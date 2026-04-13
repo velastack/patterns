@@ -1,9 +1,27 @@
+import { builtinModules } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 import dts from "vite-plugin-dts";
+import pkg from "./package.json" with { type: "json" };
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+/** Node built-ins as imported in the wild: `fs` or `node:fs`. */
+const nodeBuiltinIds = new Set<string>();
+for (const name of builtinModules) {
+  nodeBuiltinIds.add(name);
+  nodeBuiltinIds.add(`node:${name}`);
+}
+
+const optionalDependencyNames = Object.keys(pkg.optionalDependencies ?? {});
+
+function isOptionalDependency(id: string): boolean {
+  for (const dep of optionalDependencyNames) {
+    if (id === dep || id.startsWith(`${dep}/`)) return true;
+  }
+  return false;
+}
 
 export default defineConfig({
   test: {
@@ -20,9 +38,12 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: true,
     rollupOptions: {
+      external: (id) =>
+        nodeBuiltinIds.has(id) || isOptionalDependency(id),
       output: {
         entryFileNames: "index.js",
-        inlineDynamicImports: true,
+        chunkFileNames: "chunks/[name]-[hash].js",
+        inlineDynamicImports: false,
       },
     },
   },
