@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { dedent } from "ts-dedent";
+import dedent from "dedent";
 import { Project, SyntaxKind } from "ts-morph";
 
 export function modifyLayoutServer(layoutPath: string) {

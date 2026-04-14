@@ -22,23 +22,22 @@ export async function generate(options: Options) {
     .sort((a, b) => a.path.localeCompare(b.path));
 
   const components = [
-    "file",
-    "form",
     "sidebar",
     "breadcrumb",
+    "separator",
     "form",
     "collapsible",
     "avatar",
-    "dropdown",
-    "menu",
+    "dropdown-menu",
     "card",
     "input",
     "label",
+    "button",
     "badge",
     "dialog",
     "checkbox",
-    "auth",
-    "menu",
+    "file-form",
+    "auth-menu",
   ];
 
   if (options.features.payments) {
@@ -51,5 +50,6 @@ export async function generate(options: Options) {
     deletes: [],
     components,
     packages: [],
+    collections: [],
   } satisfies Result;
 }

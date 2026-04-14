@@ -9,6 +9,12 @@ vi.mock("../../../parse/env.runtime", () => {
   };
 });
 
+vi.mock("../../../runtime/write-result", () => {
+  return {
+    writeResult: async (result: unknown) => result,
+  };
+});
+
 function makeOptions(
   overrides: Partial<Options> & Pick<Options, "argv" | "env">,
 ): Options {
@@ -53,6 +59,7 @@ describe("generate form pattern", () => {
     expect(result.creates.map((file) => file.path)).toEqual([
       "src/routes/(app)/contacts/new/+page.svelte",
       "src/routes/(app)/contacts/new/+page.server.ts",
+      "src/routes/(app)/contacts/new/server.test.ts",
       "src/lib/schemas/contact.ts",
     ]);
 
@@ -63,14 +70,21 @@ describe("generate form pattern", () => {
     const schema = result.creates.find((file) =>
       file.path.endsWith("src/lib/schemas/contact.ts"),
     );
+    const serverTest = result.creates.find((file) =>
+      file.path.endsWith("/contacts/new/server.test.ts"),
+    );
 
     expect(page?.content).toContain("const statusLabels =");
     expect(page?.content).toContain("<FileForm.Field {form} name=\"attachments\"");
     expect(page?.content).toContain("name=\"owner\"");
     expect(page?.content).toContain('enctype="multipart/form-data"');
+    expect(page?.content).toContain('placeholder="Select an option"');
+    expect(page?.content).toContain('placeholder="Search users..."');
 
     expect(server?.content).toContain("withFiles");
     expect(server?.content).toContain("setFlash");
+    expect(serverTest?.content).toContain('describe("GET /contacts/new"');
+    expect(serverTest?.content).toContain('describe("POST /contacts/new"');
 
     expect(schema?.content).toContain("'attachments+': z.instanceof(File).array().optional()");
     expect(schema?.content).toContain("'attachments-': z.string().array().optional()");

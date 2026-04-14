@@ -44,6 +44,7 @@ describe("mergeResults", () => {
       deletes: [],
       components: [],
       packages: [],
+      collections: [],
     });
   });
 
@@ -54,6 +55,7 @@ describe("mergeResults", () => {
       deletes: [],
       components: ["A"],
       packages: ["pkg-a"],
+      collections: [{ name: "products", type: "base", fields: [] }],
     };
     const b: Result = {
       creates: [],
@@ -61,6 +63,7 @@ describe("mergeResults", () => {
       deletes: [{ path: "old.ts", language: "ts", content: "" }],
       components: ["B"],
       packages: [],
+      collections: [{ name: "invoices", type: "base", fields: [] }],
     };
     expect(mergeResults([a, b])).toEqual({
       creates: a.creates,
@@ -68,6 +71,7 @@ describe("mergeResults", () => {
       deletes: b.deletes,
       components: ["A", "B"],
       packages: ["pkg-a"],
+      collections: [...a.collections, ...b.collections],
     });
   });
 });

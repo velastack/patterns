@@ -215,5 +215,6 @@ export async function generate(options: Options) {
     deletes: [],
     components: [],
     packages: [],
+    collections: [],
   } satisfies Result;
 }

@@ -7,6 +7,7 @@
 		"dev": "vela dev",
 		"build": "vela build",
 		"preview": "vela preview",
+		"sync": "svelte-kit sync",
 		"prepare": "svelte-kit sync && vela sync || echo ''",
 		"test:server": "vela test:server",
 		"check": "svelte-kit sync && vela sync && svelte-check --tsconfig ./tsconfig.json",

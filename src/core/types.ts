@@ -14,12 +14,35 @@ export interface Options {
 export type Component = string;
 export type Package = string;
 
+export interface CollectionFieldSpec {
+  name: string;
+  type: string;
+  required?: boolean;
+  collectionId?: string;
+  maxSelect?: number;
+  values?: string[];
+  onCreate?: boolean;
+  onUpdate?: boolean;
+}
+
+export interface CollectionSpec {
+  name: string;
+  type: "base" | "auth" | "view";
+  listRule?: string;
+  viewRule?: string;
+  createRule?: string;
+  updateRule?: string;
+  deleteRule?: string;
+  fields: CollectionFieldSpec[];
+}
+
 export interface Result {
   creates: File[];
   modifies: File[];
   deletes: File[];
   components: Component[];
   packages: Package[];
+  collections: CollectionSpec[];
 }
 
 export interface Pattern {

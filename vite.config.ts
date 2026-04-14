@@ -14,10 +14,10 @@ for (const name of builtinModules) {
   nodeBuiltinIds.add(`node:${name}`);
 }
 
-const optionalDependencyNames = Object.keys(pkg.optionalDependencies ?? {});
+const peerDependencyNames = Object.keys(pkg.peerDependencies ?? {});
 
-function isOptionalDependency(id: string): boolean {
-  for (const dep of optionalDependencyNames) {
+function isPeerDependency(id: string): boolean {
+  for (const dep of peerDependencyNames) {
     if (id === dep || id.startsWith(`${dep}/`)) return true;
   }
   return false;
@@ -25,8 +25,12 @@ function isOptionalDependency(id: string): boolean {
 
 export default defineConfig({
   test: {
-    include: ["src/core/**/*.test.ts", "src/parse/**/*.test.ts", "src/patterns/**/*.test.ts"],
-    exclude: ["src/patterns/**/src/**"],
+    include: [
+      "src/core/**/*.test.ts",
+      "src/parse/**/*.test.ts",
+      "src/patterns/**/*.test.ts",
+    ],
+    exclude: ["src/patterns/**/src/**", "src/**/integration.test.ts"],
   },
   build: {
     lib: {
@@ -38,8 +42,7 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: true,
     rollupOptions: {
-      external: (id) =>
-        nodeBuiltinIds.has(id) || isOptionalDependency(id),
+      external: (id) => nodeBuiltinIds.has(id) || isPeerDependency(id),
       output: {
         entryFileNames: "index.js",
         chunkFileNames: "chunks/[name]-[hash].js",

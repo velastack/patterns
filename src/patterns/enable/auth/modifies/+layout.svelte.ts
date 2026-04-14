@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { dedent } from "ts-dedent";
+import dedent from "dedent";
 
 export function modifyLayoutSvelte(layoutPath: string) {
   let layout = fs.readFileSync(layoutPath, "utf8");
