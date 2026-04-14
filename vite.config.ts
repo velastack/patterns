@@ -25,7 +25,7 @@ function isOptionalDependency(id: string): boolean {
 
 export default defineConfig({
   test: {
-    include: ["src/core/**/*.test.ts", "src/patterns/**/*.test.ts"],
+    include: ["src/core/**/*.test.ts", "src/parse/**/*.test.ts", "src/patterns/**/*.test.ts"],
     exclude: ["src/patterns/**/src/**"],
   },
   build: {
