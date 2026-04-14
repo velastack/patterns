@@ -15,8 +15,12 @@ for (const name of builtinModules) {
 }
 
 const peerDependencyNames = Object.keys(pkg.peerDependencies ?? {});
+const dependencyNames = Object.keys(pkg.dependencies ?? {});
 
-function isPeerDependency(id: string): boolean {
+function isExternalDependency(id: string): boolean {
+  for (const dep of dependencyNames) {
+    if (id === dep || id.startsWith(`${dep}/`)) return true;
+  }
   for (const dep of peerDependencyNames) {
     if (id === dep || id.startsWith(`${dep}/`)) return true;
   }
@@ -42,7 +46,7 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: true,
     rollupOptions: {
-      external: (id) => nodeBuiltinIds.has(id) || isPeerDependency(id),
+      external: (id) => nodeBuiltinIds.has(id) || isExternalDependency(id),
       output: {
         entryFileNames: "index.js",
         chunkFileNames: "chunks/[name]-[hash].js",
