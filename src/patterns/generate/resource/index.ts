@@ -1,10 +1,14 @@
 import type { Options, Pattern } from "../../../core/types";
+import { formatResult } from "../../../core/format-result";
 import { generate as generateBase } from "./generate";
+
+export const GENERATE_RESOURCE_SLUG = "generate-resource";
 
 export async function generate(options: Options) {
   const baseRes = await generateBase(options);
+
   if (options.env !== "runtime") {
-    return baseRes;
+    return formatResult(baseRes);
   }
 
   const { createCollections } = await import("../../../runtime/collections");
@@ -15,11 +19,11 @@ export async function generate(options: Options) {
   };
 
   const { writeResult } = await import("../../../runtime/write-result");
-  return writeResult(runtimeRes, options);
+  return writeResult(await formatResult(runtimeRes), options);
 }
 
 export default {
-  slug: "generate-resource",
+  slug: GENERATE_RESOURCE_SLUG,
   title: "Generate a resource",
   summary: "Generates model schema resources.",
   categories: ["data"],

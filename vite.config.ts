@@ -57,6 +57,7 @@ export default defineConfig({
       exclude: [
         "**/node_modules/**",
         "src/baselines/**",
+        "**/fixtures/**",
         "**/preview-modifies/**",
         "**/creates/**",
       ],

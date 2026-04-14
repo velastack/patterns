@@ -1,10 +1,14 @@
 import type { Options, Pattern } from "../../../core/types";
+import { formatResult } from "../../../core/format-result";
 import { generate as generateBase } from "./generate";
+
+export const GENERATE_SCAFFOLD_SLUG = "generate-scaffold";
 
 export async function generate(options: Options) {
   const baseRes = await generateBase(options);
+
   if (options.env !== "runtime") {
-    return baseRes;
+    return formatResult(baseRes);
   }
 
   const { createCollections } = await import("../../../runtime/collections");
@@ -15,11 +19,11 @@ export async function generate(options: Options) {
   };
 
   const { writeResult } = await import("../../../runtime/write-result");
-  return writeResult(runtimeRes, options);
+  return writeResult(await formatResult(runtimeRes), options);
 }
 
 export default {
-  slug: "generate-scaffold",
+  slug: GENERATE_SCAFFOLD_SLUG,
   title: "Generate a scaffold",
   summary: "Generates CRUD routes and schema.",
   categories: ["data", "forms"],
