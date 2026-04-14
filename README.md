@@ -19,7 +19,7 @@ const pattern = await registry.loadPattern("generate-form", {
     "contact",
     "name:text",
     "email:email",
-    "message:textarea",
+    "message:editor",
   ],
   root: "/user/project",
   features: {
@@ -37,14 +37,14 @@ is loaded like this:
 
 ```ts
 const pattern = await registry.loadPattern("generate-form", {
-  env: "browser",
+  env: "preview",
   argv: [
     "generate",
     "form",
     "contact",
     "name:text",
     "email:email",
-    "message:textarea",
+    "message:editor",
   ],
 });
 ```
