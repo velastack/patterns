@@ -1,0 +1,9 @@
+import { env } from "$env/dynamic/private";
+import { handlePocketbase } from "@svsh/pocketbase";
+
+export const getPocketbase = () =>
+  handlePocketbase({
+    pocketbaseUrl: env.POCKETBASE_URL,
+    superuserEmail: env.POCKETBASE_SUPERUSER_EMAIL,
+    superuserPassword: env.POCKETBASE_SUPERUSER_PASSWORD,
+  });
