@@ -36,6 +36,10 @@ export default {
   plan: "open",
   title: "Generate a scaffold",
   summary: "Generates CRUD routes and schema.",
+  requires: {
+    auth: false,
+    payments: false,
+  },
   categories: ["data", "forms"],
   tags: ["crud", "scaffold", "pocketbase", "sveltekit"],
 

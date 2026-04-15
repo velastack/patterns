@@ -54,6 +54,8 @@ export interface Pattern {
   docs: string;
   summary: string;
 
+  requires: Features;
+
   // Categories and tags for browsing patterns on the website.
   categories: string[] | string;
   tags: string[] | string;

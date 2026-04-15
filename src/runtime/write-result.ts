@@ -34,6 +34,7 @@ const customDependencies: Record<string, string[]> = {
   pagination: ["button", "select"],
   "row-actions": ["dropdown-menu", "button"],
   leaflet: [],
+  "auth-menu": ["dropdown-menu", "button"],
 };
 
 const customNpmPackages: CustomNpmPackages = {

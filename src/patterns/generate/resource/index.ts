@@ -36,6 +36,10 @@ export default {
   plan: "open",
   title: "Generate a resource",
   summary: "Generates model schema resources.",
+  requires: {
+    auth: false,
+    payments: false,
+  },
   categories: ["data"],
   tags: ["pocketbase", "resource", "schema"],
 

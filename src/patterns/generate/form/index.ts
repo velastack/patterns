@@ -27,6 +27,10 @@ export default {
   plan: "open",
   title: "Generate a form",
   summary: "Generates a form.",
+  requires: {
+    auth: false,
+    payments: false,
+  },
   categories: ["forms"],
   tags: ["sveltekit", "superforms", "validation", "zod"],
 

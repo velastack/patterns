@@ -26,6 +26,10 @@ export default {
   plan: "open",
   title: "Generate a schema",
   summary: "Generates a zod schema.",
+  requires: {
+    auth: false,
+    payments: false,
+  },
   categories: ["data"],
   tags: ["zod", "schema", "pocketbase"],
 

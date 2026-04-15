@@ -1,5 +1,9 @@
-<script lang="ts" module>
+<script lang="ts">
+	import type { ComponentProps } from 'svelte';
 	import HomeIcon from '@lucide/svelte/icons/home';
+	import * as Sidebar from '$lib/components/ui/sidebar';
+	import NavMain from './nav-main.svelte';
+	import NavUser from './nav-user.svelte';
 
 	let data = {
 		navMain: [
@@ -10,13 +14,6 @@
 			}
 		]
 	};
-</script>
-
-<script lang="ts">
-	import NavMain from './nav-main.svelte';
-	import NavUser from './nav-user.svelte';
-	import * as Sidebar from '$lib/components/ui/sidebar';
-	import type { ComponentProps } from 'svelte';
 
 	let {
 		user,

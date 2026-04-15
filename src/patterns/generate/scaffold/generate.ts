@@ -30,9 +30,7 @@ import { generateScaffoldServerTestSnippet } from "../tests";
 function parsePatternArgs(argv: string[]) {
   const [modelPath, ...fields] = argv;
   if (!modelPath) {
-    throw new Error(
-      "Invalid command arguments. Expected: <model> [fields...]",
-    );
+    throw new Error("Invalid command arguments. Expected: <model> [fields...]");
   }
 
   return { modelPath, fields };
@@ -664,8 +662,12 @@ async function resolveInputFields(
   const model = parseModel(modelPath, options);
   const collections =
     options.env === "runtime"
-      ? ((await (await import("../../../parse/env.runtime")).getCollections()) as Collection[])
-      : (await import("../../../parse/env.preview")).getPreviewCollections(options);
+      ? ((await (
+          await import("../../../parse/env.runtime")
+        ).getCollections()) as Collection[])
+      : (await import("../../../parse/env.preview")).getPreviewCollections(
+          options,
+        );
 
   // If fields are provided, let's parse them and mark the collection as "shouldCreateCollection"
   if (fieldDefs.length > 0) {
@@ -740,7 +742,13 @@ export async function generate(options: Options) {
     ),
     toFile(
       `${paths.list}/server.test.ts`,
-      generateScaffoldServerTestSnippet(model, urls, fields, options, collections),
+      generateScaffoldServerTestSnippet(
+        model,
+        urls,
+        fields,
+        options,
+        collections,
+      ),
     ),
   ];
 
@@ -768,7 +776,7 @@ export async function generate(options: Options) {
     modifies: [],
     deletes: [],
     components: [...new Set(components)],
-    packages: [],
+    packages: ["@tanstack/table-core"],
     collections: shouldCreateCollection
       ? [collectionSpecFromModelFields(model, fields, auth)]
       : [],

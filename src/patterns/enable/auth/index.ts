@@ -34,6 +34,10 @@ export default {
   plan: "open",
   title: "Enable authentication",
   summary: "Enables authentication.",
+  requires: {
+    auth: false,
+    payments: false,
+  },
   categories: ["authentication"],
   tags: [
     "sveltekit",

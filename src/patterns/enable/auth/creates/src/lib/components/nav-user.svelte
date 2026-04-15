@@ -1,6 +1,14 @@
-<script lang="ts" module>
+<script lang="ts">
+	import { toggleMode, mode } from 'mode-watcher';
+	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
 	import Settings2Icon from '@lucide/svelte/icons/settings-2';
-
+	import LogOutIcon from '@lucide/svelte/icons/log-out';
+	import MoonIcon from '@lucide/svelte/icons/moon';
+	import SunIcon from '@lucide/svelte/icons/sun';
+	import * as Avatar from '$lib/components/ui/avatar';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+	import * as Sidebar from '$lib/components/ui/sidebar';
+	
 	let data = {
 		navUser: [
 			{
@@ -10,17 +18,6 @@
 			}
 		]
 	};
-</script>
-
-<script lang="ts">
-	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
-	import LogOutIcon from '@lucide/svelte/icons/log-out';
-	import MoonIcon from '@lucide/svelte/icons/moon';
-	import SunIcon from '@lucide/svelte/icons/sun';
-	import * as Avatar from '$lib/components/ui/avatar';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
-	import * as Sidebar from '$lib/components/ui/sidebar';
-	import { toggleMode, mode } from 'mode-watcher';
 
 	let {
 		user
