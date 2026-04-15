@@ -57,8 +57,8 @@ export interface Pattern {
   requires: Features;
 
   // Categories and tags for browsing patterns on the website.
-  categories: string[] | string;
-  tags: string[] | string;
+  category: string;
+  tags: string[];
 
   // Example command for the pattern. This is used to generate the command for the pattern.
   command: {

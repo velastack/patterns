@@ -40,7 +40,7 @@ export default {
     auth: false,
     payments: false,
   },
-  categories: ["data"],
+  category: "generators" as const,
   tags: ["pocketbase", "resource", "schema"],
 
   command: {

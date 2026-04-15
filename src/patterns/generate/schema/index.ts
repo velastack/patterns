@@ -30,7 +30,7 @@ export default {
     auth: false,
     payments: false,
   },
-  categories: ["data"],
+  category: "generators" as const,
   tags: ["zod", "schema", "pocketbase"],
 
   command: {

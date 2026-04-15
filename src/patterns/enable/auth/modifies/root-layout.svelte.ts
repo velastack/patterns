@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import dedent from "dedent";
 
-export function modifyLayoutSvelte(layoutPath: string) {
+export function modifyRootLayoutSvelte(layoutPath: string) {
   let layout = fs.readFileSync(layoutPath, "utf8");
   // TODO: use magic-string to modify the layout
 

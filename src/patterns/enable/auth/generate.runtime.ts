@@ -4,7 +4,7 @@ import { Options, Result, File } from "../../../core/types";
 import { getMigrationFile, withPocketbase } from "../../../runtime/pocketbase";
 
 import { modifyLayoutServer } from "./modifies/+layout.server";
-import { modifyLayoutSvelte } from "./modifies/+layout.svelte";
+import { modifyRootLayoutSvelte } from "./modifies/root-layout.svelte";
 import { modifyHooksServer } from "./modifies/hooks.server";
 
 export async function generate(options: Options) {
@@ -71,7 +71,6 @@ export async function generate(options: Options) {
         content: fs.readFileSync(migrationFile, "utf8"),
       });
     }
-
   });
 
   // Modify files
@@ -120,7 +119,7 @@ export async function generate(options: Options) {
   }
 
   if (fs.existsSync(layoutFile)) {
-    modifyLayoutSvelte(layoutFile);
+    modifyRootLayoutSvelte(layoutFile);
     modifies.push({
       path: layoutFile,
       language: "svelte",

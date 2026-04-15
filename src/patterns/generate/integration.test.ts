@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 
-import patternsPackage from "../../index";
+import { patterns } from "../../index";
 import type { Options, Pattern, Result } from "../../core/types";
 import { withPocketbase } from "../../runtime/pocketbase";
 
@@ -146,7 +146,7 @@ function changedFilePaths(result: Result): string[] {
 }
 
 function getPatternBySlug(slug: string): Pattern {
-  const pattern = patternsPackage.patterns.find((entry) => entry.slug === slug);
+  const pattern = patterns.find((entry) => entry.slug === slug);
   if (!pattern) {
     throw new Error(`Pattern not found: ${slug}`);
   }
@@ -223,11 +223,7 @@ describe("generate integration", () => {
       const steps: GenerateStep[] = [
         {
           slug: "generate-scaffold",
-          argv: [
-            "product",
-            "name:text",
-            "price:number",
-          ],
+          argv: ["product", "name:text", "price:number"],
         },
         {
           slug: "generate-form",
@@ -235,11 +231,7 @@ describe("generate integration", () => {
         },
         {
           slug: "generate-resource",
-          argv: [
-            "invoice",
-            "amount:number",
-            "paid:bool",
-          ],
+          argv: ["invoice", "amount:number", "paid:bool"],
         },
         {
           slug: "generate-schema",

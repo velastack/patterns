@@ -31,7 +31,7 @@ export default {
     auth: false,
     payments: false,
   },
-  categories: ["forms"],
+  category: "generators" as const,
   tags: ["sveltekit", "superforms", "validation", "zod"],
 
   command: {

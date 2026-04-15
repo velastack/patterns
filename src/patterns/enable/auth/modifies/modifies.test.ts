@@ -4,7 +4,7 @@ import path from "node:path";
 import fs from "node:fs";
 
 import { modifyLayoutServer } from "./+layout.server";
-import { modifyLayoutSvelte } from "./+layout.svelte";
+import { modifyRootLayoutSvelte } from "./root-layout.svelte";
 import { modifyHooksServer } from "./hooks.server";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -72,7 +72,7 @@ describe("modifyLayoutSvelte", () => {
   });
 
   it.each(layoutSvelteTestCases)("should modify %s correctly", (testCase) => {
-    modifyLayoutSvelte(path.join(tempDir, testCase));
+    modifyRootLayoutSvelte(path.join(tempDir, testCase));
 
     const modifiedFile = fs.readFileSync(path.join(tempDir, testCase), "utf8");
     const expectedFile = fs.readFileSync(

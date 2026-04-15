@@ -40,7 +40,7 @@ export default {
     auth: false,
     payments: false,
   },
-  categories: ["data", "forms"],
+  category: "generators" as const,
   tags: ["crud", "scaffold", "pocketbase", "sveltekit"],
 
   command: {

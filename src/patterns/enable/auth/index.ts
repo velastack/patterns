@@ -38,7 +38,7 @@ export default {
     auth: false,
     payments: false,
   },
-  categories: ["authentication"],
+  category: "auth" as const,
   tags: [
     "sveltekit",
     "authentication",
