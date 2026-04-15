@@ -4,6 +4,7 @@ import generateResource from "./patterns/generate/resource";
 import generateScaffold from "./patterns/generate/scaffold";
 import generateSchema from "./patterns/generate/schema";
 import enableAuth from "./patterns/enable/auth";
+import enableApi from "./patterns/enable/api";
 
 export const version = packageJson.version;
 
@@ -13,6 +14,7 @@ export const patterns = [
   generateResource,
   generateScaffold,
   enableAuth,
+  enableApi,
 ];
 
 type PatternEntry = (typeof patterns)[number];
