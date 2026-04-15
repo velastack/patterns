@@ -18,7 +18,7 @@ function makeOptions(root: string): Options {
     argv: ["contact", "name:text"],
     env: "runtime",
     root,
-    features: { auth: false, payments: false },
+    features: { auth: false, api: false, payments: false },
     input: {},
   };
 }
@@ -37,7 +37,11 @@ describe("createCollections", () => {
   it("creates collections and appends created migration files", async () => {
     const root = mkdtempSync(path.join(os.tmpdir(), "collections-runtime-"));
     tempDirs.push(root);
-    const migrationPath = path.join(root, "migrations", "0001_created_contacts.js");
+    const migrationPath = path.join(
+      root,
+      "migrations",
+      "0001_created_contacts.js",
+    );
     writeFileSync(migrationPath, "migration-content", "utf8");
 
     const createMock = vi.fn().mockResolvedValue(undefined);

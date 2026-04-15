@@ -22,7 +22,11 @@ function makeOptions(
     argv: overrides.argv,
     env: overrides.env,
     root: "/tmp/project",
-    features: overrides.features ?? { auth: false, payments: false },
+    features: overrides.features ?? {
+      auth: false,
+      api: false,
+      payments: false,
+    },
     input: overrides.input ?? {},
   };
 }
@@ -43,7 +47,7 @@ describe("generate form pattern", () => {
     const result = await generateBase(
       makeOptions({
         env: "preview",
-        features: { auth: true, payments: false },
+        features: { auth: true, api: false, payments: false },
         argv: [
           "contact",
           "name:text!",

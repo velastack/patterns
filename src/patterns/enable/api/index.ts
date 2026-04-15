@@ -36,6 +36,7 @@ export default {
   summary: "Enables the PocketBase API.",
   requires: {
     auth: false,
+    api: false,
     payments: false,
   },
   category: "api" as const,

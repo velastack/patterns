@@ -26,7 +26,11 @@ function makeOptions(
     argv: overrides.argv,
     env: overrides.env,
     root: "/tmp/project",
-    features: overrides.features ?? { auth: false, payments: false },
+    features: overrides.features ?? {
+      auth: false,
+      api: false,
+      payments: false,
+    },
     input: overrides.input ?? {},
   };
 }
@@ -43,9 +47,15 @@ describe("generate resource pattern", () => {
     expect(result.creates).toHaveLength(1);
     expect(result.creates[0].path).toBe("src/lib/schemas/contact.ts");
     expect(result.creates[0].content).toContain("id: z.string().optional()");
-    expect(result.creates[0].content).toContain("collectionId: z.string().optional()");
-    expect(result.creates[0].content).toContain("avatar: z.union([z.instanceof(File), z.string()]).optional().default(\"\")");
-    expect(result.creates[0].content).toContain('satisfies Schemas["contacts"]');
+    expect(result.creates[0].content).toContain(
+      "collectionId: z.string().optional()",
+    );
+    expect(result.creates[0].content).toContain(
+      'avatar: z.union([z.instanceof(File), z.string()]).optional().default("")',
+    );
+    expect(result.creates[0].content).toContain(
+      'satisfies Schemas["contacts"]',
+    );
     expect(result.collections).toEqual([
       {
         name: "contacts",
@@ -67,7 +77,9 @@ describe("generate resource pattern", () => {
     );
 
     expect(result.creates[0].content).toContain("name: z.string().nonempty()");
-    expect(result.creates[0].content).toContain("avatar: z.union([z.instanceof(File), z.string()]).optional().default(\"\")");
+    expect(result.creates[0].content).toContain(
+      'avatar: z.union([z.instanceof(File), z.string()]).optional().default("")',
+    );
     expect(result.collections).toEqual([]);
   });
 });

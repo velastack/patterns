@@ -25,7 +25,7 @@ function makeOptions(root: string): Options {
     argv: ["test"],
     env: "runtime",
     root,
-    features: { auth: false, payments: false },
+    features: { auth: false, api: false, payments: false },
     input: {},
   };
 }
@@ -60,8 +60,20 @@ describe("writeResult", () => {
     const result = await writeResult(
       {
         ...emptyResult(),
-        creates: [{ path: "src/new.ts", language: "ts", content: "export const a = 1;\n" }],
-        modifies: [{ path: modifyPath, language: "ts", content: "export const b = 2;\n" }],
+        creates: [
+          {
+            path: "src/new.ts",
+            language: "ts",
+            content: "export const a = 1;\n",
+          },
+        ],
+        modifies: [
+          {
+            path: modifyPath,
+            language: "ts",
+            content: "export const b = 2;\n",
+          },
+        ],
         deletes: [{ path: "src/old.txt", language: "text", content: "" }],
       },
       makeOptions(root),
@@ -89,11 +101,13 @@ describe("writeResult", () => {
       recursive: true,
     });
 
-    const executeCommand = vi.fn<(
-      cwd: string,
-      operation: "execute" | "install",
-      args: string[],
-    ) => Promise<void>>(async () => {});
+    const executeCommand = vi.fn<
+      (
+        cwd: string,
+        operation: "execute" | "install",
+        args: string[],
+      ) => Promise<void>
+    >(async () => {});
 
     const result = await writeResult(
       {

@@ -38,6 +38,7 @@ export default {
   summary: "Generates CRUD routes and schema.",
   requires: {
     auth: false,
+    api: false,
     payments: false,
   },
   category: "generators" as const,

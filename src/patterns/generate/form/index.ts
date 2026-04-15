@@ -29,6 +29,7 @@ export default {
   summary: "Generates a form.",
   requires: {
     auth: false,
+    api: false,
     payments: false,
   },
   category: "generators" as const,

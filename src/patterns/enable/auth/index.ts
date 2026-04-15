@@ -36,6 +36,7 @@ export default {
   summary: "Enables authentication.",
   requires: {
     auth: false,
+    api: false,
     payments: false,
   },
   category: "auth" as const,

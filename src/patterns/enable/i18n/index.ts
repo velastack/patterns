@@ -36,6 +36,7 @@ export default {
   summary: "Enables i18n with Wuchale and locale-aware routing.",
   requires: {
     auth: false,
+    api: false,
     payments: false,
   },
   category: "i18n" as const,

@@ -6,11 +6,7 @@ import {
   validateModelName,
   safeVarName,
 } from "./model";
-import {
-  resolveFields,
-  splitFieldDef,
-  parseSelectOptions,
-} from "./fields";
+import { resolveFields, splitFieldDef, parseSelectOptions } from "./fields";
 import {
   pickDisplayField,
   collectionIdMap,
@@ -20,8 +16,8 @@ import {
 import { generateAuthRule } from "./permissions";
 import type { Collection, Model, RelationField, SelectField } from "./types";
 
-const noAuth = { features: { auth: false, payments: false } };
-const withAuth = { features: { auth: true, payments: false } };
+const noAuth = { features: { auth: false, api: false, payments: false } };
+const withAuth = { features: { auth: true, api: false, payments: false } };
 
 // A parent model used across resolveFields tests
 const parent: Model = {
@@ -349,12 +345,7 @@ describe("resolveFields", () => {
       "point:geopoint",
       "user:references",
     ];
-    const { fields } = resolveFields(
-      inputs,
-      parent,
-      [usersCollection],
-      noAuth,
-    );
+    const { fields } = resolveFields(inputs, parent, [usersCollection], noAuth);
     expect(fields.map((f) => f.type)).toEqual([
       "text",
       "bool",
@@ -371,21 +362,21 @@ describe("resolveFields", () => {
   });
 
   it("should throw for invalid field name", () => {
-    expect(() =>
-      resolveFields(["1abc:text"], parent, [], noAuth),
-    ).toThrow(/Invalid field name/);
+    expect(() => resolveFields(["1abc:text"], parent, [], noAuth)).toThrow(
+      /Invalid field name/,
+    );
   });
 
   it("should throw for invalid field type", () => {
-    expect(() =>
-      resolveFields(["title:unknown"], parent, [], noAuth),
-    ).toThrow(/Invalid field type/);
+    expect(() => resolveFields(["title:unknown"], parent, [], noAuth)).toThrow(
+      /Invalid field type/,
+    );
   });
 
   it("should throw for invalid field format (missing type)", () => {
-    expect(() =>
-      resolveFields(["noType"], parent, [], noAuth),
-    ).toThrow(/Invalid field format/);
+    expect(() => resolveFields(["noType"], parent, [], noAuth)).toThrow(
+      /Invalid field format/,
+    );
   });
 
   it("should set required on relation fields and keep relation metadata", () => {
@@ -439,9 +430,9 @@ describe("resolveFields", () => {
   });
 
   it("should error for relation field when collection does not exist", () => {
-    expect(() =>
-      resolveFields(["user:relation"], parent, [], noAuth),
-    ).toThrow(/Invalid relation field/);
+    expect(() => resolveFields(["user:relation"], parent, [], noAuth)).toThrow(
+      /Invalid relation field/,
+    );
   });
 
   it("should handle relation type with singular and plural field names", () => {
@@ -604,12 +595,7 @@ describe("resolveFields", () => {
   });
 
   it("should handle 'files' alias type", () => {
-    const { fields } = resolveFields(
-      ["photos:files"],
-      parent,
-      [],
-      noAuth,
-    );
+    const { fields } = resolveFields(["photos:files"], parent, [], noAuth);
     expect(fields[0].type).toBe("file");
     expect((fields[0] as any).maxSelect).toBe(99);
   });
@@ -637,12 +623,7 @@ describe("resolveFields", () => {
   });
 
   it("should not generate auth rule when auth is disabled", () => {
-    const { auth } = resolveFields(
-      ["name:text"],
-      parent,
-      [],
-      noAuth,
-    );
+    const { auth } = resolveFields(["name:text"], parent, [], noAuth);
     expect(auth).toBeUndefined();
   });
 
@@ -756,7 +737,12 @@ describe("generateAuthRule", () => {
         name: "posts",
         type: "base",
         fields: [
-          { name: "author", type: "relation", collectionId: "u1", maxSelect: 1 },
+          {
+            name: "author",
+            type: "relation",
+            collectionId: "u1",
+            maxSelect: 1,
+          },
         ],
       },
     ];

@@ -12,7 +12,12 @@ vi.mock("../../../parse/env.runtime", () => {
         fields: [
           { name: "id", type: "text", system: true },
           { name: "name", type: "text", required: true },
-          { name: "status", type: "select", values: ["draft", "published"], maxSelect: 1 },
+          {
+            name: "status",
+            type: "select",
+            values: ["draft", "published"],
+            maxSelect: 1,
+          },
         ],
       },
     ],
@@ -29,7 +34,12 @@ vi.mock("../../../parse/env.preview", () => {
         fields: [
           { name: "id", type: "text", system: true },
           { name: "name", type: "text", required: true },
-          { name: "status", type: "select", values: ["draft", "published"], maxSelect: 1 },
+          {
+            name: "status",
+            type: "select",
+            values: ["draft", "published"],
+            maxSelect: 1,
+          },
         ],
       },
     ],
@@ -43,7 +53,11 @@ function makeOptions(
     argv: overrides.argv,
     env: overrides.env,
     root: "/tmp/project",
-    features: overrides.features ?? { auth: false, payments: false },
+    features: overrides.features ?? {
+      auth: false,
+      api: false,
+      payments: false,
+    },
     input: overrides.input ?? {},
   };
 }
@@ -61,7 +75,9 @@ describe("generate schema pattern", () => {
     expect(result.creates[0].path).toBe("src/lib/schemas/contact.ts");
     expect(result.creates[0].content).toContain("export const contactSchema");
     expect(result.creates[0].content).toContain("name: z.string().nonempty()");
-    expect(result.creates[0].content).toContain("email: z.string().email().optional()");
+    expect(result.creates[0].content).toContain(
+      "email: z.string().email().optional()",
+    );
     expect(result.creates[0].content).not.toContain("satisfies Schemas");
   });
 
@@ -73,9 +89,15 @@ describe("generate schema pattern", () => {
       }),
     );
 
-    expect(result.creates[0].content).toContain('import type { Schemas } from "pocketbase-svelte"');
-    expect(result.creates[0].content).toContain('satisfies Schemas["contacts"]');
-    expect(result.creates[0].content).toContain("status: z.enum([\"draft\", \"published\"]).optional()");
+    expect(result.creates[0].content).toContain(
+      'import type { Schemas } from "pocketbase-svelte"',
+    );
+    expect(result.creates[0].content).toContain(
+      'satisfies Schemas["contacts"]',
+    );
+    expect(result.creates[0].content).toContain(
+      'status: z.enum(["draft", "published"]).optional()',
+    );
   });
 
   it("hydrates schema fields from preview collections when no fields are passed", async () => {
@@ -86,8 +108,14 @@ describe("generate schema pattern", () => {
       }),
     );
 
-    expect(result.creates[0].content).toContain('import type { Schemas } from "pocketbase-svelte"');
-    expect(result.creates[0].content).toContain('satisfies Schemas["contacts"]');
-    expect(result.creates[0].content).toContain("status: z.enum([\"draft\", \"published\"]).optional()");
+    expect(result.creates[0].content).toContain(
+      'import type { Schemas } from "pocketbase-svelte"',
+    );
+    expect(result.creates[0].content).toContain(
+      'satisfies Schemas["contacts"]',
+    );
+    expect(result.creates[0].content).toContain(
+      'status: z.enum(["draft", "published"]).optional()',
+    );
   });
 });

@@ -160,6 +160,7 @@ function makeOptions(root: string, argv: string[]): Options {
     root,
     features: {
       auth: false,
+      api: false,
       payments: false,
     },
     input: {},

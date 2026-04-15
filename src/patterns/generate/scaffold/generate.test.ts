@@ -37,7 +37,11 @@ function makeOptions(
     argv: overrides.argv,
     env: overrides.env,
     root: "/tmp/project",
-    features: overrides.features ?? { auth: false, payments: false },
+    features: overrides.features ?? {
+      auth: false,
+      api: false,
+      payments: false,
+    },
     input: overrides.input ?? {},
   };
 }
@@ -47,7 +51,7 @@ describe("generate scaffold pattern", () => {
     const result = await generateBase(
       makeOptions({
         env: "preview",
-        features: { auth: true, payments: false },
+        features: { auth: true, api: false, payments: false },
         argv: [
           "contact",
           "name:text!",
@@ -71,9 +75,15 @@ describe("generate scaffold pattern", () => {
       "src/routes/(app)/contacts/server.test.ts",
     ]);
 
-    const listServer = result.creates.find((file) => file.path.endsWith("/contacts/+page.server.ts"));
-    const newPage = result.creates.find((file) => file.path.endsWith("/contacts/new/+page.svelte"));
-    const showPage = result.creates.find((file) => file.path.endsWith("/contacts/[id]/+page.svelte"));
+    const listServer = result.creates.find((file) =>
+      file.path.endsWith("/contacts/+page.server.ts"),
+    );
+    const newPage = result.creates.find((file) =>
+      file.path.endsWith("/contacts/new/+page.svelte"),
+    );
+    const showPage = result.creates.find((file) =>
+      file.path.endsWith("/contacts/[id]/+page.svelte"),
+    );
     const editServer = result.creates.find((file) =>
       file.path.endsWith("/contacts/[id]/edit/+page.server.ts"),
     );
@@ -81,14 +91,20 @@ describe("generate scaffold pattern", () => {
       file.path.endsWith("/contacts/server.test.ts"),
     );
 
-    expect(listServer?.content).toContain('getFullList({ expand: "category" })');
+    expect(listServer?.content).toContain(
+      'getFullList({ expand: "category" })',
+    );
     expect(newPage?.content).toContain("const statusLabels =");
     expect(newPage?.content).toContain('name="category"');
     expect(showPage?.content).toContain("Contact details");
     expect(showPage?.content).toContain("Back to list");
-    expect(editServer?.content).toContain("await superValidate(contact, zod(contactSchema))");
+    expect(editServer?.content).toContain(
+      "await superValidate(contact, zod(contactSchema))",
+    );
     expect(scaffoldServerTest?.content).toContain('describe("GET /contacts"');
-    expect(scaffoldServerTest?.content).toContain('describe("POST /contacts/new"');
+    expect(scaffoldServerTest?.content).toContain(
+      'describe("POST /contacts/new"',
+    );
 
     expect(result.components).toContain("form");
     expect(result.components).toContain("multiselect");
@@ -125,6 +141,8 @@ describe("generate scaffold pattern", () => {
       ]),
     );
     expect(result.collections[0].listRule).toBeTruthy();
-    expect(result.collections[0].createRule).toBe(result.collections[0].listRule);
+    expect(result.collections[0].createRule).toBe(
+      result.collections[0].listRule,
+    );
   });
 });

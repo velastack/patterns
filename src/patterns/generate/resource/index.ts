@@ -38,6 +38,7 @@ export default {
   summary: "Generates model schema resources.",
   requires: {
     auth: false,
+    api: false,
     payments: false,
   },
   category: "generators" as const,

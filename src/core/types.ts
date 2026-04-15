@@ -1,5 +1,6 @@
 export interface Features {
   auth: boolean;
+  api: boolean;
   payments: boolean;
 }
 

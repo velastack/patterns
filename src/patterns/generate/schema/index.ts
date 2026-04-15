@@ -28,6 +28,7 @@ export default {
   summary: "Generates a zod schema.",
   requires: {
     auth: false,
+    api: false,
     payments: false,
   },
   category: "generators" as const,
