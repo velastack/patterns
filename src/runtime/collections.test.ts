@@ -15,7 +15,7 @@ vi.mock("./pocketbase", () => ({
 
 function makeOptions(root: string): Options {
   return {
-    argv: ["generate", "resource", "contact", "name:text"],
+    argv: ["contact", "name:text"],
     env: "runtime",
     root,
     features: { auth: false, payments: false },

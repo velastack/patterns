@@ -36,7 +36,7 @@ describe("generate resource pattern", () => {
     const result = await generateBase(
       makeOptions({
         env: "preview",
-        argv: ["generate", "resource", "contact", "name:text!", "avatar:file"],
+        argv: ["contact", "name:text!", "avatar:file"],
       }),
     );
 
@@ -62,7 +62,7 @@ describe("generate resource pattern", () => {
     const result = await generateBase(
       makeOptions({
         env: "runtime",
-        argv: ["generate", "resource", "contact"],
+        argv: ["contact"],
       }),
     );
 

@@ -53,7 +53,7 @@ describe("generate schema pattern", () => {
     const result = await generateBase(
       makeOptions({
         env: "preview",
-        argv: ["generate", "schema", "contact", "name:text!", "email:email"],
+        argv: ["contact", "name:text!", "email:email"],
       }),
     );
 
@@ -69,7 +69,7 @@ describe("generate schema pattern", () => {
     const result = await generateBase(
       makeOptions({
         env: "runtime",
-        argv: ["generate", "schema", "contact"],
+        argv: ["contact"],
       }),
     );
 
@@ -82,7 +82,7 @@ describe("generate schema pattern", () => {
     const result = await generateBase(
       makeOptions({
         env: "preview",
-        argv: ["generate", "schema", "contact"],
+        argv: ["contact"],
       }),
     );
 

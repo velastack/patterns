@@ -8,8 +8,6 @@ import {
   selectFieldLabelMap,
 } from "../field";
 import {
-  modelUrls,
-  modelPaths,
   parseFields,
   parseModel,
   validateModelName,
@@ -19,25 +17,22 @@ import {
 } from "../../../parse";
 import { generateFormServerTestSnippet } from "../tests";
 
-const FORM_ARG_INDEX = 2;
-const FIELD_START_INDEX = 3;
+function formPaths(modelPath: string, routesDir: string) {
+  const normalizedModelPath = modelPath.replace(/^\/+|\/+$/g, "");
+  const basePath = `${routesDir}/${normalizedModelPath}`;
+  const baseUrl = `/${normalizedModelPath}`;
 
-function parseCommandArgs(argv: string[]) {
-  if (argv.length <= FORM_ARG_INDEX) {
-    throw new Error(
-      "Invalid command arguments. Expected: generate form <model> <fields...>",
-    );
+  return {
+    pagePath: basePath,
+    pageUrl: baseUrl,
+  };
+}
+
+function parsePatternArgs(argv: string[]) {
+  const [modelPath, ...fields] = argv;
+  if (!modelPath) {
+    throw new Error("Invalid command arguments. Expected: <model> <fields...>");
   }
-
-  const [command, subcommand] = argv;
-  if (command !== "generate" || subcommand !== "form") {
-    throw new Error(
-      `Invalid command "${argv.join(" ")}". Expected to start with "generate form".`,
-    );
-  }
-
-  const modelPath = argv[FORM_ARG_INDEX];
-  const fields = argv.slice(FIELD_START_INDEX);
   if (fields.length === 0) {
     throw new Error("At least one field definition is required.");
   }
@@ -145,7 +140,9 @@ function getFormSchemaForField(field: Field): string {
   return `${schema}.optional()`;
 }
 
-function schemaFields(fields: Field[]): Array<{ name: string; schema: string }> {
+function schemaFields(
+  fields: Field[],
+): Array<{ name: string; schema: string }> {
   const allFields: Array<{ name: string; schema: string }> = [];
 
   for (const field of fields) {
@@ -185,7 +182,6 @@ function generateSchema(model: Model, fields: Field[]): string {
   `;
 }
 
-
 function pageImports(model: Model, fields: Field[]): string[] {
   const components = getFieldComponents(fields);
   const imports = [
@@ -201,9 +197,12 @@ function pageImports(model: Model, fields: Field[]): string[] {
 
 function pageScriptSnippet(model: Model, fields: Field[]): string {
   const selectFields = fields.filter(
-    (field): field is Extract<Field, { type: "select" }> => field.type === "select",
+    (field): field is Extract<Field, { type: "select" }> =>
+      field.type === "select",
   );
-  const labelMaps = selectFields.map((field) => selectFieldLabelMap(field)).join("\n\n");
+  const labelMaps = selectFields
+    .map((field) => selectFieldLabelMap(field))
+    .join("\n\n");
 
   return dedent`
     ${labelMaps}
@@ -290,25 +289,34 @@ function toFile(path: string, content: string): File {
 }
 
 export async function generate(options: Options) {
-  const { modelPath, fields: fieldDefs } = parseCommandArgs(options.argv);
+  const { modelPath, fields: fieldDefs } = parsePatternArgs(options.argv);
 
   validateModelName(modelPath);
   const model = parseModel(modelPath, options);
   const parsed = await parseFields(fieldDefs, model, options);
   const fields = parsed.fields;
-  const paths = modelPaths(model);
-  const urls = modelUrls(model);
+  const { pagePath, pageUrl } = formPaths(modelPath, model.routesDir);
   const collections =
     options.env === "runtime"
-      ? ((await (await import("../../../parse/env.runtime")).getCollections()) as Collection[])
-      : (await import("../../../parse/env.preview")).getPreviewCollections(options);
+      ? ((await (
+          await import("../../../parse/env.runtime")
+        ).getCollections()) as Collection[])
+      : (await import("../../../parse/env.preview")).getPreviewCollections(
+          options,
+        );
 
   const creates = [
-    toFile(`${paths.new}/+page.svelte`, pageSnippet(model, fields)),
-    toFile(`${paths.new}/+page.server.ts`, serverSnippet(model, fields)),
+    toFile(`${pagePath}/+page.svelte`, pageSnippet(model, fields)),
+    toFile(`${pagePath}/+page.server.ts`, serverSnippet(model, fields)),
     toFile(
-      `${paths.new}/server.test.ts`,
-      generateFormServerTestSnippet(model, urls.new, fields, options, collections),
+      `${pagePath}/server.test.ts`,
+      generateFormServerTestSnippet(
+        model,
+        pageUrl,
+        fields,
+        options,
+        collections,
+      ),
     ),
     toFile(`src/lib/schemas/${model.name}.ts`, generateSchema(model, fields)),
   ];

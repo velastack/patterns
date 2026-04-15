@@ -33,7 +33,7 @@ describe("generate form pattern", () => {
       generateBase(
         makeOptions({
           env: "preview",
-          argv: ["generate", "form", "contact"],
+          argv: ["contact"],
         }),
       ),
     ).rejects.toThrow(/At least one field definition is required/);
@@ -45,8 +45,6 @@ describe("generate form pattern", () => {
         env: "preview",
         features: { auth: true, payments: false },
         argv: [
-          "generate",
-          "form",
           "contact",
           "name:text!",
           'status:select(draft:"Draft",published:"Published")',
@@ -57,13 +55,15 @@ describe("generate form pattern", () => {
     );
 
     expect(result.creates.map((file) => file.path)).toEqual([
-      "src/routes/(app)/contacts/new/+page.svelte",
-      "src/routes/(app)/contacts/new/+page.server.ts",
-      "src/routes/(app)/contacts/new/server.test.ts",
+      "src/routes/(app)/contact/+page.svelte",
+      "src/routes/(app)/contact/+page.server.ts",
+      "src/routes/(app)/contact/server.test.ts",
       "src/lib/schemas/contact.ts",
     ]);
 
-    const page = result.creates.find((file) => file.path.endsWith("+page.svelte"));
+    const page = result.creates.find((file) =>
+      file.path.endsWith("+page.svelte"),
+    );
     const server = result.creates.find((file) =>
       file.path.endsWith("+page.server.ts"),
     );
@@ -71,23 +71,29 @@ describe("generate form pattern", () => {
       file.path.endsWith("src/lib/schemas/contact.ts"),
     );
     const serverTest = result.creates.find((file) =>
-      file.path.endsWith("/contacts/new/server.test.ts"),
+      file.path.endsWith("/contact/server.test.ts"),
     );
 
     expect(page?.content).toContain("const statusLabels =");
-    expect(page?.content).toContain("<FileForm.Field {form} name=\"attachments\"");
-    expect(page?.content).toContain("name=\"owner\"");
+    expect(page?.content).toContain(
+      '<FileForm.Field {form} name="attachments"',
+    );
+    expect(page?.content).toContain('name="owner"');
     expect(page?.content).toContain('enctype="multipart/form-data"');
     expect(page?.content).toContain('placeholder="Select an option"');
     expect(page?.content).toContain('placeholder="Search users..."');
 
     expect(server?.content).toContain("withFiles");
     expect(server?.content).toContain("setFlash");
-    expect(serverTest?.content).toContain('describe("GET /contacts/new"');
-    expect(serverTest?.content).toContain('describe("POST /contacts/new"');
+    expect(serverTest?.content).toContain('describe("GET /contact"');
+    expect(serverTest?.content).toContain('describe("POST /contact"');
 
-    expect(schema?.content).toContain("'attachments+': z.instanceof(File).array().optional()");
-    expect(schema?.content).toContain("'attachments-': z.string().array().optional()");
+    expect(schema?.content).toContain(
+      "'attachments+': z.instanceof(File).array().optional()",
+    );
+    expect(schema?.content).toContain(
+      "'attachments-': z.string().array().optional()",
+    );
 
     expect(result.components).toEqual([
       "form",
@@ -99,7 +105,7 @@ describe("generate form pattern", () => {
   });
 
   it("returns the same create output in preview and runtime", async () => {
-    const argv = ["generate", "form", "note", "title:text", "body:editor"];
+    const argv = ["note", "title:text", "body:editor"];
 
     const previewResult = await formPattern.generate(
       makeOptions({

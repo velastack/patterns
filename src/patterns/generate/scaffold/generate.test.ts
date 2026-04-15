@@ -49,8 +49,6 @@ describe("generate scaffold pattern", () => {
         env: "preview",
         features: { auth: true, payments: false },
         argv: [
-          "generate",
-          "scaffold",
           "contact",
           "name:text!",
           "status:select(draft,published)",

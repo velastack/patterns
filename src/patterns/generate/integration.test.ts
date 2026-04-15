@@ -224,8 +224,6 @@ describe("generate integration", () => {
         {
           slug: "generate-scaffold",
           argv: [
-            "generate",
-            "scaffold",
             "product",
             "name:text",
             "price:number",
@@ -233,13 +231,11 @@ describe("generate integration", () => {
         },
         {
           slug: "generate-form",
-          argv: ["generate", "form", "feedback", "name:text", "email:email"],
+          argv: ["feedback", "name:text", "email:email"],
         },
         {
           slug: "generate-resource",
           argv: [
-            "generate",
-            "resource",
             "invoice",
             "amount:number",
             "paid:bool",
@@ -247,7 +243,7 @@ describe("generate integration", () => {
         },
         {
           slug: "generate-schema",
-          argv: ["generate", "schema", "profile", "bio:text", "website:url"],
+          argv: ["profile", "bio:text", "website:url"],
         },
       ];
 

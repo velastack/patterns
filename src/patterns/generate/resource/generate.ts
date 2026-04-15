@@ -12,25 +12,14 @@ import {
   generateSchemaSnippet,
 } from "../shared";
 
-const MODEL_INDEX = 2;
-const FIELD_START_INDEX = 3;
-
-function parseCommandArgs(argv: string[]) {
-  if (argv.length <= MODEL_INDEX) {
+function parsePatternArgs(argv: string[]) {
+  const [modelPath, ...fields] = argv;
+  if (!modelPath) {
     throw new Error(
-      "Invalid command arguments. Expected: generate resource <model> [fields...]",
+      "Invalid command arguments. Expected: <model> [fields...]",
     );
   }
 
-  const [command, subcommand] = argv;
-  if (command !== "generate" || subcommand !== "resource") {
-    throw new Error(
-      `Invalid command "${argv.join(" ")}". Expected to start with "generate resource".`,
-    );
-  }
-
-  const modelPath = argv[MODEL_INDEX];
-  const fields = argv.slice(FIELD_START_INDEX);
   return { modelPath, fields };
 }
 
@@ -60,7 +49,7 @@ async function resolveInputFields(options: Options, modelPath: string, fieldDefs
 }
 
 export async function generate(options: Options) {
-  const { modelPath, fields: fieldDefs } = parseCommandArgs(options.argv);
+  const { modelPath, fields: fieldDefs } = parsePatternArgs(options.argv);
   const { model, fields, auth, shouldCreateCollection } = await resolveInputFields(
     options,
     modelPath,

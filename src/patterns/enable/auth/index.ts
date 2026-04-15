@@ -4,9 +4,11 @@ import { mergeResults } from "../../../core/util";
 import { generate as generateBase } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
 
-export const ENABLE_AUTH_SLUG = "enable-auth";
+const SLUG = "enable-auth" as const;
+const VERSION = "1.0.7";
+const SOURCE = "src/patterns/enable/auth";
+const DOCS = "/enable/auth";
 
-// Generate entrypoint for the pattern. This function is roughly the same for all patterns.
 export async function generate(options: Options) {
   const baseRes = await generateBase(options);
 
@@ -18,11 +20,18 @@ export async function generate(options: Options) {
   const { generate: generateRuntime } = await import("./generate.runtime");
   const runtimeRes = await generateRuntime(options);
   const { writeResult } = await import("../../../runtime/write-result");
-  return writeResult(await formatResult(mergeResults([baseRes, runtimeRes])), options);
+  return writeResult(
+    await formatResult(mergeResults([baseRes, runtimeRes])),
+    options,
+  );
 }
 
 export default {
-  slug: ENABLE_AUTH_SLUG,
+  version: VERSION,
+  slug: SLUG,
+  source: SOURCE,
+  docs: DOCS,
+  plan: "open",
   title: "Enable authentication",
   summary: "Enables authentication.",
   categories: ["authentication"],
@@ -37,7 +46,8 @@ export default {
 
   command: {
     raw: "vela enable auth",
-    argv: ["enable", "auth"],
+    base: "vela enable auth",
+    argv: [],
   },
 
   baseline: "velastack",

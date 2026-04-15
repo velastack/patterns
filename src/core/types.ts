@@ -46,8 +46,12 @@ export interface Result {
 }
 
 export interface Pattern {
+  version: string;
   slug: string;
+  source: string;
+  plan: "open" | "pro" | "agency";
   title: string;
+  docs: string;
   summary: string;
 
   // Categories and tags for browsing patterns on the website.
@@ -57,7 +61,8 @@ export interface Pattern {
   // Example command for the pattern. This is used to generate the command for the pattern.
   command: {
     raw: string;
-    argv: string[] | string[];
+    base: string;
+    argv: string[];
   };
 
   // The baseline project that the pattern is based on.
