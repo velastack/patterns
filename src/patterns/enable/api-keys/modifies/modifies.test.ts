@@ -1,0 +1,45 @@
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { modifyHooksServer } from "./hooks.server";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const fixturesPath = path.join(__dirname, "fixtures");
+const tempDir = path.join(__dirname, "temp");
+
+const hooksServerTestCases = [
+  "hooks.server.no-options.ts",
+  "hooks.server.with-options.ts",
+  "hooks.server.with-api.ts",
+  "hooks.server.non-object-first-arg.ts",
+  "hooks.server.no-handle.ts",
+] as const;
+
+describe("modifyHooksServer", () => {
+  beforeEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+    fs.cpSync(path.join(fixturesPath, "original"), tempDir, {
+      recursive: true,
+    });
+  });
+
+  afterEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it.each(hooksServerTestCases)("should modify %s correctly", (testCase) => {
+    modifyHooksServer(path.join(tempDir, testCase));
+
+    const modifiedFile = fs.readFileSync(path.join(tempDir, testCase), "utf8");
+    const expectedFile = fs.readFileSync(
+      path.join(fixturesPath, "expect", testCase),
+      "utf8",
+    );
+
+    expect(modifiedFile.replace(/\s+/g, "")).toBe(
+      expectedFile.replace(/\s+/g, ""),
+    );
+  });
+});

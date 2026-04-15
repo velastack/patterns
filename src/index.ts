@@ -5,6 +5,7 @@ import generateScaffold from "./patterns/generate/scaffold";
 import generateSchema from "./patterns/generate/schema";
 import enableAuth from "./patterns/enable/auth";
 import enableApi from "./patterns/enable/api";
+import enableApiKeys from "./patterns/enable/api-keys";
 import enableI18n from "./patterns/enable/i18n";
 
 export const version = packageJson.version;
@@ -16,6 +17,7 @@ export const patterns = [
   generateScaffold,
   enableAuth,
   enableApi,
+  enableApiKeys,
   enableI18n,
 ];
 
