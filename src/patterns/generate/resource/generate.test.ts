@@ -29,6 +29,9 @@ function makeOptions(
     features: overrides.features ?? {
       auth: false,
       api: false,
+      apiKeys: false,
+      i18n: false,
+      teams: false,
       payments: false,
     },
     input: overrides.input ?? {},

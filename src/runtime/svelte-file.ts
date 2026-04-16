@@ -1,8 +1,8 @@
 import fs from "node:fs";
-import { parse } from "svelte/compiler";
+import { parse, type AST } from "svelte/compiler";
 import MagicString from "magic-string";
 
-type SvelteAst = ReturnType<typeof parse<true>>;
+type SvelteAst = AST.Root;
 type SvelteNode = any;
 
 interface ScriptBlock {

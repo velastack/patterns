@@ -35,6 +35,7 @@ export default defineConfig({
       "src/patterns/**/*.test.ts",
     ],
     exclude: ["src/patterns/**/src/**"],
+    setupFiles: ["./src/core/test-utils.ts"],
   },
   build: {
     lib: {

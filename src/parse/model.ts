@@ -1,6 +1,6 @@
 import * as changeCase from "change-case";
 import pluralize from "pluralize";
-import { APP_DIR } from "../core/constants";
+import { APP_DIR, PUBLIC_DIR } from "../core/constants";
 import type { Options } from "../core/types";
 import type { Model, ModelPaths, ModelUrls } from "./types";
 
@@ -127,7 +127,7 @@ function routesDir(options: Pick<Options, "features">): string {
   if (options.features.auth) {
     return `src/routes/${APP_DIR}`;
   }
-  return "src/routes";
+  return `src/routes/${PUBLIC_DIR}`;
 }
 
 export function parseModel(

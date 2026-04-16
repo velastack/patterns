@@ -12,10 +12,6 @@ const __dirname = path.dirname(__filename);
 const fixturesPath = path.join(__dirname, "fixtures");
 const tempDir = path.join(__dirname, "temp");
 
-function normalizeWhitespace(s: string): string {
-  return s.replace(/\s+/g, "");
-}
-
 const modifyCases = [
   {
     file: "+layout.server.ts",
@@ -55,18 +51,19 @@ describe("teams modifies (auth baseline fixtures)", () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it.each(modifyCases)("should modify $file correctly", ({ file, modify }) => {
-    const targetPath = path.join(tempDir, file);
-    modify(targetPath);
+  it.each(modifyCases)(
+    "should modify $file correctly",
+    async ({ file, modify }) => {
+      const targetPath = path.join(tempDir, file);
+      modify(targetPath);
 
-    const modifiedFile = fs.readFileSync(targetPath, "utf8");
-    const expectedFile = fs.readFileSync(
-      path.join(fixturesPath, "expect", file),
-      "utf8",
-    );
+      const modifiedFile = fs.readFileSync(targetPath, "utf8");
+      const expectedFile = fs.readFileSync(
+        path.join(fixturesPath, "expect", file),
+        "utf8",
+      );
 
-    expect(normalizeWhitespace(modifiedFile)).toBe(
-      normalizeWhitespace(expectedFile),
-    );
-  });
+      await expect(modifiedFile).toMatchFormatted(expectedFile, file);
+    },
+  );
 });

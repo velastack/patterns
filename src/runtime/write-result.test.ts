@@ -25,7 +25,14 @@ function makeOptions(root: string): Options {
     argv: ["test"],
     env: "runtime",
     root,
-    features: { auth: false, api: false, payments: false },
+    features: {
+      auth: false,
+      api: false,
+      apiKeys: false,
+      i18n: false,
+      teams: false,
+      payments: false,
+    },
     input: {},
   };
 }

@@ -27,7 +27,7 @@ describe("enable i18n modifiers", () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it("modifies vite.config.ts", () => {
+  it("modifies vite.config.ts", async () => {
     const filePath = path.join(tempDir, "vite.config.ts");
     modifyViteConfig(filePath);
 
@@ -36,10 +36,10 @@ describe("enable i18n modifiers", () => {
       path.join(fixturesPath, "expect", "vite.config.ts"),
       "utf8",
     );
-    expect(modified.replace(/\s+/g, "")).toBe(expected.replace(/\s+/g, ""));
+    await expect(modified).toMatchFormatted(expected, "vite.config.ts");
   });
 
-  it("modifies svelte.config.js", () => {
+  it("modifies svelte.config.js", async () => {
     const filePath = path.join(tempDir, "svelte.config.js");
     modifySvelteConfig(filePath);
 
@@ -48,10 +48,10 @@ describe("enable i18n modifiers", () => {
       path.join(fixturesPath, "expect", "svelte.config.js"),
       "utf8",
     );
-    expect(modified.replace(/\s+/g, "")).toBe(expected.replace(/\s+/g, ""));
+    await expect(modified).toMatchFormatted(expected, "svelte.config.js");
   });
 
-  it("modifies hooks.server.ts", () => {
+  it("modifies hooks.server.ts", async () => {
     const filePath = path.join(tempDir, "hooks.server.ts");
     modifyHooksServerI18n(filePath);
 
@@ -60,10 +60,10 @@ describe("enable i18n modifiers", () => {
       path.join(fixturesPath, "expect", "hooks.server.ts"),
       "utf8",
     );
-    expect(modified.replace(/\s+/g, "")).toBe(expected.replace(/\s+/g, ""));
+    await expect(modified).toMatchFormatted(expected, "hooks.server.ts");
   });
 
-  it("modifies app.html", () => {
+  it("modifies app.html", async () => {
     const filePath = path.join(tempDir, "app.html");
     modifyAppHtml(filePath);
 
@@ -72,10 +72,10 @@ describe("enable i18n modifiers", () => {
       path.join(fixturesPath, "expect", "app.html"),
       "utf8",
     );
-    expect(modified.replace(/\s+/g, "")).toBe(expected.replace(/\s+/g, ""));
+    await expect(modified).toMatchFormatted(expected, "app.html");
   });
 
-  it("modifies .gitignore", () => {
+  it("modifies .gitignore", async () => {
     const filePath = path.join(tempDir, ".gitignore");
     modifyGitignore(filePath);
 
@@ -84,10 +84,10 @@ describe("enable i18n modifiers", () => {
       path.join(fixturesPath, "expect", ".gitignore"),
       "utf8",
     );
-    expect(modified.replace(/\s+/g, "")).toBe(expected.replace(/\s+/g, ""));
+    await expect(modified).toMatchFormatted(expected, ".gitignore");
   });
 
-  it("creates src/routes/+layout.ts when missing", () => {
+  it("creates src/routes/+layout.ts when missing", async () => {
     const layoutPath = path.join(tempDir, "src", "routes", "+layout.ts");
     expect(fs.existsSync(layoutPath)).toBe(false);
 
@@ -98,7 +98,7 @@ describe("enable i18n modifiers", () => {
       path.join(fixturesPath, "expect", "src", "routes", "+layout.ts"),
       "utf8",
     );
-    expect(modified.replace(/\s+/g, "")).toBe(expected.replace(/\s+/g, ""));
+    await expect(modified).toMatchFormatted(expected, "+layout.ts");
   });
 
   it("is idempotent for repeated modifications", () => {

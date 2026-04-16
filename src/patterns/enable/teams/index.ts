@@ -38,6 +38,9 @@ export default {
   requires: {
     auth: true,
     api: false,
+    apiKeys: false,
+    i18n: false,
+    teams: false,
     payments: false,
   },
   category: "auth" as const,

@@ -44,20 +44,21 @@ describe("modifyLayoutServer", () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it.each(layoutServerTestCases)("should modify %s correctly", (testCase) => {
-    modifyLayoutServer(path.join(tempDir, testCase));
+  it.each(layoutServerTestCases)(
+    "should modify %s correctly",
+    async (testCase) => {
+      modifyLayoutServer(path.join(tempDir, testCase));
 
-    const modifiedFilePath = path.join(tempDir, testCase);
-    const modifiedFile = fs.readFileSync(modifiedFilePath, "utf8");
-    const expectedFile = fs.readFileSync(
-      path.join(fixturesPath, "expect", testCase),
-      "utf8",
-    );
+      const modifiedFilePath = path.join(tempDir, testCase);
+      const modifiedFile = fs.readFileSync(modifiedFilePath, "utf8");
+      const expectedFile = fs.readFileSync(
+        path.join(fixturesPath, "expect", testCase),
+        "utf8",
+      );
 
-    expect(modifiedFile.replace(/\s+/g, "")).toBe(
-      expectedFile.replace(/\s+/g, ""),
-    );
-  });
+      await expect(modifiedFile).toMatchFormatted(expectedFile, testCase);
+    },
+  );
 });
 
 describe("modifyLayoutSvelte", () => {
@@ -72,19 +73,23 @@ describe("modifyLayoutSvelte", () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it.each(layoutSvelteTestCases)("should modify %s correctly", (testCase) => {
-    modifyRootLayoutSvelte(path.join(tempDir, testCase));
+  it.each(layoutSvelteTestCases)(
+    "should modify %s correctly",
+    async (testCase) => {
+      modifyRootLayoutSvelte(path.join(tempDir, testCase));
 
-    const modifiedFile = fs.readFileSync(path.join(tempDir, testCase), "utf8");
-    const expectedFile = fs.readFileSync(
-      path.join(fixturesPath, "expect", testCase),
-      "utf8",
-    );
+      const modifiedFile = fs.readFileSync(
+        path.join(tempDir, testCase),
+        "utf8",
+      );
+      const expectedFile = fs.readFileSync(
+        path.join(fixturesPath, "expect", testCase),
+        "utf8",
+      );
 
-    expect(modifiedFile.replace(/\s+/g, "")).toBe(
-      expectedFile.replace(/\s+/g, ""),
-    );
-  });
+      await expect(modifiedFile).toMatchFormatted(expectedFile, testCase);
+    },
+  );
 });
 
 describe("modifyHooksServer", () => {
@@ -99,17 +104,21 @@ describe("modifyHooksServer", () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it.each(hooksServerTestCases)("should modify %s correctly", (testCase) => {
-    modifyHooksServer(path.join(tempDir, testCase));
+  it.each(hooksServerTestCases)(
+    "should modify %s correctly",
+    async (testCase) => {
+      modifyHooksServer(path.join(tempDir, testCase));
 
-    const modifiedFile = fs.readFileSync(path.join(tempDir, testCase), "utf8");
-    const expectedFile = fs.readFileSync(
-      path.join(fixturesPath, "expect", testCase),
-      "utf8",
-    );
+      const modifiedFile = fs.readFileSync(
+        path.join(tempDir, testCase),
+        "utf8",
+      );
+      const expectedFile = fs.readFileSync(
+        path.join(fixturesPath, "expect", testCase),
+        "utf8",
+      );
 
-    expect(modifiedFile.replace(/\s+/g, "")).toBe(
-      expectedFile.replace(/\s+/g, ""),
-    );
-  });
+      await expect(modifiedFile).toMatchFormatted(expectedFile, testCase);
+    },
+  );
 });

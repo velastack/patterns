@@ -29,17 +29,21 @@ describe("modifyHooksServer", () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it.each(hooksServerTestCases)("should modify %s correctly", (testCase) => {
-    modifyHooksServer(path.join(tempDir, testCase));
+  it.each(hooksServerTestCases)(
+    "should modify %s correctly",
+    async (testCase) => {
+      modifyHooksServer(path.join(tempDir, testCase));
 
-    const modifiedFile = fs.readFileSync(path.join(tempDir, testCase), "utf8");
-    const expectedFile = fs.readFileSync(
-      path.join(fixturesPath, "expect", testCase),
-      "utf8",
-    );
+      const modifiedFile = fs.readFileSync(
+        path.join(tempDir, testCase),
+        "utf8",
+      );
+      const expectedFile = fs.readFileSync(
+        path.join(fixturesPath, "expect", testCase),
+        "utf8",
+      );
 
-    expect(modifiedFile.replace(/\s+/g, "")).toBe(
-      expectedFile.replace(/\s+/g, ""),
-    );
-  });
+      await expect(modifiedFile).toMatchFormatted(expectedFile, testCase);
+    },
+  );
 });

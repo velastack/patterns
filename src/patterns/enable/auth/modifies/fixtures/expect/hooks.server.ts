@@ -9,7 +9,5 @@ export const handle = handlePocketbase({
   pocketbaseUrl: POCKETBASE_URL,
   superuserEmail: POCKETBASE_SUPERUSER_EMAIL,
   superuserPassword: POCKETBASE_SUPERUSER_PASSWORD,
-  auth: {
-    protectedRoutes: ["/(app)"],
-  },
+  auth: { protectedRoutes: ["/(app)"] },
 });

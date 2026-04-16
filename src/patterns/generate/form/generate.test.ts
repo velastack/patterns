@@ -25,6 +25,9 @@ function makeOptions(
     features: overrides.features ?? {
       auth: false,
       api: false,
+      apiKeys: false,
+      i18n: false,
+      teams: false,
       payments: false,
     },
     input: overrides.input ?? {},
@@ -47,7 +50,14 @@ describe("generate form pattern", () => {
     const result = await generateBase(
       makeOptions({
         env: "preview",
-        features: { auth: true, api: false, payments: false },
+        features: {
+          auth: true,
+          api: false,
+          apiKeys: false,
+          i18n: false,
+          teams: false,
+          payments: false,
+        },
         argv: [
           "contact",
           "name:text!",

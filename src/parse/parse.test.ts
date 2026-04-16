@@ -16,8 +16,26 @@ import {
 import { generateAuthRule } from "./permissions";
 import type { Collection, Model, RelationField, SelectField } from "./types";
 
-const noAuth = { features: { auth: false, api: false, payments: false } };
-const withAuth = { features: { auth: true, api: false, payments: false } };
+const noAuth = {
+  features: {
+    auth: false,
+    api: false,
+    apiKeys: false,
+    i18n: false,
+    teams: false,
+    payments: false,
+  },
+};
+const withAuth = {
+  features: {
+    auth: true,
+    api: false,
+    apiKeys: false,
+    i18n: false,
+    teams: false,
+    payments: false,
+  },
+};
 
 // A parent model used across resolveFields tests
 const parent: Model = {
@@ -46,7 +64,7 @@ describe("parseModel", () => {
       pluralDisplayName: "Birds",
       schemaName: "birdSchema",
       routeSegment: "birds",
-      routesDir: "src/routes",
+      routesDir: "src/routes/(public)",
     });
   });
 
@@ -61,7 +79,7 @@ describe("parseModel", () => {
       pluralDisplayName: "Admin Users",
       schemaName: "adminUserSchema",
       routeSegment: "dashboard/admin-users",
-      routesDir: "src/routes",
+      routesDir: "src/routes/(public)",
     });
   });
 
@@ -71,9 +89,9 @@ describe("parseModel", () => {
     expect(model.routeSegment).toBe("birds");
   });
 
-  it("should use plain routes dir when auth is disabled", () => {
+  it("should use (public) routes dir when auth is disabled", () => {
     const model = parseModel("birds", noAuth);
-    expect(model.routesDir).toBe("src/routes");
+    expect(model.routesDir).toBe("src/routes/(public)");
   });
 });
 
@@ -83,10 +101,10 @@ describe("modelPaths", () => {
   it("should derive correct paths for simple model", () => {
     const model = parseModel("birds", noAuth);
     expect(modelPaths(model)).toEqual({
-      list: "src/routes/birds",
-      new: "src/routes/birds/new",
-      show: "src/routes/birds/[id]",
-      edit: "src/routes/birds/[id]/edit",
+      list: "src/routes/(public)/birds",
+      new: "src/routes/(public)/birds/new",
+      show: "src/routes/(public)/birds/[id]",
+      edit: "src/routes/(public)/birds/[id]/edit",
     });
   });
 

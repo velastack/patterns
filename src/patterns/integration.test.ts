@@ -147,6 +147,9 @@ function makeOptions(root: string, argv: string[]): Options {
     features: {
       auth: false,
       api: false,
+      apiKeys: false,
+      i18n: false,
+      teams: false,
       payments: false,
     },
     input: {},

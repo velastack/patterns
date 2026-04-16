@@ -13,6 +13,9 @@
     "dev": "vite build --watch",
     "clean": "rm -rf dist",
     "demo": "vite-node scripts/demo.ts --",
+    "lint": "npm run lint:ts && npm run lint:format",
+    "lint:ts": "tsc --noEmit",
+    "lint:format": "prettier --check .",
     "test": "vitest run --exclude **/integration.test.ts",
     "test:watch": "vitest --watch --exclude **/integration.test.ts",
     "test:integration": "vitest run **/integration.test.ts"
