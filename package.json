@@ -1,6 +1,6 @@
 {
   "name": "@velastack/patterns",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "type": "module",
   "private": false,
   "main": "./dist/index.js",
@@ -12,9 +12,9 @@
     "build": "vite build",
     "dev": "vite build --watch",
     "clean": "rm -rf dist",
-    "test": "vitest run",
-    "test:watch": "vitest --watch",
-    "test:integration": "vitest run \"**/integration.test.ts\""
+    "test": "vitest run --exclude **/integration.test.ts",
+    "test:watch": "vitest --watch --exclude **/integration.test.ts",
+    "test:integration": "vitest run **/integration.test.ts"
   },
   "dependencies": {
     "prettier": "^3.8.2",

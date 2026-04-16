@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, beforeAll } from 'vitest';
-import supertest, { Agent } from 'supertest';
+import supertest, { type Agent } from 'supertest';
 import PocketBase from 'pocketbase-svelte';
 import type { TestContext } from '@velastack/pocketbase';
 

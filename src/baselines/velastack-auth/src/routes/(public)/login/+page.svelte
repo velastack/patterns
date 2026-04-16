@@ -12,11 +12,13 @@
 	import { page } from '$app/state';
 
 	let { data } = $props();
-	let { authMethods } = data;
+	let authMethods = $derived(data.authMethods);
 
 	const redirect = page.url.searchParams.get('redirect');
-	const hasOAuth2 = authMethods.oauth2.enabled && authMethods.oauth2.providers.length > 0;
-	const hasAuthMethods = authMethods.password.enabled || authMethods.otp.enabled || hasOAuth2;
+	const hasOAuth2 = $derived(authMethods.oauth2.enabled && authMethods.oauth2.providers.length > 0);
+	const hasAuthMethods = $derived(
+		authMethods.password.enabled || authMethods.otp.enabled || hasOAuth2
+	);
 
 	const form = superForm(
 		untrack(() => data.form),

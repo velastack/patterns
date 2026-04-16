@@ -497,15 +497,18 @@ function newServerSnippet(
           return fail(400, { form });
         }
 
+        let ${model.name};
+
         try {
-          const ${model.name} = await ${pb}.collection("${model.tableName}").create(
+          ${model.name} = await ${pb}.collection("${model.tableName}").create(
             ${createPayload}
           );
-          return redirect(303, \`${urls.list}/\${${model.name}.id}\`);
         } catch (error) {
           setPocketbaseErrors(form, error);
           return fail(400, { form });
         }
+
+        return redirect(303, \`${urls.list}/\${${model.name}.id}\`);
       },
     };
   `;

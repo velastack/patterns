@@ -34,7 +34,7 @@ export default defineConfig({
       "src/parse/**/*.test.ts",
       "src/patterns/**/*.test.ts",
     ],
-    exclude: ["src/patterns/**/src/**", "src/**/integration.test.ts"],
+    exclude: ["src/patterns/**/src/**"],
   },
   build: {
     lib: {
