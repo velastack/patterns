@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
-import { getMigrationFile, withPocketbase } from "../../../runtime/pocketbase";
+import { getMigrationFile, migrationDelay, withPocketbase } from "../../../runtime/pocketbase";
 import { modifyHooksServer } from "./modifies/hooks.server";
 import { modifyNavUser } from "./modifies/nav-user.svelte";
 
@@ -52,6 +52,7 @@ export async function generate(options: Options) {
         },
       ],
     });
+    await migrationDelay();
 
     const migrationFile = getMigrationFile("api_keys", "created", options);
     if (migrationFile) {

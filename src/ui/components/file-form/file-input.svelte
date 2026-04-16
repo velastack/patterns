@@ -3,11 +3,11 @@
 	import { fileProxy, filesProxy, type SuperForm } from 'sveltekit-superforms';
 	import { Input } from '$lib/components/ui/input';
 
-	const { form, name } = getContext<{ form: SuperForm<any, any>; name: string }>('file-field');
+	const ctx = getContext<{ form: SuperForm<any, any>; name: string }>('file-field');
 	const { multiple } = getContext<{ multiple: boolean }>('file-field-multiple');
 
-	const files = multiple ? filesProxy(form, `${name}+`) : fileProxy(form, name);
-	const { form: formData, reset } = form;
+	const files = multiple ? filesProxy(ctx.form, `${ctx.name}+`) : fileProxy(ctx.form, ctx.name);
+	const { form: formData, reset } = ctx.form;
 
 	const { ...props } = $props();
 
@@ -19,14 +19,14 @@
 </script>
 
 {#if !multiple}
-	{#if $formData[name]}
-		{#if typeof $formData[name] === 'string'}
-			<input type="text" {name} value={$formData[name]} class="hidden" />
+	{#if $formData[ctx.name]}
+		{#if typeof $formData[ctx.name] === 'string'}
+			<input type="text" name={ctx.name} value={$formData[ctx.name]} class="hidden" />
 		{:else}
-			<input type="file" {name} files={$files} class="hidden" />
+			<input type="file" name={ctx.name} files={$files} class="hidden" />
 		{/if}
 	{:else}
-		<input type="text" {name} value="" class="hidden" />
+		<input type="text" name={ctx.name} value="" class="hidden" />
 	{/if}
 {/if}
 
@@ -36,5 +36,5 @@
 	{multiple}
 	{onchange}
 	{...props}
-	name={multiple ? `${name}+` : ''}
+	name={multiple ? `${ctx.name}+` : ''}
 />

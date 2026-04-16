@@ -8,6 +8,20 @@ import { randomPort, waitForPort, waitForHealth } from "./net";
 import type { Options } from "../core/types";
 import { DATA_DIR, MIGRATIONS_DIR } from "../core/constants";
 
+/**
+ * PocketBase names migration files with a 1-second-resolution Unix timestamp
+ * (e.g. `1776099881_created_users.js`). Two schema operations issued in the
+ * same wall-clock second produce files that sort alphabetically by their
+ * action/collection suffix — which reverses the intended order whenever a
+ * later migration depends on an earlier one. Wait out the full second between
+ * migration-producing calls so the timestamps stay distinct.
+ */
+const MIGRATION_DELAY_MS = 1100;
+
+export function migrationDelay(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, MIGRATION_DELAY_MS));
+}
+
 export function getMigrationFile(
   collectionName: string,
   action: "created" | "deleted" | "updated",

@@ -3,18 +3,20 @@ import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
 import { languageFromPath } from "../../../core/util";
 import { applyCollectionRulePatches } from "../../../runtime/collections";
-import { getMigrationFile, withPocketbase } from "../../../runtime/pocketbase";
+import { getMigrationFile, migrationDelay, withPocketbase } from "../../../runtime/pocketbase";
 import { modifyAppLayoutSvelte } from "./modifies/modify-app-layout";
 import { modifyAppSidebar } from "./modifies/modify-app-sidebar";
 import { modifyLayoutServer } from "./modifies/+layout.server";
 import { modifyNavUser } from "./modifies/modify-nav-user";
 import { TEAM_RULE_PATCHES } from "./runtime/pocketbase";
 
-function pushMigrationCreates(
+async function pushMigrationCreates(
   creates: File[],
   collectionName: string,
   options: Options,
 ) {
+  // Wait so the next schema op lands in a different PocketBase timestamp second.
+  await migrationDelay();
   const migrationFile = getMigrationFile(collectionName, "created", options);
   if (!migrationFile) {
     return;
@@ -74,7 +76,7 @@ export async function generate(options: Options) {
         },
       ],
     });
-    pushMigrationCreates(creates, "teams", options);
+    await pushMigrationCreates(creates, "teams", options);
 
     const teamMembershipsCollection = await pb.collections.create({
       name: "team_memberships",
@@ -129,7 +131,7 @@ export async function generate(options: Options) {
         },
       ],
     });
-    pushMigrationCreates(creates, "team_memberships", options);
+    await pushMigrationCreates(creates, "team_memberships", options);
 
     await pb.collections.create({
       name: "team_users",
@@ -184,7 +186,7 @@ export async function generate(options: Options) {
       viewQuery:
         "select users.id, users.email, users.name, team_memberships.id as membership_id, team_memberships.team, team_memberships.role from users join team_memberships on team_memberships.user = users.id;",
     });
-    pushMigrationCreates(creates, "team_users", options);
+    await pushMigrationCreates(creates, "team_users", options);
 
     await pb.collections.create({
       name: "team_invites",
@@ -228,7 +230,7 @@ export async function generate(options: Options) {
         },
       ],
     });
-    pushMigrationCreates(creates, "team_invites", options);
+    await pushMigrationCreates(creates, "team_invites", options);
 
     await pb.collections.create({
       name: "team_invite_links",
@@ -270,7 +272,7 @@ export async function generate(options: Options) {
         "CREATE UNIQUE INDEX `idx_9y3Oz1KVzz` ON `team_invite_links` (`team`)",
       ],
     });
-    pushMigrationCreates(creates, "team_invite_links", options);
+    await pushMigrationCreates(creates, "team_invite_links", options);
 
     const ruleMigrations = await applyCollectionRulePatches(
       pb,

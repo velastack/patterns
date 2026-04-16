@@ -3,7 +3,7 @@
 	import { type SuperForm } from 'sveltekit-superforms';
 	import { getName } from './shared';
 
-	const { form, name } = getContext<{ form: SuperForm<any, any>; name: string }>('file-field');
+	const ctx = getContext<{ form: SuperForm<any, any>; name: string }>('file-field');
 	const {
 		display,
 		input
@@ -16,7 +16,7 @@
 		input: () => any;
 	} = $props();
 
-	const { form: formData, reset } = form;
+	const { form: formData, reset } = ctx.form;
 
 	setContext('file-field-multiple', { multiple: false });
 
@@ -24,14 +24,14 @@
 		reset({
 			data: {
 				...$formData,
-				[name]: ''
+				[ctx.name]: ''
 			}
 		});
 	};
 </script>
 
-{#if $formData[name]}
-	{@render display({ file: $formData[name], filename: getName($formData[name]), onremove })}
+{#if $formData[ctx.name]}
+	{@render display({ file: $formData[ctx.name], filename: getName($formData[ctx.name]), onremove })}
 {/if}
 
 {@render input()}

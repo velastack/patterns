@@ -1,7 +1,7 @@
 import path from "node:path";
 import fs from "node:fs";
 import { Options, Result, File } from "../../../core/types";
-import { getMigrationFile, withPocketbase } from "../../../runtime/pocketbase";
+import { getMigrationFile, migrationDelay, withPocketbase } from "../../../runtime/pocketbase";
 
 import { modifyLayoutServer } from "./modifies/+layout.server";
 import { modifyRootLayoutSvelte } from "./modifies/root-layout.svelte";
@@ -20,6 +20,7 @@ export async function generate(options: Options) {
         senderAddress: input.senderAddress,
       },
     });
+    await migrationDelay();
 
     const userCollection = await pb.collections.getOne("users");
 
@@ -62,6 +63,7 @@ export async function generate(options: Options) {
         body: confirmEmailChangeTemplate,
       },
     });
+    await migrationDelay();
 
     const migrationFile = getMigrationFile("users", "updated", options);
     if (migrationFile) {

@@ -3,7 +3,7 @@
 	import { type SuperForm } from 'sveltekit-superforms';
 	import { getName } from './shared';
 
-	const { form, name } = getContext<{ form: SuperForm<any, any>; name: string }>('file-field');
+	const ctx = getContext<{ form: SuperForm<any, any>; name: string }>('file-field');
 	const {
 		display,
 		input
@@ -18,7 +18,7 @@
 
 	setContext('file-field-multiple', { multiple: true });
 
-	const { form: formData, reset } = form;
+	const { form: formData, reset } = ctx.form;
 
 	let removed = $state<string[]>([]);
 
@@ -30,12 +30,14 @@
 		reset({
 			data: {
 				...$formData,
-				[name]: $formData[name].filter((f: File | string) => f !== file) as File[] | undefined
+				[ctx.name]: $formData[ctx.name].filter((f: File | string) => f !== file) as
+					| File[]
+					| undefined
 			}
 		});
 	};
 
-	const initialFiles = $formData[name] || [];
+	const initialFiles = $formData[ctx.name] || [];
 </script>
 
 {#if initialFiles}
@@ -46,14 +48,14 @@
 	{/each}
 {/if}
 
-{#each $formData[`${name}+`] as file}
+{#each $formData[`${ctx.name}+`] as file}
 	{#if file && typeof file !== 'string'}
 		{@render display({ file, filename: getName(file), onremove })}
 	{/if}
 {/each}
 
 {#each removed as removedFile}
-	<input type="text" name={`${name}-`} value={removedFile} class="hidden" />
+	<input type="text" name={`${ctx.name}-`} value={removedFile} class="hidden" />
 {/each}
 
 {@render input()}

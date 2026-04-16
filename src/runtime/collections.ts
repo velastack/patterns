@@ -6,7 +6,7 @@ import type {
   Options,
 } from "../core/types";
 import { languageFromPath } from "../core/util";
-import { getMigrationFile, withPocketbase } from "./pocketbase";
+import { getMigrationFile, migrationDelay, withPocketbase } from "./pocketbase";
 
 interface PocketBaseCollectionCreateError {
   response?: {
@@ -60,6 +60,7 @@ export async function applyCollectionRulePatches(
     const escaped = patch.collectionName.replace(/'/g, "''");
     const col = await pb.collections.getFirstListItem(`name='${escaped}'`);
     await pb.collections.update(col.id, rulePayloadFromPatch(patch));
+    await migrationDelay();
 
     if (options) {
       const migrationFile = getMigrationFile(
@@ -106,6 +107,7 @@ export async function createCollections(
         }
         throw error;
       }
+      await migrationDelay();
 
       const migrationFile = getMigrationFile(collection.name, "created", options);
       if (!migrationFile) {

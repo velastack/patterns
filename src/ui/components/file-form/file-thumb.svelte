@@ -6,8 +6,8 @@
 	import { cn } from '$lib/utils';
 	import type { HTMLAttributes } from 'svelte/elements';
 
-	const { form } = getContext<{ form: SuperForm<any, any>; name: string }>('file-field');
-	const { form: formData } = form;
+	const ctx = getContext<{ form: SuperForm<any, any>; name: string }>('file-field');
+	const { form: formData } = ctx.form;
 
 	const {
 		file,

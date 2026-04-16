@@ -16,8 +16,12 @@
 		WithoutChildren<WithElementRef<HTMLAttributes<HTMLDivElement>>> = $props();
 
 	setContext('file-field', {
-		form,
-		name
+		get form() {
+			return form;
+		},
+		get name() {
+			return name;
+		}
 	});
 </script>
 
