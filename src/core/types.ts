@@ -19,22 +19,49 @@ export interface CollectionFieldSpec {
   name: string;
   type: string;
   required?: boolean;
+  /** PocketBase collection id for relation fields (runtime). Preview may use the related collection name as a readable stand-in. */
   collectionId?: string;
   maxSelect?: number;
+  minSelect?: number;
   values?: string[];
   onCreate?: boolean;
   onUpdate?: boolean;
+  primaryKey?: boolean;
+  cascadeDelete?: boolean;
+  pattern?: string;
+  min?: number;
+  max?: number;
+  autogeneratePattern?: string;
+  exceptDomains?: null;
+  onlyDomains?: null;
 }
 
 export interface CollectionSpec {
   name: string;
   type: "base" | "auth" | "view";
-  listRule?: string;
-  viewRule?: string;
-  createRule?: string;
-  updateRule?: string;
-  deleteRule?: string;
+  listRule?: string | null;
+  viewRule?: string | null;
+  createRule?: string | null;
+  updateRule?: string | null;
+  deleteRule?: string | null;
   fields: CollectionFieldSpec[];
+  /** View collection SQL (PocketBase). */
+  viewQuery?: string;
+  indexes?: string[];
+}
+
+/**
+ * PocketBase rule fields applied in order after collections exist.
+ * Use when create-time rules fail validation (e.g. cross-collection references)
+ * or when rules must be layered after related collections are present.
+ */
+export interface CollectionRulesPatch {
+  collectionName: string;
+  listRule?: string | null;
+  viewRule?: string | null;
+  createRule?: string | null;
+  updateRule?: string | null;
+  deleteRule?: string | null;
 }
 
 export interface Result {
