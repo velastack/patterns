@@ -59,6 +59,8 @@ export default {
     argv: [],
   },
 
+  tests: 36,
+
   baseline: "velastack",
 
   generate,

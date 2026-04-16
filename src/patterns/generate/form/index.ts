@@ -44,6 +44,8 @@ export default {
     argv: ["contact", "name:text", "email:email", "message:editor"],
   },
 
+  tests: 2,
+
   baseline: "velastack",
 
   generate: generate,

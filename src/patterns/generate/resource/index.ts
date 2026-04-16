@@ -53,6 +53,8 @@ export default {
     argv: ["contact", "name:text", "email:email"],
   },
 
+  tests: 0,
+
   baseline: "velastack",
 
   generate,

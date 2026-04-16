@@ -98,6 +98,8 @@ export interface Pattern {
     argv: string[];
   };
 
+  tests: number;
+
   // The baseline project that the pattern is based on.
   baseline: "sv" | "velastack" | "velastack-auth";
 
