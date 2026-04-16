@@ -26,7 +26,15 @@ const modifyCases = [
     modify: modifyAppLayoutSvelte,
   },
   {
+    file: "multiline-app-layout.svelte",
+    modify: modifyAppLayoutSvelte,
+  },
+  {
     file: "app-sidebar.svelte",
+    modify: modifyAppSidebar,
+  },
+  {
+    file: "spaced-app-sidebar.svelte",
     modify: modifyAppSidebar,
   },
   {

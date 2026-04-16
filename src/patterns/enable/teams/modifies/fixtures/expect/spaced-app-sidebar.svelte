@@ -8,6 +8,7 @@ import TeamSwitcher from '$lib/components/team-switcher.svelte';
 import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
 import * as Avatar from '$lib/components/ui/avatar';
 
+
   let data = {
     navMain: [
       {
@@ -18,22 +19,26 @@ import * as Avatar from '$lib/components/ui/avatar';
     ],
   };
 
+
   let {
-		user,
-		meta,
-		team,
-		teams = [],
-		ref = $bindable(null),
-		...restProps
-	}: ComponentProps<typeof Sidebar.Root> & {
-		user: any;
-		meta: any;
-		team?: string | undefined;
-		teams?: { id: string; name: string }[];
-	} = $props();
+    user,
+    meta,
+    team,
+    teams = [],
+    ref = $bindable(null),
+    ...restProps
+  }: ComponentProps<typeof Sidebar.Root> & {
+    user: any;
+    meta: any;
+    team?: string | undefined;
+    teams?: { id: string; name: string }[];
+  } = $props();
 </script>
 
+
 <Sidebar.Root bind:ref variant="inset" {...restProps}>
+
+
   <Sidebar.Header>
 		<Sidebar.Menu>
 			<TeamSwitcher {teams}>
@@ -65,6 +70,8 @@ import * as Avatar from '$lib/components/ui/avatar';
 			</TeamSwitcher>
 		</Sidebar.Menu>
 	</Sidebar.Header>
+
+
   <Sidebar.Content>
     <NavMain items={data.navMain} />
   </Sidebar.Content>

@@ -27,6 +27,7 @@ const layoutServerTestCases = [
 const layoutSvelteTestCases = [
   "basic-layout.svelte",
   "no-navbar-layout.svelte",
+  "wrapped-layout.svelte",
 ] as const;
 
 const hooksServerTestCases = ["hooks.server.ts"] as const;
