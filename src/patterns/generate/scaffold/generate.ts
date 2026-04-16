@@ -17,15 +17,15 @@ import {
   renderDisplayField,
   renderField,
   selectFieldLabelMap,
-} from "../field";
+} from "../../../core/field";
 import {
   collectionSpecFromModelFields,
   fieldsFromCollection,
   generateSchemaSnippet,
   relationExpandParam,
   uniqueRelationCollections,
-} from "../shared";
-import { generateScaffoldServerTestSnippet } from "../tests";
+} from "../../../core/shared";
+import { generateScaffoldServerTestSnippet } from "../../../core/tests";
 
 function parsePatternArgs(argv: string[]) {
   const [modelPath, ...fields] = argv;

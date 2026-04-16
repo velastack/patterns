@@ -1,7 +1,7 @@
 import * as changeCase from "change-case";
 import dedent from "dedent";
 import pluralize from "pluralize";
-import type { CollectionFieldSpec, CollectionSpec, Options } from "../../core/types";
+import type { CollectionFieldSpec, CollectionSpec, Options } from "./types";
 import {
   collectionDisplayFieldMap,
   parseModel,
@@ -9,7 +9,7 @@ import {
   type Field,
   type Model,
   type OwnershipResult,
-} from "../../parse";
+} from "../parse";
 
 interface RuntimeCollectionField {
   name: string;

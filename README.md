@@ -79,3 +79,15 @@ the modifications work across a wide range of project setups.
 ### Preview-Modifies
 
 The `preview-modifies` directory is the mock modify output used only for previews. It's bundled in the same way as the `creates` directory.
+
+## Baselines
+
+The `src/baselines/` directory contains template SvelteKit projects that patterns are applied on top of:
+
+- `sv` — minimal SvelteKit starter
+- `velastack` — full VelaStack with components, UI, and database setup
+- `velastack-auth` — VelaStack with authentication pre-configured
+
+Each baseline is a standalone project with its own `package.json`. When working with a baseline locally, run `npm install` inside its directory. The `node_modules` and `.svelte-kit` directories inside baselines are gitignored and must be installed locally before running or testing.
+
+Baselines are not bundled into the published package — they are used by the VelaStack CLI's `create` command and by the velastack.dev website.

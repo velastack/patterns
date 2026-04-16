@@ -6,7 +6,7 @@ import {
   validateModelName,
   type Collection,
 } from "../../../parse";
-import { fieldsFromCollection, generateSchemaSnippet } from "../shared";
+import { fieldsFromCollection, generateSchemaSnippet } from "../../../core/shared";
 
 function parsePatternArgs(argv: string[]) {
   const [modelPath, ...fields] = argv;

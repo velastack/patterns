@@ -1,6 +1,9 @@
 export interface Features {
   auth: boolean;
   api: boolean;
+  apiKeys: boolean;
+  i18n: boolean;
+  teams: boolean;
   payments: boolean;
 }
 

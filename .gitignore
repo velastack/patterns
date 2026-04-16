@@ -2,3 +2,5 @@ dist
 node_modules
 .integration-tests
 .cursor
+src/baselines/**/node_modules
+src/baselines/**/.svelte-kit

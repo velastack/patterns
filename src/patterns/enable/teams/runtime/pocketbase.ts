@@ -1,4 +1,4 @@
-import type { CollectionRulesPatch } from "../../../core/types";
+import type { CollectionRulesPatch } from "../../../../core/types";
 
 /** Applied after all team collections are created (create-time rules are omitted). */
 export const TEAM_RULE_PATCHES: CollectionRulesPatch[] = [

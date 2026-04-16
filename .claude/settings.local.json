@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs -I {} ls -la {})",
+      "Bash(git -C /Users/nathancahill/Code/velastack-patterns ls-files src/baselines/)",
+      "Bash(mkdir -p /Users/nathancahill/Code/velastack-patterns/src/core/field)",
+      "Bash(mkdir -p /Users/nathancahill/Code/velastack-patterns/src/patterns/enable/teams/runtime)",
+      "Bash(sed -e 's|from \"\\\\.\\\\./\\\\.\\\\./core/types\"|from \"./types\"|g' -e 's|from \"\\\\.\\\\./\\\\.\\\\./parse\"|from \"../parse\"|g' /Users/nathancahill/Code/velastack-patterns/src/patterns/generate/shared.ts)",
+      "Bash(sed -e 's|from \"\\\\.\\\\./\\\\.\\\\./core/types\"|from \"./types\"|g' -e 's|from \"\\\\.\\\\./\\\\.\\\\./parse\"|from \"../parse\"|g' /Users/nathancahill/Code/velastack-patterns/src/patterns/generate/tests.ts)",
+      "Bash(sed 's|from \"\\\\.\\\\./\\\\.\\\\./\\\\.\\\\./core/types\"|from \"../../../../core/types\"|g' /Users/nathancahill/Code/velastack-patterns/src/patterns/enable/teams/teams-pocketbase.ts)",
+      "Bash(sed -e 's|from \"\\\\.\\\\./\\\\.\\\\./\\\\.\\\\./core/types\"|from \"../../../../core/types\"|g' -e 's|from \"\\\\./teams-pocketbase\"|from \"./pocketbase\"|g' /Users/nathancahill/Code/velastack-patterns/src/patterns/enable/teams/teams-collections.ts)",
+      "Bash(npm test *)",
+      "Bash(npm run *)"
+    ]
+  }
+}

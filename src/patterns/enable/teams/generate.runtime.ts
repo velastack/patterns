@@ -8,7 +8,7 @@ import { modifyAppLayoutSvelte } from "./modifies/modify-app-layout";
 import { modifyAppSidebar } from "./modifies/modify-app-sidebar";
 import { modifyLayoutServer } from "./modifies/+layout.server";
 import { modifyNavUser } from "./modifies/modify-nav-user";
-import { TEAM_RULE_PATCHES } from "./teams-pocketbase";
+import { TEAM_RULE_PATCHES } from "./runtime/pocketbase";
 
 function pushMigrationCreates(
   creates: File[],

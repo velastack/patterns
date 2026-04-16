@@ -1,5 +1,5 @@
-import type { CollectionSpec } from "../../../core/types";
-import { TEAM_RULE_PATCHES } from "./teams-pocketbase";
+import type { CollectionSpec } from "../../../../core/types";
+import { TEAM_RULE_PATCHES } from "./pocketbase";
 
 /** Relation targets use collection names as readable stand-ins for PocketBase collection ids in preview. */
 const users = "users";

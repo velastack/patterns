@@ -10,7 +10,7 @@ import {
   collectionSpecFromModelFields,
   fieldsFromCollection,
   generateSchemaSnippet,
-} from "../shared";
+} from "../../../core/shared";
 
 function parsePatternArgs(argv: string[]) {
   const [modelPath, ...fields] = argv;

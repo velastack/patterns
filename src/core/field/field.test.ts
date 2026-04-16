@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Model } from "../../../parse";
+import type { Model } from "../../parse";
 import { renderDisplayField, renderField, selectFieldLabelMap } from "./index";
 
 const model: Model = {

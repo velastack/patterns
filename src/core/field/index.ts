@@ -1,5 +1,5 @@
 import dedent from "dedent";
-import type { Field, Model } from "../../../parse";
+import type { Field, Model } from "../../parse";
 
 type InputPropValue = string | number | boolean | null | undefined;
 

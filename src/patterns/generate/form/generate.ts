@@ -6,7 +6,7 @@ import {
   getFieldImports,
   renderField,
   selectFieldLabelMap,
-} from "../field";
+} from "../../../core/field";
 import {
   parseFields,
   parseModel,
@@ -15,7 +15,7 @@ import {
   type Field,
   type Model,
 } from "../../../parse";
-import { generateFormServerTestSnippet } from "../tests";
+import { generateFormServerTestSnippet } from "../../../core/tests";
 
 function formPaths(modelPath: string, routesDir: string) {
   const normalizedModelPath = modelPath.replace(/^\/+|\/+$/g, "");

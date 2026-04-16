@@ -1,6 +1,6 @@
 import type { Options, Result } from "../../../core/types";
 import { appRelativePath, languageFromPath } from "../../../core/util";
-import { TEAMS_PREVIEW_COLLECTIONS } from "./teams-collections";
+import { TEAMS_PREVIEW_COLLECTIONS } from "./runtime/collections";
 
 const previewRaw = import.meta.glob<string>("./preview-modifies/**", {
   query: "?raw",

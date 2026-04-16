@@ -1,6 +1,6 @@
 import dedent from "dedent";
-import type { Options } from "../../core/types";
-import { parseModel, type Collection, type Field, type Model } from "../../parse";
+import type { Options } from "./types";
+import { parseModel, type Collection, type Field, type Model } from "../parse";
 
 const GENERATED_DATE = "2024-01-01T00:00:00.000Z";
 
