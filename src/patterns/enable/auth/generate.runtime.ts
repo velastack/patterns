@@ -34,8 +34,8 @@ export async function generate(options: Options) {
       );
     const resetPasswordTemplate =
       userCollection.resetPasswordTemplate.body.replace(
-        "{APP_URL}/_/#/auth/confirm-password-reset/{TOKEN}",
-        "{APP_URL}/confirm-password-reset/{TOKEN}",
+        "{APP_URL}/_/#/auth/confirm-reset/{TOKEN}",
+        "{APP_URL}/confirm-reset/{TOKEN}",
       );
     const confirmEmailChangeTemplate =
       userCollection.confirmEmailChangeTemplate.body.replace(
