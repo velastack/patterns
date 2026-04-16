@@ -70,11 +70,15 @@ function updateAppSidebarScript(source: string): string {
       // Type changes first — name change can shift positions and invalidate type node refs.
       const typeNode = decl.getTypeNode();
       if (typeNode?.getKind() === SyntaxKind.IntersectionType) {
-        const intersection = typeNode.asKindOrThrow(SyntaxKind.IntersectionType);
+        const intersection = typeNode.asKindOrThrow(
+          SyntaxKind.IntersectionType,
+        );
         for (const member of intersection.getTypeNodes()) {
           if (member.getKind() !== SyntaxKind.TypeLiteral) continue;
           const lit = member.asKindOrThrow(SyntaxKind.TypeLiteral);
-          const propTexts = lit.getProperties().map((p) => p.getText().replace(/[;,]\s*$/, ""));
+          const propTexts = lit
+            .getProperties()
+            .map((p) => p.getText().replace(/[;,]\s*$/, ""));
           if (propTexts.some((t) => /^team\b/.test(t))) break;
           propTexts.push(
             "team?: string | undefined",

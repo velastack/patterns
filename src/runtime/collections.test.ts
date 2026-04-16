@@ -2,7 +2,11 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { CollectionRulesPatch, CollectionSpec, Options } from "../core/types";
+import type {
+  CollectionRulesPatch,
+  CollectionSpec,
+  Options,
+} from "../core/types";
 import { applyCollectionRulePatches, createCollections } from "./collections";
 
 const withPocketbaseMock = vi.fn();
@@ -112,7 +116,11 @@ describe("applyCollectionRulePatches", () => {
   it("updates collections in patch order and collects migration files", async () => {
     const root = mkdtempSync(path.join(os.tmpdir(), "collections-rules-"));
     tempDirs.push(root);
-    const migrationPath = path.join(root, "migrations", "0001_updated_teams.js");
+    const migrationPath = path.join(
+      root,
+      "migrations",
+      "0001_updated_teams.js",
+    );
     writeFileSync(migrationPath, "updated-migration", "utf8");
 
     getFirstListItemMock.mockResolvedValue({ id: "col1" });
@@ -131,12 +139,23 @@ describe("applyCollectionRulePatches", () => {
       },
     };
 
-    const files = await applyCollectionRulePatches(pb, patches, makeOptions(root));
+    const files = await applyCollectionRulePatches(
+      pb,
+      patches,
+      makeOptions(root),
+    );
 
     expect(getFirstListItemMock).toHaveBeenNthCalledWith(1, `name='teams'`);
-    expect(getFirstListItemMock).toHaveBeenNthCalledWith(2, `name='team_memberships'`);
-    expect(collectionsUpdateMock).toHaveBeenNthCalledWith(1, "col1", { listRule: "a = 1" });
-    expect(collectionsUpdateMock).toHaveBeenNthCalledWith(2, "col1", { viewRule: "b = 2" });
+    expect(getFirstListItemMock).toHaveBeenNthCalledWith(
+      2,
+      `name='team_memberships'`,
+    );
+    expect(collectionsUpdateMock).toHaveBeenNthCalledWith(1, "col1", {
+      listRule: "a = 1",
+    });
+    expect(collectionsUpdateMock).toHaveBeenNthCalledWith(2, "col1", {
+      viewRule: "b = 2",
+    });
     expect(files).toEqual([
       {
         path: migrationPath,

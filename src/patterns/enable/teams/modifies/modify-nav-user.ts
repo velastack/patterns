@@ -15,7 +15,13 @@ export function addItemToNavUser(
   const tryAdd = (run: (fn: (s: string) => string) => boolean) => {
     if (wasAdded) return;
     run((source) => {
-      const result = addNavItemToScript(source, title, url, icon, iconImportPath);
+      const result = addNavItemToScript(
+        source,
+        title,
+        url,
+        icon,
+        iconImportPath,
+      );
       if (result.wasAdded) wasAdded = true;
       return result.source;
     });

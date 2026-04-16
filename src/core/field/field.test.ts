@@ -37,7 +37,7 @@ describe("renderField", () => {
       type: "text",
       title: "Name",
       required: true,
-      labelAside: "<a href=\"/help\">Help</a>",
+      labelAside: '<a href="/help">Help</a>',
       inputProps: { placeholder: "Enter name", autocomplete: "off" },
     });
 
@@ -63,7 +63,9 @@ describe("renderField", () => {
     });
 
     expect(field).toContain('class="col-span-1 flex items-start space-x-2"');
-    expect(field.indexOf("<Checkbox")).toBeLessThan(field.indexOf("<Form.Label>Active"));
+    expect(field.indexOf("<Checkbox")).toBeLessThan(
+      field.indexOf("<Form.Label>Active"),
+    );
   });
 
   it("renders autodate as readonly value input", () => {
@@ -94,8 +96,12 @@ describe("renderField", () => {
       ],
     });
 
-    expect(field).toContain('<MultiSelect.Field {form} type="single" name="role" required');
-    expect(field).toContain('<MultiSelect.Item value="admin" label={roleLabels["admin"].label} />');
+    expect(field).toContain(
+      '<MultiSelect.Field {form} type="single" name="role" required',
+    );
+    expect(field).toContain(
+      '<MultiSelect.Item value="admin" label={roleLabels["admin"].label} />',
+    );
     expect(field).toContain("<Command.Empty>No options found</Command.Empty>");
   });
 
@@ -116,7 +122,9 @@ describe("renderField", () => {
 
     expect(field).toContain('placeholder="Select hotel owner"');
     expect(field).toContain('placeholder="Search hotel owners..."');
-    expect(field).toContain("<Command.Empty>No hotel owners found</Command.Empty>");
+    expect(field).toContain(
+      "<Command.Empty>No hotel owners found</Command.Empty>",
+    );
   });
 });
 
@@ -132,7 +140,9 @@ describe("renderDisplayField", () => {
     });
 
     expect(display).toContain("{#if data.user.created}");
-    expect(display).toContain("{new Date(data.user.created).toLocaleDateString()}");
+    expect(display).toContain(
+      "{new Date(data.user.created).toLocaleDateString()}",
+    );
   });
 
   it("renders select display for single optional and multi select", () => {
@@ -167,9 +177,13 @@ describe("renderDisplayField", () => {
       required: true,
       maxSelect: 1,
     });
-    expect(singleDisplay).toContain('{#if [".jpg", ".png", ".jpeg", ".webp", ".gif"].some((ext) => data.user.avatar?.endsWith(ext))}');
+    expect(singleDisplay).toContain(
+      '{#if [".jpg", ".png", ".jpeg", ".webp", ".gif"].some((ext) => data.user.avatar?.endsWith(ext))}',
+    );
     expect(singleDisplay).toContain('<FileIcon class="w-4 h-4" />');
-    expect(singleDisplay).toContain('src="/api/files/{data.user.collectionId}/{data.user.id}/{data.user.avatar}"');
+    expect(singleDisplay).toContain(
+      'src="/api/files/{data.user.collectionId}/{data.user.id}/{data.user.avatar}"',
+    );
 
     const multiDisplay = renderDisplayField(model, {
       name: "avatars",
@@ -197,7 +211,9 @@ describe("renderDisplayField", () => {
       isCurrentUser: false,
     });
     expect(singleDisplay).toContain("{#if data.user.expand?.owner}");
-    expect(singleDisplay).toContain('href="/hotel-owners/{data.user.expand?.owner.id}"');
+    expect(singleDisplay).toContain(
+      'href="/hotel-owners/{data.user.expand?.owner.id}"',
+    );
 
     const multiDisplay = renderDisplayField(model, {
       name: "owners",
@@ -212,7 +228,9 @@ describe("renderDisplayField", () => {
       pluralRelationName: "hotelOwners",
       isCurrentUser: false,
     });
-    expect(multiDisplay).toContain("{#each data.user.expand?.owners ?? [] as hotelOwner}");
+    expect(multiDisplay).toContain(
+      "{#each data.user.expand?.owners ?? [] as hotelOwner}",
+    );
     expect(multiDisplay).toContain("{hotelOwner.name}");
   });
 
@@ -225,8 +243,12 @@ describe("renderDisplayField", () => {
     });
 
     expect(display).toContain("{#if data.user.location}");
-    expect(display).toContain('{#await import("$lib/components/ui/leaflet/leaflet.svelte")}');
-    expect(display).toContain("{data.user.location?.lat.toFixed(6)}, {data.user.location?.lon.toFixed(6)}");
+    expect(display).toContain(
+      '{#await import("$lib/components/ui/leaflet/leaflet.svelte")}',
+    );
+    expect(display).toContain(
+      "{data.user.location?.lat.toFixed(6)}, {data.user.location?.lon.toFixed(6)}",
+    );
   });
 });
 

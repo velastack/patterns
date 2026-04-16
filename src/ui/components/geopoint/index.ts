@@ -1,1 +1,1 @@
-export { default as GeopointInput } from './input.svelte';
+export { default as GeopointInput } from "./input.svelte";

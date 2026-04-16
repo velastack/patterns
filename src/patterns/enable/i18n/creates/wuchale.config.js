@@ -6,10 +6,16 @@ import { defineConfig } from "wuchale";
 export default defineConfig({
   locales: ["en", "es"],
   adapters: {
-    main: svelte({ loader: "sveltekit", url: { localize: true, patterns: ["/"] } }),
+    main: svelte({
+      loader: "sveltekit",
+      url: { localize: true, patterns: ["/"] },
+    }),
     js: js({
       loader: "vite",
-      files: ["src/**/+{page,layout}.{js,ts}", "src/**/+{page,layout}.server.{js,ts}"],
+      files: [
+        "src/**/+{page,layout}.{js,ts}",
+        "src/**/+{page,layout}.server.{js,ts}",
+      ],
     }),
   },
 });

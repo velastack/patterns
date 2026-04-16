@@ -165,7 +165,11 @@ function findNode(
           const found = visit(item);
           if (found) return found;
         }
-      } else if (child && typeof child === "object" && "type" in (child as object)) {
+      } else if (
+        child &&
+        typeof child === "object" &&
+        "type" in (child as object)
+      ) {
         const found = visit(child);
         if (found) return found;
       }

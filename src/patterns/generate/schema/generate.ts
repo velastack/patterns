@@ -6,14 +6,15 @@ import {
   validateModelName,
   type Collection,
 } from "../../../parse";
-import { fieldsFromCollection, generateSchemaSnippet } from "../../../core/shared";
+import {
+  fieldsFromCollection,
+  generateSchemaSnippet,
+} from "../../../core/shared";
 
 function parsePatternArgs(argv: string[]) {
   const [modelPath, ...fields] = argv;
   if (!modelPath) {
-    throw new Error(
-      "Invalid command arguments. Expected: <model> [fields...]",
-    );
+    throw new Error("Invalid command arguments. Expected: <model> [fields...]");
   }
 
   return { modelPath, fields };
@@ -27,7 +28,11 @@ function toFile(path: string, content: string): File {
   };
 }
 
-async function resolveInputFields(options: Options, modelPath: string, fieldDefs: string[]) {
+async function resolveInputFields(
+  options: Options,
+  modelPath: string,
+  fieldDefs: string[],
+) {
   validateModelName(modelPath);
   const model = parseModel(modelPath, options);
 
@@ -38,8 +43,12 @@ async function resolveInputFields(options: Options, modelPath: string, fieldDefs
 
   const collections =
     options.env === "runtime"
-      ? ((await (await import("../../../parse/env.runtime")).getCollections()) as Collection[])
-      : (await import("../../../parse/env.preview")).getPreviewCollections(options);
+      ? ((await (
+          await import("../../../parse/env.runtime")
+        ).getCollections()) as Collection[])
+      : (await import("../../../parse/env.preview")).getPreviewCollections(
+          options,
+        );
   const fields = fieldsFromCollection(model, collections, options);
   return { model, fields, includeModelFields: true };
 }

@@ -3,7 +3,11 @@ import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
 import { languageFromPath } from "../../../core/util";
 import { applyCollectionRulePatches } from "../../../runtime/collections";
-import { getMigrationFile, migrationDelay, withPocketbase } from "../../../runtime/pocketbase";
+import {
+  getMigrationFile,
+  migrationDelay,
+  withPocketbase,
+} from "../../../runtime/pocketbase";
 import { modifyAppLayoutSvelte } from "./modifies/modify-app-layout";
 import { modifyAppSidebar } from "./modifies/modify-app-sidebar";
 import { modifyLayoutServer } from "./modifies/+layout.server";

@@ -1,3 +1,3 @@
 export const load = () => ({
-	// initially empty
+  // initially empty
 });

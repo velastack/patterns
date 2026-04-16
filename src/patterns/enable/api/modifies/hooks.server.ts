@@ -43,7 +43,9 @@ export function modifyHooksServer(hooksServerPath: string) {
   }
 
   if (apiProp.getKind() === SyntaxKind.PropertyAssignment) {
-    const apiInit = (apiProp as import("ts-morph").PropertyAssignment).getInitializer();
+    const apiInit = (
+      apiProp as import("ts-morph").PropertyAssignment
+    ).getInitializer();
     if (apiInit && apiInit.getKind() === SyntaxKind.ObjectLiteralExpression) {
       const apiObj = apiInit as import("ts-morph").ObjectLiteralExpression;
       const enabledProp = apiObj.getProperty("enabled");

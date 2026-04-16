@@ -49,17 +49,23 @@ export function modifyLayoutServer(layoutServerPath: string) {
     const vs = varDecl.getFirstAncestorByKind(SyntaxKind.VariableStatement);
     const isExported = !!vs?.hasExportKeyword();
     if (isExported) {
-      const directArrow = varDecl.getInitializerIfKind(SyntaxKind.ArrowFunction);
+      const directArrow = varDecl.getInitializerIfKind(
+        SyntaxKind.ArrowFunction,
+      );
       if (directArrow) {
         loadArrow = directArrow;
       } else {
         const init = varDecl.getInitializer();
         if (init) {
-          const innerArrow = init.getFirstDescendantByKind(SyntaxKind.ArrowFunction);
+          const innerArrow = init.getFirstDescendantByKind(
+            SyntaxKind.ArrowFunction,
+          );
           if (innerArrow) {
             loadArrow = innerArrow;
           } else {
-            const innerFnExpr = init.getFirstDescendantByKind(SyntaxKind.FunctionExpression);
+            const innerFnExpr = init.getFirstDescendantByKind(
+              SyntaxKind.FunctionExpression,
+            );
             if (innerFnExpr) {
               loadFn = innerFnExpr;
             }
@@ -111,8 +117,12 @@ export function modifyLayoutServer(layoutServerPath: string) {
     const nameNode = first.getNameNode();
     if (nameNode.getKind() === SyntaxKind.ObjectBindingPattern) {
       const obp = nameNode as import("ts-morph").ObjectBindingPattern;
-      const hasDepends = obp.getElements().some((el) => el.getName() === "depends");
-      const hasLocals = obp.getElements().some((el) => el.getName() === "locals");
+      const hasDepends = obp
+        .getElements()
+        .some((el) => el.getName() === "depends");
+      const hasLocals = obp
+        .getElements()
+        .some((el) => el.getName() === "locals");
 
       if (!hasDepends) {
         const parts = obp
@@ -177,7 +187,9 @@ export function modifyLayoutServer(layoutServerPath: string) {
         stmt.getKind() === SyntaxKind.VariableStatement &&
         stmt
           .getDescendantsOfKind(SyntaxKind.Identifier)
-          .some((id: import("ts-morph").Identifier) => id.getText() === "teams"),
+          .some(
+            (id: import("ts-morph").Identifier) => id.getText() === "teams",
+          ),
     );
 
     const hasDependsTeam = statements.some(
@@ -225,7 +237,9 @@ export function modifyLayoutServer(layoutServerPath: string) {
           addProperty(obj, "team", "team");
           addProperty(obj, "teams", "teams");
         } else if (expr.getKind() === SyntaxKind.ParenthesizedExpression) {
-          const inner = (expr as import("ts-morph").ParenthesizedExpression).getExpression();
+          const inner = (
+            expr as import("ts-morph").ParenthesizedExpression
+          ).getExpression();
           if (inner.getKind() === SyntaxKind.ObjectLiteralExpression) {
             const obj = inner as import("ts-morph").ObjectLiteralExpression;
             addProperty(obj, "team", "team");
@@ -236,7 +250,9 @@ export function modifyLayoutServer(layoutServerPath: string) {
     } else {
       const bodyExpr = body as import("ts-morph").Expression;
       if (bodyExpr.getKind() === SyntaxKind.ParenthesizedExpression) {
-        const inner = (bodyExpr as import("ts-morph").ParenthesizedExpression).getExpression();
+        const inner = (
+          bodyExpr as import("ts-morph").ParenthesizedExpression
+        ).getExpression();
         if (inner.getKind() === SyntaxKind.ObjectLiteralExpression) {
           const obj = inner as import("ts-morph").ObjectLiteralExpression;
           addProperty(obj, "team", "team");
@@ -260,7 +276,9 @@ export function modifyLayoutServer(layoutServerPath: string) {
           addProperty(obj, "team", "team");
           addProperty(obj, "teams", "teams");
         } else if (expr.getKind() === SyntaxKind.ParenthesizedExpression) {
-          const inner = (expr as import("ts-morph").ParenthesizedExpression).getExpression();
+          const inner = (
+            expr as import("ts-morph").ParenthesizedExpression
+          ).getExpression();
           if (inner.getKind() === SyntaxKind.ObjectLiteralExpression) {
             const obj = inner as import("ts-morph").ObjectLiteralExpression;
             addProperty(obj, "team", "team");

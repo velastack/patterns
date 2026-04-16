@@ -27,10 +27,14 @@ function isCollectionAlreadyExistsError(
   }
 
   const message = error.message?.toLowerCase() ?? "";
-  return message.includes("already exists") || message.includes("must be unique");
+  return (
+    message.includes("already exists") || message.includes("must be unique")
+  );
 }
 
-function rulePayloadFromPatch(patch: CollectionRulesPatch): Record<string, unknown> {
+function rulePayloadFromPatch(
+  patch: CollectionRulesPatch,
+): Record<string, unknown> {
   const payload: Record<string, unknown> = {};
   if (patch.listRule !== undefined) payload.listRule = patch.listRule;
   if (patch.viewRule !== undefined) payload.viewRule = patch.viewRule;
@@ -109,7 +113,11 @@ export async function createCollections(
       }
       await migrationDelay();
 
-      const migrationFile = getMigrationFile(collection.name, "created", options);
+      const migrationFile = getMigrationFile(
+        collection.name,
+        "created",
+        options,
+      );
       if (!migrationFile) {
         continue;
       }

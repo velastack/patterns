@@ -1,1 +1,1 @@
-export { default as FacetedFilter } from './faceted-filter.svelte';
+export { default as FacetedFilter } from "./faceted-filter.svelte";

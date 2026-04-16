@@ -7,7 +7,10 @@ export function modifyAppLayoutSvelte(layoutPath: string): boolean {
   }
 
   const file = SvelteFile.fromPath(layoutPath);
-  if (!file.hasElement("AppSidebar") || file.hasAttribute("AppSidebar", "teams")) {
+  if (
+    !file.hasElement("AppSidebar") ||
+    file.hasAttribute("AppSidebar", "teams")
+  ) {
     return false;
   }
 

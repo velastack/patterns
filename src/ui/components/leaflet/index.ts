@@ -1,1 +1,1 @@
-export { default as Leaflet } from './leaflet.svelte';
+export { default as Leaflet } from "./leaflet.svelte";

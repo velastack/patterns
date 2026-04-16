@@ -13,7 +13,11 @@ export function localize(path: string, locale: Locale) {
   return `/${locale}${path}`;
 }
 
-export function translateUrl(url: string, fromLocale: Locale, toLocale: Locale) {
+export function translateUrl(
+  url: string,
+  fromLocale: Locale,
+  toLocale: Locale,
+) {
   const [pathOnly] = deLocalizeDefault(url, locales);
   const result = matchUrl(pathOnly, fromLocale);
   if (result.path !== null) {

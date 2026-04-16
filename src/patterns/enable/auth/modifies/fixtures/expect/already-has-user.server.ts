@@ -1,4 +1,4 @@
 export const load = ({ locals, ...event }) => ({
-	user: 'existing',
-	meta: 1
+  user: "existing",
+  meta: 1,
 });

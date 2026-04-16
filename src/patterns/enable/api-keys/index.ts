@@ -33,14 +33,22 @@ export default {
   docs: DOCS,
   plan: "open",
   title: "Enable API keys",
-  summary: "Adds API key management for authenticated users and PocketBase API access.",
+  summary:
+    "Adds API key management for authenticated users and PocketBase API access.",
   requires: {
     auth: true,
     api: true,
     payments: false,
   },
   category: "api" as const,
-  tags: ["sveltekit", "api", "api-keys", "pocketbase", "velastack", "authentication"],
+  tags: [
+    "sveltekit",
+    "api",
+    "api-keys",
+    "pocketbase",
+    "velastack",
+    "authentication",
+  ],
 
   command: {
     raw: "vela enable api-keys",

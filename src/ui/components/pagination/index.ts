@@ -1,1 +1,1 @@
-export { default as Pagination } from './pagination.svelte';
+export { default as Pagination } from "./pagination.svelte";

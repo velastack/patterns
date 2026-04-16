@@ -75,7 +75,10 @@ export function addNavItemToScript(
       .getVariableDeclarations()
       .find((d) => d.getName() === "data");
     const dataInit = dataDecl?.getInitializer();
-    if (!dataInit || dataInit.getKind() !== SyntaxKind.ObjectLiteralExpression) {
+    if (
+      !dataInit ||
+      dataInit.getKind() !== SyntaxKind.ObjectLiteralExpression
+    ) {
       return { wasAdded: false };
     }
 

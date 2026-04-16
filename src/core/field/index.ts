@@ -149,7 +149,9 @@ function renderGeoPointField(field: RenderableField): string {
   `;
 }
 
-function renderFileField(field: Extract<RenderableField, { type: "file" }>): string {
+function renderFileField(
+  field: Extract<RenderableField, { type: "file" }>,
+): string {
   const required = field.required ? " required" : "";
   const fileMode = field.maxSelect > 1 ? "Multiple" : "Single";
 
@@ -179,10 +181,13 @@ function renderFileField(field: Extract<RenderableField, { type: "file" }>): str
   `;
 }
 
-function renderSelectField(field: Extract<RenderableField, { type: "select" }>): string {
+function renderSelectField(
+  field: Extract<RenderableField, { type: "select" }>,
+): string {
   const multiType = field.maxSelect > 1 ? "multiple" : "single";
   const required = field.required ? " required" : "";
-  const placeholder = field.maxSelect > 1 ? "Select options" : "Select an option";
+  const placeholder =
+    field.maxSelect > 1 ? "Select options" : "Select an option";
 
   const options = field.options
     .map(
@@ -325,7 +330,9 @@ export function renderField(field: RenderableField): string {
   }
 }
 
-export function selectFieldLabelMap(field: Extract<Field, { type: "select" }>): string {
+export function selectFieldLabelMap(
+  field: Extract<Field, { type: "select" }>,
+): string {
   const labels = field.options
     .map(
       (option) => dedent`
@@ -350,7 +357,9 @@ export function getFieldComponents(fields: Field[]): FieldComponent[] {
 }
 
 export function getFieldImports(components: FieldComponent[]): string[] {
-  return [...new Set(components.flatMap((component) => FIELD_IMPORTS[component]))];
+  return [
+    ...new Set(components.flatMap((component) => FIELD_IMPORTS[component])),
+  ];
 }
 
 function displayDataPath(model: Model, field: Pick<Field, "name">): string {
@@ -392,7 +401,10 @@ function renderDisplayDateField(
   `;
 }
 
-function renderDisplayUrlField(model: Model, field: Field & { type: "url" }): string {
+function renderDisplayUrlField(
+  model: Model,
+  field: Field & { type: "url" },
+): string {
   const dataPath = displayDataPath(model, field);
   const anchor = dedent`
     <a href={${dataPath}} target="_blank" rel="noopener noreferrer">
@@ -450,7 +462,10 @@ function renderDisplaySelectField(
   `;
 }
 
-function renderDisplayFileField(model: Model, field: Extract<Field, { type: "file" }>): string {
+function renderDisplayFileField(
+  model: Model,
+  field: Extract<Field, { type: "file" }>,
+): string {
   const dataPath = displayDataPath(model, field);
   if (field.maxSelect > 1) {
     return dedent`
@@ -542,7 +557,10 @@ function renderDisplayRelationField(
   `;
 }
 
-function renderDisplayGeoPointField(model: Model, field: Field & { type: "geoPoint" }): string {
+function renderDisplayGeoPointField(
+  model: Model,
+  field: Field & { type: "geoPoint" },
+): string {
   const dataPath = displayDataPath(model, field);
   const content = dedent`
     {#await import("$lib/components/ui/leaflet/leaflet.svelte")}
@@ -576,7 +594,11 @@ export function renderDisplayField(model: Model, field: Field): string {
     case "number":
     case "email":
     case "editor":
-      return renderDisplaySimple(model, field, `{${displayDataPath(model, field)}}`);
+      return renderDisplaySimple(
+        model,
+        field,
+        `{${displayDataPath(model, field)}}`,
+      );
     case "password":
       return dedent`
         <div class="space-y-2">
@@ -594,7 +616,10 @@ export function renderDisplayField(model: Model, field: Field): string {
       );
     case "date":
     case "autodate":
-      return renderDisplayDateField(model, field as Field & { type: "date" | "autodate" });
+      return renderDisplayDateField(
+        model,
+        field as Field & { type: "date" | "autodate" },
+      );
     case "url":
       return renderDisplayUrlField(model, field as Field & { type: "url" });
     case "select":
@@ -602,9 +627,16 @@ export function renderDisplayField(model: Model, field: Field): string {
     case "file":
       return renderDisplayFileField(model, field);
     case "json":
-      return renderDisplaySimple(model, field, `{JSON.stringify(${displayDataPath(model, field)})}`);
+      return renderDisplaySimple(
+        model,
+        field,
+        `{JSON.stringify(${displayDataPath(model, field)})}`,
+      );
     case "geoPoint":
-      return renderDisplayGeoPointField(model, field as Field & { type: "geoPoint" });
+      return renderDisplayGeoPointField(
+        model,
+        field as Field & { type: "geoPoint" },
+      );
     case "relation":
       return renderDisplayRelationField(model, field);
     default: {

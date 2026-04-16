@@ -1,1 +1,1 @@
-export { default as ColumnHeader } from './column-header.svelte';
+export { default as ColumnHeader } from "./column-header.svelte";

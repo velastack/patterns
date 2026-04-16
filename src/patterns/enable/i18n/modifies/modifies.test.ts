@@ -18,7 +18,9 @@ const tempDir = path.join(__dirname, "temp");
 describe("enable i18n modifiers", () => {
   beforeEach(() => {
     fs.rmSync(tempDir, { recursive: true, force: true });
-    fs.cpSync(path.join(fixturesPath, "original"), tempDir, { recursive: true });
+    fs.cpSync(path.join(fixturesPath, "original"), tempDir, {
+      recursive: true,
+    });
   });
 
   afterEach(() => {
@@ -30,7 +32,10 @@ describe("enable i18n modifiers", () => {
     modifyViteConfig(filePath);
 
     const modified = fs.readFileSync(filePath, "utf8");
-    const expected = fs.readFileSync(path.join(fixturesPath, "expect", "vite.config.ts"), "utf8");
+    const expected = fs.readFileSync(
+      path.join(fixturesPath, "expect", "vite.config.ts"),
+      "utf8",
+    );
     expect(modified.replace(/\s+/g, "")).toBe(expected.replace(/\s+/g, ""));
   });
 
@@ -51,7 +56,10 @@ describe("enable i18n modifiers", () => {
     modifyHooksServerI18n(filePath);
 
     const modified = fs.readFileSync(filePath, "utf8");
-    const expected = fs.readFileSync(path.join(fixturesPath, "expect", "hooks.server.ts"), "utf8");
+    const expected = fs.readFileSync(
+      path.join(fixturesPath, "expect", "hooks.server.ts"),
+      "utf8",
+    );
     expect(modified.replace(/\s+/g, "")).toBe(expected.replace(/\s+/g, ""));
   });
 
@@ -60,7 +68,10 @@ describe("enable i18n modifiers", () => {
     modifyAppHtml(filePath);
 
     const modified = fs.readFileSync(filePath, "utf8");
-    const expected = fs.readFileSync(path.join(fixturesPath, "expect", "app.html"), "utf8");
+    const expected = fs.readFileSync(
+      path.join(fixturesPath, "expect", "app.html"),
+      "utf8",
+    );
     expect(modified.replace(/\s+/g, "")).toBe(expected.replace(/\s+/g, ""));
   });
 
@@ -69,7 +80,10 @@ describe("enable i18n modifiers", () => {
     modifyGitignore(filePath);
 
     const modified = fs.readFileSync(filePath, "utf8");
-    const expected = fs.readFileSync(path.join(fixturesPath, "expect", ".gitignore"), "utf8");
+    const expected = fs.readFileSync(
+      path.join(fixturesPath, "expect", ".gitignore"),
+      "utf8",
+    );
     expect(modified.replace(/\s+/g, "")).toBe(expected.replace(/\s+/g, ""));
   });
 

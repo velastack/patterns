@@ -1,5 +1,5 @@
 export type AuthMenuContext = {
-	isDesktop: boolean;
+  isDesktop: boolean;
 };
 
-export const AUTH_MENU_CONTEXT_KEY = Symbol('auth-menu-context');
+export const AUTH_MENU_CONTEXT_KEY = Symbol("auth-menu-context");

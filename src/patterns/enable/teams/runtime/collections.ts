@@ -9,7 +9,9 @@ const teamMemberships = "team_memberships";
 function rulesFor(collectionName: string) {
   const p = TEAM_RULE_PATCHES.find((x) => x.collectionName === collectionName);
   if (!p) {
-    throw new Error(`teams: missing TEAM_RULE_PATCHES entry for "${collectionName}"`);
+    throw new Error(
+      `teams: missing TEAM_RULE_PATCHES entry for "${collectionName}"`,
+    );
   }
   return {
     listRule: p.listRule,

@@ -1,4 +1,11 @@
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+} from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
@@ -24,13 +31,19 @@ const SLUG_TO_FEATURE: Partial<Record<string, keyof Features>> = {
 };
 
 function usage(): never {
-  console.error("Usage: npm run demo -- <category> <name> [argv...] [, <category> <name> [argv...]]...");
+  console.error(
+    "Usage: npm run demo -- <category> <name> [argv...] [, <category> <name> [argv...]]...",
+  );
   console.error("");
   console.error("Examples:");
   console.error("  npm run demo -- enable auth");
   console.error("  npm run demo -- enable auth, enable teams");
-  console.error("  npm run demo -- enable auth, enable api-keys, generate form contact name:text");
-  console.error("  npm run demo -- generate scaffold posts title:text body:editor");
+  console.error(
+    "  npm run demo -- enable auth, enable api-keys, generate form contact name:text",
+  );
+  console.error(
+    "  npm run demo -- generate scaffold posts title:text body:editor",
+  );
   console.error("");
   console.error("Available patterns:");
   for (const p of patterns) {
@@ -39,7 +52,11 @@ function usage(): never {
   process.exit(1);
 }
 
-function run(command: string, args: string[], opts: { cwd?: string; env?: NodeJS.ProcessEnv } = {}) {
+function run(
+  command: string,
+  args: string[],
+  opts: { cwd?: string; env?: NodeJS.ProcessEnv } = {},
+) {
   const result = spawnSync(command, args, { stdio: "inherit", ...opts });
   if (result.status !== 0) {
     console.error(`\nCommand failed: ${command} ${args.join(" ")}`);
@@ -64,7 +81,11 @@ function cacheKey(packageJsonPath: string): string {
 
 function restoreCache(cacheDir: string, projectRoot: string) {
   // cp -rl creates a recursive hard-linked copy — instant and zero extra disk space.
-  run("cp", ["-rl", path.join(cacheDir, "node_modules"), path.join(projectRoot, "node_modules")]);
+  run("cp", [
+    "-rl",
+    path.join(cacheDir, "node_modules"),
+    path.join(projectRoot, "node_modules"),
+  ]);
   const lockFile = path.join(cacheDir, "package-lock.json");
   if (existsSync(lockFile)) {
     copyFileSync(lockFile, path.join(projectRoot, "package-lock.json"));
@@ -73,7 +94,11 @@ function restoreCache(cacheDir: string, projectRoot: string) {
 
 function saveCache(cacheDir: string, projectRoot: string) {
   mkdirSync(cacheDir, { recursive: true });
-  run("cp", ["-rl", path.join(projectRoot, "node_modules"), path.join(cacheDir, "node_modules")]);
+  run("cp", [
+    "-rl",
+    path.join(projectRoot, "node_modules"),
+    path.join(cacheDir, "node_modules"),
+  ]);
   const lockFile = path.join(projectRoot, "package-lock.json");
   if (existsSync(lockFile)) {
     copyFileSync(lockFile, path.join(cacheDir, "package-lock.json"));
@@ -101,7 +126,9 @@ interface ParsedCommand {
 
 function parseCommand(tokens: string[]): ParsedCommand {
   if (tokens.length < 2) {
-    console.error(`Invalid command: "${tokens.join(" ")}" — expected <category> <name> [argv...]`);
+    console.error(
+      `Invalid command: "${tokens.join(" ")}" — expected <category> <name> [argv...]`,
+    );
     usage();
   }
   const [category, name, ...argv] = tokens;
@@ -120,7 +147,9 @@ if (args.length === 0) usage();
 const commands = splitCommands(args).map(parseCommand);
 if (commands.length === 0) usage();
 
-const dirSuffix = commands.map((c) => c.slug.replace(/^(enable|generate)-/, "")).join("+");
+const dirSuffix = commands
+  .map((c) => c.slug.replace(/^(enable|generate)-/, ""))
+  .join("+");
 
 mkdirSync(INTEGRATION_ROOT, { recursive: true });
 const tempRoot = mkdtempSync(path.join(INTEGRATION_ROOT, `demo-${dirSuffix}-`));
@@ -210,7 +239,9 @@ for (const [index, { slug, argv, pattern }] of commands.entries()) {
     payments: features.payments || (pattern.requires.payments ?? false),
   };
 
-  console.log(`\n[${index + 1}/${commands.length}] Applying ${slug}${argv.length ? ` ${argv.join(" ")}` : ""}\n`);
+  console.log(
+    `\n[${index + 1}/${commands.length}] Applying ${slug}${argv.length ? ` ${argv.join(" ")}` : ""}\n`,
+  );
 
   const result = await pattern.generate({
     argv,

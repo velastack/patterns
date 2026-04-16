@@ -8,7 +8,10 @@ import { modifyAppHtml } from "./modifies/app-html";
 import { modifyGitignore } from "./modifies/gitignore";
 import { ensureRootLayoutI18n } from "./modifies/+layout";
 
-function findFirstExistingFile(root: string, candidates: string[]): string | null {
+function findFirstExistingFile(
+  root: string,
+  candidates: string[],
+): string | null {
   for (const relPath of candidates) {
     const absPath = path.join(root, relPath);
     if (fs.existsSync(absPath)) {
@@ -53,11 +56,19 @@ export async function generate(options: Options) {
     "svelte.config.cjs",
   ]);
   if (svelteConfigPath) {
-    pushIfChanged(modifies, svelteConfigPath, modifySvelteConfig(svelteConfigPath));
+    pushIfChanged(
+      modifies,
+      svelteConfigPath,
+      modifySvelteConfig(svelteConfigPath),
+    );
   }
 
   const hooksServerPath = path.join(options.root, "src", "hooks.server.ts");
-  pushIfChanged(modifies, hooksServerPath, modifyHooksServerI18n(hooksServerPath));
+  pushIfChanged(
+    modifies,
+    hooksServerPath,
+    modifyHooksServerI18n(hooksServerPath),
+  );
 
   const appHtmlPath = path.join(options.root, "src", "app.html");
   pushIfChanged(modifies, appHtmlPath, modifyAppHtml(appHtmlPath));

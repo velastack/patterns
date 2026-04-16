@@ -142,7 +142,8 @@ function zodSchemaForField(
           `;
       break;
     case "relation":
-      schema = (field.maxSelect ?? 1) > 1 ? "z.array(z.string())" : "z.string()";
+      schema =
+        (field.maxSelect ?? 1) > 1 ? "z.array(z.string())" : "z.string()";
       break;
     default: {
       const exhaustiveType: never = field.type;
@@ -184,15 +185,28 @@ export function generateSchemaSnippet(
   for (const field of fields) {
     if (field.type === "file" && field.maxSelect > 1) {
       allFields.push({ ...field, required: false });
-      allFields.push({ name: `${field.name}+`, type: "file", required: false, maxSelect: 999 });
-      allFields.push({ name: `${field.name}-`, type: "file", required: false, maxSelect: 999 });
+      allFields.push({
+        name: `${field.name}+`,
+        type: "file",
+        required: false,
+        maxSelect: 999,
+      });
+      allFields.push({
+        name: `${field.name}-`,
+        type: "file",
+        required: false,
+        maxSelect: 999,
+      });
       continue;
     }
     allFields.push(field);
   }
 
   const schemaFields = allFields
-    .map((field) => `${escapeFieldName(field.name)}: ${zodSchemaForField(field, options)}`)
+    .map(
+      (field) =>
+        `${escapeFieldName(field.name)}: ${zodSchemaForField(field, options)}`,
+    )
     .join(",\n  ");
 
   const modelTypeImport = options.includeModelFields
@@ -214,7 +228,9 @@ export function generateSchemaSnippet(
 function normalizeType(type: string): Field["type"] {
   const normalized = TYPE_ALIASES[type];
   if (!normalized) {
-    throw new Error(`Unsupported collection field type "${type}" when generating from collection`);
+    throw new Error(
+      `Unsupported collection field type "${type}" when generating from collection`,
+    );
   }
   return normalized;
 }
@@ -330,7 +346,10 @@ export function inferPrimaryField(fields: Field[]): Field | undefined {
 
 export function relationExpandParam(fields: Field[]): string | undefined {
   const names = fields
-    .filter((field): field is Extract<Field, { type: "relation" }> => field.type === "relation")
+    .filter(
+      (field): field is Extract<Field, { type: "relation" }> =>
+        field.type === "relation",
+    )
     .map((field) => field.name);
   return names.length > 0 ? names.join(",") : undefined;
 }
@@ -339,7 +358,8 @@ export function uniqueRelationCollections(
   fields: Field[],
 ): Array<Extract<Field, { type: "relation" }>["relatedModel"]> {
   const seen = new Set<string>();
-  const models: Array<Extract<Field, { type: "relation" }>["relatedModel"]> = [];
+  const models: Array<Extract<Field, { type: "relation" }>["relatedModel"]> =
+    [];
 
   for (const field of fields) {
     if (field.type !== "relation") continue;
@@ -351,7 +371,10 @@ export function uniqueRelationCollections(
   return models;
 }
 
-export function routeWithId(routeSegment: string, idExpression: string): string {
+export function routeWithId(
+  routeSegment: string,
+  idExpression: string,
+): string {
   return `/${routeSegment}/\${${idExpression}}`;
 }
 

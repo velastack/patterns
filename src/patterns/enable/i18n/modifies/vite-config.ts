@@ -44,7 +44,10 @@ export function modifyViteConfig(viteConfigPath: string) {
 
   const pluginsProp = configObj.getProperty("plugins");
   if (!pluginsProp) {
-    configObj.addPropertyAssignment({ name: "plugins", initializer: "[wuchale()]" });
+    configObj.addPropertyAssignment({
+      name: "plugins",
+      initializer: "[wuchale()]",
+    });
     sourceFile.formatText();
     sourceFile.saveSync();
     return true;

@@ -48,7 +48,9 @@ export function modifyHooksServer(hooksServerPath: string) {
   }
 
   if (apiProp.getKind() === SyntaxKind.PropertyAssignment) {
-    const apiInit = (apiProp as import("ts-morph").PropertyAssignment).getInitializer();
+    const apiInit = (
+      apiProp as import("ts-morph").PropertyAssignment
+    ).getInitializer();
     if (apiInit && apiInit.getKind() === SyntaxKind.ObjectLiteralExpression) {
       const apiObj = apiInit as import("ts-morph").ObjectLiteralExpression;
       const enabledProp = apiObj.getProperty("enabled");
@@ -63,12 +65,21 @@ export function modifyHooksServer(hooksServerPath: string) {
           initializer: `{ enabled: true }`,
         });
       } else if (apiKeysProp.getKind() === SyntaxKind.PropertyAssignment) {
-        const keysInit = (apiKeysProp as import("ts-morph").PropertyAssignment).getInitializer();
-        if (keysInit && keysInit.getKind() === SyntaxKind.ObjectLiteralExpression) {
-          const keysObj = keysInit as import("ts-morph").ObjectLiteralExpression;
+        const keysInit = (
+          apiKeysProp as import("ts-morph").PropertyAssignment
+        ).getInitializer();
+        if (
+          keysInit &&
+          keysInit.getKind() === SyntaxKind.ObjectLiteralExpression
+        ) {
+          const keysObj =
+            keysInit as import("ts-morph").ObjectLiteralExpression;
           const keysEnabled = keysObj.getProperty("enabled");
           if (!keysEnabled) {
-            keysObj.addPropertyAssignment({ name: "enabled", initializer: "true" });
+            keysObj.addPropertyAssignment({
+              name: "enabled",
+              initializer: "true",
+            });
           }
         } else {
           (apiKeysProp as import("ts-morph").PropertyAssignment).setInitializer(

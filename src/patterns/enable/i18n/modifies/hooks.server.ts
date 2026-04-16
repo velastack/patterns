@@ -47,7 +47,9 @@ export function modifyHooksServerI18n(hooksServerPath: string) {
   const handleDecl = sourceFile.getVariableDeclaration("handle");
   if (!handleDecl) return false;
 
-  const handleStmt = handleDecl.getFirstAncestorByKind(SyntaxKind.VariableStatement);
+  const handleStmt = handleDecl.getFirstAncestorByKind(
+    SyntaxKind.VariableStatement,
+  );
   if (!handleStmt?.hasExportKeyword()) {
     return false;
   }
@@ -57,7 +59,11 @@ export function modifyHooksServerI18n(hooksServerPath: string) {
   ensureNamedImport(sourceFile, "wuchale/load-utils/server", "loadLocales");
   ensureNamedImport(sourceFile, "$locales/main.url", "getLocale");
   ensureNamedImport(sourceFile, "$locales/data", "locales");
-  ensureNamespaceImport(sourceFile, "$locales/main.loader.server.svelte.js", "main");
+  ensureNamespaceImport(
+    sourceFile,
+    "$locales/main.loader.server.svelte.js",
+    "main",
+  );
   ensureNamespaceImport(sourceFile, "$locales/js.loader.server.js", "js");
 
   const statements = sourceFile.getStatements();

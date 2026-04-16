@@ -1,7 +1,11 @@
 import path from "node:path";
 import fs from "node:fs";
 import { Options, Result, File } from "../../../core/types";
-import { getMigrationFile, migrationDelay, withPocketbase } from "../../../runtime/pocketbase";
+import {
+  getMigrationFile,
+  migrationDelay,
+  withPocketbase,
+} from "../../../runtime/pocketbase";
 
 import { modifyLayoutServer } from "./modifies/+layout.server";
 import { modifyRootLayoutSvelte } from "./modifies/root-layout.svelte";

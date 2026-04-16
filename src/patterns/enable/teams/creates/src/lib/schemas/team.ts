@@ -1,5 +1,5 @@
-import { z } from 'zod/v3';
+import { z } from "zod/v3";
 
 export const teamSchema = z.object({
-	name: z.string()
+  name: z.string(),
 });

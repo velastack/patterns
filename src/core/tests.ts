@@ -55,7 +55,9 @@ function fixtureObjectToCode(data: Record<string, FixtureValue>): string {
   return `{ ${entries.join(", ")} }`;
 }
 
-function fieldTypeFromCollectionField(rawType: string): Field["type"] | undefined {
+function fieldTypeFromCollectionField(
+  rawType: string,
+): Field["type"] | undefined {
   switch (rawType) {
     case "text":
     case "number":
@@ -165,7 +167,11 @@ function fixtureDataFromFields(
       continue;
     }
 
-    if (options.authEnabled && field.type === "relation" && field.isCurrentUser) {
+    if (
+      options.authEnabled &&
+      field.type === "relation" &&
+      field.isCurrentUser
+    ) {
       if (!options.forForm) {
         data[field.name] = new RawExpression("context.user.id");
       }
@@ -206,7 +212,8 @@ function fixtureDataFromCollectionFields(
     if (type === "relation") {
       value = field.collectionId
         ? new RawExpression(
-            relationIdsByCollectionId[field.collectionId] ?? '"missing-relation-id"',
+            relationIdsByCollectionId[field.collectionId] ??
+              '"missing-relation-id"',
           )
         : undefined;
     } else if (type === "select") {
@@ -297,7 +304,10 @@ function uniqueVarName(base: string, used: Set<string>): string {
   return name;
 }
 
-function fallbackCollectionFromFields(model: Model, fields: Field[]): Collection {
+function fallbackCollectionFromFields(
+  model: Model,
+  fields: Field[],
+): Collection {
   return {
     id: `generated-${model.tableName}`,
     name: model.tableName,
@@ -344,16 +354,20 @@ function relationDependencyContext(
     collections.find((entry) => entry.name === model.tableName) ??
     fallbackCollectionFromFields(model, fields);
 
-  const dependencies = orderedDependencyCollections(collection, collections).filter(
-    (entry) => !(options.features.auth && entry.name === "users"),
-  );
+  const dependencies = orderedDependencyCollections(
+    collection,
+    collections,
+  ).filter((entry) => !(options.features.auth && entry.name === "users"));
 
   const relationIdsByCollectionId: Record<string, string> = {};
   const dependencyVars: Array<{ varName: string; collection: Collection }> = [];
   const usedVarNames = new Set<string>();
 
   for (const dependency of dependencies) {
-    const varName = uniqueVarName(parseModel(dependency.name, options).name, usedVarNames);
+    const varName = uniqueVarName(
+      parseModel(dependency.name, options).name,
+      usedVarNames,
+    );
     dependencyVars.push({ varName, collection: dependency });
     relationIdsByCollectionId[dependency.id] = `${varName}.id`;
   }
@@ -362,17 +376,19 @@ function relationDependencyContext(
     ? `${dependencyVars.map((dependency) => `let ${dependency.varName}: { id: string };`).join("\n")}\n\n`
     : "";
 
-  const setupLines = dependencyVars.map(({ varName, collection: dependency }) => {
-    const payload = fixtureDataFromCollectionFields(
-      dependency.fields as RuntimeCollectionField[],
-      relationIdsByCollectionId,
-      options,
-    );
-    if (dependency.type === "auth") {
-      ensureAuthCollectionFixture(payload);
-    }
-    return `${varName} = await context.admin.collection("${dependency.name}").create(${fixtureObjectToCode(payload)});`;
-  });
+  const setupLines = dependencyVars.map(
+    ({ varName, collection: dependency }) => {
+      const payload = fixtureDataFromCollectionFields(
+        dependency.fields as RuntimeCollectionField[],
+        relationIdsByCollectionId,
+        options,
+      );
+      if (dependency.type === "auth") {
+        ensureAuthCollectionFixture(payload);
+      }
+      return `${varName} = await context.admin.collection("${dependency.name}").create(${fixtureObjectToCode(payload)});`;
+    },
+  );
 
   const cleanupLines = dependencyVars
     .slice()
@@ -382,9 +398,11 @@ function relationDependencyContext(
         `await context.admin.collection("${dependency.name}").delete(${varName}.id);`,
     );
 
-  const requestAgent = options.features.auth ? "context.agent" : "context.request";
+  const requestAgent = options.features.auth
+    ? "context.agent"
+    : "context.request";
   const authSetup = options.features.auth
-    ? 'await context.agent.authenticateUser();\n      '
+    ? "await context.agent.authenticateUser();\n      "
     : "";
 
   let setupSection = "";
@@ -432,8 +450,13 @@ export function generateScaffoldServerTestSnippet(
   options: Options,
   collections: Collection[],
 ): string {
-  const { declarations, setupSection, requestAgent, modelDbData, modelFormData } =
-    relationDependencyContext(model, fields, options, collections);
+  const {
+    declarations,
+    setupSection,
+    requestAgent,
+    modelDbData,
+    modelFormData,
+  } = relationDependencyContext(model, fields, options, collections);
 
   return dedent`
     import { afterEach, beforeEach, describe, expect, it } from "vitest";

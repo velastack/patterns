@@ -1,5 +1,10 @@
 import fs from "node:fs";
-import { Project, QuoteKind, SyntaxKind, type ObjectLiteralExpression } from "ts-morph";
+import {
+  Project,
+  QuoteKind,
+  SyntaxKind,
+  type ObjectLiteralExpression,
+} from "ts-morph";
 
 function getOrCreateObjectLiteralProperty(
   obj: ObjectLiteralExpression,
@@ -10,9 +15,13 @@ function getOrCreateObjectLiteralProperty(
   if (!prop) {
     obj.addPropertyAssignment({ name, initializer });
     const added = obj.getProperty(name);
-    if (!added || added.getKind() !== SyntaxKind.PropertyAssignment) return null;
-    const init = (added as import("ts-morph").PropertyAssignment).getInitializer();
-    if (!init || init.getKind() !== SyntaxKind.ObjectLiteralExpression) return null;
+    if (!added || added.getKind() !== SyntaxKind.PropertyAssignment)
+      return null;
+    const init = (
+      added as import("ts-morph").PropertyAssignment
+    ).getInitializer();
+    if (!init || init.getKind() !== SyntaxKind.ObjectLiteralExpression)
+      return null;
     return init as ObjectLiteralExpression;
   }
 
@@ -21,7 +30,9 @@ function getOrCreateObjectLiteralProperty(
   if (!init) return null;
   if (init.getKind() !== SyntaxKind.ObjectLiteralExpression) {
     (prop as import("ts-morph").PropertyAssignment).setInitializer(initializer);
-    const init2 = (prop as import("ts-morph").PropertyAssignment).getInitializer();
+    const init2 = (
+      prop as import("ts-morph").PropertyAssignment
+    ).getInitializer();
     return init2 && init2.getKind() === SyntaxKind.ObjectLiteralExpression
       ? (init2 as ObjectLiteralExpression)
       : null;
@@ -39,7 +50,9 @@ export function modifySvelteConfig(svelteConfigPath: string) {
   });
   const sourceFile = project.addSourceFileAtPath(svelteConfigPath);
 
-  const defaultExport = sourceFile.getExportAssignment((ea) => !ea.isExportEquals());
+  const defaultExport = sourceFile.getExportAssignment(
+    (ea) => !ea.isExportEquals(),
+  );
   const exportedExpr = defaultExport?.getExpression();
 
   let configObj: ObjectLiteralExpression | null = null;
@@ -64,14 +77,19 @@ export function modifySvelteConfig(svelteConfigPath: string) {
 
   const existingLocales = aliasObj.getProperty("$locales");
   if (!existingLocales) {
-    aliasObj.addPropertyAssignment({ name: "$locales", initializer: "'src/locales'" });
+    aliasObj.addPropertyAssignment({
+      name: "$locales",
+      initializer: "'src/locales'",
+    });
     sourceFile.formatText();
     sourceFile.saveSync();
     return true;
   }
 
   if (existingLocales.getKind() !== SyntaxKind.PropertyAssignment) return false;
-  const init = (existingLocales as import("ts-morph").PropertyAssignment).getInitializer();
+  const init = (
+    existingLocales as import("ts-morph").PropertyAssignment
+  ).getInitializer();
   const current = init?.getText()?.replace(/['"`]/g, "");
   if (current === "src/locales") return false;
 
