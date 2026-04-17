@@ -5,6 +5,7 @@ import {
   ensureImports,
   withInMemoryScript,
 } from "../../../../runtime/ts-morph-helpers";
+import type { ModifyOutcome } from "../../../../core/types";
 
 const NEW_HEADER = `<Sidebar.Header>
 		<Sidebar.Menu>
@@ -37,6 +38,36 @@ const NEW_HEADER = `<Sidebar.Header>
 			</TeamSwitcher>
 		</Sidebar.Menu>
 	</Sidebar.Header>`;
+
+const IMPORT_SNIPPET = [
+  "import TeamSwitcher from '$lib/components/team-switcher.svelte';",
+  "import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';",
+  "import * as Avatar from '$lib/components/ui/avatar';",
+].join("\n");
+
+const FAILURE_HINT = [
+  "Replace the <Sidebar.Header> in your app sidebar with the team switcher.",
+  "",
+  "Imports to add to the <script> tag:",
+  "",
+  IMPORT_SNIPPET,
+  "",
+  "Props to destructure in $props(): team, teams = []",
+  "",
+  "Markup to use as the header:",
+  NEW_HEADER,
+].join("\n");
+
+const NOT_FOUND_HINT = [
+  "Create an app sidebar with a <Sidebar.Header> containing the team switcher.",
+  "",
+  "Imports:",
+  "",
+  IMPORT_SNIPPET,
+  "",
+  "Header markup:",
+  NEW_HEADER,
+].join("\n");
 
 function updateAppSidebarScript(source: string): string {
   const { source: out } = withInMemoryScript(source, (sf) => {
@@ -103,15 +134,21 @@ function updateAppSidebarScript(source: string): string {
   return out;
 }
 
-export function modifyAppSidebar(appSidebarPath: string): boolean {
-  if (!fs.existsSync(appSidebarPath)) return false;
+export function modifyAppSidebar(appSidebarPath: string): ModifyOutcome {
+  if (!fs.existsSync(appSidebarPath)) {
+    return { status: "not-found", message: NOT_FOUND_HINT };
+  }
 
   const file = SvelteFile.fromPath(appSidebarPath);
-  if (file.hasElement("TeamSwitcher")) return false;
-  if (!file.hasElement("Sidebar.Header")) return false;
+  if (file.hasElement("TeamSwitcher")) {
+    return { status: "success", changed: false };
+  }
+  if (!file.hasElement("Sidebar.Header")) {
+    return { status: "failed", message: FAILURE_HINT };
+  }
 
   file.modifyScript(updateAppSidebarScript);
   file.replaceElement("Sidebar.Header", NEW_HEADER);
   file.writeTo(appSidebarPath);
-  return file.hasChanged();
+  return { status: "success", changed: file.hasChanged() };
 }

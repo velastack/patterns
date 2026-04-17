@@ -296,14 +296,17 @@ export async function writeResult(
   runtime?: WriteResultRuntime,
 ): Promise<Result> {
   for (const file of result.creates) {
+    if (file.status !== "success") continue;
     writeFile(toTargetPath(options.root, file.path), file.content);
   }
 
   for (const file of result.modifies) {
+    if (file.status !== "success") continue;
     writeFile(toTargetPath(options.root, file.path), file.content);
   }
 
   for (const file of result.deletes) {
+    if (file.status !== "success") continue;
     removeFile(toTargetPath(options.root, file.path));
   }
 

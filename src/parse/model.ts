@@ -1,6 +1,7 @@
 import * as changeCase from "change-case";
 import pluralize from "pluralize";
 import { APP_DIR, PUBLIC_DIR } from "../core/constants";
+import { InvalidArgumentError } from "../core/errors";
 import type { Options } from "../core/types";
 import type { Model, ModelPaths, ModelUrls } from "./types";
 
@@ -117,7 +118,7 @@ export function safeVarName(str: string): string {
 
 export function validateModelName(model: string): void {
   if (!/^[a-zA-Z][a-zA-Z0-9-_/]*$/.test(model)) {
-    throw new Error(
+    throw new InvalidArgumentError(
       "Model path must start with a letter and contain only alphanumeric characters, dash, slash, or underscore",
     );
   }

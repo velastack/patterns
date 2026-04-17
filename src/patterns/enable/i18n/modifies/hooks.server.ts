@@ -1,6 +1,59 @@
 import fs from "node:fs";
 import dedent from "dedent";
 import { Project, QuoteKind, SyntaxKind } from "ts-morph";
+import type { ModifyOutcome } from "../../../../core/types";
+
+const FAILURE_HINT = dedent`
+  Wrap your exported handle with the wuchale i18n handler:
+
+  import { sequence } from '@sveltejs/kit/hooks';
+  import { runWithLocale, loadLocales } from 'wuchale/load-utils/server';
+  import { getLocale } from '$locales/main.url';
+  import { locales } from '$locales/data';
+  import * as main from '$locales/main.loader.server.svelte.js';
+  import * as js from '$locales/js.loader.server.js';
+
+  loadLocales(main.key, main.loadIDs, main.loadCatalog, locales);
+  loadLocales(js.key, js.loadIDs, js.loadCatalog, locales);
+
+  const handleWuchale = async ({ event, resolve }: any) => {
+    const locale = getLocale(event.url);
+    return await runWithLocale(locale, () =>
+      resolve(event, {
+        transformPageChunk: ({ html }: { html: string }) =>
+          html.replace('%sveltekit.lang%', locale),
+      }),
+    );
+  };
+
+  export const handle = sequence(handleWuchale, /* your existing handle */);
+`;
+
+const NOT_FOUND_HINT = dedent`
+  Create src/hooks.server.ts with an i18n handle:
+
+  import { sequence } from '@sveltejs/kit/hooks';
+  import { runWithLocale, loadLocales } from 'wuchale/load-utils/server';
+  import { getLocale } from '$locales/main.url';
+  import { locales } from '$locales/data';
+  import * as main from '$locales/main.loader.server.svelte.js';
+  import * as js from '$locales/js.loader.server.js';
+
+  loadLocales(main.key, main.loadIDs, main.loadCatalog, locales);
+  loadLocales(js.key, js.loadIDs, js.loadCatalog, locales);
+
+  const handleWuchale = async ({ event, resolve }: any) => {
+    const locale = getLocale(event.url);
+    return await runWithLocale(locale, () =>
+      resolve(event, {
+        transformPageChunk: ({ html }: { html: string }) =>
+          html.replace('%sveltekit.lang%', locale),
+      }),
+    );
+  };
+
+  export const handle = handleWuchale;
+`;
 
 function ensureNamedImport(
   sourceFile: import("ts-morph").SourceFile,
@@ -30,12 +83,14 @@ function ensureNamespaceImport(
   sourceFile.addImportDeclaration({ namespaceImport: ns, moduleSpecifier });
 }
 
-export function modifyHooksServerI18n(hooksServerPath: string) {
-  if (!fs.existsSync(hooksServerPath)) return false;
+export function modifyHooksServerI18n(hooksServerPath: string): ModifyOutcome {
+  if (!fs.existsSync(hooksServerPath)) {
+    return { status: "not-found", message: NOT_FOUND_HINT };
+  }
 
   const original = fs.readFileSync(hooksServerPath, "utf8");
   if (original.includes("runWithLocale") || original.includes("loadLocales(")) {
-    return false;
+    return { status: "success", changed: false };
   }
 
   const project = new Project({
@@ -45,13 +100,15 @@ export function modifyHooksServerI18n(hooksServerPath: string) {
   const sourceFile = project.addSourceFileAtPath(hooksServerPath);
 
   const handleDecl = sourceFile.getVariableDeclaration("handle");
-  if (!handleDecl) return false;
+  if (!handleDecl) {
+    return { status: "failed", message: FAILURE_HINT };
+  }
 
   const handleStmt = handleDecl.getFirstAncestorByKind(
     SyntaxKind.VariableStatement,
   );
   if (!handleStmt?.hasExportKeyword()) {
-    return false;
+    return { status: "failed", message: FAILURE_HINT };
   }
 
   ensureNamedImport(sourceFile, "@sveltejs/kit/hooks", "sequence");
@@ -97,15 +154,17 @@ export function modifyHooksServerI18n(hooksServerPath: string) {
   }
 
   const init = handleDecl.getInitializer();
-  if (!init) return false;
+  if (!init) {
+    return { status: "failed", message: FAILURE_HINT };
+  }
 
   const initText = init.getText();
   if (initText.includes(i18nHandleName) || initText.includes("runWithLocale")) {
-    return false;
+    return { status: "success", changed: false };
   }
 
   handleDecl.setInitializer(`sequence(${i18nHandleName}, ${initText})`);
   sourceFile.formatText();
   sourceFile.saveSync();
-  return true;
+  return { status: "success", changed: true };
 }

@@ -119,14 +119,17 @@ describe("enable i18n modifiers", () => {
     expect(secondVite).toBe(firstVite);
   });
 
-  it("does not modify hooks.server.ts when there is no exported handle", () => {
+  it("reports failure for hooks.server.ts when there is no exported handle", () => {
     const filePath = path.join(tempDir, "hooks.server.no-handle.ts");
     const original = fs.readFileSync(filePath, "utf8");
 
-    const changed = modifyHooksServerI18n(filePath);
+    const outcome = modifyHooksServerI18n(filePath);
     const modified = fs.readFileSync(filePath, "utf8");
 
-    expect(changed).toBe(false);
+    expect(outcome.status).toBe("failed");
+    if (outcome.status === "failed") {
+      expect(outcome.message).toContain("handle");
+    }
     expect(modified).toBe(original);
   });
 
@@ -134,14 +137,14 @@ describe("enable i18n modifiers", () => {
     const filePath = path.join(tempDir, "app-already.html");
     const original = fs.readFileSync(filePath, "utf8");
 
-    const changed = modifyAppHtml(filePath);
+    const outcome = modifyAppHtml(filePath);
     const modified = fs.readFileSync(filePath, "utf8");
 
-    expect(changed).toBe(false);
+    expect(outcome).toEqual({ status: "success", changed: false });
     expect(modified).toBe(original);
   });
 
-  it("does not replace an existing load export in +layout.ts", () => {
+  it("reports failure when +layout.ts already has a load export", () => {
     const layoutPath = path.join(tempDir, "src", "routes", "+layout.ts");
     fs.mkdirSync(path.dirname(layoutPath), { recursive: true });
     fs.writeFileSync(
@@ -150,14 +153,17 @@ describe("enable i18n modifiers", () => {
     );
 
     const original = fs.readFileSync(layoutPath, "utf8");
-    const changed = ensureRootLayoutI18n(layoutPath);
+    const outcome = ensureRootLayoutI18n(layoutPath);
     const modified = fs.readFileSync(layoutPath, "utf8");
 
-    expect(changed).toBe(false);
+    expect(outcome.status).toBe("failed");
+    if (outcome.status === "failed") {
+      expect(outcome.message).toContain("loadLocale");
+    }
     expect(modified).toBe(original);
   });
 
-  it("adds only the import for non-array vite plugins", () => {
+  it("reports failure for non-array vite plugins but still adds the import", () => {
     const filePath = path.join(tempDir, "vite.non-array.config.ts");
     fs.writeFileSync(
       filePath,
@@ -174,11 +180,20 @@ describe("enable i18n modifiers", () => {
       ].join("\n"),
     );
 
-    const changed = modifyViteConfig(filePath);
+    const outcome = modifyViteConfig(filePath);
     const modified = fs.readFileSync(filePath, "utf8");
 
-    expect(changed).toBe(true);
+    expect(outcome.status).toBe("failed");
     expect(modified).toContain(`import { wuchale } from 'wuchale/vite';`);
     expect(modified).not.toContain("wuchale()");
+  });
+
+  it("reports not-found when vite config is missing", () => {
+    const filePath = path.join(tempDir, "missing.vite.config.ts");
+    const outcome = modifyViteConfig(filePath);
+    expect(outcome.status).toBe("not-found");
+    if (outcome.status === "not-found") {
+      expect(outcome.message).toContain("wuchale");
+    }
   });
 });

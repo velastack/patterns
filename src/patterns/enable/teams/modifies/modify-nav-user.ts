@@ -1,6 +1,26 @@
 import fs from "node:fs";
 import { SvelteFile } from "../../../../runtime/svelte-file";
 import { addNavItemToScript } from "../../../../runtime/ts-morph-helpers";
+import type { ModifyOutcome } from "../../../../core/types";
+
+const TEAMS_NAV_SNIPPET = [
+  "import UsersIcon from '@lucide/svelte/icons/users';",
+  "",
+  "// Add to your navUser array:",
+  "{ title: 'Teams', url: '/teams', icon: UsersIcon }",
+].join("\n");
+
+const FAILURE_HINT = [
+  "Add a Teams nav item to nav-user.svelte:",
+  "",
+  TEAMS_NAV_SNIPPET,
+].join("\n");
+
+const NOT_FOUND_HINT = [
+  "Create nav-user.svelte with a Teams entry:",
+  "",
+  TEAMS_NAV_SNIPPET,
+].join("\n");
 
 export function addItemToNavUser(
   navUserSnippet: string,
@@ -33,10 +53,16 @@ export function addItemToNavUser(
   return { newNavUserSnippet: file.toString(), wasAdded };
 }
 
-export function modifyNavUser(navUserPath: string): boolean {
-  if (!fs.existsSync(navUserPath)) return false;
+export function modifyNavUser(navUserPath: string): ModifyOutcome {
+  if (!fs.existsSync(navUserPath)) {
+    return { status: "not-found", message: NOT_FOUND_HINT };
+  }
 
   const navUserSnippet = fs.readFileSync(navUserPath, "utf8");
+  if (navUserSnippet.includes("/teams")) {
+    return { status: "success", changed: false };
+  }
+
   const { newNavUserSnippet, wasAdded } = addItemToNavUser(
     navUserSnippet,
     "Teams",
@@ -45,9 +71,10 @@ export function modifyNavUser(navUserPath: string): boolean {
     "@lucide/svelte/icons/users",
   );
 
-  if (wasAdded) {
-    fs.writeFileSync(navUserPath, newNavUserSnippet, "utf8");
+  if (!wasAdded) {
+    return { status: "failed", message: FAILURE_HINT };
   }
 
-  return wasAdded;
+  fs.writeFileSync(navUserPath, newNavUserSnippet, "utf8");
+  return { status: "success", changed: true };
 }

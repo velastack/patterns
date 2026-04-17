@@ -11,7 +11,7 @@ function canFormatFile(file: File): boolean {
 }
 
 async function formatFile(file: File): Promise<File> {
-  if (!canFormatFile(file)) {
+  if (file.status !== "success" || !canFormatFile(file)) {
     return file;
   }
 

@@ -6,6 +6,7 @@ import {
   migrationDelay,
   withPocketbase,
 } from "../../../runtime/pocketbase";
+import { modifyOutcomeToFile } from "../../../runtime/modify-file";
 
 import { modifyLayoutServer } from "./modifies/+layout.server";
 import { modifyRootLayoutSvelte } from "./modifies/root-layout.svelte";
@@ -75,12 +76,16 @@ export async function generate(options: Options) {
         path: migrationFile,
         language: "ts",
         content: fs.readFileSync(migrationFile, "utf8"),
+        status: "success",
       });
     }
   });
 
   // Modify files
-  let modifies: File[] = [];
+  const modifies: File[] = [];
+  const pushResult = (file: File | null) => {
+    if (file) modifies.push(file);
+  };
 
   const layoutServerFile = path.join(
     options.root,
@@ -88,61 +93,28 @@ export async function generate(options: Options) {
     "routes",
     "+layout.server.ts",
   );
-
-  await modifyLayoutServer(layoutServerFile);
-  modifies.push({
-    path: layoutServerFile,
-    language: "ts",
-    content: fs.readFileSync(layoutServerFile, "utf8"),
-  });
+  pushResult(
+    modifyOutcomeToFile(layoutServerFile, modifyLayoutServer(layoutServerFile)),
+  );
 
   // TODO: make this more robust by searching for Navbar.Root > Navbar.List
   // src/routes/(public)/root-layout.svelte is what vela creates by default
-  let layoutFile = path.join(
-    options.root,
-    "src",
-    "routes",
-    "(public)",
-    "root-layout.svelte",
+  const layoutCandidates = [
+    path.join(options.root, "src", "routes", "(public)", "root-layout.svelte"),
+    path.join(options.root, "src", "routes", "root-layout.svelte"),
+    path.join(options.root, "src", "routes", "(public)", "+layout.svelte"),
+    path.join(options.root, "src", "routes", "+layout.svelte"),
+  ];
+  const layoutFile =
+    layoutCandidates.find((p) => fs.existsSync(p)) ?? layoutCandidates[0];
+  pushResult(
+    modifyOutcomeToFile(layoutFile, modifyRootLayoutSvelte(layoutFile)),
   );
 
-  if (!fs.existsSync(layoutFile)) {
-    layoutFile = path.join(options.root, "src", "routes", "root-layout.svelte");
-  }
-
-  if (!fs.existsSync(layoutFile)) {
-    layoutFile = path.join(
-      options.root,
-      "src",
-      "routes",
-      "(public)",
-      "+layout.svelte",
-    );
-  }
-
-  if (!fs.existsSync(layoutFile)) {
-    layoutFile = path.join(options.root, "src", "routes", "+layout.svelte");
-  }
-
-  if (fs.existsSync(layoutFile)) {
-    modifyRootLayoutSvelte(layoutFile);
-    modifies.push({
-      path: layoutFile,
-      language: "svelte",
-      content: fs.readFileSync(layoutFile, "utf8"),
-    });
-  }
-
   const hooksServerFile = path.join(options.root, "src", "hooks.server.ts");
-
-  if (fs.existsSync(hooksServerFile)) {
-    modifyHooksServer(hooksServerFile);
-    modifies.push({
-      path: hooksServerFile,
-      language: "ts",
-      content: fs.readFileSync(hooksServerFile, "utf8"),
-    });
-  }
+  pushResult(
+    modifyOutcomeToFile(hooksServerFile, modifyHooksServer(hooksServerFile)),
+  );
 
   return {
     creates: [],

@@ -1,11 +1,10 @@
 import fs from "node:fs";
 import dedent from "dedent";
 import { Project, SyntaxKind } from "ts-morph";
+import type { ModifyOutcome } from "../../../../core/types";
 
-export function modifyLayoutServer(layoutPath: string) {
+export function modifyLayoutServer(layoutPath: string): ModifyOutcome {
   if (!fs.existsSync(layoutPath)) {
-    // write file directly
-
     const snippet = dedent`
 			export const load = async ({ locals }) => {
 				return { user: locals.pb.authStore.record };
@@ -13,9 +12,10 @@ export function modifyLayoutServer(layoutPath: string) {
 		`;
 
     fs.writeFileSync(layoutPath, snippet);
-    return;
+    return { status: "success", changed: true };
   }
 
+  const originalSource = fs.readFileSync(layoutPath, "utf8");
   const project = new Project();
   const sourceFile = project.addSourceFileAtPath(layoutPath);
 
@@ -86,7 +86,7 @@ export function modifyLayoutServer(layoutPath: string) {
     });
     sourceFile.formatText();
     sourceFile.saveSync();
-    return;
+    return { status: "success", changed: true };
   }
 
   // normalize function-like to a single handle
@@ -188,4 +188,8 @@ export function modifyLayoutServer(layoutPath: string) {
 
   sourceFile.formatText();
   sourceFile.saveSync();
+  return {
+    status: "success",
+    changed: sourceFile.getFullText() !== originalSource,
+  };
 }

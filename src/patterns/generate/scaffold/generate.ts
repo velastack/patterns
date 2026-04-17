@@ -1,5 +1,6 @@
 import dedent from "dedent";
 import type { Component, File, Options, Result } from "../../../core/types";
+import { InvalidArgumentError } from "../../../core/errors";
 import { languageFromPath } from "../../../core/util";
 import { modelPaths, modelUrls, type Field, type Model } from "../../../parse";
 import {
@@ -21,7 +22,9 @@ import { generateScaffoldServerTestSnippet } from "../../../core/tests";
 function parsePatternArgs(argv: string[]) {
   const [modelPath, ...fields] = argv;
   if (!modelPath) {
-    throw new Error("Invalid command arguments. Expected: <model> [fields...]");
+    throw new InvalidArgumentError(
+      "Invalid command arguments. Expected: <model> [fields...]",
+    );
   }
 
   return { modelPath, fields };
@@ -32,6 +35,7 @@ function toFile(path: string, content: string): File {
     path,
     language: languageFromPath(path),
     content,
+    status: "success",
   };
 }
 

@@ -1,5 +1,6 @@
 import * as changeCase from "change-case";
 import pluralize from "pluralize";
+import { InvalidArgumentError } from "../core/errors";
 import type { Options } from "../core/types";
 import {
   collectionDisplayFieldMap,
@@ -284,7 +285,7 @@ function resolveField(
     const onCreate = name.includes("create");
     const onUpdate = name.includes("update");
     if (!onCreate && !onUpdate) {
-      throw new Error(
+      throw new InvalidArgumentError(
         `Invalid autodate field: ${name}. Must be one of created/created_at/updated/updated_at.`,
       );
     }
@@ -319,7 +320,7 @@ function resolveField(
     const singular = pluralize.singular(name);
     const plural = pluralize.plural(singular);
     if (!names.includes(plural)) {
-      throw new Error(
+      throw new InvalidArgumentError(
         `Invalid relation field: ${name}. Must be one of ${names.join(", ")} (singular or plural)`,
       );
     }
@@ -424,7 +425,7 @@ function resolveField(
       ] as string[]
     ).includes(type)
   ) {
-    throw new Error(
+    throw new InvalidArgumentError(
       `Invalid field type: ${type}. Valid types are: ${allValidTypes.join(", ").replace("relation", "references")}`,
     );
   }
@@ -444,13 +445,13 @@ export function resolveFields(
     const [name, rawType] = splitFieldDef(fieldDef);
 
     if (!name || !rawType) {
-      throw new Error(
+      throw new InvalidArgumentError(
         `Invalid field format: ${fieldDef}. Expected format: name:type or name:type!`,
       );
     }
 
     if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name)) {
-      throw new Error(
+      throw new InvalidArgumentError(
         `Invalid field name: ${name}. Must start with a letter and contain only alphanumeric characters`,
       );
     }

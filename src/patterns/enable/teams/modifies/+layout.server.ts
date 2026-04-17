@@ -1,8 +1,9 @@
 import fs from "node:fs";
 import dedent from "dedent";
 import { Project, SyntaxKind } from "ts-morph";
+import type { ModifyOutcome } from "../../../../core/types";
 
-export function modifyLayoutServer(layoutServerPath: string) {
+export function modifyLayoutServer(layoutServerPath: string): ModifyOutcome {
   if (!fs.existsSync(layoutServerPath)) {
     const snippet = dedent`
       export const load = async ({ locals, depends }) => {
@@ -17,9 +18,10 @@ export function modifyLayoutServer(layoutServerPath: string) {
     `;
 
     fs.writeFileSync(layoutServerPath, snippet);
-    return;
+    return { status: "success", changed: true };
   }
 
+  const originalSource = fs.readFileSync(layoutServerPath, "utf8");
   const project = new Project();
   const sourceFile = project.addSourceFileAtPath(layoutServerPath);
 
@@ -100,7 +102,7 @@ export function modifyLayoutServer(layoutServerPath: string) {
     });
     sourceFile.formatText();
     sourceFile.saveSync();
-    return;
+    return { status: "success", changed: true };
   }
 
   const fnLike:
@@ -291,4 +293,8 @@ export function modifyLayoutServer(layoutServerPath: string) {
 
   sourceFile.formatText();
   sourceFile.saveSync();
+  return {
+    status: "success",
+    changed: sourceFile.getFullText() !== originalSource,
+  };
 }

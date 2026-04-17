@@ -8,6 +8,7 @@ import {
   migrationDelay,
   withPocketbase,
 } from "../../../runtime/pocketbase";
+import { modifyOutcomeToFile } from "../../../runtime/modify-file";
 import { modifyAppLayoutSvelte } from "./modifies/modify-app-layout";
 import { modifyAppSidebar } from "./modifies/modify-app-sidebar";
 import { modifyLayoutServer } from "./modifies/+layout.server";
@@ -29,6 +30,7 @@ async function pushMigrationCreates(
     path: migrationFile,
     language: languageFromPath(migrationFile),
     content: fs.readFileSync(migrationFile, "utf8"),
+    status: "success",
   });
 }
 
@@ -287,6 +289,9 @@ export async function generate(options: Options) {
   });
 
   const modifies: File[] = [];
+  const pushResult = (file: File | null) => {
+    if (file) modifies.push(file);
+  };
 
   const layoutServerPath = path.join(
     options.root,
@@ -295,14 +300,9 @@ export async function generate(options: Options) {
     "(app)",
     "+layout.server.ts",
   );
-  if (fs.existsSync(layoutServerPath)) {
-    modifyLayoutServer(layoutServerPath);
-    modifies.push({
-      path: layoutServerPath,
-      language: "ts",
-      content: fs.readFileSync(layoutServerPath, "utf8"),
-    });
-  }
+  pushResult(
+    modifyOutcomeToFile(layoutServerPath, modifyLayoutServer(layoutServerPath)),
+  );
 
   const appLayoutPath = path.join(
     options.root,
@@ -311,13 +311,9 @@ export async function generate(options: Options) {
     "(app)",
     "+layout.svelte",
   );
-  if (fs.existsSync(appLayoutPath) && modifyAppLayoutSvelte(appLayoutPath)) {
-    modifies.push({
-      path: appLayoutPath,
-      language: "svelte",
-      content: fs.readFileSync(appLayoutPath, "utf8"),
-    });
-  }
+  pushResult(
+    modifyOutcomeToFile(appLayoutPath, modifyAppLayoutSvelte(appLayoutPath)),
+  );
 
   const appSidebarPath = path.join(
     options.root,
@@ -326,13 +322,9 @@ export async function generate(options: Options) {
     "components",
     "app-sidebar.svelte",
   );
-  if (fs.existsSync(appSidebarPath) && modifyAppSidebar(appSidebarPath)) {
-    modifies.push({
-      path: appSidebarPath,
-      language: "svelte",
-      content: fs.readFileSync(appSidebarPath, "utf8"),
-    });
-  }
+  pushResult(
+    modifyOutcomeToFile(appSidebarPath, modifyAppSidebar(appSidebarPath)),
+  );
 
   const navUserPath = path.join(
     options.root,
@@ -341,13 +333,7 @@ export async function generate(options: Options) {
     "components",
     "nav-user.svelte",
   );
-  if (modifyNavUser(navUserPath)) {
-    modifies.push({
-      path: navUserPath,
-      language: "svelte",
-      content: fs.readFileSync(navUserPath, "utf8"),
-    });
-  }
+  pushResult(modifyOutcomeToFile(navUserPath, modifyNavUser(navUserPath)));
 
   return {
     creates,

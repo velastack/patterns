@@ -72,6 +72,7 @@ describe("writeResult", () => {
             path: "src/new.ts",
             language: "ts",
             content: "export const a = 1;\n",
+            status: "success",
           },
         ],
         modifies: [
@@ -79,9 +80,17 @@ describe("writeResult", () => {
             path: modifyPath,
             language: "ts",
             content: "export const b = 2;\n",
+            status: "success",
           },
         ],
-        deletes: [{ path: "src/old.txt", language: "text", content: "" }],
+        deletes: [
+          {
+            path: "src/old.txt",
+            language: "text",
+            content: "",
+            status: "success",
+          },
+        ],
       },
       makeOptions(root),
       { executeCommand: vi.fn() },

@@ -107,8 +107,17 @@ export interface Pattern {
   generate: (options: Options) => Promise<Result>;
 }
 
+export type FileStatus = "success" | "failed" | "not-found";
+
 export interface File {
   path: string;
   language: string;
   content: string;
+  status: FileStatus;
+  message?: string;
 }
+
+export type ModifyOutcome =
+  | { status: "success"; changed: boolean }
+  | { status: "failed"; message: string }
+  | { status: "not-found"; message: string };

@@ -1,20 +1,17 @@
-import fs from "node:fs";
 import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
+import { modifyOutcomeToFile } from "../../../runtime/modify-file";
 import { modifyHooksServer } from "./modifies/hooks.server";
 
 export async function generate(options: Options) {
   const modifies: File[] = [];
 
   const hooksServerPath = path.join(options.root, "src", "hooks.server.ts");
-  if (fs.existsSync(hooksServerPath)) {
-    modifyHooksServer(hooksServerPath);
-    modifies.push({
-      path: hooksServerPath,
-      language: "ts",
-      content: fs.readFileSync(hooksServerPath, "utf8"),
-    });
-  }
+  const file = modifyOutcomeToFile(
+    hooksServerPath,
+    modifyHooksServer(hooksServerPath),
+  );
+  if (file) modifies.push(file);
 
   return {
     creates: [],

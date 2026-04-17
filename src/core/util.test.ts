@@ -50,7 +50,9 @@ describe("mergeResults", () => {
 
   it("concatenates all fields from multiple results in order", () => {
     const a: Result = {
-      creates: [{ path: "a.ts", language: "ts", content: "" }],
+      creates: [
+        { path: "a.ts", language: "ts", content: "", status: "success" },
+      ],
       modifies: [],
       deletes: [],
       components: ["A"],
@@ -59,8 +61,12 @@ describe("mergeResults", () => {
     };
     const b: Result = {
       creates: [],
-      modifies: [{ path: "b.ts", language: "ts", content: "" }],
-      deletes: [{ path: "old.ts", language: "ts", content: "" }],
+      modifies: [
+        { path: "b.ts", language: "ts", content: "", status: "success" },
+      ],
+      deletes: [
+        { path: "old.ts", language: "ts", content: "", status: "success" },
+      ],
       components: ["B"],
       packages: [],
       collections: [{ name: "invoices", type: "base", fields: [] }],

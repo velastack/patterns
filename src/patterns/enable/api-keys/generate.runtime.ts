@@ -6,6 +6,7 @@ import {
   migrationDelay,
   withPocketbase,
 } from "../../../runtime/pocketbase";
+import { modifyOutcomeToFile } from "../../../runtime/modify-file";
 import { modifyHooksServer } from "./modifies/hooks.server";
 import { modifyNavUser } from "./modifies/nav-user.svelte";
 
@@ -64,21 +65,20 @@ export async function generate(options: Options) {
         path: migrationFile,
         language: "ts",
         content: fs.readFileSync(migrationFile, "utf8"),
+        status: "success",
       });
     }
   });
 
   const modifies: File[] = [];
+  const pushResult = (file: File | null) => {
+    if (file) modifies.push(file);
+  };
 
   const hooksServerPath = path.join(options.root, "src", "hooks.server.ts");
-  if (fs.existsSync(hooksServerPath)) {
-    modifyHooksServer(hooksServerPath);
-    modifies.push({
-      path: hooksServerPath,
-      language: "ts",
-      content: fs.readFileSync(hooksServerPath, "utf8"),
-    });
-  }
+  pushResult(
+    modifyOutcomeToFile(hooksServerPath, modifyHooksServer(hooksServerPath)),
+  );
 
   const navUserPath = path.join(
     options.root,
@@ -87,13 +87,7 @@ export async function generate(options: Options) {
     "components",
     "nav-user.svelte",
   );
-  if (modifyNavUser(navUserPath)) {
-    modifies.push({
-      path: navUserPath,
-      language: "svelte",
-      content: fs.readFileSync(navUserPath, "utf8"),
-    });
-  }
+  pushResult(modifyOutcomeToFile(navUserPath, modifyNavUser(navUserPath)));
 
   return {
     creates,

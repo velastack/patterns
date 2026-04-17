@@ -5,6 +5,32 @@ import {
   SyntaxKind,
   type ObjectLiteralExpression,
 } from "ts-morph";
+import type { ModifyOutcome } from "../../../../core/types";
+
+const FAILURE_HINT = [
+  "Add the $locales alias to your Svelte config:",
+  "",
+  "kit: {",
+  "  alias: {",
+  "    $locales: 'src/locales',",
+  "  },",
+  "},",
+].join("\n");
+
+const NOT_FOUND_HINT = [
+  "Create a Svelte config with the $locales alias:",
+  "",
+  "/** @type {import('@sveltejs/kit').Config} */",
+  "const config = {",
+  "  kit: {",
+  "    alias: {",
+  "      $locales: 'src/locales',",
+  "    },",
+  "  },",
+  "};",
+  "",
+  "export default config;",
+].join("\n");
 
 function getOrCreateObjectLiteralProperty(
   obj: ObjectLiteralExpression,
@@ -41,8 +67,10 @@ function getOrCreateObjectLiteralProperty(
   return init as ObjectLiteralExpression;
 }
 
-export function modifySvelteConfig(svelteConfigPath: string) {
-  if (!fs.existsSync(svelteConfigPath)) return false;
+export function modifySvelteConfig(svelteConfigPath: string): ModifyOutcome {
+  if (!fs.existsSync(svelteConfigPath)) {
+    return { status: "not-found", message: NOT_FOUND_HINT };
+  }
 
   const project = new Project({
     compilerOptions: { allowJs: true },
@@ -67,13 +95,19 @@ export function modifySvelteConfig(svelteConfigPath: string) {
     }
   }
 
-  if (!configObj) return false;
+  if (!configObj) {
+    return { status: "failed", message: FAILURE_HINT };
+  }
 
   const kitObj = getOrCreateObjectLiteralProperty(configObj, "kit", "{}");
-  if (!kitObj) return false;
+  if (!kitObj) {
+    return { status: "failed", message: FAILURE_HINT };
+  }
 
   const aliasObj = getOrCreateObjectLiteralProperty(kitObj, "alias", "{}");
-  if (!aliasObj) return false;
+  if (!aliasObj) {
+    return { status: "failed", message: FAILURE_HINT };
+  }
 
   const existingLocales = aliasObj.getProperty("$locales");
   if (!existingLocales) {
@@ -83,20 +117,22 @@ export function modifySvelteConfig(svelteConfigPath: string) {
     });
     sourceFile.formatText();
     sourceFile.saveSync();
-    return true;
+    return { status: "success", changed: true };
   }
 
-  if (existingLocales.getKind() !== SyntaxKind.PropertyAssignment) return false;
+  if (existingLocales.getKind() !== SyntaxKind.PropertyAssignment) {
+    return { status: "failed", message: FAILURE_HINT };
+  }
   const init = (
     existingLocales as import("ts-morph").PropertyAssignment
   ).getInitializer();
   const current = init?.getText()?.replace(/['"`]/g, "");
-  if (current === "src/locales") return false;
+  if (current === "src/locales") return { status: "success", changed: false };
 
   (existingLocales as import("ts-morph").PropertyAssignment).setInitializer(
     "'src/locales'",
   );
   sourceFile.formatText();
   sourceFile.saveSync();
-  return true;
+  return { status: "success", changed: true };
 }

@@ -1,5 +1,6 @@
 import dedent from "dedent";
 import type { Component, File, Options, Result } from "../../../core/types";
+import { InvalidArgumentError } from "../../../core/errors";
 import { languageFromPath } from "../../../core/util";
 import {
   getFieldComponents,
@@ -29,10 +30,14 @@ function formPaths(modelPath: string, routesDir: string) {
 function parsePatternArgs(argv: string[]) {
   const [modelPath, ...fields] = argv;
   if (!modelPath) {
-    throw new Error("Invalid command arguments. Expected: <model> <fields...>");
+    throw new InvalidArgumentError(
+      "Invalid command arguments. Expected: <model> <fields...>",
+    );
   }
   if (fields.length === 0) {
-    throw new Error("At least one field definition is required.");
+    throw new InvalidArgumentError(
+      "At least one field definition is required.",
+    );
   }
 
   return { modelPath, fieldDefs: fields };
@@ -145,6 +150,7 @@ function toFile(path: string, content: string): File {
     path,
     language: languageFromPath(path),
     content,
+    status: "success",
   };
 }
 

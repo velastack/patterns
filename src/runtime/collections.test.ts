@@ -90,6 +90,7 @@ describe("createCollections", () => {
         path: migrationPath,
         language: "js",
         content: "migration-content",
+        status: "success",
       },
     ]);
   });
@@ -168,11 +169,13 @@ describe("applyCollectionRulePatches", () => {
         path: migrationPath,
         language: "js",
         content: "updated-migration",
+        status: "success",
       },
       {
         path: migrationPath,
         language: "js",
         content: "updated-migration",
+        status: "success",
       },
     ]);
   });

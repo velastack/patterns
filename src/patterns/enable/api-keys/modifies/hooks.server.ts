@@ -1,6 +1,38 @@
+import fs from "node:fs";
+import dedent from "dedent";
 import { Project, SyntaxKind } from "ts-morph";
+import type { ModifyOutcome } from "../../../../core/types";
 
-export function modifyHooksServer(hooksServerPath: string) {
+const FAILURE_HINT = dedent`
+  Configure handlePocketbase() with API keys in hooks.server.ts:
+
+  handlePocketbase({
+    api: {
+      enabled: true,
+      apiKeys: { enabled: true },
+    },
+  });
+`;
+
+const NOT_FOUND_HINT = dedent`
+  Create src/hooks.server.ts with handlePocketbase:
+
+  import { handlePocketbase } from 'velastack/handle';
+
+  export const handle = handlePocketbase({
+    api: {
+      enabled: true,
+      apiKeys: { enabled: true },
+    },
+  });
+`;
+
+export function modifyHooksServer(hooksServerPath: string): ModifyOutcome {
+  if (!fs.existsSync(hooksServerPath)) {
+    return { status: "not-found", message: NOT_FOUND_HINT };
+  }
+
+  const originalSource = fs.readFileSync(hooksServerPath, "utf8");
   const project = new Project();
   const sourceFile = project.addSourceFileAtPath(hooksServerPath);
 
@@ -9,8 +41,7 @@ export function modifyHooksServer(hooksServerPath: string) {
     .find((ce) => ce.getExpression().getText() === "handlePocketbase");
 
   if (!callExpr) {
-    sourceFile.saveSync();
-    return;
+    return { status: "failed", message: FAILURE_HINT };
   }
 
   const args = callExpr.getArguments();
@@ -20,7 +51,7 @@ export function modifyHooksServer(hooksServerPath: string) {
     );
     sourceFile.formatText();
     sourceFile.saveSync();
-    return;
+    return { status: "success", changed: true };
   }
 
   const firstArg = args[0];
@@ -31,7 +62,7 @@ export function modifyHooksServer(hooksServerPath: string) {
     );
     sourceFile.formatText();
     sourceFile.saveSync();
-    return;
+    return { status: "success", changed: true };
   }
 
   const optionsObj = firstArg.asKindOrThrow(SyntaxKind.ObjectLiteralExpression);
@@ -44,7 +75,7 @@ export function modifyHooksServer(hooksServerPath: string) {
     });
     sourceFile.formatText();
     sourceFile.saveSync();
-    return;
+    return { status: "success", changed: true };
   }
 
   if (apiProp.getKind() === SyntaxKind.PropertyAssignment) {
@@ -92,4 +123,8 @@ export function modifyHooksServer(hooksServerPath: string) {
 
   sourceFile.formatText();
   sourceFile.saveSync();
+  return {
+    status: "success",
+    changed: sourceFile.getFullText() !== originalSource,
+  };
 }

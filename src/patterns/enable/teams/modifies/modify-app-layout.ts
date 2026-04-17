@@ -1,17 +1,30 @@
 import fs from "node:fs";
 import { SvelteFile } from "../../../../runtime/svelte-file";
+import type { ModifyOutcome } from "../../../../core/types";
 
-export function modifyAppLayoutSvelte(layoutPath: string): boolean {
+const FAILURE_HINT = [
+  "Pass team props to <AppSidebar> in your app layout:",
+  "",
+  "<AppSidebar team={data.team} teams={data.teams ?? []} />",
+].join("\n");
+
+const NOT_FOUND_HINT = [
+  "Create an app layout that renders <AppSidebar> with team props:",
+  "",
+  "<AppSidebar team={data.team} teams={data.teams ?? []} />",
+].join("\n");
+
+export function modifyAppLayoutSvelte(layoutPath: string): ModifyOutcome {
   if (!fs.existsSync(layoutPath)) {
-    return false;
+    return { status: "not-found", message: NOT_FOUND_HINT };
   }
 
   const file = SvelteFile.fromPath(layoutPath);
-  if (
-    !file.hasElement("AppSidebar") ||
-    file.hasAttribute("AppSidebar", "teams")
-  ) {
-    return false;
+  if (!file.hasElement("AppSidebar")) {
+    return { status: "failed", message: FAILURE_HINT };
+  }
+  if (file.hasAttribute("AppSidebar", "teams")) {
+    return { status: "success", changed: false };
   }
 
   file.appendToAttributes(
@@ -19,5 +32,5 @@ export function modifyAppLayoutSvelte(layoutPath: string): boolean {
     " team={data.team} teams={data.teams ?? []}",
   );
   file.writeTo(layoutPath);
-  return file.hasChanged();
+  return { status: "success", changed: file.hasChanged() };
 }

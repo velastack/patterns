@@ -1,4 +1,5 @@
 import packageJson from "../package.json";
+export { InvalidArgumentError } from "./core/errors";
 import generateForm from "./patterns/generate/form";
 import generateResource from "./patterns/generate/resource";
 import generateScaffold from "./patterns/generate/scaffold";

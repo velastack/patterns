@@ -77,6 +77,7 @@ export async function applyCollectionRulePatches(
           path: migrationFile,
           language: languageFromPath(migrationFile),
           content: readFileSync(migrationFile, "utf8"),
+          status: "success",
         });
       }
     }
@@ -126,6 +127,7 @@ export async function createCollections(
         path: migrationFile,
         language: languageFromPath(migrationFile),
         content: readFileSync(migrationFile, "utf8"),
+        status: "success",
       });
     }
   });

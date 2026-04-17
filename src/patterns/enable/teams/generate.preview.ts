@@ -18,6 +18,7 @@ export async function generate(_options: Options) {
         path,
         language: languageFromPath(path),
         content,
+        status: "success" as const,
       };
     })
     .sort((a, b) => a.path.localeCompare(b.path));
