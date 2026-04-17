@@ -1,16 +1,7 @@
 import dedent from "dedent";
 import type { Component, File, Options, Result } from "../../../core/types";
 import { languageFromPath } from "../../../core/util";
-import {
-  modelPaths,
-  modelUrls,
-  parseFields,
-  parseModel,
-  validateModelName,
-  type Collection,
-  type Field,
-  type Model,
-} from "../../../parse";
+import { modelPaths, modelUrls, type Field, type Model } from "../../../parse";
 import {
   getFieldComponents,
   getFieldImports,
@@ -20,9 +11,9 @@ import {
 } from "../../../core/field";
 import {
   collectionSpecFromModelFields,
-  fieldsFromCollection,
   generateSchemaSnippet,
   relationExpandParam,
+  resolveInputFields,
   uniqueRelationCollections,
 } from "../../../core/shared";
 import { generateScaffoldServerTestSnippet } from "../../../core/tests";
@@ -98,7 +89,7 @@ function formScript(
     ${paramsLine}
 
     const form = superForm(untrack(() => data.form), {
-      validators: zodClient(${model.schemaName}),
+      validators: zod4Client(${model.schemaName}),
     });
 
     const { form: formData } = form;
@@ -114,7 +105,7 @@ function newPageSnippet(
   const imports = uniqueImports([
     'import { untrack } from "svelte";',
     'import { superForm } from "sveltekit-superforms";',
-    'import { zodClient } from "sveltekit-superforms/adapters";',
+    'import { zod4Client } from "sveltekit-superforms/adapters";',
     `import { ${model.schemaName} } from "$lib/schemas/${model.name}";`,
     ...getFieldImports(getFieldComponents(fields)),
     'import { Button } from "$lib/components/ui/button";',
@@ -164,7 +155,7 @@ function editPageSnippet(
   const imports = uniqueImports([
     'import { untrack } from "svelte";',
     'import { superForm } from "sveltekit-superforms";',
-    'import { zodClient } from "sveltekit-superforms/adapters";',
+    'import { zod4Client } from "sveltekit-superforms/adapters";',
     `import { ${model.schemaName} } from "$lib/schemas/${model.name}";`,
     ...getFieldImports(getFieldComponents(fields)),
     'import { Button } from "$lib/components/ui/button";',
@@ -306,7 +297,8 @@ function listPageSnippet(
               "aria-label": "Select row"
             }),
           enableSorting: false,
-          enableHiding: false
+          enableHiding: false,
+          meta: { class: "w-0" },
         }),
         ${columnDefs}${fields.length > 0 ? "," : ""}
         columnHelper.display({
@@ -317,6 +309,7 @@ function listPageSnippet(
               editPath: \`${urls.list}/\${row.original.id}/edit\`,
               deletePath: \`${urls.list}/\${row.original.id}\`
             })
+          meta: { class: "w-0 text-right" },
         })
       ];
 
@@ -370,7 +363,6 @@ function listPageSnippet(
     <section data-role="content">
       <div class="flex justify-between items-center mb-4">
         <h1 class="text-3xl font-bold tracking-tight">${model.pluralDisplayName}</h1>
-        <Button href="${urls.new}" variant="outline">New ${model.displayName.toLowerCase()}</Button>
       </div>
 
       <div class="space-y-4">
@@ -460,6 +452,7 @@ function newServerSnippet(
   pb: string,
   authMode: boolean,
 ): string {
+  const withFiles = hasFiles(fields);
   const relationLoads = relationLoadLines(fields, pb);
   const relationVars = relationLoadReturnVars(fields);
   const relationReturn = relationVars ? `, ${relationVars}` : "";
@@ -479,22 +472,22 @@ function newServerSnippet(
 
   return dedent`
     import { fail, redirect } from "@sveltejs/kit";
-    import { superValidate } from "sveltekit-superforms";
-    import { zod } from "sveltekit-superforms/adapters";
+    import { superValidate${withFiles ? ", withFiles" : ""} } from "sveltekit-superforms";
+    import { zod4 } from "sveltekit-superforms/adapters";
     import { setPocketbaseErrors } from "@velastack/pocketbase";
     import { ${model.schemaName} } from "$lib/schemas/${model.name}";
 
     export const load = async ({ locals }) => {
       ${relationLoads}
-      return { form: await superValidate(zod(${model.schemaName}))${relationReturn} };
+      return { form: await superValidate(zod4(${model.schemaName}))${relationReturn} };
     };
 
     export const actions = {
       default: async ({ locals, request }) => {
-        const form = await superValidate(request, zod(${model.schemaName}));
+        const form = await superValidate(request, zod4(${model.schemaName}));
 
         if (!form.valid) {
-          return fail(400, { form });
+          return fail(400, ${withFiles ? "withFiles({ form })" : "{ form }"});
         }
 
         let ${model.name};
@@ -505,7 +498,7 @@ function newServerSnippet(
           );
         } catch (error) {
           setPocketbaseErrors(form, error);
-          return fail(400, { form });
+          return fail(400, ${withFiles ? "withFiles({ form })" : "{ form }"});
         }
 
         return redirect(303, \`${urls.list}/\${${model.name}.id}\`);
@@ -612,14 +605,15 @@ function editServerSnippet(
   fields: Field[],
   pb: string,
 ): string {
+  const withFiles = hasFiles(fields);
   const relationLoads = relationLoadLines(fields, pb);
   const relationVars = relationLoadReturnVars(fields);
   const relationReturn = relationVars ? `, ${relationVars}` : "";
   return dedent`
     import { error, fail, redirect } from "@sveltejs/kit";
     import { setPocketbaseErrors, setDefaultData } from "@velastack/pocketbase";
-    import { superValidate } from "sveltekit-superforms";
-    import { zod } from "sveltekit-superforms/adapters";
+    import { superValidate${withFiles ? ", withFiles" : ""} } from "sveltekit-superforms";
+    import { zod4 } from "sveltekit-superforms/adapters";
     import { ${model.schemaName} } from "$lib/schemas/${model.name}";
 
     export const load = async ({ locals, params }) => {
@@ -630,17 +624,17 @@ function editServerSnippet(
         throw error(404, "Not found");
       }
       ${relationLoads}
-      return { form: await superValidate(${model.name}, zod(${model.schemaName}))${relationReturn} };
+      return { form: await superValidate(${model.name}, zod4(${model.schemaName}))${relationReturn} };
     };
 
     export const actions = {
       default: async ({ locals, params, request }) => {
         const ${model.name} = await ${pb}.collection("${model.tableName}").getOne(params.id);
-        const form = await superValidate(request, zod(${model.schemaName}));
+        const form = await superValidate(request, zod4(${model.schemaName}));
 
         if (!form.valid) {
           setDefaultData(form, ${model.name});
-          return fail(400, { form });
+          return fail(400, ${withFiles ? "withFiles({ form })" : "{ form }"});
         }
 
         try {
@@ -649,50 +643,11 @@ function editServerSnippet(
         } catch (error) {
           setPocketbaseErrors(form, error);
           setDefaultData(form, ${model.name});
-          return fail(400, { form });
+          return fail(400, ${withFiles ? "withFiles({ form })" : "{ form }"});
         }
       },
     };
   `;
-}
-
-async function resolveInputFields(
-  options: Options,
-  modelPath: string,
-  fieldDefs: string[],
-) {
-  validateModelName(modelPath);
-  const model = parseModel(modelPath, options);
-  const collections =
-    options.env === "runtime"
-      ? ((await (
-          await import("../../../parse/env.runtime")
-        ).getCollections()) as Collection[])
-      : (await import("../../../parse/env.preview")).getPreviewCollections(
-          options,
-        );
-
-  // If fields are provided, let's parse them and mark the collection as "shouldCreateCollection"
-  if (fieldDefs.length > 0) {
-    const parsed = await parseFields(fieldDefs, model, options);
-    return {
-      model,
-      fields: parsed.fields,
-      auth: parsed.auth,
-      shouldCreateCollection: true,
-      collections,
-    };
-  }
-
-  // If fields aren't provided, let's check if the model references an existing collection
-  const fields = fieldsFromCollection(model, collections, options);
-  return {
-    model,
-    fields,
-    auth: undefined,
-    shouldCreateCollection: false,
-    collections,
-  };
 }
 
 export async function generate(options: Options) {

@@ -1,18 +1,18 @@
 import { fail, superValidate } from "sveltekit-superforms";
-import { zod } from "sveltekit-superforms/adapters";
+import { zod4 } from "sveltekit-superforms/adapters";
 import { teamSchema } from "$lib/schemas/team";
 import { redirect } from "sveltekit-flash-message/server";
 import { setPocketbaseErrors } from "@velastack/pocketbase";
 
 export const load = async () => {
-  const form = await superValidate(zod(teamSchema));
+  const form = await superValidate(zod4(teamSchema));
   return { form };
 };
 
 export const actions = {
   default: async ({ locals, request, cookies }) => {
     const user = locals.pb.authStore.record!;
-    const form = await superValidate(request, zod(teamSchema));
+    const form = await superValidate(request, zod4(teamSchema));
 
     if (!form.valid) {
       return fail(400, { form });

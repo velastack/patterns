@@ -3,7 +3,7 @@
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { goto } from '$app/navigation';
 	import { superForm } from 'sveltekit-superforms';
-	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { teamRoleSchema } from '$lib/schemas/teamRole';
 	import * as Form from '$lib/components/ui/form';
 	import * as Select from '$lib/components/ui/select';
@@ -28,7 +28,7 @@
 	const form = superForm(
 		untrack(() => data.form),
 		{
-			validators: zodClient(teamRoleSchema)
+			validators: zod4Client(teamRoleSchema)
 		}
 	);
 

@@ -5,6 +5,8 @@ import type { CollectionFieldSpec, CollectionSpec, Options } from "./types";
 import {
   collectionDisplayFieldMap,
   parseModel,
+  resolveFields,
+  validateModelName,
   type Collection,
   type Field,
   type Model,
@@ -93,13 +95,13 @@ function zodSchemaForField(
       schema = options.forForm ? "z.string()" : "z.date()";
       break;
     case "email":
-      schema = "z.string().email()";
+      schema = "z.email()";
       break;
     case "password":
       schema = "z.string()";
       break;
     case "url":
-      schema = "z.string().url()";
+      schema = "z.url()";
       break;
     case "editor":
       schema = "z.string()";
@@ -133,7 +135,7 @@ function zodSchemaForField(
     return val;
   }
   return JSON.stringify(val);
-}, z.string()${field.required ? "" : ".optional()"}) as z.ZodEffects<${field.required ? "" : "z.ZodOptional<"}z.ZodString${field.required ? "" : ">"}, any, any>`
+}, z.string()${field.required ? "" : ".optional()"})`
         : dedent`
             z.object({
               lat: z.number().min(-90).max(90),
@@ -170,43 +172,108 @@ function zodSchemaForField(
   return `${schema}.optional()`;
 }
 
+export async function loadCollections(
+  options: Pick<Options, "env" | "features">,
+): Promise<Collection[]> {
+  if (options.env === "runtime") {
+    const { getCollections } = await import("../parse/env.runtime");
+    return (await getCollections()) as Collection[];
+  }
+  const { getPreviewCollections } = await import("../parse/env.preview");
+  return getPreviewCollections(options);
+}
+
+export interface ResolvedInput {
+  model: Model;
+  fields: Field[];
+  auth: OwnershipResult | undefined;
+  shouldCreateCollection: boolean;
+  collections: Collection[];
+}
+
+export async function resolveInputFields(
+  options: Options,
+  modelPath: string,
+  fieldDefs: string[],
+): Promise<ResolvedInput> {
+  validateModelName(modelPath);
+  const model = parseModel(modelPath, options);
+  const collections = await loadCollections(options);
+
+  if (fieldDefs.length > 0) {
+    const { fields, auth } = resolveFields(
+      fieldDefs,
+      model,
+      collections,
+      options,
+    );
+    return {
+      model,
+      fields,
+      auth,
+      shouldCreateCollection: true,
+      collections,
+    };
+  }
+
+  const fields = fieldsFromCollection(model, collections, options);
+  return {
+    model,
+    fields,
+    auth: undefined,
+    shouldCreateCollection: false,
+    collections,
+  };
+}
+
 export function generateSchemaSnippet(
   model: Pick<Model, "schemaName" | "tableName">,
   fields: Field[],
   options: { includeModelFields: boolean; forForm: boolean },
 ): string {
-  const allFields: SchemaField[] = [];
+  const entries: Array<{ name: string; schema: string }> = [];
 
   if (options.includeModelFields) {
-    allFields.push({ name: "id", type: "text", required: false });
-    allFields.push({ name: "collectionId", type: "text", required: false });
+    entries.push({
+      name: "id",
+      schema: zodSchemaForField(
+        { name: "id", type: "text", required: false },
+        options,
+      ),
+    });
+    entries.push({
+      name: "collectionId",
+      schema: zodSchemaForField(
+        { name: "collectionId", type: "text", required: false },
+        options,
+      ),
+    });
   }
 
   for (const field of fields) {
     if (field.type === "file" && field.maxSelect > 1) {
-      allFields.push({ ...field, required: false });
-      allFields.push({
-        name: `${field.name}+`,
-        type: "file",
-        required: false,
-        maxSelect: 999,
+      entries.push({
+        name: field.name,
+        schema: zodSchemaForField({ ...field, required: false }, options),
       });
-      allFields.push({
+      entries.push({
+        name: `${field.name}+`,
+        schema: "z.instanceof(File).array().optional()",
+      });
+      entries.push({
         name: `${field.name}-`,
-        type: "file",
-        required: false,
-        maxSelect: 999,
+        schema: "z.string().array().optional()",
       });
       continue;
     }
-    allFields.push(field);
+    entries.push({
+      name: field.name,
+      schema: zodSchemaForField(field, options),
+    });
   }
 
-  const schemaFields = allFields
-    .map(
-      (field) =>
-        `${escapeFieldName(field.name)}: ${zodSchemaForField(field, options)}`,
-    )
+  const schemaFields = entries
+    .map((entry) => `${escapeFieldName(entry.name)}: ${entry.schema}`)
     .join(",\n  ");
 
   const modelTypeImport = options.includeModelFields
@@ -217,7 +284,7 @@ export function generateSchemaSnippet(
     : "";
 
   return dedent`
-    import { z } from "zod/v3";${modelTypeImport}
+    import { z } from "zod";${modelTypeImport}
 
     export const ${model.schemaName} = z.object({
       ${schemaFields}

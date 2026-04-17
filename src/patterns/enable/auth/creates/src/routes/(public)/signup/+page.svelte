@@ -3,7 +3,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import * as Card from '$lib/components/ui/card';
 	import { superForm } from 'sveltekit-superforms';
-	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { signupSchema } from '$lib/schemas/signup';
 	import * as Form from '$lib/components/ui/form';
 	import { Input } from '$lib/components/ui/input';
@@ -21,7 +21,7 @@
 	const form = superForm(
 		untrack(() => data.form),
 		{
-			validators: zodClient(signupSchema)
+			validators: zod4Client(signupSchema)
 		}
 	);
 

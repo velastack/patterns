@@ -68,6 +68,7 @@ describe("generate scaffold pattern", () => {
           "status:select(draft,published)",
           "owner:current_user",
           "category:relation",
+          "attachments:files",
         ],
       }),
     );
@@ -100,6 +101,16 @@ describe("generate scaffold pattern", () => {
     const scaffoldServerTest = result.creates.find((file) =>
       file.path.endsWith("/contacts/server.test.ts"),
     );
+    const schemaFile = result.creates.find((file) =>
+      file.path.endsWith("src/lib/schemas/contact.ts"),
+    );
+
+    expect(schemaFile?.content).toContain(
+      "'attachments+': z.instanceof(File).array().optional()",
+    );
+    expect(schemaFile?.content).toContain(
+      "'attachments-': z.string().array().optional()",
+    );
 
     expect(listServer?.content).toContain(
       'getFullList({ expand: "category" })',
@@ -109,7 +120,7 @@ describe("generate scaffold pattern", () => {
     expect(showPage?.content).toContain("Contact details");
     expect(showPage?.content).toContain("Back to list");
     expect(editServer?.content).toContain(
-      "await superValidate(contact, zod(contactSchema))",
+      "await superValidate(contact, zod4(contactSchema))",
     );
     expect(scaffoldServerTest?.content).toContain('describe("GET /contacts"');
     expect(scaffoldServerTest?.content).toContain(

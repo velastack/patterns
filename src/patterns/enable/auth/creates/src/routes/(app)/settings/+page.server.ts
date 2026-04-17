@@ -1,5 +1,5 @@
 import { superValidate, fail, withFiles } from "sveltekit-superforms";
-import { zod } from "sveltekit-superforms/adapters";
+import { zod4 } from "sveltekit-superforms/adapters";
 import { setFlash } from "sveltekit-flash-message/server";
 import { profileSchema } from "$lib/schemas/profile";
 import { changeEmailSchema } from "$lib/schemas/changeEmail";
@@ -14,17 +14,17 @@ export const load = async ({ parent }) => {
       name: user.name,
       emailVisibility: user.emailVisibility,
     },
-    zod(profileSchema),
+    zod4(profileSchema),
   );
-  const emailForm = await superValidate(zod(changeEmailSchema));
-  const passwordForm = await superValidate(zod(changePasswordSchema));
+  const emailForm = await superValidate(zod4(changeEmailSchema));
+  const passwordForm = await superValidate(zod4(changePasswordSchema));
 
   return { profileForm, emailForm, passwordForm, user };
 };
 
 export const actions = {
   updateProfile: async ({ locals, request, cookies }) => {
-    const form = await superValidate(request, zod(profileSchema));
+    const form = await superValidate(request, zod4(profileSchema));
 
     if (!form.valid) {
       return fail(400, { profileForm: form });
@@ -41,7 +41,7 @@ export const actions = {
     return withFiles({ profileForm: form });
   },
   changeEmail: async ({ locals, request, cookies }) => {
-    const form = await superValidate(request, zod(changeEmailSchema));
+    const form = await superValidate(request, zod4(changeEmailSchema));
 
     if (!form.valid) {
       return fail(400, { emailForm: form });
@@ -58,7 +58,7 @@ export const actions = {
     return { emailForm: form };
   },
   changePassword: async ({ locals, request, cookies }) => {
-    const form = await superValidate(request, zod(changePasswordSchema));
+    const form = await superValidate(request, zod4(changePasswordSchema));
 
     if (!form.valid) {
       return fail(400, { passwordForm: form });

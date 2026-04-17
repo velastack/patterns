@@ -1,5 +1,5 @@
 import { fail, superValidate } from 'sveltekit-superforms';
-import { zod } from 'sveltekit-superforms/adapters';
+import { zod4 } from 'sveltekit-superforms/adapters';
 import { resetSchema } from '$lib/schemas/reset';
 import { redirect } from '@sveltejs/kit';
 import { setFlash } from 'sveltekit-flash-message/server';
@@ -9,12 +9,12 @@ export const load = async ({ locals }) => {
 		redirect(303, '/dashboard');
 	}
 
-	return { form: await superValidate(zod(resetSchema)) };
+	return { form: await superValidate(zod4(resetSchema)) };
 };
 
 export const actions = {
 	default: async ({ locals, request, cookies }) => {
-		const form = await superValidate(request, zod(resetSchema));
+		const form = await superValidate(request, zod4(resetSchema));
 
 		if (!form.valid) {
 			return fail(400, { form });

@@ -1,5 +1,5 @@
 import { fail, superValidate, message } from 'sveltekit-superforms';
-import { zod } from 'sveltekit-superforms/adapters';
+import { zod4 } from 'sveltekit-superforms/adapters';
 import { loginSchema } from '$lib/schemas/login';
 import { redirect } from '@sveltejs/kit';
 import { dev } from '$app/environment';
@@ -18,14 +18,14 @@ export const load = async ({ locals }) => {
 			: 'oauth2';
 
 	return {
-		form: await superValidate(zod(loginSchema.default({ type, email: '', password: '' }))),
+		form: await superValidate(zod4(loginSchema.default({ type, email: '', password: '' }))),
 		authMethods
 	};
 };
 
 export const actions = {
 	default: async ({ locals, request, cookies, url }) => {
-		const form = await superValidate(request, zod(loginSchema));
+		const form = await superValidate(request, zod4(loginSchema));
 
 		if (!form.valid) {
 			return fail(400, { form });

@@ -1,17 +1,17 @@
 import { fail, superValidate } from "sveltekit-superforms";
-import { zod } from "sveltekit-superforms/adapters";
+import { zod4 } from "sveltekit-superforms/adapters";
 import { redirect } from "sveltekit-flash-message/server";
 import { apiKeySchema } from "$lib/schemas/apiKey";
 import { setPocketbaseErrors } from "@velastack/pocketbase";
 import { createApiKey } from "./create-api-key";
 
 export const load = async () => {
-  return { form: await superValidate(zod(apiKeySchema)) };
+  return { form: await superValidate(zod4(apiKeySchema)) };
 };
 
 export const actions = {
   default: async ({ locals, request, cookies }) => {
-    const form = await superValidate(request, zod(apiKeySchema));
+    const form = await superValidate(request, zod4(apiKeySchema));
 
     if (!form.valid) {
       return fail(400, { form });

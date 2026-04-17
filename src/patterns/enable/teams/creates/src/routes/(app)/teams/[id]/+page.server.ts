@@ -1,13 +1,13 @@
 import { error, fail } from "@sveltejs/kit";
 import { redirect } from "sveltekit-flash-message/server";
-import { zod } from "sveltekit-superforms/adapters";
+import { zod4 } from "sveltekit-superforms/adapters";
 import { superValidate } from "sveltekit-superforms";
 import { teamSchema } from "$lib/schemas/team";
 import { setPocketbaseErrors } from "@velastack/pocketbase";
 
 export const actions = {
   updateTeam: async ({ locals, params, request, cookies }) => {
-    const form = await superValidate(request, zod(teamSchema));
+    const form = await superValidate(request, zod4(teamSchema));
 
     if (!form.valid) {
       return fail(400, { form });
