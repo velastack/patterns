@@ -1,6 +1,7 @@
 import packageJson from "../package.json";
 export { InvalidArgumentError } from "./core/errors";
 import generateForm from "./patterns/generate/form";
+import generateFormRemote from "./patterns/generate/form-remote";
 import generateResource from "./patterns/generate/resource";
 import generateScaffold from "./patterns/generate/scaffold";
 import generateSchema from "./patterns/generate/schema";
@@ -14,6 +15,7 @@ export const version = packageJson.version;
 
 export const patterns = [
   generateForm,
+  generateFormRemote,
   generateSchema,
   generateResource,
   generateScaffold,

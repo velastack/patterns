@@ -1,0 +1,67 @@
+import type { Options, Pattern } from "../../../core/types";
+import { formatResult } from "../../../core/format-result";
+import { generate as generateBase } from "./generate";
+
+const SLUG = "generate-form-remote" as const;
+const VERSION = "1.0.0";
+const SOURCE = "src/patterns/generate/form-remote";
+const DOCS = "/generate/form-remote";
+
+export async function generate(options: Options) {
+  const baseRes = await generateBase(options);
+
+  if (options.env !== "runtime") {
+    return formatResult(baseRes);
+  }
+
+  const { writeResult } = await import("../../../runtime/write-result");
+  return writeResult(await formatResult(baseRes), options);
+}
+
+export default {
+  version: VERSION,
+  slug: SLUG,
+  source: SOURCE,
+  docs: DOCS,
+  plan: "open",
+  title: "Generate a form (remote functions)",
+  summary:
+    "Generates a form using SvelteKit remote functions instead of sveltekit-superforms.",
+  requires: {
+    auth: false,
+    api: false,
+    apiKeys: false,
+    i18n: false,
+    teams: false,
+    payments: false,
+  },
+  category: "generators" as const,
+  tags: ["sveltekit", "remote-functions", "validation", "zod"],
+
+  command: {
+    raw: "vela generate form contact name:text email:email message:editor --remote",
+    base: "vela generate form",
+    argv: ["contact", "name:text", "email:email", "message:editor"],
+  },
+
+  examples: [
+    {
+      command: "contact name:text! email:email! message:editor",
+      description: "Contact form using remote functions.",
+    },
+    {
+      command: "profile avatar:file bio:editor website:url",
+      description: "File upload (multipart) + editor + URL validation.",
+    },
+    {
+      command: "feedback rating:select(1,2,3,4,5) comment:editor",
+      description: "Select enum with a long-form comment.",
+    },
+  ],
+
+  tests: 1,
+
+  baseline: "velastack",
+
+  generate: generate,
+} satisfies Pattern;

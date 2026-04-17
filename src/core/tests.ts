@@ -567,3 +567,29 @@ export function generateFormServerTestSnippet(
     });
   `;
 }
+
+export function generateFormRemoteServerTestSnippet(
+  model: Model,
+  formUrl: string,
+  fields: Field[],
+  options: Options,
+  collections: Collection[],
+): string {
+  const { declarations, setupSection, requestAgent } =
+    relationDependencyContext(model, fields, options, collections);
+
+  return dedent`
+    import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+    describe("${formUrl}", () => {
+      ${declarations}${setupSection}
+
+      describe("GET ${formUrl}", () => {
+        it("should return a 200 status code", async (context) => {
+          const response = await ${requestAgent}.get("${formUrl}");
+          expect(response.status).toBe(200);
+        });
+      });
+    });
+  `;
+}
