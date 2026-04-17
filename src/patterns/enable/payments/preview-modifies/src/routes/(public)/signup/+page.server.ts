@@ -39,7 +39,7 @@ export const actions = {
       return fail(400, { form });
     }
 
-    // [!code highlight:2]
+    // [!code highlight:1]
     await linkStripeCustomer(form.data.email, user, locals);
 
     await locals.pb.collection("users").requestVerification(user.email);
@@ -65,7 +65,7 @@ export const actions = {
   },
 };
 
-// [!code highlight:55]
+// [!code highlight:66]
 const linkStripeCustomer = async (
   email: string,
   user: { id: string },

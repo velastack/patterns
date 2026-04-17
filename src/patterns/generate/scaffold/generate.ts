@@ -115,7 +115,9 @@ function newPageSnippet(
     'import { Button } from "$lib/components/ui/button";',
     'import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";',
     'import * as Form from "$lib/components/ui/form";',
-    hasSelectFields ? 'import type { Models } from "pocketbase-svelte";' : "",
+    hasSelectFields
+      ? 'import type { Models } from "@velastack/pocketbase";'
+      : "",
   ]).join("\n");
   const fieldContent = fields.map((field) => renderField(field)).join("\n");
   const enctype = hasFiles(fields) ? ' enctype="multipart/form-data"' : "";
@@ -165,7 +167,9 @@ function editPageSnippet(
     'import { Button } from "$lib/components/ui/button";',
     'import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";',
     'import * as Form from "$lib/components/ui/form";',
-    hasSelectFields ? 'import type { Models } from "pocketbase-svelte";' : "",
+    hasSelectFields
+      ? 'import type { Models } from "@velastack/pocketbase";'
+      : "",
   ]).join("\n");
   const fieldContent = fields.map((field) => renderField(field)).join("\n");
   const enctype = hasFiles(fields) ? ' enctype="multipart/form-data"' : "";
@@ -272,7 +276,7 @@ function listPageSnippet(
       ${hasSelectFields ? 'import { FacetedFilter } from "$lib/components/ui/faceted-filter";' : ""}
       import XIcon from "@lucide/svelte/icons/x";
       import PlusIcon from "@lucide/svelte/icons/plus";
-      import type { Models } from "pocketbase-svelte";
+      import type { Models } from "@velastack/pocketbase";
 
       let { data } = $props();
       let rowSelection = $state<RowSelectionState>({});

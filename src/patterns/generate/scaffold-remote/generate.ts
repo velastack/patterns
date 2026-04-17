@@ -255,7 +255,7 @@ function listPageSnippet(
       ${hasSelectFields ? 'import { FacetedFilter } from "$lib/components/ui/faceted-filter";' : ""}
       import XIcon from "@lucide/svelte/icons/x";
       import PlusIcon from "@lucide/svelte/icons/plus";
-      import type { Models } from "pocketbase-svelte";
+      import type { Models } from "@velastack/pocketbase";
 
       let { data } = $props();
       let rowSelection = $state<RowSelectionState>({});

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Schemas } from "pocketbase-svelte";
+import type { Schemas } from "@velastack/pocketbase";
 
 export const apiKeySchema = z.object({
   label: z.string().optional(),

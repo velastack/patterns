@@ -84,7 +84,7 @@ describe("generate schema pattern", () => {
     );
 
     expect(result.creates[0].content).toContain(
-      'import type { Schemas } from "pocketbase-svelte"',
+      'import type { Schemas } from "@velastack/pocketbase"',
     );
     expect(result.creates[0].content).toContain(
       'satisfies Schemas["contacts"]',
@@ -106,7 +106,7 @@ describe("generate schema pattern", () => {
     );
 
     expect(result.creates[0].content).toContain(
-      'import type { Schemas } from "pocketbase-svelte"',
+      'import type { Schemas } from "@velastack/pocketbase"',
     );
     expect(result.creates[0].content).toContain(
       'satisfies Schemas["contacts"]',

@@ -1,6 +1,6 @@
 import { beforeEach, afterEach, beforeAll } from 'vitest';
 import supertest, { type Agent } from 'supertest';
-import PocketBase from 'pocketbase-svelte';
+import PocketBase from 'pocketbase-sveltekit';
 import type { TestContext } from '@velastack/pocketbase';
 
 const admin = new PocketBase(process.env.POCKETBASE_URL!) as App.Locals['admin'];
@@ -18,6 +18,7 @@ async function authenticateUser(agent: Agent, user: { email: string }) {
 
 beforeAll(async () => {
 	await admin
+		// @ts-ignore
 		.collection('_superusers')
 		.authWithPassword(
 			process.env.POCKETBASE_SUPERUSER_EMAIL!,

@@ -277,7 +277,7 @@ export function generateSchemaSnippet(
     .join(",\n  ");
 
   const modelTypeImport = options.includeModelFields
-    ? '\nimport type { Schemas } from "pocketbase-svelte";'
+    ? '\nimport type { Schemas } from "@velastack/pocketbase";'
     : "";
   const modelSatisfies = options.includeModelFields
     ? ` satisfies Schemas["${model.tableName}"]`

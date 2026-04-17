@@ -1,4 +1,4 @@
-import PocketBase from "pocketbase-svelte";
+import PocketBase from "pocketbase-sveltekit";
 import argon2 from "argon2";
 import { randomBytes } from "node:crypto";
 

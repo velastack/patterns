@@ -7,7 +7,7 @@
 	import { signupSchema } from '$lib/schemas/signup';
 	import * as Form from '$lib/components/ui/form';
 	import { Input } from '$lib/components/ui/input';
-	import PocketBase from 'pocketbase-svelte';
+	import PocketBase from 'pocketbase-sveltekit';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 
