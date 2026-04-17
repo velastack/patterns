@@ -7,16 +7,14 @@ import {
   renderField,
   selectFieldLabelMap,
 } from "../../../core/field";
-import {
-  parseFields,
-  parseModel,
-  validateModelName,
-  type Collection,
-  type Field,
-  type Model,
-} from "../../../parse";
+import { type Field, type Model } from "../../../parse";
 import { generateFormServerTestSnippet } from "../../../core/tests";
+import {
+  generateSchemaSnippet,
+  resolveInputFields,
+} from "../../../core/shared";
 
+// Different from parse/model since we don't want to use the plural name
 function formPaths(modelPath: string, routesDir: string) {
   const normalizedModelPath = modelPath.replace(/^\/+|\/+$/g, "");
   const basePath = `${routesDir}/${normalizedModelPath}`;
@@ -37,149 +35,11 @@ function parsePatternArgs(argv: string[]) {
     throw new Error("At least one field definition is required.");
   }
 
-  return { modelPath, fields };
+  return { modelPath, fieldDefs: fields };
 }
 
 function hasFiles(fields: Field[]): boolean {
   return fields.some((field) => field.type === "file");
-}
-
-function escapeFieldName(fieldName: string): string {
-  const validIdentifierRegex = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
-  return validIdentifierRegex.test(fieldName) ? fieldName : `'${fieldName}'`;
-}
-
-function getFormSchemaForField(field: Field): string {
-  const selectValues =
-    field.type === "select"
-      ? `[${field.options.map((option) => JSON.stringify(option.value)).join(", ")}]`
-      : "";
-
-  let schema: string;
-  switch (field.type) {
-    case "text":
-      schema = "z.string()";
-      break;
-    case "number":
-      schema = "z.number()";
-      break;
-    case "bool":
-      schema = "z.boolean().default(false)";
-      break;
-    case "date":
-      schema = "z.string()";
-      break;
-    case "email":
-      schema = "z.string().email()";
-      break;
-    case "password":
-      schema = "z.string()";
-      break;
-    case "url":
-      schema = "z.string().url()";
-      break;
-    case "editor":
-      schema = "z.string()";
-      break;
-    case "autodate":
-      schema = "z.string()";
-      break;
-    case "select":
-      if (selectValues) {
-        schema =
-          field.maxSelect > 1
-            ? `z.array(z.enum(${selectValues}))`
-            : `z.enum(${selectValues})`;
-      } else {
-        schema = "z.string()";
-      }
-      break;
-    case "file":
-      schema =
-        field.maxSelect > 1
-          ? "z.string().array()"
-          : "z.union([z.instanceof(File), z.string()])";
-      break;
-    case "json":
-      schema = "z.any()";
-      break;
-    case "geoPoint":
-      schema = `z.preprocess((val) => {
-  if (typeof val === "string") {
-    return val;
-  }
-  return JSON.stringify(val);
-}, z.string()${field.required ? "" : ".optional()"}) as z.ZodEffects<${field.required ? "" : "z.ZodOptional<"}z.ZodString${field.required ? "" : ">"}, any, any>`;
-      break;
-    case "relation":
-      schema = field.maxSelect > 1 ? "z.array(z.string())" : "z.string()";
-      break;
-    default: {
-      const exhaustiveType: never = field;
-      return exhaustiveType;
-    }
-  }
-
-  const nonEmptyTypes: Field["type"][] = ["text"];
-  if (nonEmptyTypes.includes(field.type)) {
-    return field.required ? `${schema}.nonempty()` : `${schema}.optional()`;
-  }
-
-  if (field.required) {
-    return schema;
-  }
-
-  if (field.type === "geoPoint") {
-    return schema;
-  }
-
-  if (field.type === "file" && field.maxSelect <= 1) {
-    return `${schema}.optional().default("")`;
-  }
-
-  return `${schema}.optional()`;
-}
-
-function schemaFields(
-  fields: Field[],
-): Array<{ name: string; schema: string }> {
-  const allFields: Array<{ name: string; schema: string }> = [];
-
-  for (const field of fields) {
-    if (field.type === "file" && field.maxSelect > 1) {
-      allFields.push({
-        name: field.name,
-        schema: getFormSchemaForField({ ...field, required: false }),
-      });
-      allFields.push({
-        name: `${field.name}+`,
-        schema: "z.instanceof(File).array().optional()",
-      });
-      allFields.push({
-        name: `${field.name}-`,
-        schema: "z.string().array().optional()",
-      });
-      continue;
-    }
-
-    allFields.push({ name: field.name, schema: getFormSchemaForField(field) });
-  }
-
-  return allFields;
-}
-
-function generateSchema(model: Model, fields: Field[]): string {
-  const fieldLines = schemaFields(fields)
-    .map((field) => `${escapeFieldName(field.name)}: ${field.schema}`)
-    .join(",\n  ");
-
-  return dedent`
-    import { z } from "zod/v3";
-
-    export const ${model.schemaName} = z.object({
-      ${fieldLines}
-    });
-  `;
 }
 
 function pageImports(model: Model, fields: Field[]): string[] {
@@ -187,7 +47,7 @@ function pageImports(model: Model, fields: Field[]): string[] {
   const imports = [
     'import { untrack } from "svelte";',
     'import { superForm } from "sveltekit-superforms";',
-    'import { zodClient } from "sveltekit-superforms/adapters";',
+    'import { zod4Client } from "sveltekit-superforms/adapters";',
     `import { ${model.schemaName} } from "$lib/schemas/${model.name}";`,
     ...getFieldImports(components),
   ];
@@ -208,7 +68,7 @@ function pageScriptSnippet(model: Model, fields: Field[]): string {
     ${labelMaps}
 
     const form = superForm(untrack(() => data.form), {
-      validators: zodClient(${model.schemaName}),
+      validators: zod4Client(${model.schemaName}),
     });
 
     const { form: formData } = form;
@@ -251,7 +111,7 @@ function serverSnippet(model: Model, fields: Field[]): string {
   const withFiles = hasFiles(fields);
   const imports = dedent`
     import { fail, superValidate${withFiles ? ", withFiles" : ""} } from "sveltekit-superforms";
-    import { zod } from "sveltekit-superforms/adapters";
+    import { zod4 } from "sveltekit-superforms/adapters";
     import { ${model.schemaName} } from "$lib/schemas/${model.name}";
     import { setFlash } from "sveltekit-flash-message/server";
   `;
@@ -260,13 +120,13 @@ function serverSnippet(model: Model, fields: Field[]): string {
     ${imports}
 
     export const load = async () => {
-      const form = await superValidate(zod(${model.schemaName}));
+      const form = await superValidate(zod4(${model.schemaName}));
       return { form };
     };
 
     export const actions = {
       default: async ({ request, cookies }) => {
-        const form = await superValidate(request, zod(${model.schemaName}));
+        const form = await superValidate(request, zod4(${model.schemaName}));
 
         if (!form.valid) {
           return fail(400, { form });
@@ -289,21 +149,13 @@ function toFile(path: string, content: string): File {
 }
 
 export async function generate(options: Options) {
-  const { modelPath, fields: fieldDefs } = parsePatternArgs(options.argv);
-
-  validateModelName(modelPath);
-  const model = parseModel(modelPath, options);
-  const parsed = await parseFields(fieldDefs, model, options);
-  const fields = parsed.fields;
+  const { modelPath, fieldDefs } = parsePatternArgs(options.argv);
+  const { model, fields, collections } = await resolveInputFields(
+    options,
+    modelPath,
+    fieldDefs,
+  );
   const { pagePath, pageUrl } = formPaths(modelPath, model.routesDir);
-  const collections =
-    options.env === "runtime"
-      ? ((await (
-          await import("../../../parse/env.runtime")
-        ).getCollections()) as Collection[])
-      : (await import("../../../parse/env.preview")).getPreviewCollections(
-          options,
-        );
 
   const creates = [
     toFile(`${pagePath}/+page.svelte`, pageSnippet(model, fields)),
@@ -318,7 +170,13 @@ export async function generate(options: Options) {
         collections,
       ),
     ),
-    toFile(`src/lib/schemas/${model.name}.ts`, generateSchema(model, fields)),
+    toFile(
+      `src/lib/schemas/${model.name}.ts`,
+      generateSchemaSnippet(model, fields, {
+        includeModelFields: false,
+        forForm: true,
+      }),
+    ),
   ];
 
   const components = getFieldComponents(fields) as Component[];

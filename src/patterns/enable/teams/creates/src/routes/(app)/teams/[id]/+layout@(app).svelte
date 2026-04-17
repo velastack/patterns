@@ -19,7 +19,7 @@
 	import TrashIcon from '@lucide/svelte/icons/trash-2';
 	import { Input } from '$lib/components/ui/input';
 	import { superForm } from 'sveltekit-superforms';
-	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { teamSchema } from '$lib/schemas/team';
 
 	let { data, children } = $props();
@@ -27,7 +27,7 @@
 	const form = superForm(
 		untrack(() => data.form),
 		{
-			validators: zodClient(teamSchema),
+			validators: zod4Client(teamSchema),
 			warnings: {
 				duplicateId: false
 			}

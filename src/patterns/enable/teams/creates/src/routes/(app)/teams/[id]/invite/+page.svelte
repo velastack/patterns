@@ -4,7 +4,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { goto } from '$app/navigation';
 	import { superForm } from 'sveltekit-superforms';
-	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { teamInviteSchema } from '$lib/schemas/teamInvite';
 	import * as Form from '$lib/components/ui/form';
 
@@ -13,7 +13,7 @@
 	const form = superForm(
 		untrack(() => data.form),
 		{
-			validators: zodClient(teamInviteSchema)
+			validators: zod4Client(teamInviteSchema)
 		}
 	);
 

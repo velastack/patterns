@@ -1,7 +1,7 @@
-import { z } from 'zod/v3';
+import { z } from 'zod';
 
 export const signupSchema = z.object({
-	email: z.string().email(),
+	email: z.email(),
 	password: z.string(),
 	passwordConfirm: z.string()
 });

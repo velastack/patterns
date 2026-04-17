@@ -13,6 +13,12 @@ vi.mock("../../../parse/env.runtime", () => {
           { name: "id", type: "text", system: true },
           { name: "name", type: "text", required: true },
           { name: "avatar", type: "file", maxSelect: 1, required: false },
+          {
+            name: "attachments",
+            type: "file",
+            maxSelect: 5,
+            required: false,
+          },
         ],
       },
     ],
@@ -43,7 +49,7 @@ describe("generate resource pattern", () => {
     const result = await generateBase(
       makeOptions({
         env: "preview",
-        argv: ["contact", "name:text!", "avatar:file"],
+        argv: ["contact", "name:text!", "avatar:file", "attachments:files"],
       }),
     );
 
@@ -57,6 +63,12 @@ describe("generate resource pattern", () => {
       'avatar: z.union([z.instanceof(File), z.string()]).optional().default("")',
     );
     expect(result.creates[0].content).toContain(
+      "'attachments+': z.instanceof(File).array().optional()",
+    );
+    expect(result.creates[0].content).toContain(
+      "'attachments-': z.string().array().optional()",
+    );
+    expect(result.creates[0].content).toContain(
       'satisfies Schemas["contacts"]',
     );
     expect(result.collections).toEqual([
@@ -66,6 +78,12 @@ describe("generate resource pattern", () => {
         fields: [
           { name: "name", type: "text", required: true },
           { name: "avatar", type: "file", required: false, maxSelect: 1 },
+          {
+            name: "attachments",
+            type: "file",
+            required: false,
+            maxSelect: 99,
+          },
         ],
       },
     ]);
@@ -82,6 +100,12 @@ describe("generate resource pattern", () => {
     expect(result.creates[0].content).toContain("name: z.string().nonempty()");
     expect(result.creates[0].content).toContain(
       'avatar: z.union([z.instanceof(File), z.string()]).optional().default("")',
+    );
+    expect(result.creates[0].content).toContain(
+      "'attachments+': z.instanceof(File).array().optional()",
+    );
+    expect(result.creates[0].content).toContain(
+      "'attachments-': z.string().array().optional()",
     );
     expect(result.collections).toEqual([]);
   });

@@ -1,15 +1,9 @@
 import type { File, Options, Result } from "../../../core/types";
 import { languageFromPath } from "../../../core/util";
 import {
-  parseFields,
-  parseModel,
-  validateModelName,
-  type Collection,
-} from "../../../parse";
-import {
   collectionSpecFromModelFields,
-  fieldsFromCollection,
   generateSchemaSnippet,
+  resolveInputFields,
 } from "../../../core/shared";
 
 function parsePatternArgs(argv: string[]) {
@@ -27,36 +21,6 @@ function toFile(path: string, content: string): File {
     language: languageFromPath(path),
     content,
   };
-}
-
-async function resolveInputFields(
-  options: Options,
-  modelPath: string,
-  fieldDefs: string[],
-) {
-  validateModelName(modelPath);
-  const model = parseModel(modelPath, options);
-
-  if (fieldDefs.length > 0) {
-    const parsed = await parseFields(fieldDefs, model, options);
-    return {
-      model,
-      fields: parsed.fields,
-      auth: parsed.auth,
-      shouldCreateCollection: true,
-    };
-  }
-
-  const collections =
-    options.env === "runtime"
-      ? ((await (
-          await import("../../../parse/env.runtime")
-        ).getCollections()) as Collection[])
-      : (await import("../../../parse/env.preview")).getPreviewCollections(
-          options,
-        );
-  const fields = fieldsFromCollection(model, collections, options);
-  return { model, fields, auth: undefined, shouldCreateCollection: false };
 }
 
 export async function generate(options: Options) {

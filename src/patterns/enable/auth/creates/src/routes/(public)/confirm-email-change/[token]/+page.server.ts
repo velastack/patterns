@@ -1,16 +1,16 @@
 import { fail, superValidate } from "sveltekit-superforms";
-import { zod } from "sveltekit-superforms/adapters";
+import { zod4 } from "sveltekit-superforms/adapters";
 import { confirmEmailChangeSchema } from "$lib/schemas/confirmEmailChange";
 import { redirect } from "@sveltejs/kit";
 import { setFlash } from "sveltekit-flash-message/server";
 
 export const load = async () => {
-  return { form: await superValidate(zod(confirmEmailChangeSchema)) };
+  return { form: await superValidate(zod4(confirmEmailChangeSchema)) };
 };
 
 export const actions = {
   default: async ({ locals, params, request, cookies }) => {
-    const form = await superValidate(request, zod(confirmEmailChangeSchema));
+    const form = await superValidate(request, zod4(confirmEmailChangeSchema));
 
     if (!form.valid) {
       return fail(400, { form });

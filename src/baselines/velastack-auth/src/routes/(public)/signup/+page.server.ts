@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { fail, superValidate } from 'sveltekit-superforms';
-import { zod } from 'sveltekit-superforms/adapters';
+import { zod4 } from 'sveltekit-superforms/adapters';
 import { setFlash } from 'sveltekit-flash-message/server';
 import { setPocketbaseErrors } from '@velastack/pocketbase';
 import { dev } from '$app/environment';
@@ -13,12 +13,12 @@ export const load = async ({ locals }) => {
 		redirect(303, '/dashboard');
 	}
 
-	return { form: await superValidate(zod(signupSchema)), authMethods };
+	return { form: await superValidate(zod4(signupSchema)), authMethods };
 };
 
 export const actions = {
 	default: async ({ locals, request, cookies, url }) => {
-		const form = await superValidate(request, zod(signupSchema));
+		const form = await superValidate(request, zod4(signupSchema));
 
 		if (!form.valid) {
 			return fail(400, { form });

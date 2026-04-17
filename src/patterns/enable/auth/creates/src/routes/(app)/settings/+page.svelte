@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { superForm } from 'sveltekit-superforms';
-	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { changeEmailSchema } from '$lib/schemas/changeEmail';
 	import { changePasswordSchema } from '$lib/schemas/changePassword';
 	import { profileSchema } from '$lib/schemas/profile';
@@ -20,7 +20,7 @@
 	const profileForm = superForm(
 		untrack(() => data.profileForm),
 		{
-			validators: zodClient(profileSchema),
+			validators: zod4Client(profileSchema),
 			id: 'profileForm'
 		}
 	);
@@ -28,7 +28,7 @@
 	const emailForm = superForm(
 		untrack(() => data.emailForm),
 		{
-			validators: zodClient(changeEmailSchema),
+			validators: zod4Client(changeEmailSchema),
 			id: 'emailForm'
 		}
 	);
@@ -36,7 +36,7 @@
 	const passwordForm = superForm(
 		untrack(() => data.passwordForm),
 		{
-			validators: zodClient(changePasswordSchema),
+			validators: zod4Client(changePasswordSchema),
 			id: 'passwordForm'
 		}
 	);

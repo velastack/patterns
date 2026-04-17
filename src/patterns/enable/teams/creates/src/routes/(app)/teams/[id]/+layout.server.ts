@@ -1,6 +1,6 @@
 import { redirect } from "@sveltejs/kit";
 import { superValidate } from "sveltekit-superforms";
-import { zod } from "sveltekit-superforms/adapters";
+import { zod4 } from "sveltekit-superforms/adapters";
 import { teamSchema } from "$lib/schemas/team";
 
 export const load = async ({ params, locals, parent }) => {
@@ -45,7 +45,7 @@ export const load = async ({ params, locals, parent }) => {
       filter: locals.pb.filter("team = {:team}", { team: id }),
     });
 
-  const form = await superValidate(team, zod(teamSchema));
+  const form = await superValidate(team, zod4(teamSchema));
 
   return {
     team,

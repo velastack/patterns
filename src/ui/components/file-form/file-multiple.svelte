@@ -25,16 +25,18 @@
 	const onremove = (file: File | string) => {
 		if (typeof file === 'string') {
 			removed.push(file);
-		}
-
-		reset({
-			data: {
-				...$formData,
-				[ctx.name]: $formData[ctx.name].filter((f: File | string) => f !== file) as
-					| File[]
-					| undefined
+		} else {
+			if (Array.isArray($formData[`${ctx.name}+`])) {
+				reset({
+					data: {
+						...$formData,
+						[`${ctx.name}+`]: $formData[`${ctx.name}+`].filter((f: File | string) => f !== file) as
+							| File[]
+							| undefined
+					}
+				});
 			}
-		});
+		}
 	};
 
 	const initialFiles = $formData[ctx.name] || [];

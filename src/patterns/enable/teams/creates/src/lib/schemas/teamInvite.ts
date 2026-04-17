@@ -1,5 +1,5 @@
-import { z } from "zod/v3";
+import { z } from "zod";
 
 export const teamInviteSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
 });

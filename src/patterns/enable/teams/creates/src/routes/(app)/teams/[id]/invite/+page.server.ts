@@ -1,17 +1,17 @@
 import { fail, superValidate } from "sveltekit-superforms";
-import { zod } from "sveltekit-superforms/adapters";
+import { zod4 } from "sveltekit-superforms/adapters";
 import { teamInviteSchema } from "$lib/schemas/teamInvite";
 import { redirect } from "sveltekit-flash-message/server";
 import { setPocketbaseErrors } from "@velastack/pocketbase";
 
 export const load = async () => {
-  const form = await superValidate(zod(teamInviteSchema));
+  const form = await superValidate(zod4(teamInviteSchema));
   return { form };
 };
 
 export const actions = {
   default: async ({ locals, params, request, cookies }) => {
-    const form = await superValidate(request, zod(teamInviteSchema));
+    const form = await superValidate(request, zod4(teamInviteSchema));
 
     if (!form.valid) {
       return fail(400, { form });
