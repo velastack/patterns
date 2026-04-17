@@ -308,7 +308,7 @@ function listPageSnippet(
               viewPath: \`${urls.list}/\${row.original.id}\`,
               editPath: \`${urls.list}/\${row.original.id}/edit\`,
               deletePath: \`${urls.list}/\${row.original.id}\`
-            })
+            }),
           meta: { class: "w-0 text-right" },
         })
       ];

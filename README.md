@@ -13,14 +13,7 @@ It also takes any additional wizard inputs from the CLI and passes the data as `
 ```ts
 const pattern = await registry.loadPattern("generate-form", {
   env: "runtime",
-  argv: [
-    "generate",
-    "form",
-    "contact",
-    "name:text",
-    "email:email",
-    "message:editor",
-  ],
+  argv: ["contact", "name:text", "email:email", "message:editor"],
   root: "/user/project",
   features: {
     auth: false,
@@ -38,14 +31,7 @@ is loaded like this:
 ```ts
 const pattern = await registry.loadPattern("generate-form", {
   env: "preview",
-  argv: [
-    "generate",
-    "form",
-    "contact",
-    "name:text",
-    "email:email",
-    "message:editor",
-  ],
+  argv: ["contact", "name:text", "email:email", "message:editor"],
 });
 ```
 
@@ -91,3 +77,10 @@ The `src/baselines/` directory contains template SvelteKit projects that pattern
 Each baseline is a standalone project with its own `package.json`. When working with a baseline locally, run `npm install` inside its directory. The `node_modules` and `.svelte-kit` directories inside baselines are gitignored and must be installed locally before running or testing.
 
 Baselines are not bundled into the published package — they are used by the VelaStack CLI's `create` command and by the velastack.dev website.
+
+# Workflow for adding new patterns
+
+- Develop the pattern in the `src/patterns` directory.
+- Use the demo script to generate a temporary project with the pattern to see applied changes.
+- In the temporary project, run `npm run test:server` to run the tests.
+- Run `npm run lint` and `npm run check` to make sure the code is correct.
