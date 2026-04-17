@@ -18,7 +18,8 @@
     "lint:format": "prettier --check .",
     "test": "vitest run --exclude **/integration.test.ts",
     "test:watch": "vitest --watch --exclude **/integration.test.ts",
-    "test:integration": "vitest run **/integration.test.ts"
+    "test:integration": "vitest run **/integration.test.ts",
+    "prepare": "npm run build"
   },
   "dependencies": {
     "prettier": "^3.8.2",
