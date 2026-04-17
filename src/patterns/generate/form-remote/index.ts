@@ -39,8 +39,8 @@ export default {
   tags: ["sveltekit", "remote-functions", "validation", "zod"],
 
   command: {
-    raw: "vela generate form contact name:text email:email message:editor --remote",
-    base: "vela generate form",
+    raw: "vela generate form --remote contact name:text email:email message:editor",
+    base: "vela generate form --remote",
     argv: ["contact", "name:text", "email:email", "message:editor"],
   },
 

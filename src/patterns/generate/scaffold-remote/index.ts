@@ -49,8 +49,8 @@ export default {
   tags: ["crud", "scaffold", "pocketbase", "sveltekit", "remote-functions"],
 
   command: {
-    raw: "vela generate scaffold contact name:text email:email --remote",
-    base: "vela generate scaffold",
+    raw: "vela generate scaffold --remote contact name:text email:email",
+    base: "vela generate scaffold --remote",
     argv: ["contact", "name:text", "email:email"],
   },
 
