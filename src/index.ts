@@ -4,11 +4,13 @@ import generateForm from "./patterns/generate/form";
 import generateFormRemote from "./patterns/generate/form-remote";
 import generateResource from "./patterns/generate/resource";
 import generateScaffold from "./patterns/generate/scaffold";
+import generateScaffoldRemote from "./patterns/generate/scaffold-remote";
 import generateSchema from "./patterns/generate/schema";
 import enableAuth from "./patterns/enable/auth";
 import enableApi from "./patterns/enable/api";
 import enableApiKeys from "./patterns/enable/api-keys";
 import enableI18n from "./patterns/enable/i18n";
+import enablePayments from "./patterns/enable/payments";
 import enableTeams from "./patterns/enable/teams";
 
 export const version = packageJson.version;
@@ -19,10 +21,12 @@ export const patterns = [
   generateSchema,
   generateResource,
   generateScaffold,
+  generateScaffoldRemote,
   enableAuth,
   enableApi,
   enableApiKeys,
   enableI18n,
+  enablePayments,
   enableTeams,
 ];
 

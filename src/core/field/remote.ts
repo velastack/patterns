@@ -29,7 +29,9 @@ const REMOTE_FIELD_IMPORTS: Record<RemoteFieldComponent, string> = {
 export function getRemoteFieldComponents(
   fields: Field[],
 ): RemoteFieldComponent[] {
-  const components = fields.flatMap((field) => REMOTE_FIELD_COMPONENTS[field.type]);
+  const components = fields.flatMap(
+    (field) => REMOTE_FIELD_COMPONENTS[field.type],
+  );
   return [...new Set(components)];
 }
 

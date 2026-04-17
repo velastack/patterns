@@ -535,6 +535,71 @@ export function generateScaffoldServerTestSnippet(
   `;
 }
 
+export function generateScaffoldRemoteServerTestSnippet(
+  model: Model,
+  urls: ScaffoldUrls,
+  fields: Field[],
+  options: Options,
+  collections: Collection[],
+): string {
+  const { declarations, setupSection, requestAgent, modelDbData } =
+    relationDependencyContext(model, fields, options, collections);
+
+  return dedent`
+    import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+    describe("${model.pluralName}", () => {
+      ${declarations}${setupSection}
+
+      describe("GET ${urls.list}", () => {
+        it("should return a 200 status code", async (context) => {
+          const response = await ${requestAgent}.get("${urls.list}");
+          expect(response.status).toBe(200);
+        });
+      });
+
+      describe("GET ${urls.new}", () => {
+        it("should return a 200 status code", async (context) => {
+          const response = await ${requestAgent}.get("${urls.new}");
+          expect(response.status).toBe(200);
+        });
+      });
+
+      describe("GET ${urls.show}", () => {
+        it("should return a 200 status code", async (context) => {
+          const { id } = await context.admin.collection("${model.tableName}").create(${modelDbData});
+          const response = await ${requestAgent}.get(\`${relationUrl(urls.show, "id")}\`);
+          expect(response.status).toBe(200);
+        });
+
+        it("should return a 404 status code", async (context) => {
+          const response = await ${requestAgent}.get("${urls.show.replace("[id]", "non-existent")}");
+          expect(response.status).toBe(404);
+        });
+      });
+
+      describe("POST ${urls.show}", () => {
+        it("should delete a ${model.displayName.toLowerCase()}", async (context) => {
+          const { id } = await context.admin.collection("${model.tableName}").create(${modelDbData});
+          const response = await ${requestAgent}.post(\`${relationUrl(urls.show, "id")}\`).type("form");
+          expect(response.body.status).toBe(303);
+
+          const response2 = await ${requestAgent}.get(\`${relationUrl(urls.show, "id")}\`);
+          expect(response2.status).toBe(404);
+        });
+      });
+
+      describe("GET ${urls.edit}", () => {
+        it("should return a 200 status code", async (context) => {
+          const { id } = await context.admin.collection("${model.tableName}").create(${modelDbData});
+          const response = await ${requestAgent}.get(\`${relationUrl(urls.edit, "id")}\`);
+          expect(response.status).toBe(200);
+        });
+      });
+    });
+  `;
+}
+
 export function generateFormServerTestSnippet(
   model: Model,
   formUrl: string,

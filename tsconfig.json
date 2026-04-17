@@ -17,6 +17,7 @@
     "src/baselines/**",
     "**/fixtures/**",
     "**/preview-modifies/**",
-    "**/creates/**"
+    "**/creates/**",
+    "**/creates-app-mode/**"
   ]
 }

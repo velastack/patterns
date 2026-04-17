@@ -49,7 +49,8 @@ export default {
       description: "Validation schema for a login form.",
     },
     {
-      command: "settings theme:select(light:Light,dark:Dark) notifications:bool",
+      command:
+        "settings theme:select(light:Light,dark:Dark) notifications:bool",
       description: "Schema with an enum and a boolean flag.",
     },
     {

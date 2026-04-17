@@ -65,6 +65,7 @@ export default defineConfig({
         "**/fixtures/**",
         "**/preview-modifies/**",
         "**/creates/**",
+        "**/creates-app-mode/**",
       ],
     }),
   ],

@@ -31,6 +31,7 @@
     "magic-string": "^0.30.21",
     "package-manager-detector": "^1.6.0",
     "pocketbase": "^0.26.8",
+    "stripe": "^19.0.0",
     "svelte": "^5.55.4",
     "ts-morph": "^28.0.0"
   },
@@ -48,6 +49,9 @@
       "optional": true
     },
     "pocketbase": {
+      "optional": true
+    },
+    "stripe": {
       "optional": true
     },
     "svelte": {
@@ -69,6 +73,7 @@
     "package-manager-detector": "^1.6.0",
     "pluralize": "^8.0.0",
     "pocketbase": "^0.26.8",
+    "stripe": "^19.3.0",
     "svelte": "^5.55.4",
     "ts-morph": "^28.0.0",
     "typescript": "^5.0.0",

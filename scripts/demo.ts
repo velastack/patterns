@@ -28,6 +28,7 @@ const SLUG_TO_FEATURE: Partial<Record<string, keyof Features>> = {
   "enable-api-keys": "apiKeys",
   "enable-i18n": "i18n",
   "enable-teams": "teams",
+  "enable-payments": "payments",
 };
 
 function usage(): never {

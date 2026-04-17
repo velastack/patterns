@@ -91,9 +91,7 @@ describe("generate form-remote pattern", () => {
       'import { submitContactForm } from "./form.remote";',
     );
     expect(page?.content).toContain("{...submitContactForm}");
-    expect(page?.content).toContain(
-      'submitContactForm.fields.name.as("text")',
-    );
+    expect(page?.content).toContain('submitContactForm.fields.name.as("text")');
     expect(page?.content).toContain(
       'submitContactForm.fields.attachments.as("file")',
     );
@@ -101,7 +99,7 @@ describe("generate form-remote pattern", () => {
       "{#each submitContactForm.fields.name.issues() as issue}",
     );
     expect(page?.content).toContain('enctype="multipart/form-data"');
-    expect(page?.content).toContain("<option value=\"draft\">Draft</option>");
+    expect(page?.content).toContain('<option value="draft">Draft</option>');
 
     expect(remote?.content).toContain(
       'import { form, getRequestEvent } from "$app/server";',
