@@ -44,6 +44,21 @@ export default {
     argv: ["contact", "name:text", "email:email", "message:editor"],
   },
 
+  examples: [
+    {
+      command: "contact name:text! email:email! message:editor",
+      description: "Contact form with required text fields and a rich editor.",
+    },
+    {
+      command: "profile avatar:file bio:editor website:url",
+      description: "File upload, editor, and URL validation.",
+    },
+    {
+      command: "feedback rating:select(1,2,3,4,5) comment:editor",
+      description: "Select enum with a long-form comment.",
+    },
+  ],
+
   tests: 2,
 
   baseline: "velastack",

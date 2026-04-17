@@ -53,6 +53,21 @@ export default {
     argv: ["contact", "name:text", "email:email"],
   },
 
+  examples: [
+    {
+      command: "articles title:text! body:editor author:current_user",
+      description: "Content model with an auth-bound author relation.",
+    },
+    {
+      command: "projects name:text! status:select(active:Active,done:Done)",
+      description: "Resource with an enum status field.",
+    },
+    {
+      command: "users/posts title:text! published:bool",
+      description: "Nested resource scoped under users.",
+    },
+  ],
+
   tests: 0,
 
   baseline: "velastack",

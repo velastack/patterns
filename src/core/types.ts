@@ -18,6 +18,11 @@ export interface Options {
 export type Component = string;
 export type Package = string;
 
+export interface Example {
+  command: string;
+  description: string;
+}
+
 export interface CollectionFieldSpec {
   name: string;
   type: string;
@@ -97,6 +102,8 @@ export interface Pattern {
     base: string;
     argv: string[];
   };
+
+  examples: Example[];
 
   tests: number;
 

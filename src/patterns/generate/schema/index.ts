@@ -43,6 +43,21 @@ export default {
     argv: ["contact", "name:text", "email:email"],
   },
 
+  examples: [
+    {
+      command: "login email:email! password:text!",
+      description: "Validation schema for a login form.",
+    },
+    {
+      command: "settings theme:select(light:Light,dark:Dark) notifications:bool",
+      description: "Schema with an enum and a boolean flag.",
+    },
+    {
+      command: "address street:text! city:text! postal:text!",
+      description: "Schema with all required text fields.",
+    },
+  ],
+
   tests: 0,
 
   baseline: "velastack",

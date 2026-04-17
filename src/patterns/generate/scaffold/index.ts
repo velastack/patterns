@@ -53,6 +53,21 @@ export default {
     argv: ["contact", "name:text", "email:email"],
   },
 
+  examples: [
+    {
+      command: "todos title:text! done:bool",
+      description: "Todos with required title and boolean flag.",
+    },
+    {
+      command: "pets type:select(dog:Dog,cat:Cat) owner:user",
+      description: "Enum field and a one-to-many relation to user.",
+    },
+    {
+      command: "users/pets name:text! author:current_user",
+      description: "Nested resource with auth-bound author.",
+    },
+  ],
+
   tests: 8,
 
   baseline: "velastack",
