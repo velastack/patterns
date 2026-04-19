@@ -8,6 +8,7 @@ import { modifyHooksServerI18n } from "./modifies/hooks.server";
 import { modifyAppHtml } from "./modifies/app-html";
 import { modifyGitignore } from "./modifies/gitignore";
 import { ensureRootLayoutI18n } from "./modifies/+layout";
+import { modifyRootLayoutLanguageSelect } from "./modifies/root-layout.svelte";
 
 function findFirstExistingFile(root: string, candidates: string[]): string {
   for (const relPath of candidates) {
@@ -59,6 +60,22 @@ export async function generate(options: Options) {
 
   const layoutPath = path.join(options.root, "src", "routes", "+layout.ts");
   pushResult(modifyOutcomeToFile(layoutPath, ensureRootLayoutI18n(layoutPath)));
+
+  const rootLayoutCandidates = [
+    path.join(options.root, "src", "routes", "(public)", "root-layout.svelte"),
+    path.join(options.root, "src", "routes", "root-layout.svelte"),
+    path.join(options.root, "src", "routes", "(public)", "+layout.svelte"),
+    path.join(options.root, "src", "routes", "+layout.svelte"),
+  ];
+  const rootLayoutPath =
+    rootLayoutCandidates.find((p) => fs.existsSync(p)) ??
+    rootLayoutCandidates[0];
+  pushResult(
+    modifyOutcomeToFile(
+      rootLayoutPath,
+      modifyRootLayoutLanguageSelect(rootLayoutPath),
+    ),
+  );
 
   const gitignorePath = path.join(options.root, ".gitignore");
   pushResult(

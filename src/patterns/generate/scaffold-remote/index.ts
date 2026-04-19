@@ -1,6 +1,8 @@
 import type { Options, Pattern } from "../../../core/types";
 import { formatResult } from "../../../core/format-result";
+import { mergeResults } from "../../../core/util";
 import { generate as generateBase } from "./generate";
+import { generate as generatePreview } from "./generate.preview";
 
 const SLUG = "generate-scaffold-remote" as const;
 const VERSION = "1.0.0";
@@ -9,6 +11,11 @@ const DOCS = "/generate/scaffold-remote";
 
 export async function generate(options: Options) {
   const baseRes = await generateBase(options);
+
+  if (options.env === "preview") {
+    const previewRes = await generatePreview(options);
+    return formatResult(mergeResults([baseRes, previewRes]));
+  }
 
   if (options.env !== "runtime") {
     return formatResult(baseRes);
@@ -19,9 +26,23 @@ export async function generate(options: Options) {
     baseRes.collections,
     options,
   );
+
+  const { modifyOutcomeToFile } = await import("../../../runtime/modify-file");
+  const { findSvelteConfigPath, modifySvelteConfigRemote } =
+    await import("../../../runtime/modify-svelte-config-remote");
+  const svelteConfigPath = findSvelteConfigPath(options.root);
+  const svelteConfigFile = modifyOutcomeToFile(
+    svelteConfigPath,
+    modifySvelteConfigRemote(svelteConfigPath),
+  );
+
   const runtimeRes = {
     ...baseRes,
     creates: [...baseRes.creates, ...migrationCreates],
+    modifies: [
+      ...baseRes.modifies,
+      ...(svelteConfigFile ? [svelteConfigFile] : []),
+    ],
   };
 
   const { writeResult } = await import("../../../runtime/write-result");

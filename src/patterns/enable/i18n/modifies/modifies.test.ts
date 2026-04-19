@@ -9,6 +9,7 @@ import { modifyHooksServerI18n } from "./hooks.server";
 import { modifyAppHtml } from "./app-html";
 import { modifyGitignore } from "./gitignore";
 import { ensureRootLayoutI18n } from "./+layout";
+import { modifyRootLayoutLanguageSelect } from "./root-layout.svelte";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -85,6 +86,30 @@ describe("enable i18n modifiers", () => {
       "utf8",
     );
     await expect(modified).toMatchFormatted(expected, ".gitignore");
+  });
+
+  it("adds <LanguageSelect /> to root-layout.svelte", async () => {
+    const filePath = path.join(tempDir, "root-layout.svelte");
+    modifyRootLayoutLanguageSelect(filePath);
+
+    const modified = fs.readFileSync(filePath, "utf8");
+    const expected = fs.readFileSync(
+      path.join(fixturesPath, "expect", "root-layout.svelte"),
+      "utf8",
+    );
+    await expect(modified).toMatchFormatted(expected, "root-layout.svelte");
+  });
+
+  it("is idempotent for root-layout.svelte", () => {
+    const filePath = path.join(tempDir, "root-layout.svelte");
+
+    modifyRootLayoutLanguageSelect(filePath);
+    const first = fs.readFileSync(filePath, "utf8");
+
+    modifyRootLayoutLanguageSelect(filePath);
+    const second = fs.readFileSync(filePath, "utf8");
+
+    expect(second).toBe(first);
   });
 
   it("creates src/routes/+layout.ts when missing", async () => {

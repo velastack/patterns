@@ -7,6 +7,7 @@ import generateScaffold from "./patterns/generate/scaffold";
 import generateScaffoldRemote from "./patterns/generate/scaffold-remote";
 import generateSchema from "./patterns/generate/schema";
 import enableAuth from "./patterns/enable/auth";
+import enableAuthRemote from "./patterns/enable/auth-remote";
 import enableApi from "./patterns/enable/api";
 import enableApiKeys from "./patterns/enable/api-keys";
 import enableI18n from "./patterns/enable/i18n";
@@ -23,6 +24,7 @@ export const patterns = [
   generateScaffold,
   generateScaffoldRemote,
   enableAuth,
+  enableAuthRemote,
   enableApi,
   enableApiKeys,
   enableI18n,
