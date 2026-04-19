@@ -14,9 +14,8 @@ export async function generate(options: Options) {
     return formatResult(baseRes);
   }
 
-  const { applyCollectionFieldsPatches } = await import(
-    "../../../runtime/collections"
-  );
+  const { applyCollectionFieldsPatches } =
+    await import("../../../runtime/collections");
   const { withPocketbase } = await import("../../../runtime/pocketbase");
 
   let migrationCreates: File[] = [];
@@ -58,9 +57,9 @@ export default {
   tags: ["pocketbase", "migration", "schema"],
 
   command: {
-    raw: "vela generate migration posts add title:text!",
+    raw: "vela generate migration users add birthday:date",
     base: "vela generate migration",
-    argv: ["posts", "add", "title:text!"],
+    argv: ["users", "add", "birthday:date"],
   },
 
   examples: [
