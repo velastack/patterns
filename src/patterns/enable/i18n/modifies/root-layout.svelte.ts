@@ -7,34 +7,34 @@ import {
 } from "../../../../runtime/ts-morph-helpers";
 import type { ModifyOutcome } from "../../../../core/types";
 
-const LANGUAGE_SELECT_SNIPPET = `
-
-	<LanguageSelect />
-`;
+const LANGUAGE_SELECT_SNIPPET = `<Navbar.Item>
+				<LanguageSelect />
+			</Navbar.Item>
+			`;
 
 const IMPORT_SNIPPET = dedent`
   import LanguageSelect from '$lib/components/language-select.svelte';
 `;
 
 const FAILURE_HINT = [
-  "Add the language select inside your <Navbar.Root> in the root layout.",
+  "Add the language select inside your <Navbar.List> in the root layout.",
   "",
   "Import to add to the <script> tag:",
   "",
   IMPORT_SNIPPET,
   "",
-  "Markup to add at the end of <Navbar.Root>:",
+  "Markup to add at the end of <Navbar.List>:",
   LANGUAGE_SELECT_SNIPPET,
 ].join("\n");
 
 const NOT_FOUND_HINT = [
-  "Create a root layout that includes a language select inside <Navbar.Root>.",
+  "Create a root layout that includes a language select inside <Navbar.List>.",
   "",
   "Import for the <script> tag:",
   "",
   IMPORT_SNIPPET,
   "",
-  "Markup at the end of <Navbar.Root>:",
+  "Markup at the end of <Navbar.List>:",
   LANGUAGE_SELECT_SNIPPET,
 ].join("\n");
 
@@ -46,7 +46,7 @@ export function modifyRootLayoutLanguageSelect(
   }
 
   const file = SvelteFile.fromPath(layoutPath);
-  if (!file.hasElement("Navbar.Root")) {
+  if (!file.hasElement("Navbar.List")) {
     return { status: "failed", message: FAILURE_HINT };
   }
   if (file.hasElement("LanguageSelect")) {
@@ -65,7 +65,7 @@ export function modifyRootLayoutLanguageSelect(
     return out;
   });
 
-  file.insertBeforeClosingTag("Navbar.Root", LANGUAGE_SELECT_SNIPPET);
+  file.insertBeforeClosingTag("Navbar.List", LANGUAGE_SELECT_SNIPPET);
   file.writeTo(layoutPath);
   return { status: "success", changed: file.hasChanged() };
 }

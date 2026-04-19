@@ -47,5 +47,6 @@ export async function generate(options: Options) {
     components: [],
     packages: [],
     collections: [],
+    collectionPatches: [],
   } satisfies Result;
 }

@@ -29,5 +29,6 @@ export async function generate(_options: Options) {
     components: [],
     packages: [],
     collections: [],
+    collectionPatches: [],
   } satisfies Result;
 }

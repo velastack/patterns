@@ -22,10 +22,11 @@
 					Home
 				</Button>
 			</Navbar.Item>
+			<!-- [!code highlight:3] -->
+			<Navbar.Item>
+				<LanguageSelect />
+			</Navbar.Item>
 		</Navbar.List>
-
-		<!-- [!code highlight] -->
-		<LanguageSelect />
 	</Navbar.Root>
 
 	{@render children?.()}

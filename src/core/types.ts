@@ -72,6 +72,16 @@ export interface CollectionRulesPatch {
   deleteRule?: string | null;
 }
 
+export type FieldChange =
+  | { op: "add"; field: CollectionFieldSpec }
+  | { op: "remove"; fieldName: string }
+  | { op: "rename"; from: string; to: string };
+
+export interface CollectionFieldsPatch {
+  collectionName: string;
+  changes: FieldChange[];
+}
+
 export interface Result {
   creates: File[];
   modifies: File[];
@@ -79,6 +89,7 @@ export interface Result {
   components: Component[];
   packages: Package[];
   collections: CollectionSpec[];
+  collectionPatches: CollectionFieldsPatch[];
 }
 
 export interface Pattern {

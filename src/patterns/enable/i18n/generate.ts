@@ -29,5 +29,6 @@ export async function generate(_options: Options) {
     components: ["select"],
     packages: ["wuchale", "@wuchale/svelte"],
     collections: [],
+    collectionPatches: [],
   } satisfies Result;
 }

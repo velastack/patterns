@@ -449,7 +449,7 @@ export function inferModelCollectionName(name: string): string {
   return pluralize.plural(changeCase.snakeCase(name));
 }
 
-function toCollectionFieldSpec(field: Field): CollectionFieldSpec {
+export function toCollectionFieldSpec(field: Field): CollectionFieldSpec {
   const base = {
     name: field.name,
     type: field.type,

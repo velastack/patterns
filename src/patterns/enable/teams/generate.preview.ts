@@ -30,5 +30,6 @@ export async function generate(_options: Options) {
     components: [],
     packages: [],
     collections: TEAMS_PREVIEW_COLLECTIONS,
+    collectionPatches: [],
   } satisfies Result;
 }

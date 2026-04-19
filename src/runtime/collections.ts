@@ -1,10 +1,13 @@
 import { readFileSync } from "node:fs";
 import type {
+  CollectionFieldSpec,
+  CollectionFieldsPatch,
   CollectionRulesPatch,
   CollectionSpec,
   File,
   Options,
 } from "../core/types";
+import { InvalidArgumentError } from "../core/errors";
 import { languageFromPath } from "../core/util";
 import { getMigrationFile, migrationDelay, withPocketbase } from "./pocketbase";
 
@@ -81,6 +84,90 @@ export async function applyCollectionRulePatches(
         });
       }
     }
+  }
+
+  return migrations;
+}
+
+function applyFieldChanges(
+  existing: CollectionFieldSpec[],
+  patch: CollectionFieldsPatch,
+): CollectionFieldSpec[] {
+  const fields = existing.map((field) => ({ ...field }));
+
+  for (const change of patch.changes) {
+    if (change.op === "add") {
+      if (fields.some((f) => f.name === change.field.name)) {
+        throw new InvalidArgumentError(
+          `Field "${change.field.name}" already exists on collection "${patch.collectionName}"`,
+        );
+      }
+      fields.push(change.field);
+      continue;
+    }
+    if (change.op === "remove") {
+      const index = fields.findIndex((f) => f.name === change.fieldName);
+      if (index === -1) {
+        throw new InvalidArgumentError(
+          `Field "${change.fieldName}" does not exist on collection "${patch.collectionName}"`,
+        );
+      }
+      fields.splice(index, 1);
+      continue;
+    }
+    if (change.op === "rename") {
+      const field = fields.find((f) => f.name === change.from);
+      if (!field) {
+        throw new InvalidArgumentError(
+          `Field "${change.from}" does not exist on collection "${patch.collectionName}"`,
+        );
+      }
+      if (fields.some((f) => f.name === change.to)) {
+        throw new InvalidArgumentError(
+          `Field "${change.to}" already exists on collection "${patch.collectionName}"`,
+        );
+      }
+      field.name = change.to;
+      continue;
+    }
+  }
+
+  return fields;
+}
+
+export async function applyCollectionFieldsPatches(
+  pb: {
+    collections: {
+      getOne: (
+        name: string,
+      ) => Promise<{ id: string; fields: CollectionFieldSpec[] }>;
+      update: (id: string, body: Record<string, unknown>) => Promise<unknown>;
+    };
+  },
+  patches: CollectionFieldsPatch[],
+  options: Options,
+): Promise<File[]> {
+  const migrations: File[] = [];
+
+  for (const patch of patches) {
+    const collection = await pb.collections.getOne(patch.collectionName);
+    const newFields = applyFieldChanges(collection.fields, patch);
+    await pb.collections.update(collection.id, { fields: newFields });
+    await migrationDelay();
+
+    const migrationFile = getMigrationFile(
+      patch.collectionName,
+      "updated",
+      options,
+    );
+    if (!migrationFile) continue;
+
+    migrations.push({
+      path: migrationFile,
+      language: languageFromPath(migrationFile),
+      content: readFileSync(migrationFile, "utf8"),
+      status: "success",
+    });
   }
 
   return migrations;

@@ -25,6 +25,7 @@ export function mergeResults(results: Result[]) {
       acc.components.push(...result.components);
       acc.packages.push(...result.packages);
       acc.collections.push(...result.collections);
+      acc.collectionPatches.push(...result.collectionPatches);
       return acc;
     },
     {
@@ -34,6 +35,7 @@ export function mergeResults(results: Result[]) {
       components: [],
       packages: [],
       collections: [],
+      collectionPatches: [],
     } satisfies Result,
   );
 }

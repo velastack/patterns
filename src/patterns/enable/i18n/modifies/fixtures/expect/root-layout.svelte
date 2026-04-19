@@ -21,9 +21,10 @@
 					Home
 				</Button>
 			</Navbar.Item>
+			<Navbar.Item>
+				<LanguageSelect />
+			</Navbar.Item>
 		</Navbar.List>
-
-		<LanguageSelect />
 	</Navbar.Root>
 
 	{@render children?.()}

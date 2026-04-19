@@ -746,5 +746,6 @@ export async function generate(options: Options) {
     collections: shouldCreateCollection
       ? [collectionSpecFromModelFields(model, fields, auth)]
       : [],
+    collectionPatches: [],
   } satisfies Result;
 }

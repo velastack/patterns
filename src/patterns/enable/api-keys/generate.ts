@@ -29,5 +29,6 @@ export async function generate(_options: Options) {
     components: ["alert-dialog", "button", "badge"],
     packages: ["argon2", "@types/node"],
     collections: [],
+    collectionPatches: [],
   } satisfies Result;
 }

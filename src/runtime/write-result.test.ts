@@ -45,6 +45,7 @@ function emptyResult(): Result {
     components: [],
     packages: [],
     collections: [],
+    collectionPatches: [],
   };
 }
 
