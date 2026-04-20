@@ -90,9 +90,8 @@ export async function generate(options: Options) {
   pushResult(modifyOutcomeToFile(envPath, modifyEnv(envPath, envEdits)));
 
   await withPocketbase(options.root, async (pb) => {
-    const create = (
-      spec: Parameters<typeof createCollectionIdempotent>[1],
-    ) => createCollectionIdempotent(pb, spec, logger);
+    const create = (spec: Parameters<typeof createCollectionIdempotent>[1]) =>
+      createCollectionIdempotent(pb, spec, logger);
 
     logger.info("Creating stripe_products collection");
     const productsResult = await create({
@@ -346,29 +345,41 @@ export async function generate(options: Options) {
   } else {
     logger.info("Creating test Stripe product and price");
   }
-  const { product, price } = stripePriceId
+  const { product, price, existing } = stripePriceId
     ? await getProductAndPriceById(stripeSecretKey, stripePriceId)
     : await createTestProductAndPrice(stripeSecretKey);
 
+  if (existing) {
+    logger.info("Stripe product/price already exists, skipping creation");
+  }
+
   logger.info("Seeding Stripe product/price records");
   await withPocketbase(options.root, async (pb) => {
-    await pb.collection("stripe_products").create({
-      id: product.id,
-      name: product.name,
-      active: product.active,
-      default_price: product.default_price,
-    });
+    try {
+      await pb.collection("stripe_products").getOne(product.id);
+    } catch (error) {
+      await pb.collection("stripe_products").create({
+        id: product.id,
+        name: product.name,
+        active: product.active,
+        default_price: product.default_price,
+      });
+    }
 
-    await pb.collection("stripe_prices").create({
-      id: price.id,
-      billing_scheme: price.billing_scheme,
-      currency: price.currency,
-      product: price.product,
-      recurring: price.recurring,
-      type: price.type,
-      unit_amount: price.unit_amount,
-      active: price.active,
-    });
+    try {
+      await pb.collection("stripe_prices").getOne(price.id);
+    } catch (error) {
+      await pb.collection("stripe_prices").create({
+        id: price.id,
+        billing_scheme: price.billing_scheme,
+        currency: price.currency,
+        product: price.product,
+        recurring: price.recurring,
+        type: price.type,
+        unit_amount: price.unit_amount,
+        active: price.active,
+      });
+    }
   });
 
   logger.info("Creating payment +page.svelte");

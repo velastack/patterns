@@ -284,7 +284,9 @@ async function installComponents(
 
   const publicList = [...publicToInstall].sort();
   if (publicList.length > 0) {
-    logger.info(`Installing shadcn-svelte components: ${publicList.join(", ")}`);
+    logger.info(
+      `Installing shadcn-svelte components: ${publicList.join(", ")}`,
+    );
     await executeCommand(
       root,
       "execute",
@@ -307,9 +309,22 @@ export async function writeResult(
 ): Promise<Result> {
   const logger = getLogger(options);
 
+  const writtenResult: Result = {
+    creates: [],
+    modifies: [],
+    deletes: [],
+    components: [],
+    packages: [],
+    collections: [],
+    collectionPatches: [],
+  };
+
   for (const file of result.creates) {
     if (file.status !== "success") continue;
-    writeFile(toTargetPath(options.root, file.path), file.content);
+    if (!existsSync(toTargetPath(options.root, file.path))) {
+      writeFile(toTargetPath(options.root, file.path), file.content);
+      writtenResult.creates.push(file);
+    }
   }
 
   for (const file of result.modifies) {
@@ -319,7 +334,10 @@ export async function writeResult(
 
   for (const file of result.deletes) {
     if (file.status !== "success") continue;
-    removeFile(toTargetPath(options.root, file.path));
+    if (existsSync(toTargetPath(options.root, file.path))) {
+      removeFile(toTargetPath(options.root, file.path));
+      writtenResult.deletes.push(file);
+    }
   }
 
   const packageInstalls = await installPackages(
@@ -328,6 +346,7 @@ export async function writeResult(
     runtime,
     logger,
   );
+
   const componentInstalls = await installComponents(
     options.root,
     result.components,
@@ -337,6 +356,8 @@ export async function writeResult(
 
   return {
     ...result,
+    creates: writtenResult.creates,
+    deletes: writtenResult.deletes,
     components: componentInstalls.components,
     packages: [...new Set([...packageInstalls, ...componentInstalls.packages])],
   };

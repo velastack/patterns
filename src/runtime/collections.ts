@@ -28,8 +28,9 @@ interface PocketBaseCollectionCreateError {
 function isCollectionAlreadyExistsError(
   error: PocketBaseCollectionCreateError,
 ): boolean {
-  console.log(JSON.stringify(error, null, 2));
-  if (error.response?.data?.name?.code === "validation_not_unique") {
+  if (
+    error.response?.data?.name?.code === "validation_collection_name_exists"
+  ) {
     return true;
   }
 
