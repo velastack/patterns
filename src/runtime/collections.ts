@@ -28,6 +28,7 @@ interface PocketBaseCollectionCreateError {
 function isCollectionAlreadyExistsError(
   error: PocketBaseCollectionCreateError,
 ): boolean {
+  console.log(JSON.stringify(error, null, 2));
   if (error.response?.data?.name?.code === "validation_not_unique") {
     return true;
   }
@@ -38,9 +39,7 @@ function isCollectionAlreadyExistsError(
   );
 }
 
-type CollectionCreateInput = Parameters<
-  PocketBase["collections"]["create"]
->[0];
+type CollectionCreateInput = Parameters<PocketBase["collections"]["create"]>[0];
 
 export interface CreateCollectionResult {
   collection: CollectionModel;
@@ -64,9 +63,7 @@ export async function createCollectionIdempotent(
     return { collection, created: true };
   } catch (error) {
     if (
-      !isCollectionAlreadyExistsError(
-        error as PocketBaseCollectionCreateError,
-      )
+      !isCollectionAlreadyExistsError(error as PocketBaseCollectionCreateError)
     ) {
       throw error;
     }
