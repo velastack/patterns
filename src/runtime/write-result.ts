@@ -10,6 +10,7 @@ import { detect } from "package-manager-detector";
 import { resolveCommand } from "package-manager-detector/commands";
 import spawn from "cross-spawn";
 import type { Options, Result } from "../core/types";
+import { getLogger, NOOP_LOGGER, type Logger } from "../core/logger";
 
 type PackageManagerOperation = "execute" | "install";
 type ExecuteCommand = (
@@ -172,6 +173,7 @@ async function installPackages(
   root: string,
   packages: string[],
   runtime?: WriteResultRuntime,
+  logger: Logger = NOOP_LOGGER,
 ): Promise<string[]> {
   if (packages.length === 0) {
     return [];
@@ -183,6 +185,7 @@ async function installPackages(
     return [];
   }
 
+  logger.info(`Installing packages: ${toInstall.join(", ")}`);
   await executeCommand(root, "install", toInstall, runtime);
   return toInstall;
 }
@@ -225,6 +228,7 @@ async function installComponents(
   root: string,
   components: string[],
   runtime?: WriteResultRuntime,
+  logger: Logger = NOOP_LOGGER,
 ): Promise<{ components: string[]; packages: string[] }> {
   if (components.length === 0) {
     return { components: [], packages: [] };
@@ -261,7 +265,11 @@ async function installComponents(
   }
 
   const installedComponents: string[] = [];
-  for (const component of [...customToInstall].sort()) {
+  const customList = [...customToInstall].sort();
+  if (customList.length > 0) {
+    logger.info(`Installing custom components: ${customList.join(", ")}`);
+  }
+  for (const component of customList) {
     copyCustomComponent(component, componentsDir);
     installedComponents.push(component);
     publicToInstall.delete(component);
@@ -271,10 +279,12 @@ async function installComponents(
     root,
     customNpmPackagesFor([...customToInstall]),
     runtime,
+    logger,
   );
 
   const publicList = [...publicToInstall].sort();
   if (publicList.length > 0) {
+    logger.info(`Installing shadcn-svelte components: ${publicList.join(", ")}`);
     await executeCommand(
       root,
       "execute",
@@ -295,6 +305,8 @@ export async function writeResult(
   options: Options,
   runtime?: WriteResultRuntime,
 ): Promise<Result> {
+  const logger = getLogger(options);
+
   for (const file of result.creates) {
     if (file.status !== "success") continue;
     writeFile(toTargetPath(options.root, file.path), file.content);
@@ -314,11 +326,13 @@ export async function writeResult(
     options.root,
     result.packages,
     runtime,
+    logger,
   );
   const componentInstalls = await installComponents(
     options.root,
     result.components,
     runtime,
+    logger,
   );
 
   return {

@@ -1,5 +1,6 @@
 import type { File, Options, Pattern } from "../../../core/types";
 import { formatResult } from "../../../core/format-result";
+import { getLogger } from "../../../core/logger";
 import { generate as generateBase } from "./generate";
 
 const SLUG = "generate-migration" as const;
@@ -18,12 +19,14 @@ export async function generate(options: Options) {
     await import("../../../runtime/collections");
   const { withPocketbase } = await import("../../../runtime/pocketbase");
 
+  const logger = getLogger(options);
   let migrationCreates: File[] = [];
   await withPocketbase(options.root, async (pb) => {
     migrationCreates = await applyCollectionFieldsPatches(
       pb,
       baseRes.collectionPatches,
       options,
+      logger,
     );
   });
 

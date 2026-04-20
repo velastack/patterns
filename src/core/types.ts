@@ -1,3 +1,5 @@
+import type { Logger } from "./logger";
+
 export interface Features {
   auth: boolean;
   api: boolean;
@@ -13,6 +15,7 @@ export interface Options {
   root: string;
   features: Features;
   input: Record<string, any>;
+  logger?: Logger;
 }
 
 export type Component = string;

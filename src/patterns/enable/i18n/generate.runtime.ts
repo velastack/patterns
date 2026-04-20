@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
+import { getLogger } from "../../../core/logger";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
 import { modifyViteConfig } from "./modifies/vite-config";
 import { modifySvelteConfig } from "./modifies/svelte-config";
@@ -21,12 +22,14 @@ function findFirstExistingFile(root: string, candidates: string[]): string {
 }
 
 export async function generate(options: Options) {
+  const logger = getLogger(options);
   const modifies: File[] = [];
 
   const pushResult = (file: File | null) => {
     if (file) modifies.push(file);
   };
 
+  logger.info("Modifying vite.config");
   const viteConfigPath = findFirstExistingFile(options.root, [
     "vite.config.ts",
     "vite.config.js",
@@ -37,6 +40,7 @@ export async function generate(options: Options) {
     modifyOutcomeToFile(viteConfigPath, modifyViteConfig(viteConfigPath)),
   );
 
+  logger.info("Modifying svelte.config");
   const svelteConfigPath = findFirstExistingFile(options.root, [
     "svelte.config.ts",
     "svelte.config.js",
@@ -47,6 +51,7 @@ export async function generate(options: Options) {
     modifyOutcomeToFile(svelteConfigPath, modifySvelteConfig(svelteConfigPath)),
   );
 
+  logger.info("Modifying hooks.server.ts");
   const hooksServerPath = path.join(options.root, "src", "hooks.server.ts");
   pushResult(
     modifyOutcomeToFile(
@@ -55,12 +60,15 @@ export async function generate(options: Options) {
     ),
   );
 
+  logger.info("Modifying app.html");
   const appHtmlPath = path.join(options.root, "src", "app.html");
   pushResult(modifyOutcomeToFile(appHtmlPath, modifyAppHtml(appHtmlPath)));
 
+  logger.info("Modifying root +layout.ts");
   const layoutPath = path.join(options.root, "src", "routes", "+layout.ts");
   pushResult(modifyOutcomeToFile(layoutPath, ensureRootLayoutI18n(layoutPath)));
 
+  logger.info("Modifying root layout language select");
   const rootLayoutCandidates = [
     path.join(options.root, "src", "routes", "(public)", "root-layout.svelte"),
     path.join(options.root, "src", "routes", "root-layout.svelte"),
@@ -77,6 +85,7 @@ export async function generate(options: Options) {
     ),
   );
 
+  logger.info("Updating .gitignore");
   const gitignorePath = path.join(options.root, ".gitignore");
   pushResult(
     modifyOutcomeToFile(gitignorePath, modifyGitignore(gitignorePath)),

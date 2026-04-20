@@ -1,6 +1,7 @@
 import path from "node:path";
 import fs from "node:fs";
 import { Options, Result, File } from "../../../core/types";
+import { getLogger } from "../../../core/logger";
 import {
   getMigrationFile,
   migrationDelay,
@@ -18,11 +19,13 @@ import { modifyHooksServer } from "./modifies/hooks.server";
 
 export async function generate(options: Options) {
   const { input } = options;
+  const logger = getLogger(options);
 
   let creates: File[] = [];
 
   // Update PocketBase
   await withPocketbase(options.root, async (pb) => {
+    logger.info("Updating PocketBase mail settings");
     await pb.settings.update({
       meta: {
         senderName: input.senderName,
@@ -53,6 +56,7 @@ export async function generate(options: Options) {
         "{APP_URL}/confirm-email-change/{TOKEN}",
       );
 
+    logger.info("Locking down users collection rules and email templates");
     // Update user auth rules to lock down access to the user's own account
     await pb.collections.update("users", {
       listRule: "@request.auth.id = id",
@@ -91,6 +95,7 @@ export async function generate(options: Options) {
     if (file) modifies.push(file);
   };
 
+  logger.info("Modifying +layout.server.ts");
   const layoutServerFile = path.join(
     options.root,
     "src",
@@ -101,6 +106,7 @@ export async function generate(options: Options) {
     modifyOutcomeToFile(layoutServerFile, modifyLayoutServer(layoutServerFile)),
   );
 
+  logger.info("Modifying root layout");
   // TODO: make this more robust by searching for Navbar.Root > Navbar.List
   // src/routes/(public)/root-layout.svelte is what vela creates by default
   const layoutCandidates = [
@@ -115,11 +121,13 @@ export async function generate(options: Options) {
     modifyOutcomeToFile(layoutFile, modifyRootLayoutSvelte(layoutFile)),
   );
 
+  logger.info("Modifying hooks.server.ts");
   const hooksServerFile = path.join(options.root, "src", "hooks.server.ts");
   pushResult(
     modifyOutcomeToFile(hooksServerFile, modifyHooksServer(hooksServerFile)),
   );
 
+  logger.info("Modifying svelte.config for remote");
   const svelteConfigPath = findSvelteConfigPath(options.root);
   pushResult(
     modifyOutcomeToFile(

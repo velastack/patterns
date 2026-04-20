@@ -1,5 +1,6 @@
 import type { Options, Pattern } from "../../../core/types";
 import { formatResult } from "../../../core/format-result";
+import { getLogger } from "../../../core/logger";
 import { mergeResults } from "../../../core/util";
 import { generate as generateBase } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
@@ -30,6 +31,8 @@ export async function generate(options: Options) {
   const { modifyOutcomeToFile } = await import("../../../runtime/modify-file");
   const { findSvelteConfigPath, modifySvelteConfigRemote } =
     await import("../../../runtime/modify-svelte-config-remote");
+  const logger = getLogger(options);
+  logger.info("Modifying svelte.config for remote");
   const svelteConfigPath = findSvelteConfigPath(options.root);
   const svelteConfigFile = modifyOutcomeToFile(
     svelteConfigPath,

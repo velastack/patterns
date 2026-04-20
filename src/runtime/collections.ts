@@ -1,4 +1,6 @@
 import { readFileSync } from "node:fs";
+import type PocketBase from "pocketbase";
+import type { CollectionModel } from "pocketbase";
 import type {
   CollectionFieldSpec,
   CollectionFieldsPatch,
@@ -8,6 +10,7 @@ import type {
   Options,
 } from "../core/types";
 import { InvalidArgumentError } from "../core/errors";
+import { getLogger, NOOP_LOGGER, type Logger } from "../core/logger";
 import { languageFromPath } from "../core/util";
 import { getMigrationFile, migrationDelay, withPocketbase } from "./pocketbase";
 
@@ -35,6 +38,44 @@ function isCollectionAlreadyExistsError(
   );
 }
 
+type CollectionCreateInput = Parameters<
+  PocketBase["collections"]["create"]
+>[0];
+
+export interface CreateCollectionResult {
+  collection: CollectionModel;
+  created: boolean;
+}
+
+/**
+ * Idempotent wrapper around `pb.collections.create`. If the collection already
+ * exists, logs and returns the existing model with `created: false` so callers
+ * can skip work tied to a fresh create (e.g. appending a newly-generated
+ * migration file to the result).
+ */
+export async function createCollectionIdempotent(
+  pb: PocketBase,
+  spec: CollectionCreateInput,
+  logger: Logger = NOOP_LOGGER,
+): Promise<CreateCollectionResult> {
+  const name = (spec as { name: string }).name;
+  try {
+    const collection = await pb.collections.create(spec);
+    return { collection, created: true };
+  } catch (error) {
+    if (
+      !isCollectionAlreadyExistsError(
+        error as PocketBaseCollectionCreateError,
+      )
+    ) {
+      throw error;
+    }
+    logger.info(`Collection "${name}" already exists, skipping`);
+    const collection = await pb.collections.getOne(name);
+    return { collection, created: false };
+  }
+}
+
 function rulePayloadFromPatch(
   patch: CollectionRulesPatch,
 ): Record<string, unknown> {
@@ -60,12 +101,14 @@ export async function applyCollectionRulePatches(
   },
   patches: CollectionRulesPatch[],
   options?: Options,
+  logger: Logger = NOOP_LOGGER,
 ): Promise<File[]> {
   const migrations: File[] = [];
 
   for (const patch of patches) {
     const escaped = patch.collectionName.replace(/'/g, "''");
     const col = await pb.collections.getFirstListItem(`name='${escaped}'`);
+    logger.info(`Updating rules on collection "${patch.collectionName}"`);
     await pb.collections.update(col.id, rulePayloadFromPatch(patch));
     await migrationDelay();
 
@@ -146,12 +189,14 @@ export async function applyCollectionFieldsPatches(
   },
   patches: CollectionFieldsPatch[],
   options: Options,
+  logger: Logger = NOOP_LOGGER,
 ): Promise<File[]> {
   const migrations: File[] = [];
 
   for (const patch of patches) {
     const collection = await pb.collections.getOne(patch.collectionName);
     const newFields = applyFieldChanges(collection.fields, patch);
+    logger.info(`Updating fields on collection "${patch.collectionName}"`);
     await pb.collections.update(collection.id, { fields: newFields });
     await migrationDelay();
 
@@ -182,23 +227,17 @@ export async function createCollections(
   }
 
   const migrations: File[] = [];
+  const logger = getLogger(options);
 
   await withPocketbase(options.root, async (pb) => {
     for (const collection of collections) {
-      try {
-        await pb.collections.create(collection);
-      } catch (error) {
-        if (
-          isCollectionAlreadyExistsError(
-            error as PocketBaseCollectionCreateError,
-          )
-        ) {
-          throw new Error(
-            `Collection "${collection.name}" already exists. Choose a different model name or remove the existing collection first.`,
-          );
-        }
-        throw error;
-      }
+      logger.info(`Creating collection "${collection.name}"`);
+      const { created } = await createCollectionIdempotent(
+        pb,
+        collection,
+        logger,
+      );
+      if (!created) continue;
       await migrationDelay();
 
       const migrationFile = getMigrationFile(

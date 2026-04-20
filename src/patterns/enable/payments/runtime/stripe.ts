@@ -41,3 +41,17 @@ export async function createTestProductAndPrice(
 
   return { product, price, existing: false };
 }
+
+export async function getProductAndPriceById(
+  stripeSecretKey: string,
+  priceId: string,
+): Promise<StripeTestFixture> {
+  const stripe = new Stripe(stripeSecretKey);
+  const price = await stripe.prices.retrieve(priceId, { expand: ["product"] });
+  const product =
+    typeof price.product === "string"
+      ? await stripe.products.retrieve(price.product)
+      : (price.product as Stripe.Product);
+  price.product = product.id;
+  return { product, price, existing: true };
+}

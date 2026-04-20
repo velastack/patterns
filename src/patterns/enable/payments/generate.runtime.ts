@@ -3,24 +3,31 @@ import path from "node:path";
 import { randomBytes } from "node:crypto";
 import dedent from "dedent";
 import type { File, Options, Result } from "../../../core/types";
+import { getLogger } from "../../../core/logger";
 import { languageFromPath } from "../../../core/util";
 import {
   getMigrationFile,
   migrationDelay,
   withPocketbase,
 } from "../../../runtime/pocketbase";
+import { createCollectionIdempotent } from "../../../runtime/collections";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
 import { modifyNavUser } from "./modifies/modify-nav-user";
 import { modifyUserSignup } from "./modifies/modify-user-signup";
 import { modifyEnv, type EnvEdit } from "./modifies/modify-env";
-import { createTestProductAndPrice } from "./runtime/stripe";
+import {
+  createTestProductAndPrice,
+  getProductAndPriceById,
+} from "./runtime/stripe";
 
 async function pushMigrationCreates(
   creates: File[],
   collectionName: string,
   action: "created" | "updated",
   options: Options,
+  created = true,
 ) {
+  if (!created) return;
   await migrationDelay();
   const migrationFile = getMigrationFile(collectionName, action, options);
   if (!migrationFile) return;
@@ -45,20 +52,27 @@ function paymentPageSnippet(priceId: string): string {
 }
 
 export async function generate(options: Options) {
-  const { stripeSecretKey, stripePublishableKey, stripeWebhookSecret } =
-    options.input as {
-      stripeSecretKey: string;
-      stripePublishableKey: string;
-      stripeWebhookSecret: string;
-    };
+  const {
+    stripeSecretKey,
+    stripePublishableKey,
+    stripeWebhookSecret,
+    stripePriceId,
+  } = options.input as {
+    stripeSecretKey: string;
+    stripePublishableKey: string;
+    stripeWebhookSecret: string;
+    stripePriceId?: string;
+  };
 
   const isAppMode = options.features.auth;
+  const logger = getLogger(options);
   const creates: File[] = [];
   const modifies: File[] = [];
   const pushResult = (file: File | null) => {
     if (file) modifies.push(file);
   };
 
+  logger.info("Writing Stripe credentials to .env");
   const internalJobSecret = randomBytes(16).toString("hex");
   const envEdits: EnvEdit[] = [
     { type: "comment", key: "Stripe credentials" },
@@ -76,7 +90,12 @@ export async function generate(options: Options) {
   pushResult(modifyOutcomeToFile(envPath, modifyEnv(envPath, envEdits)));
 
   await withPocketbase(options.root, async (pb) => {
-    await pb.collections.create({
+    const create = (
+      spec: Parameters<typeof createCollectionIdempotent>[1],
+    ) => createCollectionIdempotent(pb, spec, logger);
+
+    logger.info("Creating stripe_products collection");
+    const productsResult = await create({
       name: "stripe_products",
       type: "base",
       fields: [
@@ -95,9 +114,16 @@ export async function generate(options: Options) {
         { name: "updated", onCreate: true, onUpdate: true, type: "autodate" },
       ],
     });
-    await pushMigrationCreates(creates, "stripe_products", "created", options);
+    await pushMigrationCreates(
+      creates,
+      "stripe_products",
+      "created",
+      options,
+      productsResult.created,
+    );
 
-    await pb.collections.create({
+    logger.info("Creating stripe_prices collection");
+    const pricesResult = await create({
       name: "stripe_prices",
       type: "base",
       fields: [
@@ -120,10 +146,17 @@ export async function generate(options: Options) {
         { name: "updated", onCreate: true, onUpdate: true, type: "autodate" },
       ],
     });
-    await pushMigrationCreates(creates, "stripe_prices", "created", options);
+    await pushMigrationCreates(
+      creates,
+      "stripe_prices",
+      "created",
+      options,
+      pricesResult.created,
+    );
 
     if (isAppMode) {
-      const stripeCustomersCollection = await pb.collections.create({
+      logger.info("Creating stripe_customers collection");
+      const customersResult = await create({
         name: "stripe_customers",
         type: "base",
         fields: [
@@ -157,14 +190,17 @@ export async function generate(options: Options) {
           },
         ],
       });
+      const stripeCustomersCollection = customersResult.collection;
       await pushMigrationCreates(
         creates,
         "stripe_customers",
         "created",
         options,
+        customersResult.created,
       );
 
-      const stripePaymentMethodsCollection = await pb.collections.create({
+      logger.info("Creating stripe_payment_methods collection");
+      const paymentMethodsResult = await create({
         name: "stripe_payment_methods",
         type: "base",
         fields: [
@@ -203,13 +239,16 @@ export async function generate(options: Options) {
           },
         ],
       });
+      const stripePaymentMethodsCollection = paymentMethodsResult.collection;
       await pushMigrationCreates(
         creates,
         "stripe_payment_methods",
         "created",
         options,
+        paymentMethodsResult.created,
       );
 
+      logger.info("Linking default_payment_method on stripe_customers");
       await pb.collections.update("stripe_customers", {
         fields: [
           {
@@ -257,7 +296,8 @@ export async function generate(options: Options) {
         options,
       );
 
-      await pb.collections.create({
+      logger.info("Creating transactions collection");
+      const transactionsResult = await create({
         name: "transactions",
         type: "base",
         fields: [
@@ -291,12 +331,26 @@ export async function generate(options: Options) {
           { name: "receipt_url", required: true, type: "url" },
         ],
       });
-      await pushMigrationCreates(creates, "transactions", "created", options);
+      await pushMigrationCreates(
+        creates,
+        "transactions",
+        "created",
+        options,
+        transactionsResult.created,
+      );
     }
   });
 
-  const { product, price } = await createTestProductAndPrice(stripeSecretKey);
+  if (stripePriceId) {
+    logger.info(`Fetching Stripe product/price ${stripePriceId}`);
+  } else {
+    logger.info("Creating test Stripe product and price");
+  }
+  const { product, price } = stripePriceId
+    ? await getProductAndPriceById(stripeSecretKey, stripePriceId)
+    : await createTestProductAndPrice(stripeSecretKey);
 
+  logger.info("Seeding Stripe product/price records");
   await withPocketbase(options.root, async (pb) => {
     await pb.collection("stripe_products").create({
       id: product.id,
@@ -317,6 +371,7 @@ export async function generate(options: Options) {
     });
   });
 
+  logger.info("Creating payment +page.svelte");
   creates.push({
     path: "src/routes/(public)/payment/+page.svelte",
     language: "svelte",
@@ -325,6 +380,7 @@ export async function generate(options: Options) {
   });
 
   if (isAppMode) {
+    logger.info("Modifying nav-user.svelte");
     const navUserPath = path.join(
       options.root,
       "src",
@@ -334,6 +390,7 @@ export async function generate(options: Options) {
     );
     pushResult(modifyOutcomeToFile(navUserPath, modifyNavUser(navUserPath)));
 
+    logger.info("Modifying signup +page.server.ts");
     const userSignupPath = path.join(
       options.root,
       "src",

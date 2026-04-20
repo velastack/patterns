@@ -6,17 +6,21 @@ import {
   migrationDelay,
   withPocketbase,
 } from "../../../runtime/pocketbase";
+import { createCollectionIdempotent } from "../../../runtime/collections";
+import { getLogger } from "../../../core/logger";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
 import { modifyHooksServer } from "./modifies/hooks.server";
 import { modifyNavUser } from "./modifies/nav-user.svelte";
 
 export async function generate(options: Options) {
+  const logger = getLogger(options);
   const creates: File[] = [];
 
   await withPocketbase(options.root, async (pb) => {
     const userCollection = await pb.collections.getOne("users");
 
-    await pb.collections.create({
+    logger.info("Creating api_keys collection");
+    const apiKeysResult = await createCollectionIdempotent(pb, {
       listRule: "@request.auth.id = user.id",
       viewRule: "@request.auth.id = user.id",
       createRule: "@request.auth.id = user.id",
@@ -57,16 +61,18 @@ export async function generate(options: Options) {
         },
       ],
     });
-    await migrationDelay();
+    if (apiKeysResult.created) {
+      await migrationDelay();
 
-    const migrationFile = getMigrationFile("api_keys", "created", options);
-    if (migrationFile) {
-      creates.push({
-        path: migrationFile,
-        language: "ts",
-        content: fs.readFileSync(migrationFile, "utf8"),
-        status: "success",
-      });
+      const migrationFile = getMigrationFile("api_keys", "created", options);
+      if (migrationFile) {
+        creates.push({
+          path: migrationFile,
+          language: "ts",
+          content: fs.readFileSync(migrationFile, "utf8"),
+          status: "success",
+        });
+      }
     }
   });
 
@@ -75,11 +81,13 @@ export async function generate(options: Options) {
     if (file) modifies.push(file);
   };
 
+  logger.info("Modifying hooks.server.ts");
   const hooksServerPath = path.join(options.root, "src", "hooks.server.ts");
   pushResult(
     modifyOutcomeToFile(hooksServerPath, modifyHooksServer(hooksServerPath)),
   );
 
+  logger.info("Modifying nav-user");
   const navUserPath = path.join(
     options.root,
     "src",
