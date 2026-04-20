@@ -14,6 +14,19 @@ import enableApiKeys from "./patterns/enable/api-keys";
 import enableI18n from "./patterns/enable/i18n";
 import enablePayments from "./patterns/enable/payments";
 import enableTeams from "./patterns/enable/teams";
+import destroySchema from "./patterns/destroy/schema";
+import destroyForm from "./patterns/destroy/form";
+import destroyFormRemote from "./patterns/destroy/form-remote";
+import destroyResource from "./patterns/destroy/resource";
+import destroyScaffold from "./patterns/destroy/scaffold";
+import destroyScaffoldRemote from "./patterns/destroy/scaffold-remote";
+import disableApi from "./patterns/disable/api";
+import disableApiKeys from "./patterns/disable/api-keys";
+import disableAuth from "./patterns/disable/auth";
+import disableAuthRemote from "./patterns/disable/auth-remote";
+import disableI18n from "./patterns/disable/i18n";
+import disableTeams from "./patterns/disable/teams";
+import disablePayments from "./patterns/disable/payments";
 
 export const version = packageJson.version;
 
@@ -32,6 +45,19 @@ export const patterns = [
   enableI18n,
   enablePayments,
   enableTeams,
+  destroySchema,
+  destroyForm,
+  destroyFormRemote,
+  destroyResource,
+  destroyScaffold,
+  destroyScaffoldRemote,
+  disableApi,
+  disableApiKeys,
+  disableAuth,
+  disableAuthRemote,
+  disableI18n,
+  disableTeams,
+  disablePayments,
 ];
 
 type PatternEntry = (typeof patterns)[number];

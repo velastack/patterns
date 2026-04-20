@@ -30,5 +30,6 @@ export async function generate(_options: Options) {
     packages: ["wuchale", "@wuchale/svelte"],
     collections: [],
     collectionPatches: [],
+    collectionDrops: [],
   } satisfies Result;
 }

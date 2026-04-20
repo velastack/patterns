@@ -51,6 +51,39 @@ export function ensureImports(sf: SourceFile, imports: ImportSpec[]): void {
   }
 }
 
+/** Remove the import declaration for the given module specifier, if present. */
+export function removeImportByModuleSpecifier(
+  sf: SourceFile,
+  moduleSpecifier: string,
+): { wasRemoved: boolean } {
+  const decl = sf
+    .getImportDeclarations()
+    .find((d) => d.getModuleSpecifierValue() === moduleSpecifier);
+  if (!decl) return { wasRemoved: false };
+  decl.remove();
+  return { wasRemoved: true };
+}
+
+/** Remove a top-level function or variable declaration by name, if present. */
+export function removeTopLevelStatementByIdentifier(
+  sf: SourceFile,
+  name: string,
+): { wasRemoved: boolean } {
+  const fn = sf.getFunction(name);
+  if (fn) {
+    fn.remove();
+    return { wasRemoved: true };
+  }
+  const vs = sf
+    .getVariableStatements()
+    .find((s) => s.getDeclarations().some((d) => d.getName() === name));
+  if (vs) {
+    vs.remove();
+    return { wasRemoved: true };
+  }
+  return { wasRemoved: false };
+}
+
 /**
  * Add an item to the `data.navUser` array in a Svelte component's script body.
  * Idempotent: if an entry with the same `title` already exists, no-op.
@@ -123,4 +156,105 @@ export function addNavItemToScript(
   });
 
   return { source, wasAdded: result.wasAdded };
+}
+
+/**
+ * Remove the entry with the given `title` from the `data.navUser` array in a
+ * Svelte component's script body. Also removes the icon import if supplied and
+ * no other navUser entry references it. Idempotent: no-op if the entry or
+ * navUser structure is missing.
+ */
+export function removeNavItemFromScript(
+  scriptSource: string,
+  title: string,
+  iconImportPath?: string,
+): { source: string; wasRemoved: boolean } {
+  const { source, result } = withInMemoryScript(scriptSource, (sf) => {
+    const dataDecl = sf
+      .getVariableDeclarations()
+      .find((d) => d.getName() === "data");
+    const dataInit = dataDecl?.getInitializer();
+    if (
+      !dataInit ||
+      dataInit.getKind() !== SyntaxKind.ObjectLiteralExpression
+    ) {
+      return { wasRemoved: false };
+    }
+
+    const obj = dataInit.asKindOrThrow(SyntaxKind.ObjectLiteralExpression);
+    const navProp = obj.getProperty("navUser");
+    if (!navProp || navProp.getKind() !== SyntaxKind.PropertyAssignment) {
+      return { wasRemoved: false };
+    }
+
+    const init = navProp
+      .asKindOrThrow(SyntaxKind.PropertyAssignment)
+      .getInitializer();
+    if (!init || init.getKind() !== SyntaxKind.ArrayLiteralExpression) {
+      return { wasRemoved: false };
+    }
+
+    const arr = init.asKindOrThrow(SyntaxKind.ArrayLiteralExpression);
+    const elements = arr.getElements();
+    const index = elements.findIndex((el) => {
+      if (el.getKind() !== SyntaxKind.ObjectLiteralExpression) return false;
+      const o = el.asKindOrThrow(SyntaxKind.ObjectLiteralExpression);
+      const titleProp = o.getProperty("title");
+      if (!titleProp || titleProp.getKind() !== SyntaxKind.PropertyAssignment) {
+        return false;
+      }
+      const value = titleProp
+        .asKindOrThrow(SyntaxKind.PropertyAssignment)
+        .getInitializer();
+      return (
+        value?.getKind() === SyntaxKind.StringLiteral &&
+        (value as StringLiteral).getLiteralText() === title
+      );
+    });
+
+    if (index === -1) return { wasRemoved: false };
+
+    arr.removeElement(index);
+
+    if (iconImportPath) {
+      const remainingRefs = arr.getElements().some((el) => {
+        if (el.getKind() !== SyntaxKind.ObjectLiteralExpression) return false;
+        const o = el.asKindOrThrow(SyntaxKind.ObjectLiteralExpression);
+        const iconProp = o.getProperty("icon");
+        if (!iconProp || iconProp.getKind() !== SyntaxKind.PropertyAssignment) {
+          return false;
+        }
+        return iconProp
+          .asKindOrThrow(SyntaxKind.PropertyAssignment)
+          .getInitializer()
+          ?.getText() !== undefined;
+      });
+      const importDecl = sf
+        .getImportDeclarations()
+        .find((d) => d.getModuleSpecifierValue() === iconImportPath);
+      if (importDecl && !remainingRefs) {
+        const importName = importDecl.getDefaultImport()?.getText();
+        const stillUsed =
+          importName &&
+          sf
+            .getDescendantsOfKind(SyntaxKind.Identifier)
+            .some(
+              (id) =>
+                id.getText() === importName &&
+                id.getParent()?.getKind() !==
+                  SyntaxKind.ImportClause &&
+                id.getParent()?.getKind() !==
+                  SyntaxKind.ImportSpecifier,
+            );
+        if (!stillUsed) {
+          importDecl.remove();
+        }
+      }
+    }
+
+    sf.formatText();
+    return { wasRemoved: true };
+  });
+
+  return { source, wasRemoved: result.wasRemoved };
 }

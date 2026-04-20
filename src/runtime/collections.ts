@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import type PocketBase from "pocketbase";
 import type { CollectionModel } from "pocketbase";
 import type {
+  CollectionDropSpec,
   CollectionFieldSpec,
   CollectionFieldsPatch,
   CollectionRulesPatch,
@@ -212,6 +213,117 @@ export async function applyCollectionFieldsPatches(
       status: "success",
     });
   }
+
+  return migrations;
+}
+
+export interface DropCollectionResult {
+  dropped: boolean;
+  existed: boolean;
+}
+
+/**
+ * Idempotent collection drop. Returns `{ existed: false, dropped: false }` if
+ * the collection is already gone, matching the idempotency contract of
+ * `createCollectionIdempotent`.
+ */
+export async function dropCollectionIdempotent(
+  pb: PocketBase,
+  name: string,
+  logger: Logger = NOOP_LOGGER,
+): Promise<DropCollectionResult> {
+  try {
+    await pb.collections.getOne(name);
+  } catch (error) {
+    const status = (error as { status?: number }).status;
+    if (status === 404) {
+      logger.info(`Collection "${name}" does not exist, skipping drop`);
+      return { dropped: false, existed: false };
+    }
+    throw error;
+  }
+  await pb.collections.delete(name);
+  return { dropped: true, existed: true };
+}
+
+export interface CollectionStats {
+  exists: boolean;
+  rowCount: number;
+}
+
+export async function getCollectionStats(
+  pb: PocketBase,
+  name: string,
+): Promise<CollectionStats> {
+  try {
+    await pb.collections.getOne(name);
+  } catch (error) {
+    const status = (error as { status?: number }).status;
+    if (status === 404) {
+      return { exists: false, rowCount: 0 };
+    }
+    throw error;
+  }
+
+  try {
+    const result = await pb.collection(name).getList(1, 1, { skipTotal: false });
+    return { exists: true, rowCount: result.totalItems };
+  } catch {
+    return { exists: true, rowCount: 0 };
+  }
+}
+
+/**
+ * Resolve the set of collections to drop, with current row counts. Missing
+ * collections are included with `exists: false, rowCount: 0` so callers can
+ * display the full reversal plan even when some collections were already gone.
+ */
+export async function planCollectionDrops(
+  pb: PocketBase,
+  names: string[],
+): Promise<CollectionDropSpec[]> {
+  const plans: CollectionDropSpec[] = [];
+  for (const name of names) {
+    const stats = await getCollectionStats(pb, name);
+    plans.push({ name, exists: stats.exists, rowCount: stats.rowCount });
+  }
+  return plans;
+}
+
+/**
+ * Drop each of the given collections (skipping those that are already gone)
+ * and collect the `_deleted_<name>.js` migration file PocketBase emits for
+ * each successful drop. Symmetric to `createCollections`.
+ */
+export async function dropCollections(
+  specs: CollectionDropSpec[],
+  options: Options,
+): Promise<File[]> {
+  if (specs.length === 0) {
+    return [];
+  }
+
+  const migrations: File[] = [];
+  const logger = getLogger(options);
+
+  await withPocketbase(options.root, async (pb) => {
+    for (const spec of specs) {
+      logger.info(`Dropping collection "${spec.name}"`);
+      const { dropped } = await dropCollectionIdempotent(pb, spec.name, logger);
+      if (!dropped) continue;
+      await migrationDelay();
+
+      const migrationFile = getMigrationFile(spec.name, "deleted", options);
+      if (!migrationFile) continue;
+
+      migrations.push({
+        path: migrationFile,
+        language: languageFromPath(migrationFile),
+        content: readFileSync(migrationFile, "utf8"),
+        status: "success",
+      });
+    }
+  });
 
   return migrations;
 }

@@ -85,6 +85,12 @@ export interface CollectionFieldsPatch {
   changes: FieldChange[];
 }
 
+export interface CollectionDropSpec {
+  name: string;
+  exists: boolean;
+  rowCount: number;
+}
+
 export interface Result {
   creates: File[];
   modifies: File[];
@@ -93,6 +99,7 @@ export interface Result {
   packages: Package[];
   collections: CollectionSpec[];
   collectionPatches: CollectionFieldsPatch[];
+  collectionDrops: CollectionDropSpec[];
 }
 
 export interface Pattern {

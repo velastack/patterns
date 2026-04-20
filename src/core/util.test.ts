@@ -46,6 +46,7 @@ describe("mergeResults", () => {
       packages: [],
       collections: [],
       collectionPatches: [],
+      collectionDrops: [],
     });
   });
 
@@ -60,6 +61,7 @@ describe("mergeResults", () => {
       packages: ["pkg-a"],
       collections: [{ name: "products", type: "base", fields: [] }],
       collectionPatches: [],
+      collectionDrops: [],
     };
     const b: Result = {
       creates: [],
@@ -73,6 +75,7 @@ describe("mergeResults", () => {
       packages: [],
       collections: [{ name: "invoices", type: "base", fields: [] }],
       collectionPatches: [],
+      collectionDrops: [],
     };
     expect(mergeResults([a, b])).toEqual({
       creates: a.creates,
@@ -82,6 +85,7 @@ describe("mergeResults", () => {
       packages: ["pkg-a"],
       collections: [...a.collections, ...b.collections],
       collectionPatches: [],
+      collectionDrops: [],
     });
   });
 });

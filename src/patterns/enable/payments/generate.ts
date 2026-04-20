@@ -61,5 +61,6 @@ export async function generate(options: Options) {
     packages: ["stripe", "@stripe/stripe-js"],
     collections: [],
     collectionPatches: [],
+    collectionDrops: [],
   } satisfies Result;
 }

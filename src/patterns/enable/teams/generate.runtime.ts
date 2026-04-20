@@ -386,5 +386,6 @@ export async function generate(options: Options) {
     packages: [],
     collections: [],
     collectionPatches: [],
+    collectionDrops: [],
   } satisfies Result;
 }

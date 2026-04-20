@@ -317,9 +317,16 @@ export async function writeResult(
     packages: [],
     collections: [],
     collectionPatches: [],
+    collectionDrops: [],
   };
 
-  for (const file of result.creates) {
+  let dropMigrationCreates: Result["creates"] = [];
+  if (result.collectionDrops.length > 0) {
+    const { dropCollections } = await import("./collections");
+    dropMigrationCreates = await dropCollections(result.collectionDrops, options);
+  }
+
+  for (const file of [...result.creates, ...dropMigrationCreates]) {
     if (file.status !== "success") continue;
     if (!existsSync(toTargetPath(options.root, file.path))) {
       writeFile(toTargetPath(options.root, file.path), file.content);

@@ -46,6 +46,7 @@ function emptyResult(): Result {
     packages: [],
     collections: [],
     collectionPatches: [],
+    collectionDrops: [],
   };
 }
 

@@ -116,6 +116,11 @@ export class SvelteFile {
     return true;
   }
 
+  /** Remove the element (start tag through close tag). */
+  removeElement(name: string): boolean {
+    return this.replaceElement(name, "");
+  }
+
   /**
    * Append attribute text (e.g. " team={data.team}") just after the last
    * existing attribute on the element's start tag.

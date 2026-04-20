@@ -30,5 +30,6 @@ export async function generate(_options: Options) {
     packages: [],
     collections: [],
     collectionPatches: [],
+    collectionDrops: [],
   } satisfies Result;
 }

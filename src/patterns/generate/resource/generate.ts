@@ -48,5 +48,6 @@ export async function generate(options: Options) {
       ? [collectionSpecFromModelFields(model, fields, auth)]
       : [],
     collectionPatches: [],
+    collectionDrops: [],
   } satisfies Result;
 }

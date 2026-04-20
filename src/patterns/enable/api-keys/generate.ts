@@ -30,5 +30,6 @@ export async function generate(_options: Options) {
     packages: ["argon2", "@types/node"],
     collections: [],
     collectionPatches: [],
+    collectionDrops: [],
   } satisfies Result;
 }

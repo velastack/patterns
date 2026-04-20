@@ -103,6 +103,7 @@ export async function generate(options: Options): Promise<Result> {
     packages: [],
     collections: [],
     collectionPatches: [{ collectionName, changes }],
+    collectionDrops: [],
   } satisfies Result;
 }
 
