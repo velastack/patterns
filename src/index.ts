@@ -11,15 +11,14 @@ import enableAuth from "./patterns/enable/auth";
 import enableAuthRemote from "./patterns/enable/auth-remote";
 import enableApi from "./patterns/enable/api";
 import enableApiKeys from "./patterns/enable/api-keys";
+import enableContentNegotiation from "./patterns/enable/content-negotiation";
 import enableI18n from "./patterns/enable/i18n";
 import enablePayments from "./patterns/enable/payments";
 import enableTeams from "./patterns/enable/teams";
 import destroySchema from "./patterns/destroy/schema";
 import destroyForm from "./patterns/destroy/form";
-import destroyFormRemote from "./patterns/destroy/form-remote";
 import destroyResource from "./patterns/destroy/resource";
 import destroyScaffold from "./patterns/destroy/scaffold";
-import destroyScaffoldRemote from "./patterns/destroy/scaffold-remote";
 import disableApi from "./patterns/disable/api";
 import disableApiKeys from "./patterns/disable/api-keys";
 import disableAuth from "./patterns/disable/auth";
@@ -42,15 +41,14 @@ export const patterns = [
   enableAuthRemote,
   enableApi,
   enableApiKeys,
+  enableContentNegotiation,
   enableI18n,
   enablePayments,
   enableTeams,
   destroySchema,
   destroyForm,
-  destroyFormRemote,
   destroyResource,
   destroyScaffold,
-  destroyScaffoldRemote,
   disableApi,
   disableApiKeys,
   disableAuth,

@@ -1,20 +1,16 @@
-import type { CollectionDropSpec, Options, Result } from "../../core/types";
+import type {
+  CollectionDropSpec,
+  File,
+  Options,
+} from "../../core/types";
+import { languageFromPath } from "../../core/util";
 
-/**
- * Invert a forward pattern's Result for destroy: turn `creates` into `deletes`,
- * clear fields that don't apply in reverse (packages/components are retained
- * per plan; collections become `collectionDrops` via separate logic if needed).
- */
-export function inverseCreates(forward: Result): Result {
+export function toDeleteEntry(path: string): File {
   return {
-    creates: [],
-    modifies: [],
-    deletes: [...forward.creates],
-    components: [],
-    packages: [],
-    collections: [],
-    collectionPatches: [],
-    collectionDrops: [],
+    path,
+    language: languageFromPath(path),
+    content: "",
+    status: "success",
   };
 }
 

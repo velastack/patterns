@@ -1,7 +1,8 @@
-import type { Options, Pattern } from "../../../core/types";
+import type { Options, Pattern, Result } from "../../../core/types";
 import { formatResult } from "../../../core/format-result";
-import { generate as generateForward } from "../../generate/scaffold/generate";
-import { inverseCreates, planDropsForCollections } from "../shared";
+import { InvalidArgumentError } from "../../../core/errors";
+import { modelPaths, parseModel } from "../../../parse";
+import { planDropsForCollections, toDeleteEntry } from "../shared";
 
 const SLUG = "destroy-scaffold" as const;
 const VERSION = "1.0.0";
@@ -9,15 +10,32 @@ const SOURCE = "src/patterns/destroy/scaffold";
 const DOCS = "/destroy/scaffold";
 
 export async function generate(options: Options) {
-  const forwardRes = await generateForward(options);
-  const inverseRes = inverseCreates(forwardRes);
+  const [modelPath] = options.argv;
+  if (!modelPath) {
+    throw new InvalidArgumentError(
+      "Invalid command arguments. Expected: <model>",
+    );
+  }
+
+  const model = parseModel(modelPath, options);
+  const paths = modelPaths(model);
+  const schemaPath = `src/lib/schemas/${model.name}.ts`;
   const collectionDrops = await planDropsForCollections(
-    forwardRes.collections.map((c) => c.name),
+    [model.tableName],
     options,
   );
-  inverseRes.collectionDrops = collectionDrops;
 
-  const formatted = await formatResult(inverseRes);
+  const result: Result = {
+    creates: [],
+    modifies: [],
+    deletes: [toDeleteEntry(paths.list), toDeleteEntry(schemaPath)],
+    components: [],
+    packages: [],
+    collections: [],
+    collectionPatches: [],
+    collectionDrops,
+  };
+  const formatted = await formatResult(result);
 
   if (options.env !== "runtime" || options.input.destructive !== true) {
     return formatted;
@@ -35,7 +53,7 @@ export default {
   plan: "open",
   title: "Destroy a scaffold",
   summary:
-    "Removes the CRUD routes created by generate-scaffold and drops the associated collection. Retains shadcn components.",
+    "Removes the route directory and schema file created by generate-scaffold and drops the collection. Retains shadcn components.",
   requires: {
     auth: false,
     api: false,
@@ -48,14 +66,14 @@ export default {
   tags: ["crud", "scaffold", "pocketbase", "sveltekit"],
 
   command: {
-    raw: "vela destroy scaffold contact name:text email:email",
+    raw: "vela destroy scaffold contacts",
     base: "vela destroy scaffold",
-    argv: ["contact", "name:text", "email:email"],
+    argv: ["contacts"],
   },
 
   examples: [
     {
-      command: "todos title:text! done:bool",
+      command: "todos",
       description: "Remove a todos scaffold.",
     },
   ],

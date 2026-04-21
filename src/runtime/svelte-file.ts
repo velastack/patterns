@@ -121,6 +121,11 @@ export class SvelteFile {
     return this.replaceElement(name, "");
   }
 
+  /** Append raw markup to the end of the source file. */
+  appendMarkup(content: string): void {
+    this.s.append(content);
+  }
+
   /**
    * Append attribute text (e.g. " team={data.team}") just after the last
    * existing attribute on the element's start tag.

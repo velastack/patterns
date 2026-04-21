@@ -51,7 +51,6 @@ export default defineConfig({
       output: {
         entryFileNames: "index.js",
         chunkFileNames: "chunks/[name]-[hash].js",
-        inlineDynamicImports: false,
       },
     },
   },

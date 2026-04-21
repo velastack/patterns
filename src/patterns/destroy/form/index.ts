@@ -1,7 +1,8 @@
-import type { Options, Pattern } from "../../../core/types";
+import type { Options, Pattern, Result } from "../../../core/types";
 import { formatResult } from "../../../core/format-result";
-import { generate as generateForward } from "../../generate/form/generate";
-import { inverseCreates } from "../shared";
+import { InvalidArgumentError } from "../../../core/errors";
+import { parseModel } from "../../../parse/model";
+import { toDeleteEntry } from "../shared";
 
 const SLUG = "destroy-form" as const;
 const VERSION = "1.0.0";
@@ -9,9 +10,29 @@ const SOURCE = "src/patterns/destroy/form";
 const DOCS = "/destroy/form";
 
 export async function generate(options: Options) {
-  const forwardRes = await generateForward(options);
-  const inverseRes = inverseCreates(forwardRes);
-  const formatted = await formatResult(inverseRes);
+  const [modelPath] = options.argv;
+  if (!modelPath) {
+    throw new InvalidArgumentError(
+      "Invalid command arguments. Expected: <model>",
+    );
+  }
+
+  const model = parseModel(modelPath, options);
+  const normalizedModelPath = modelPath.replace(/^\/+|\/+$/g, "");
+  const routeDir = `${model.routesDir}/${normalizedModelPath}`;
+  const schemaPath = `src/lib/schemas/${model.name}.ts`;
+
+  const result: Result = {
+    creates: [],
+    modifies: [],
+    deletes: [toDeleteEntry(routeDir), toDeleteEntry(schemaPath)],
+    components: [],
+    packages: [],
+    collections: [],
+    collectionPatches: [],
+    collectionDrops: [],
+  };
+  const formatted = await formatResult(result);
 
   if (options.env !== "runtime" || options.input.destructive !== true) {
     return formatted;
@@ -28,7 +49,8 @@ export default {
   docs: DOCS,
   plan: "open",
   title: "Destroy a form",
-  summary: "Removes the form files created by generate-form.",
+  summary:
+    "Removes the route directory and schema file created by generate-form.",
   requires: {
     auth: false,
     api: false,
@@ -41,14 +63,14 @@ export default {
   tags: ["form", "sveltekit", "pocketbase"],
 
   command: {
-    raw: "vela destroy form contact name:text email:email",
+    raw: "vela destroy form contact",
     base: "vela destroy form",
-    argv: ["contact", "name:text", "email:email"],
+    argv: ["contact"],
   },
 
   examples: [
     {
-      command: "login email:email! password:text!",
+      command: "login",
       description: "Remove the login form.",
     },
   ],

@@ -1,7 +1,8 @@
-import type { Options, Pattern } from "../../../core/types";
+import type { Options, Pattern, Result } from "../../../core/types";
 import { formatResult } from "../../../core/format-result";
-import { generate as generateForward } from "../../generate/resource/generate";
-import { inverseCreates, planDropsForCollections } from "../shared";
+import { InvalidArgumentError } from "../../../core/errors";
+import { parseModel } from "../../../parse/model";
+import { planDropsForCollections, toDeleteEntry } from "../shared";
 
 const SLUG = "destroy-resource" as const;
 const VERSION = "1.0.0";
@@ -9,15 +10,31 @@ const SOURCE = "src/patterns/destroy/resource";
 const DOCS = "/destroy/resource";
 
 export async function generate(options: Options) {
-  const forwardRes = await generateForward(options);
-  const inverseRes = inverseCreates(forwardRes);
+  const [modelPath] = options.argv;
+  if (!modelPath) {
+    throw new InvalidArgumentError(
+      "Invalid command arguments. Expected: <model>",
+    );
+  }
+
+  const model = parseModel(modelPath, options);
+  const schemaPath = `src/lib/schemas/${model.name}.ts`;
   const collectionDrops = await planDropsForCollections(
-    forwardRes.collections.map((c) => c.name),
+    [model.tableName],
     options,
   );
-  inverseRes.collectionDrops = collectionDrops;
 
-  const formatted = await formatResult(inverseRes);
+  const result: Result = {
+    creates: [],
+    modifies: [],
+    deletes: [toDeleteEntry(schemaPath)],
+    components: [],
+    packages: [],
+    collections: [],
+    collectionPatches: [],
+    collectionDrops,
+  };
+  const formatted = await formatResult(result);
 
   if (options.env !== "runtime" || options.input.destructive !== true) {
     return formatted;
@@ -35,7 +52,7 @@ export default {
   plan: "open",
   title: "Destroy a resource",
   summary:
-    "Removes the resource files created by generate-resource and drops the associated collection.",
+    "Drops the collection and removes the schema file created by generate-resource.",
   requires: {
     auth: false,
     api: false,
@@ -48,14 +65,14 @@ export default {
   tags: ["pocketbase", "resource", "schema"],
 
   command: {
-    raw: "vela destroy resource contact name:text email:email",
+    raw: "vela destroy resource contacts",
     base: "vela destroy resource",
-    argv: ["contact", "name:text", "email:email"],
+    argv: ["contacts"],
   },
 
   examples: [
     {
-      command: "articles title:text! body:editor",
+      command: "articles",
       description: "Remove an articles resource.",
     },
   ],
