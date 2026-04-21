@@ -22,7 +22,7 @@ import destroyScaffold from "./patterns/destroy/scaffold";
 import disableApi from "./patterns/disable/api";
 import disableApiKeys from "./patterns/disable/api-keys";
 import disableAuth from "./patterns/disable/auth";
-import disableAuthRemote from "./patterns/disable/auth-remote";
+import disableContentNegotiation from "./patterns/disable/content-negotiation";
 import disableI18n from "./patterns/disable/i18n";
 import disableTeams from "./patterns/disable/teams";
 import disablePayments from "./patterns/disable/payments";
@@ -52,7 +52,7 @@ export const patterns = [
   disableApi,
   disableApiKeys,
   disableAuth,
-  disableAuthRemote,
+  disableContentNegotiation,
   disableI18n,
   disableTeams,
   disablePayments,

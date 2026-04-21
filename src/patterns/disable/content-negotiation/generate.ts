@@ -2,11 +2,11 @@ import type { Options, Result } from "../../../core/types";
 import { appRelativePath, languageFromPath } from "../../../core/util";
 
 const createsRaw = import.meta.glob<string>(
-  "../../enable/auth-remote/creates/**",
+  "../../enable/content-negotiation/creates/**",
   { query: "?raw", import: "default", eager: true },
 );
 
-const CREATES_PREFIX = "../../enable/auth-remote/creates/";
+const CREATES_PREFIX = "../../enable/content-negotiation/creates/";
 
 export async function generate(_options: Options) {
   const deletes = Object.keys(createsRaw)

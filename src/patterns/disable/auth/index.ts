@@ -35,7 +35,7 @@ export default {
   plan: "open",
   title: "Disable auth",
   summary:
-    "Reverts auth integration: removes auth routes, reverts layout/hooks edits, drops oauth_accounts. Does NOT delete the users collection or user data.",
+    "Reverts auth integration (including the remote-functions variant): removes auth routes, reverts layout/hooks edits, drops oauth_accounts. Does NOT delete the users collection or user data.",
   requires: {
     auth: true,
     api: false,

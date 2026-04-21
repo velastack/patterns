@@ -3,10 +3,10 @@ import { formatResult } from "../../../core/format-result";
 import { mergeResults } from "../../../core/util";
 import { generate as generateBase } from "./generate";
 
-const SLUG = "disable-auth-remote" as const;
+const SLUG = "disable-content-negotiation" as const;
 const VERSION = "1.0.0";
-const SOURCE = "src/patterns/disable/auth-remote";
-const DOCS = "/disable/auth-remote";
+const SOURCE = "src/patterns/disable/content-negotiation";
+const DOCS = "/disable/content-negotiation";
 
 export async function generate(options: Options) {
   const baseRes = await generateBase(options);
@@ -33,31 +33,29 @@ export default {
   source: SOURCE,
   docs: DOCS,
   plan: "open",
-  title: "Disable authentication (remote functions)",
+  title: "Disable content negotiation",
   summary:
-    "Reverts remote-functions auth integration: removes auth routes, reverts layout/hooks edits, drops oauth_accounts. Does NOT delete the users collection, user data, or revert svelte.config.",
+    "Removes sveltekit-negotiate wiring: deletes creates, unwraps hooks.server handle, reverts reroute (preserving i18n compose), removes <Negotiate /> from the root layout.",
   requires: {
-    auth: true,
+    auth: false,
     api: false,
     apiKeys: false,
     i18n: false,
     teams: false,
     payments: false,
   },
-  category: "auth" as const,
+  category: "api" as const,
   tags: [
     "sveltekit",
-    "authentication",
-    "auth",
-    "velastack",
-    "oauth",
-    "pocketbase",
-    "remote-functions",
+    "content-negotiation",
+    "markdown",
+    "json",
+    "api",
   ],
 
   command: {
-    raw: "vela disable auth --remote",
-    base: "vela disable auth --remote",
+    raw: "vela disable content-negotiation",
+    base: "vela disable content-negotiation",
     argv: [],
   },
 
