@@ -18,6 +18,7 @@ import { modifyEnv, type EnvEdit } from "./modifies/modify-env";
 import {
   createTestProductAndPrice,
   getProductAndPriceById,
+  syncUsersToStripeCustomers,
 } from "./runtime/stripe";
 
 async function pushMigrationCreates(
@@ -336,6 +337,16 @@ export async function generate(options: Options) {
         "created",
         options,
         transactionsResult.created,
+      );
+
+      logger.info("Syncing existing PocketBase users to Stripe customers");
+      const syncResult = await syncUsersToStripeCustomers(
+        pb,
+        stripeSecretKey,
+        logger,
+      );
+      logger.info(
+        `Synced ${syncResult.total} users (created ${syncResult.created}, reused ${syncResult.reused}, skipped ${syncResult.skipped})`,
       );
     }
   });

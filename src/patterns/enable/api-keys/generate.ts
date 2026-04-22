@@ -1,4 +1,4 @@
-import type { Options, Result } from "../../../core/types";
+import type { CollectionSpec, Options, Result } from "../../../core/types";
 import { appRelativePath, languageFromPath } from "../../../core/util";
 
 const createsRaw = import.meta.glob<string>("./creates/**", {
@@ -8,6 +8,49 @@ const createsRaw = import.meta.glob<string>("./creates/**", {
 });
 
 const CREATES_PREFIX = "./creates/";
+
+const apiKeysCollection: CollectionSpec = {
+  listRule: "@request.auth.id = user.id",
+  viewRule: "@request.auth.id = user.id",
+  createRule: "@request.auth.id = user.id",
+  updateRule: "@request.auth.id = user.id",
+  deleteRule: "@request.auth.id = user.id",
+  name: "api_keys",
+  type: "base",
+  fields: [
+    {
+      collectionId: "_pb_users_auth_",
+      maxSelect: 1,
+      name: "user",
+      type: "relation",
+    },
+    {
+      name: "key_hash",
+      type: "text",
+    },
+    {
+      name: "label",
+      type: "text",
+      required: true,
+    },
+    {
+      name: "last_used",
+      type: "date",
+    },
+    {
+      name: "created",
+      onCreate: true,
+      onUpdate: false,
+      type: "autodate",
+    },
+    {
+      name: "updated",
+      onCreate: true,
+      onUpdate: true,
+      type: "autodate",
+    },
+  ],
+};
 
 export async function generate(_options: Options) {
   const creates = Object.entries(createsRaw)
@@ -28,7 +71,7 @@ export async function generate(_options: Options) {
     deletes: [],
     components: ["alert-dialog", "button", "badge"],
     packages: ["argon2", "@types/node"],
-    collections: [],
+    collections: [apiKeysCollection],
     collectionPatches: [],
     collectionDrops: [],
   } satisfies Result;

@@ -6,7 +6,8 @@
 	import * as Form from '$lib/components/ui/form';
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
-	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
+	import * as Dialog from '$lib/components/ui/dialog';
+	import { goto } from '$app/navigation';
 
 	let { data } = $props();
 
@@ -18,25 +19,24 @@
 	);
 
 	const { form: formData } = form;
+
+	function onOpenChange(open: boolean) {
+		if (!open) {
+			form.reset();
+			goto('/api-keys');
+		}
+	}
 </script>
 
-<section data-role="content">
-	<div class="flex justify-between items-center mb-4">
-		<h1 class="text-3xl font-bold tracking-tight">New API key</h1>
-		<Button href="/api-keys" variant="outline">
-			<ArrowLeftIcon class="w-4 h-4" />
-			Back to list
-		</Button>
-	</div>
-
-	<div class="bg-card rounded-lg shadow-sm border p-4">
+<Dialog.Root open={true} {onOpenChange}>
+	<Dialog.Content>
 		<form method="POST">
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+			<div class="grid grid-cols-1 gap-4">
 				<Form.Field {form} name="label" class="col-span-1">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Label</Form.Label>
-							<Input {...props} type="text" bind:value={$formData.label} />
+							<Form.Label>API key label</Form.Label>
+							<Input {...props} type="text" bind:value={$formData.label} autofocus />
 						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors class="contents text-destructive" />
@@ -48,5 +48,5 @@
 				<Button href="/api-keys" variant="outline">Cancel</Button>
 			</div>
 		</form>
-	</div>
-</section>
+	</Dialog.Content>
+</Dialog.Root>

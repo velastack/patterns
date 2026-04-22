@@ -17,11 +17,22 @@ export async function generate(options: Options) {
     return formatResult(mergeResults([baseRes, previewRes]));
   }
 
+  const { createCollections } = await import("../../../runtime/collections");
+  const migrationCreates = await createCollections(
+    baseRes.collections,
+    options,
+  );
+
   const { generate: generateRuntime } = await import("./generate.runtime");
   const runtimeRes = await generateRuntime(options);
   const { writeResult } = await import("../../../runtime/write-result");
   return writeResult(
-    await formatResult(mergeResults([baseRes, runtimeRes])),
+    await formatResult(
+      mergeResults([
+        { ...baseRes, creates: [...baseRes.creates, ...migrationCreates] },
+        runtimeRes,
+      ]),
+    ),
     options,
   );
 }

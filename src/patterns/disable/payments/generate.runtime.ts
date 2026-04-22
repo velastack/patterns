@@ -53,8 +53,8 @@ export async function generate(options: Options) {
 
   const collectionNames = [
     "transactions",
-    "stripe_payment_methods",
     "stripe_customers",
+    "stripe_payment_methods",
     "stripe_prices",
     "stripe_products",
   ];

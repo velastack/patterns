@@ -1,5 +1,6 @@
-import type { Options, Pattern } from "../../../core/types";
+import type { File, Options, Pattern } from "../../../core/types";
 import { formatResult } from "../../../core/format-result";
+import { getLogger } from "../../../core/logger";
 import { mergeResults } from "../../../core/util";
 import { generate as generateBase } from "./generate";
 
@@ -23,8 +24,52 @@ export async function generate(options: Options) {
     return merged;
   }
 
+  const patchCreates = await unlinkStripePaymentMethodsCustomer(options);
+  const finalResult = {
+    ...merged,
+    creates: [...merged.creates, ...patchCreates],
+  };
+
   const { writeResult } = await import("../../../runtime/write-result");
-  return writeResult(merged, options);
+  return writeResult(finalResult, options);
+}
+
+async function unlinkStripePaymentMethodsCustomer(
+  options: Options,
+): Promise<File[]> {
+  const { withPocketbase } = await import("../../../runtime/pocketbase");
+  const { applyCollectionFieldsPatches } = await import(
+    "../../../runtime/collections"
+  );
+  const logger = getLogger(options);
+
+  let creates: File[] = [];
+  await withPocketbase(options.root, async (pb) => {
+    let collection;
+    try {
+      collection = await pb.collections.getOne("stripe_payment_methods");
+    } catch (error) {
+      if ((error as { status?: number }).status === 404) return;
+      throw error;
+    }
+
+    if (!collection.fields.some((f: { name: string }) => f.name === "customer")) {
+      return;
+    }
+
+    creates = await applyCollectionFieldsPatches(
+      pb,
+      [
+        {
+          collectionName: "stripe_payment_methods",
+          changes: [{ op: "remove", fieldName: "customer" }],
+        },
+      ],
+      options,
+      logger,
+    );
+  });
+  return creates;
 }
 
 export default {

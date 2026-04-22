@@ -1,80 +1,13 @@
-import fs from "node:fs";
 import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
-import {
-  getMigrationFile,
-  migrationDelay,
-  withPocketbase,
-} from "../../../runtime/pocketbase";
-import { createCollectionIdempotent } from "../../../runtime/collections";
 import { getLogger } from "../../../core/logger";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
 import { modifyHooksServer } from "./modifies/hooks.server";
 import { modifyNavUser } from "./modifies/nav-user.svelte";
+import { modifyUtils } from "./modifies/utils";
 
 export async function generate(options: Options) {
   const logger = getLogger(options);
-  const creates: File[] = [];
-
-  await withPocketbase(options.root, async (pb) => {
-    const userCollection = await pb.collections.getOne("users");
-
-    logger.info("Creating api_keys collection");
-    const apiKeysResult = await createCollectionIdempotent(pb, {
-      listRule: "@request.auth.id = user.id",
-      viewRule: "@request.auth.id = user.id",
-      createRule: "@request.auth.id = user.id",
-      updateRule: "@request.auth.id = user.id",
-      deleteRule: "@request.auth.id = user.id",
-      name: "api_keys",
-      type: "base",
-      fields: [
-        {
-          collectionId: userCollection.id,
-          maxSelect: 1,
-          name: "user",
-          type: "relation",
-        },
-        {
-          name: "key_hash",
-          type: "text",
-        },
-        {
-          name: "label",
-          type: "text",
-        },
-        {
-          name: "last_used",
-          type: "date",
-        },
-        {
-          name: "created",
-          onCreate: true,
-          onUpdate: false,
-          type: "autodate",
-        },
-        {
-          name: "updated",
-          onCreate: true,
-          onUpdate: true,
-          type: "autodate",
-        },
-      ],
-    });
-    if (apiKeysResult.created) {
-      await migrationDelay();
-
-      const migrationFile = getMigrationFile("api_keys", "created", options);
-      if (migrationFile) {
-        creates.push({
-          path: migrationFile,
-          language: "ts",
-          content: fs.readFileSync(migrationFile, "utf8"),
-          status: "success",
-        });
-      }
-    }
-  });
 
   const modifies: File[] = [];
   const pushResult = (file: File | null) => {
@@ -97,8 +30,12 @@ export async function generate(options: Options) {
   );
   pushResult(modifyOutcomeToFile(navUserPath, modifyNavUser(navUserPath)));
 
+  logger.info("Modifying utils.ts");
+  const utilsPath = path.join(options.root, "src", "lib", "utils.ts");
+  pushResult(modifyOutcomeToFile(utilsPath, modifyUtils(utilsPath)));
+
   return {
-    creates,
+    creates: [],
     modifies,
     deletes: [],
     components: [],
