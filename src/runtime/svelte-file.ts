@@ -141,6 +141,25 @@ export class SvelteFile {
     return true;
   }
 
+  /**
+   * Remove a named attribute from a component's start tag, including the
+   * leading whitespace. No-op if the element or attribute isn't present.
+   */
+  removeAttribute(name: string, attrName: string): boolean {
+    const node = this.findElement(name);
+    if (!node) return false;
+    const attr = (node.attributes ?? []).find(
+      (a: SvelteNode) => a.type === "Attribute" && a.name === attrName,
+    );
+    if (!attr) return false;
+    // Extend the removal backwards over the whitespace between the previous
+    // token and this attribute so the tag doesn't collapse `<Foo  />`.
+    let start = attr.start as number;
+    while (start > 0 && /\s/.test(this.source[start - 1]!)) start--;
+    this.s.remove(start, attr.end as number);
+    return true;
+  }
+
   hasChanged(): boolean {
     return this.s.hasChanged();
   }

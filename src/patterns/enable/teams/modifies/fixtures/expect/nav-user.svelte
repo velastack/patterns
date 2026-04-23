@@ -54,12 +54,11 @@ const sidebar = Sidebar.useSidebar();
 								<Avatar.Image src="/api/files/users/{user.id}/{user.avatar}" alt={user.name} />
 							{/if}
 							<Avatar.Fallback class="rounded-lg">
-								{user.email?.charAt(0).toUpperCase()}
+								{user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
 							</Avatar.Fallback>
 						</Avatar.Root>
 						<div class="grid flex-1 text-left text-sm leading-tight">
-							<span class="truncate font-medium">{user.name}</span>
-							<span class="truncate text-xs">{user.email}</span>
+							<span class="truncate font-medium">{user.name || user.email}</span>
 						</div>
 						<ChevronsUpDownIcon class="ml-auto size-4" />
 					</Sidebar.MenuButton>
@@ -78,12 +77,11 @@ const sidebar = Sidebar.useSidebar();
 								<Avatar.Image src="/api/files/users/{user.id}/{user.avatar}" alt={user.name} />
 							{/if}
 							<Avatar.Fallback class="rounded-lg">
-								{user.email?.charAt(0).toUpperCase()}
+								{user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
 							</Avatar.Fallback>
 						</Avatar.Root>
 						<div class="grid flex-1 text-left text-sm leading-tight">
-							<span class="truncate font-medium">{user.name}</span>
-							<span class="truncate text-xs">{user.email}</span>
+							<span class="truncate font-medium">{user.name || user.email}</span>
 						</div>
 					</div>
 				</DropdownMenu.Label>

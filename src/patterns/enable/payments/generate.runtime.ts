@@ -138,7 +138,7 @@ export async function generate(options: Options) {
         { name: "billing_scheme", required: false, type: "text" },
         { name: "currency", required: false, type: "text" },
         { name: "product", required: false, type: "text" },
-        { name: "recurring", required: false, type: "text" },
+        { name: "recurring", required: false, type: "json" },
         { name: "type", required: false, type: "text" },
         { name: "unit_amount", required: false, type: "number" },
         { name: "active", required: false, type: "bool" },
