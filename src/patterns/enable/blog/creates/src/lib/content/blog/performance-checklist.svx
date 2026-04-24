@@ -1,0 +1,48 @@
+---
+title: A Pragmatic Performance Checklist
+description: The small set of things that have given us the biggest performance wins — in rough order of impact.
+createdDate: 2025-11-03
+tags:
+  - performance
+  - tutorial
+author:
+  name: Marco Alvarez
+---
+
+We don't have a performance budget so much as a performance allergy.
+When something feels slow, we profile, fix the obvious thing, and move
+on. The list below is what "the obvious thing" usually is.
+
+> Premature optimization is the root of all evil, but ignoring a 3s
+> cold-start isn't optimization — it's negligence.
+
+## The checklist
+
+1. **Measure with real numbers.** Lighthouse and the Network tab answer
+   most questions. If you're not measuring, you're guessing.
+2. **Serve fewer bytes.** Compress images (AVIF or WebP), remove unused
+   fonts, and audit any dependency over 50KB gzipped.
+3. **Defer the non-critical.** Scripts that aren't needed above the
+   fold can wait. `loading="lazy"` on images, `defer` on scripts, and
+   dynamic `import()` for interactive widgets.
+4. **Cache at the edge.** If the same HTML could serve a thousand users,
+   it should. Use your adapter's cache headers; don't hand-roll it.
+5. **Avoid waterfalls.** If page load depends on three sequential fetches,
+   collapse them into one endpoint or preload the critical ones.
+6. **Trust the framework.** SvelteKit's `load` functions run in parallel
+   by default and the compiler already strips unused code. Most hand-rolled
+   cleverness just gets in the way.
+
+## What we stopped worrying about
+
+- Micro-optimizations inside component code — the bundle is small, the
+  diff is fast. The savings are real but rarely matter.
+- Third-party tooling that promises "speed." If it adds a build step,
+  the benefit needs to be measurable, not theoretical.
+
+## When to go deeper
+
+If the checklist doesn't move the needle, the next step is almost
+always a deeper look at the data layer — query plans, N+1 fetches, cold
+cache behavior. But you should have exhausted the list above before
+getting there. Most slowness is boring, and most fixes are too.

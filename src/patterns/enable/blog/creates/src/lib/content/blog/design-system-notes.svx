@@ -1,0 +1,48 @@
+---
+title: Design System Notes
+description: Small choices that make a design system feel coherent — spacing, radius, and the case for fewer variants.
+createdDate: 2025-12-15
+tags:
+  - design
+  - shadcn
+author:
+  name: Ada Chen
+---
+
+We've been cleaning up the design system recently. A few notes from the
+pass, mostly for ourselves, partially in case they're useful to anyone
+else building on top of shadcn.
+
+## The variants we actually use
+
+Every primitive ships with a dozen variants. In practice our product
+leans on two or three per component:
+
+- **Buttons** — `default`, `ghost`, and `outline`. Destructive shows up
+  rarely enough to be worth the extra click.
+- **Badges** — `default` and `secondary`. Tags and counts, nothing else.
+- **Cards** — one shape, with optional footer. Multiple card styles
+  became indistinguishable from "padded div," so we stopped.
+
+If a variant hasn't appeared in a design in six months, it gets deleted.
+The point isn't minimalism; it's that every extra variant is a decision
+a future designer has to relitigate.
+
+## Spacing
+
+Tailwind's default scale is good. We only locked in one rule: never use
+odd gaps. `gap-3` and `gap-5` stay; `gap-2.5` goes. It's a small thing
+that quietly keeps vertical rhythm predictable across pages.
+
+## Radius
+
+One radius token, applied everywhere. If a surface needs to feel
+different, that's a structural decision — a card, a sheet, a popover —
+not a one-off `rounded-md`. We ended up at `0.625rem` as our default
+and haven't wanted to change it.
+
+## Dark mode
+
+We treat dark mode as a different palette, not a filter. Every token
+has an explicit OKLCH value in both themes. When a component looks
+off in dark mode, the fix is almost always a token, not a tweak.

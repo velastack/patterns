@@ -1,0 +1,60 @@
+---
+title: Getting Started with SvelteKit
+description: The smallest useful SvelteKit project, explained end to end — routing, loading data, and the dev loop.
+createdDate: 2026-03-12
+tags:
+  - sveltekit
+  - tutorial
+author:
+  name: Marco Alvarez
+---
+
+SvelteKit is the piece that turns Svelte — a component library — into
+something you can ship. Routing, server endpoints, data loading, builds,
+and deployment adapters all live in one place.
+
+## Creating a project
+
+The fastest path is the CLI. It scaffolds a minimal project, installs
+dependencies, and leaves you with a working dev server.
+
+```bash
+npx sv create my-app
+cd my-app
+npm install
+npm run dev
+```
+
+## Routes are files
+
+A route is a folder under `src/routes` with a `+page.svelte` inside.
+Nested folders produce nested URLs. Dynamic segments use `[brackets]`.
+
+```
+src/routes/
+  +page.svelte         # /
+  about/
+    +page.svelte       # /about
+  blog/
+    [slug]/
+      +page.svelte     # /blog/:slug
+```
+
+## Loading data
+
+A route's `+page.ts` (or `+page.server.ts` for server-only data) exports
+a `load` function. Whatever it returns becomes `data` on the page.
+
+```ts
+// src/routes/blog/[slug]/+page.ts
+import { error } from '@sveltejs/kit';
+
+export const load = async ({ params }) => {
+  const post = await fetchPost(params.slug);
+  if (!post) throw error(404, 'Not found');
+  return { post };
+};
+```
+
+That's most of SvelteKit. The rest — form actions, hooks, adapters — are
+opt-in once you need them.

@@ -11,6 +11,7 @@ import enableAuth from "./patterns/enable/auth";
 import enableAuthRemote from "./patterns/enable/auth-remote";
 import enableApi from "./patterns/enable/api";
 import enableApiKeys from "./patterns/enable/api-keys";
+import enableBlog from "./patterns/enable/blog";
 import enableContentNegotiation from "./patterns/enable/content-negotiation";
 import enableI18n from "./patterns/enable/i18n";
 import enablePayments from "./patterns/enable/payments";
@@ -43,6 +44,7 @@ export const patterns = [
   enableAuthRemote,
   enableApi,
   enableApiKeys,
+  enableBlog,
   enableContentNegotiation,
   enableI18n,
   enablePayments,

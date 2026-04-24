@@ -1,0 +1,53 @@
+---
+title: Why We Chose Tailwind v4
+description: Notes on moving from a traditional CSS pipeline to Tailwind v4's zero-config, CSS-first setup.
+createdDate: 2026-02-18
+tags:
+  - tailwind
+  - design
+author:
+  name: Ada Chen
+---
+
+Tailwind v4 is a meaningful rewrite. The surface API still looks the same
+— utility classes on elements — but the compiler, configuration model,
+and theming story all changed in ways that made us want to adopt it.
+
+> The point of a design system isn't to ship fewer classes. It's to make
+> the next decision easier than the last.
+
+## What changed for us
+
+Three things mattered:
+
+1. **CSS-first config.** `tailwind.config.js` is gone. Tokens live in
+   `app.css` as real CSS custom properties, which means they also work
+   outside of Tailwind — SVG fills, inline styles, wherever.
+2. **OKLCH colors.** Designers can reason about lightness and chroma
+   independently. Contrast checks become much easier to eyeball.
+3. **Speed.** The new engine compiles fast enough that we stopped
+   thinking about purge lists. Dev feedback is effectively instant.
+
+## The config we kept
+
+We pinned two things in `app.css`:
+
+```css
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.129 0.042 264.695);
+}
+```
+
+Everything else — spacing, typography, breakpoints — falls back to
+defaults until we have a reason to override it.
+
+## What we'd tell a team evaluating it
+
+If you're already using Tailwind v3, the migration is mostly a config
+move. If you're starting from scratch, v4 removes a pile of decisions
+you'd otherwise be making on day one. That alone made it worth it.

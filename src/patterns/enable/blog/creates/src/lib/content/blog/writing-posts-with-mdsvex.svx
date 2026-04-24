@@ -1,0 +1,70 @@
+---
+title: Writing Posts with MDsveX
+description: How this blog turns markdown files into real Svelte components — frontmatter, code, and embedded UI.
+createdDate: 2026-01-28
+updatedDate: 2026-02-02
+tags:
+  - mdsvex
+  - tutorial
+author:
+  name: Priya Shah
+---
+
+Posts on this blog are `.svx` files. Each one is a real Svelte component
+at build time, so Markdown and Svelte sit side by side with no glue
+code.
+
+## Frontmatter
+
+YAML at the top of a post becomes the `metadata` export. The loader
+reads it to build the list view, tag pages, and RSS feed.
+
+```yaml
+---
+title: Writing Posts with MDsveX
+description: A short description shown in previews.
+createdDate: 2026-01-28
+tags:
+  - mdsvex
+  - tutorial
+author:
+  name: Priya Shah
+---
+```
+
+## Markdown works the way you'd expect
+
+Headings, lists, links, blockquotes, and inline `code` all render.
+Fenced code blocks pick up language hints for syntax highlighting when a
+plugin is enabled.
+
+```ts
+function greet(name: string) {
+  return `hello, ${name}`;
+}
+```
+
+## Images
+
+Put images in `static/` and reference them with a root-relative path:
+
+```md
+![A screenshot](/screenshots/home.png)
+```
+
+## Svelte in your posts
+
+The superpower is that you can drop components straight into a post —
+a chart, an interactive demo, a call-to-action card. The rules are the
+same as any other Svelte file:
+
+```svelte
+<script>
+  import Callout from '$lib/components/Callout.svelte';
+</script>
+
+<Callout>This is a real component inside a markdown post.</Callout>
+```
+
+That's the whole pipeline. Write markdown, sprinkle in components when
+plain text stops being enough, and the rest is just Svelte.

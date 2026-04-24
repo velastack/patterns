@@ -1,0 +1,24 @@
+---
+title: Welcome to the Blog
+description: A quick note on what this space is for and what to expect from us.
+createdDate: 2026-04-20
+tags:
+  - announcements
+author:
+  name: Ada Chen
+---
+
+Welcome in. This blog is where we write about the things we build, the
+decisions behind them, and what we learn when they go sideways.
+
+You can expect a mix of short notes and longer walkthroughs. No schedule,
+no filler. If a post exists it's because something was worth writing down.
+
+A few threads you'll see pop up often:
+
+- Product notes on what we're shipping and why
+- Practical tutorials for the tools we use every day
+- Design and engineering decisions that took more than five minutes
+
+If you'd rather not check back manually, the [RSS feed](/blog/rss.xml)
+has every post. Thanks for reading.
