@@ -21,12 +21,14 @@
 	let {
 		user,
 		meta,
+		// [!code highlight:1]
 		subscription = null,
 		ref = $bindable(null),
 		...restProps
 	}: ComponentProps<typeof Sidebar.Root> & {
 		user: any;
 		meta: any;
+		// [!code highlight:1]
 		subscription?: { id: string; productName: string | null } | null;
 	} = $props();
 </script>

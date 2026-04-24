@@ -15,6 +15,7 @@ cronAdd("stripe-customers", "* * * * *", () => {
   utils.triggerJob("/api/stripe/sync/customers");
 });
 
+// [!code highlight:4]
 cronAdd("stripe-subscriptions", "*/2 * * * *", () => {
   const utils = require(`${__hooks}/utils.js`);
   utils.triggerJob("/api/stripe/sync/subscriptions");
