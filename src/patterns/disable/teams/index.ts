@@ -43,6 +43,8 @@ export default {
     i18n: false,
     teams: true,
     payments: false,
+    blog: false,
+    contentNegotiation: false,
   },
   category: "auth" as const,
   tags: ["teams", "pocketbase", "velastack", "sveltekit"],

@@ -55,6 +55,8 @@ export default {
     i18n: false,
     teams: false,
     payments: false,
+    blog: false,
+    contentNegotiation: false,
   },
   category: "generators" as const,
   tags: ["pocketbase", "migration", "schema"],

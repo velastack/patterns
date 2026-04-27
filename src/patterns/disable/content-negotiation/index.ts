@@ -43,6 +43,8 @@ export default {
     i18n: false,
     teams: false,
     payments: false,
+    blog: false,
+    contentNegotiation: true,
   },
   category: "api" as const,
   tags: [

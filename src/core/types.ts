@@ -7,6 +7,8 @@ export interface Features {
   i18n: boolean;
   teams: boolean;
   payments: boolean;
+  blog: boolean;
+  contentNegotiation: boolean;
 }
 
 export interface Options {

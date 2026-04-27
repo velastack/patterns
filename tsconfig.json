@@ -18,6 +18,8 @@
     "**/fixtures/**",
     "**/preview-modifies/**",
     "**/creates/**",
-    "**/creates-app-mode/**"
+    "**/creates-app-mode/**",
+    "**/creates-with-negotiation/**",
+    "**/creates-with-blog/**"
   ]
 }

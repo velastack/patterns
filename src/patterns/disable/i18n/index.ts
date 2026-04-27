@@ -43,6 +43,8 @@ export default {
     i18n: true,
     teams: false,
     payments: false,
+    blog: false,
+    contentNegotiation: false,
   },
   category: "i18n" as const,
   tags: ["sveltekit", "i18n", "localization", "wuchale", "velastack"],

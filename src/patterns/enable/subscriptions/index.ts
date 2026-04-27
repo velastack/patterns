@@ -53,6 +53,8 @@ export default {
     i18n: false,
     teams: false,
     payments: true,
+    blog: false,
+    contentNegotiation: false,
   },
   category: "payments" as const,
   tags: [

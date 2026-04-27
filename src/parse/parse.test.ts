@@ -24,6 +24,8 @@ const noAuth = {
     i18n: false,
     teams: false,
     payments: false,
+    blog: false,
+    contentNegotiation: false,
   },
 };
 const withAuth = {
@@ -34,6 +36,8 @@ const withAuth = {
     i18n: false,
     teams: false,
     payments: false,
+    blog: false,
+    contentNegotiation: false,
   },
 };
 

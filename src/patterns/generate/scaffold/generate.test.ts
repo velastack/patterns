@@ -44,6 +44,8 @@ function makeOptions(
       i18n: false,
       teams: false,
       payments: false,
+      blog: false,
+      contentNegotiation: false,
     },
     input: overrides.input ?? {},
   };
@@ -61,6 +63,8 @@ describe("generate scaffold pattern", () => {
           i18n: false,
           teams: false,
           payments: false,
+          blog: false,
+          contentNegotiation: false,
         },
         argv: [
           "contact",

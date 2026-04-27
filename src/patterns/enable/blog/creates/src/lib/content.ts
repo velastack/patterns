@@ -97,6 +97,15 @@ export function getBlogPost(slug: string) {
   return posts.find((post) => post.slug === slug) ?? null;
 }
 
+export function getBlogPostRaw(slug: string): string | null {
+  const rawModules = getBlogRawModules();
+  for (const [path, raw] of Object.entries(rawModules)) {
+    const filename = path.split("/").pop() ?? "";
+    if (filename.replace(".svx", "") === slug) return raw;
+  }
+  return null;
+}
+
 export function getBlogPostsByTag(tag: string) {
   return getBlogPosts().filter((post) => post.tags?.includes(tag));
 }

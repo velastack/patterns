@@ -41,6 +41,8 @@ export default {
     i18n: false,
     teams: false,
     payments: false,
+    blog: false,
+    contentNegotiation: false,
   },
   category: "api" as const,
   tags: ["sveltekit", "api", "rest", "backend", "pocketbase", "velastack"],

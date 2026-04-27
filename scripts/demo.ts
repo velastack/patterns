@@ -226,6 +226,8 @@ let features: Features = {
   i18n: false,
   teams: false,
   payments: false,
+  blog: false,
+  contentNegotiation: false,
 };
 
 for (const [index, { slug, argv, pattern }] of commands.entries()) {
@@ -238,6 +240,10 @@ for (const [index, { slug, argv, pattern }] of commands.entries()) {
     i18n: features.i18n,
     teams: features.teams,
     payments: features.payments || (pattern.requires.payments ?? false),
+    blog: features.blog || (pattern.requires.blog ?? false),
+    contentNegotiation:
+      features.contentNegotiation ||
+      (pattern.requires.contentNegotiation ?? false),
   };
 
   console.log(

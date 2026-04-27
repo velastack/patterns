@@ -29,6 +29,8 @@ function makeOptions(
       i18n: false,
       teams: false,
       payments: false,
+      blog: false,
+      contentNegotiation: false,
     },
     input: overrides.input ?? {},
   };
@@ -57,6 +59,8 @@ describe("generate form-remote pattern", () => {
           i18n: false,
           teams: false,
           payments: false,
+          blog: false,
+          contentNegotiation: false,
         },
         argv: [
           "contact",
@@ -134,6 +138,8 @@ describe("generate form-remote pattern", () => {
           i18n: false,
           teams: false,
           payments: false,
+          blog: false,
+          contentNegotiation: false,
         },
         argv: ["contact", "name:text!", "owner:current_user"],
       }),
