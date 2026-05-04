@@ -326,6 +326,20 @@ export async function writeResult(
     dropMigrationCreates = await dropCollections(result.collectionDrops, options);
   }
 
+  const packageInstalls = await installPackages(
+    options.root,
+    result.packages,
+    runtime,
+    logger,
+  );
+
+  const componentInstalls = await installComponents(
+    options.root,
+    result.components,
+    runtime,
+    logger,
+  );
+
   for (const file of [...result.creates, ...dropMigrationCreates]) {
     if (file.status !== "success") continue;
     if (!existsSync(toTargetPath(options.root, file.path))) {
@@ -346,20 +360,6 @@ export async function writeResult(
       writtenResult.deletes.push(file);
     }
   }
-
-  const packageInstalls = await installPackages(
-    options.root,
-    result.packages,
-    runtime,
-    logger,
-  );
-
-  const componentInstalls = await installComponents(
-    options.root,
-    result.components,
-    runtime,
-    logger,
-  );
 
   return {
     ...result,

@@ -1,7 +1,13 @@
 import { Options, Result } from "../../../core/types";
-import { appRelativePath, languageFromPath } from "../../../core/util";
+import { composeCreates } from "../../../core/util";
 
 const createsRaw = import.meta.glob<string>("./creates/**", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
+
+const variantsRaw = import.meta.glob<string>("./variants/**", {
   query: "?raw",
   import: "default",
   eager: true,
@@ -10,17 +16,17 @@ const createsRaw = import.meta.glob<string>("./creates/**", {
 const CREATES_PREFIX = "./creates/";
 
 export async function generate(options: Options) {
-  const creates = Object.entries(createsRaw)
-    .map(([key, content]) => {
-      const path = appRelativePath(key, CREATES_PREFIX);
-      return {
-        path,
-        language: languageFromPath(path),
-        content,
-        status: "success" as const,
-      };
-    })
-    .sort((a, b) => a.path.localeCompare(b.path));
+  const variant =
+    typeof options.input?.variant === "string"
+      ? options.input.variant
+      : undefined;
+
+  const creates = composeCreates(
+    createsRaw,
+    CREATES_PREFIX,
+    variantsRaw,
+    variant,
+  );
 
   const components = [
     "sidebar",

@@ -6,6 +6,7 @@ import fs from "node:fs";
 import { modifyLayoutServer } from "./+layout.server";
 import { modifyRootLayoutSvelte } from "./root-layout.svelte";
 import { modifyHooksServer } from "./hooks.server";
+import { modifySidebarMenuButton } from "./sidebar-menu-button.svelte";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,6 +32,8 @@ const layoutSvelteTestCases = [
 ] as const;
 
 const hooksServerTestCases = ["hooks.server.ts"] as const;
+
+const sidebarMenuButtonTestCases = ["sidebar-menu-button.svelte"] as const;
 
 describe("modifyLayoutServer", () => {
   beforeEach(() => {
@@ -121,4 +124,52 @@ describe("modifyHooksServer", () => {
       await expect(modifiedFile).toMatchFormatted(expectedFile, testCase);
     },
   );
+});
+
+describe("modifySidebarMenuButton", () => {
+  beforeEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+    fs.cpSync(path.join(fixturesPath, "original"), tempDir, {
+      recursive: true,
+    });
+  });
+
+  afterEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it.each(sidebarMenuButtonTestCases)(
+    "should modify %s correctly",
+    async (testCase) => {
+      modifySidebarMenuButton(path.join(tempDir, testCase));
+
+      const modifiedFile = fs.readFileSync(
+        path.join(tempDir, testCase),
+        "utf8",
+      );
+      const expectedFile = fs.readFileSync(
+        path.join(fixturesPath, "expect", testCase),
+        "utf8",
+      );
+
+      await expect(modifiedFile).toMatchFormatted(expectedFile, testCase);
+    },
+  );
+
+  it("returns changed: false when the file is already up to date", () => {
+    const filePath = path.join(tempDir, "sidebar-menu-button.svelte");
+    fs.cpSync(
+      path.join(fixturesPath, "expect", "sidebar-menu-button.svelte"),
+      filePath,
+    );
+    const result = modifySidebarMenuButton(filePath);
+    expect(result).toEqual({ status: "success", changed: false });
+  });
+
+  it("returns not-found when the file does not exist", () => {
+    const result = modifySidebarMenuButton(
+      path.join(tempDir, "does-not-exist.svelte"),
+    );
+    expect(result.status).toBe("not-found");
+  });
 });

@@ -5,7 +5,7 @@ import { generate as generateBase } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
 
 const SLUG = "enable-auth" as const;
-const VERSION = "1.0.7";
+const VERSION = "1.0.8";
 const SOURCE = "src/patterns/enable/auth";
 const DOCS = "/enable/auth";
 
@@ -62,9 +62,11 @@ export default {
 
   examples: [],
 
-  tests: 18,
+  tests: 21,
 
   baseline: "velastack",
+
+  variants: ["split"],
 
   generate: generate,
 } satisfies Pattern;

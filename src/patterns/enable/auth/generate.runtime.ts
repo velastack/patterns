@@ -12,6 +12,7 @@ import { modifyOutcomeToFile } from "../../../runtime/modify-file";
 import { modifyLayoutServer } from "./modifies/+layout.server";
 import { modifyRootLayoutSvelte } from "./modifies/root-layout.svelte";
 import { modifyHooksServer } from "./modifies/hooks.server";
+import { modifySidebarMenuButton } from "./modifies/sidebar-menu-button.svelte";
 
 export async function generate(options: Options) {
   const { input } = options;
@@ -121,6 +122,23 @@ export async function generate(options: Options) {
   const hooksServerFile = path.join(options.root, "src", "hooks.server.ts");
   pushResult(
     modifyOutcomeToFile(hooksServerFile, modifyHooksServer(hooksServerFile)),
+  );
+
+  logger.info("Modifying sidebar-menu-button.svelte");
+  const sidebarMenuButtonFile = path.join(
+    options.root,
+    "src",
+    "lib",
+    "components",
+    "ui",
+    "sidebar",
+    "sidebar-menu-button.svelte",
+  );
+  pushResult(
+    modifyOutcomeToFile(
+      sidebarMenuButtonFile,
+      modifySidebarMenuButton(sidebarMenuButtonFile),
+    ),
   );
 
   return {

@@ -1,5 +1,5 @@
 import type { File, Options, Result } from "../../../core/types";
-import { appRelativePath, languageFromPath } from "../../../core/util";
+import { filesFromGlob } from "../../../core/util";
 
 const createsRaw = import.meta.glob<string>("./creates/**", {
   query: "?raw",
@@ -15,23 +15,6 @@ const createsAppModeRaw = import.meta.glob<string>("./creates-app-mode/**", {
 
 const CREATES_PREFIX = "./creates/";
 const CREATES_APP_MODE_PREFIX = "./creates-app-mode/";
-
-function filesFromGlob(
-  raw: Record<string, string>,
-  prefix: string,
-): Record<string, File> {
-  const files: Record<string, File> = {};
-  for (const [key, content] of Object.entries(raw)) {
-    const path = appRelativePath(key, prefix);
-    files[path] = {
-      path,
-      language: languageFromPath(path),
-      content,
-      status: "success",
-    };
-  }
-  return files;
-}
 
 export async function generate(options: Options) {
   const isAppMode = options.features.auth;

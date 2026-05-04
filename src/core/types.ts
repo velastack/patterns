@@ -133,6 +133,9 @@ export interface Pattern {
   // The baseline project that the pattern is based on.
   baseline: "sv" | "velastack" | "velastack-auth";
 
+  // Optional named alternates that override files in creates/. Selected via options.input.variant.
+  variants?: string[];
+
   // The main generator function for the pattern.
   generate: (options: Options) => Promise<Result>;
 }
