@@ -1,11 +1,11 @@
 import { json } from "@sveltejs/kit";
 import stripe from "$lib/stripe";
-import { INTERNAL_JOB_SECRET } from "$env/static/private";
+import { env } from "$env/dynamic/private";
 import { subscriptionRecordFields } from "../../../../webhooks/stripe/handlers/subscription/shared";
 
 export const POST = async ({ request, locals }) => {
   const authHeader = request.headers.get("Authorization");
-  if (authHeader !== `Bearer ${INTERNAL_JOB_SECRET}`) {
+  if (authHeader !== `Bearer ${env.INTERNAL_JOB_SECRET}`) {
     return json({ error: "Unauthorized" }, { status: 401 });
   }
 

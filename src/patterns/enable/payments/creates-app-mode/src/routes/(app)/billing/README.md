@@ -28,8 +28,8 @@ const STRIPE_PUBLISHABLE_KEY = "pk_test_YOUR_KEY_HERE";
 Or better yet, load it from environment variables:
 
 ```typescript
-import { PUBLIC_STRIPE_PUBLISHABLE_KEY } from "$env/static/public";
-const STRIPE_PUBLISHABLE_KEY = PUBLIC_STRIPE_PUBLISHABLE_KEY;
+import { env } from "$env/dynamic/public";
+const STRIPE_PUBLISHABLE_KEY = env.PUBLIC_STRIPE_PUBLISHABLE_KEY;
 ```
 
 ### 2. Fetch Payment Methods on Load

@@ -1,6 +1,6 @@
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { toast } from "svelte-sonner";
-import { PUBLIC_STRIPE_PUBLISHABLE_KEY } from "$env/static/public";
+import { env } from "$env/dynamic/public";
 
 export function useStripe() {
   let stripe = $state<Stripe | null>(null);
@@ -9,7 +9,7 @@ export function useStripe() {
 
   async function initialize() {
     try {
-      stripe = await loadStripe(PUBLIC_STRIPE_PUBLISHABLE_KEY);
+      stripe = await loadStripe(env.PUBLIC_STRIPE_PUBLISHABLE_KEY);
       isLoading = false;
     } catch (err) {
       console.error("Failed to load Stripe:", err);

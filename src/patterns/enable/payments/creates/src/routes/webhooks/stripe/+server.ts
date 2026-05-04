@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { json } from "@sveltejs/kit";
-import { STRIPE_WEBHOOK_SECRET } from "$env/static/private";
+import { env } from "$env/dynamic/private";
 import stripe from "$lib/stripe";
 import { handlePaymentIntentSucceeded } from "./handlers/payment-intent/succeeded";
 
@@ -31,7 +31,10 @@ async function verifyWebhookSignature(
 
 export const POST = async ({ request, locals }) => {
   try {
-    const event = await verifyWebhookSignature(request, STRIPE_WEBHOOK_SECRET);
+    const event = await verifyWebhookSignature(
+      request,
+      env.STRIPE_WEBHOOK_SECRET,
+    );
 
     if (processedEvents.has(event.id)) {
       console.log(`Event ${event.id} already processed, skipping`);
