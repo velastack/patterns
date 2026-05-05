@@ -1,6 +1,6 @@
 {
   "name": "@velastack/patterns",
-  "version": "0.0.41",
+  "version": "0.0.42",
   "description": "Registry of VelaStack patterns: generators and modifications applied to SvelteKit projects by the VelaStack CLI.",
   "type": "module",
   "private": false,
