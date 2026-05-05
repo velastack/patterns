@@ -1,12 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import dedent from "dedent";
-import {
-  Project,
-  QuoteKind,
-  SyntaxKind,
-  type SourceFile,
-} from "ts-morph";
+import { Project, QuoteKind, SyntaxKind, type SourceFile } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
 
 const NEGOTIATE_ONLY_SNIPPET = dedent`

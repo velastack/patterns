@@ -26,7 +26,10 @@ export function modifyByTemplate(
   }
   const stripped = template
     .replace(/^[ \t]*\/\/[ \t]*\[!code highlight:\d+\][ \t]*\r?\n/gm, "")
-    .replace(/^[ \t]*<!--[ \t]*\[!code highlight:\d+\][ \t]*-->[ \t]*\r?\n/gm, "");
+    .replace(
+      /^[ \t]*<!--[ \t]*\[!code highlight:\d+\][ \t]*-->[ \t]*\r?\n/gm,
+      "",
+    );
   if (current === stripped) {
     return { status: "success", changed: false };
   }

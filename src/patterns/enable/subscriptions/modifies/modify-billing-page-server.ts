@@ -10,10 +10,5 @@ export function modifyBillingPageServer(
   filePath: string,
   template: string,
 ): ModifyOutcome {
-  return modifyByTemplate(
-    filePath,
-    template,
-    "selectPlan",
-    NOT_FOUND_HINT,
-  );
+  return modifyByTemplate(filePath, template, "selectPlan", NOT_FOUND_HINT);
 }

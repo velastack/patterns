@@ -59,7 +59,10 @@ export function removeEnvEdits(source: string, edits: EnvEdit[]): string {
     for (let i = 0; i < lines.length; i++) {
       if (!keep[i]) continue;
       const line = lines[i];
-      if (line === `${edit.key}=${edit.value ?? ""}` || line.startsWith(`${edit.key}=`)) {
+      if (
+        line === `${edit.key}=${edit.value ?? ""}` ||
+        line.startsWith(`${edit.key}=`)
+      ) {
         keep[i] = false;
       }
     }

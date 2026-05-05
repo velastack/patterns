@@ -38,9 +38,8 @@ async function unlinkStripePaymentMethodsCustomer(
   options: Options,
 ): Promise<File[]> {
   const { withPocketbase } = await import("../../../runtime/pocketbase");
-  const { applyCollectionFieldsPatches } = await import(
-    "../../../runtime/collections"
-  );
+  const { applyCollectionFieldsPatches } =
+    await import("../../../runtime/collections");
   const logger = getLogger(options);
 
   let creates: File[] = [];
@@ -53,7 +52,9 @@ async function unlinkStripePaymentMethodsCustomer(
       throw error;
     }
 
-    if (!collection.fields.some((f: { name: string }) => f.name === "customer")) {
+    if (
+      !collection.fields.some((f: { name: string }) => f.name === "customer")
+    ) {
       return;
     }
 

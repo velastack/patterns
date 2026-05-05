@@ -46,13 +46,7 @@ export default {
     contentNegotiation: false,
   },
   category: "api" as const,
-  tags: [
-    "sveltekit",
-    "content-negotiation",
-    "markdown",
-    "json",
-    "api",
-  ],
+  tags: ["sveltekit", "content-negotiation", "markdown", "json", "api"],
 
   command: {
     raw: "vela enable content-negotiation",

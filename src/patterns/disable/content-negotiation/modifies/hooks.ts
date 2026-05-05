@@ -1,10 +1,5 @@
 import fs from "node:fs";
-import {
-  Project,
-  QuoteKind,
-  SyntaxKind,
-  type SourceFile,
-} from "ts-morph";
+import { Project, QuoteKind, SyntaxKind, type SourceFile } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
 
 function removeNegotiateImport(sourceFile: SourceFile): boolean {

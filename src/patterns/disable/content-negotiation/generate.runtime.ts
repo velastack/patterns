@@ -24,9 +24,7 @@ export async function generate(options: Options) {
 
   logger.info("Reverting hooks.ts");
   const hooksPath = path.join(options.root, "src", "hooks.ts");
-  pushResult(
-    modifyOutcomeToFile(hooksPath, unmodifyHooksNegotiate(hooksPath)),
-  );
+  pushResult(modifyOutcomeToFile(hooksPath, unmodifyHooksNegotiate(hooksPath)));
 
   logger.info("Reverting src/routes/+layout.svelte");
   const rootLayoutPath = path.join(

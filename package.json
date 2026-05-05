@@ -1,8 +1,29 @@
 {
   "name": "@velastack/patterns",
   "version": "0.0.41",
+  "description": "Registry of VelaStack patterns: generators and modifications applied to SvelteKit projects by the VelaStack CLI.",
   "type": "module",
   "private": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/velastack/patterns.git"
+  },
+  "homepage": "https://github.com/velastack/patterns#readme",
+  "bugs": {
+    "url": "https://github.com/velastack/patterns/issues"
+  },
+  "keywords": [
+    "velastack",
+    "sveltekit",
+    "patterns",
+    "generators",
+    "scaffolding",
+    "pocketbase"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
@@ -13,6 +34,7 @@
     "dev": "vite build --watch",
     "clean": "rm -rf dist",
     "demo": "vite-node scripts/demo.ts --",
+    "format": "prettier --write .",
     "lint": "npm run lint:ts && npm run lint:format",
     "lint:ts": "tsc --noEmit",
     "lint:format": "prettier --check .",

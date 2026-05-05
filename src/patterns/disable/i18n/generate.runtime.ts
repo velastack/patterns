@@ -19,7 +19,9 @@ export async function generate(options: Options) {
 
   logger.info("Reverting .gitignore");
   const gitignorePath = path.join(options.root, ".gitignore");
-  pushResult(modifyOutcomeToFile(gitignorePath, unmodifyGitignore(gitignorePath)));
+  pushResult(
+    modifyOutcomeToFile(gitignorePath, unmodifyGitignore(gitignorePath)),
+  );
 
   logger.info(MANUAL_REMEDIATION);
 

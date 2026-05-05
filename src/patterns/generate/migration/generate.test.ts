@@ -118,9 +118,7 @@ describe("generate migration pattern", () => {
 
     it("requires at least one field definition", async () => {
       await expect(
-        generateBase(
-          makeOptions({ env: "preview", argv: ["posts", "add"] }),
-        ),
+        generateBase(makeOptions({ env: "preview", argv: ["posts", "add"] })),
       ).rejects.toThrow(/at least one field definition/);
     });
   });

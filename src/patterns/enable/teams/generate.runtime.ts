@@ -46,9 +46,8 @@ export async function generate(options: Options) {
 
   await withPocketbase(options.root, async (pb) => {
     const userCollection = await pb.collections.getOne("users");
-    const create = (
-      spec: Parameters<typeof createCollectionIdempotent>[1],
-    ) => createCollectionIdempotent(pb, spec, logger);
+    const create = (spec: Parameters<typeof createCollectionIdempotent>[1]) =>
+      createCollectionIdempotent(pb, spec, logger);
 
     logger.info("Creating teams collection");
     const teamsResult = await create({

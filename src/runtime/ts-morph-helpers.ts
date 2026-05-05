@@ -224,10 +224,12 @@ export function removeNavItemFromScript(
         if (!iconProp || iconProp.getKind() !== SyntaxKind.PropertyAssignment) {
           return false;
         }
-        return iconProp
-          .asKindOrThrow(SyntaxKind.PropertyAssignment)
-          .getInitializer()
-          ?.getText() !== undefined;
+        return (
+          iconProp
+            .asKindOrThrow(SyntaxKind.PropertyAssignment)
+            .getInitializer()
+            ?.getText() !== undefined
+        );
       });
       const importDecl = sf
         .getImportDeclarations()
@@ -241,10 +243,8 @@ export function removeNavItemFromScript(
             .some(
               (id) =>
                 id.getText() === importName &&
-                id.getParent()?.getKind() !==
-                  SyntaxKind.ImportClause &&
-                id.getParent()?.getKind() !==
-                  SyntaxKind.ImportSpecifier,
+                id.getParent()?.getKind() !== SyntaxKind.ImportClause &&
+                id.getParent()?.getKind() !== SyntaxKind.ImportSpecifier,
             );
         if (!stillUsed) {
           importDecl.remove();

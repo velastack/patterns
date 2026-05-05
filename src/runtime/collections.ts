@@ -266,7 +266,9 @@ export async function getCollectionStats(
   }
 
   try {
-    const result = await pb.collection(name).getList(1, 1, { skipTotal: false });
+    const result = await pb
+      .collection(name)
+      .getList(1, 1, { skipTotal: false });
     return { exists: true, rowCount: result.totalItems };
   } catch {
     return { exists: true, rowCount: 0 };

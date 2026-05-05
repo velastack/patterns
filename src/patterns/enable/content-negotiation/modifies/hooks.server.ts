@@ -1,11 +1,6 @@
 import fs from "node:fs";
 import dedent from "dedent";
-import {
-  Project,
-  QuoteKind,
-  SyntaxKind,
-  type SourceFile,
-} from "ts-morph";
+import { Project, QuoteKind, SyntaxKind, type SourceFile } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
 
 const FAILURE_HINT = dedent`
@@ -51,7 +46,8 @@ function ensureNegotiateHandleImport(sourceFile: SourceFile) {
         ni.getAliasNode()?.getText() === "handleNegotiate"
       );
     });
-    if (!has) existing.addNamedImport({ name: "handle", alias: "handleNegotiate" });
+    if (!has)
+      existing.addNamedImport({ name: "handle", alias: "handleNegotiate" });
     return;
   }
   sourceFile.addImportDeclaration({

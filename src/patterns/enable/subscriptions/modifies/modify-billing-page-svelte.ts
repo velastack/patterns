@@ -10,10 +10,5 @@ export function modifyBillingPageSvelte(
   filePath: string,
   template: string,
 ): ModifyOutcome {
-  return modifyByTemplate(
-    filePath,
-    template,
-    "availablePlans",
-    NOT_FOUND_HINT,
-  );
+  return modifyByTemplate(filePath, template, "availablePlans", NOT_FOUND_HINT);
 }

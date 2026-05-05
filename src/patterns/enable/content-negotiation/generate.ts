@@ -38,7 +38,10 @@ export async function generate(options: Options) {
   const creates: Record<string, File> = { ...base };
 
   if (options.features.blog) {
-    const withBlog = filesFromGlob(createsWithBlogRaw, CREATES_WITH_BLOG_PREFIX);
+    const withBlog = filesFromGlob(
+      createsWithBlogRaw,
+      CREATES_WITH_BLOG_PREFIX,
+    );
     Object.assign(creates, withBlog);
   }
 

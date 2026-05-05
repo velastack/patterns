@@ -148,22 +148,19 @@ describe("disable subscriptions modifies (AST)", () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it.each(astCases)(
-    "reverts $file correctly",
-    async ({ file, modify }) => {
-      const target = path.join(tempDir, file);
-      const outcome = modify(target);
-      expect(outcome.status).toBe("success");
+  it.each(astCases)("reverts $file correctly", async ({ file, modify }) => {
+    const target = path.join(tempDir, file);
+    const outcome = modify(target);
+    expect(outcome.status).toBe("success");
 
-      const modified = fs.readFileSync(target, "utf8");
-      const expected = fs.readFileSync(
-        path.join(fixturesPath, "expect", file),
-        "utf8",
-      );
+    const modified = fs.readFileSync(target, "utf8");
+    const expected = fs.readFileSync(
+      path.join(fixturesPath, "expect", file),
+      "utf8",
+    );
 
-      await expect(modified).toMatchFormatted(expected, file);
-    },
-  );
+    await expect(modified).toMatchFormatted(expected, file);
+  });
 
   it("is idempotent", () => {
     for (const { file, modify } of astCases) {

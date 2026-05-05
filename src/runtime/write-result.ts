@@ -323,7 +323,10 @@ export async function writeResult(
   let dropMigrationCreates: Result["creates"] = [];
   if (result.collectionDrops.length > 0) {
     const { dropCollections } = await import("./collections");
-    dropMigrationCreates = await dropCollections(result.collectionDrops, options);
+    dropMigrationCreates = await dropCollections(
+      result.collectionDrops,
+      options,
+    );
   }
 
   const packageInstalls = await installPackages(

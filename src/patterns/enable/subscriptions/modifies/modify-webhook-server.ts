@@ -89,7 +89,9 @@ export function modifyWebhookServer(filePath: string): ModifyOutcome {
       defaultClause.replaceWithText(prefix + defaultClause.getText());
     } else if (clauses.length > 0) {
       const last = clauses[clauses.length - 1];
-      last.replaceWithText(last.getText() + `\n\n${SUBSCRIPTION_CASES_SNIPPET}`);
+      last.replaceWithText(
+        last.getText() + `\n\n${SUBSCRIPTION_CASES_SNIPPET}`,
+      );
     } else {
       return;
     }

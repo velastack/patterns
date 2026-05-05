@@ -25,9 +25,7 @@ export async function generate(options: Options) {
 
   logger.info("Modifying hooks.ts");
   const hooksPath = path.join(options.root, "src", "hooks.ts");
-  pushResult(
-    modifyOutcomeToFile(hooksPath, modifyHooksNegotiate(hooksPath)),
-  );
+  pushResult(modifyOutcomeToFile(hooksPath, modifyHooksNegotiate(hooksPath)));
 
   logger.info("Modifying src/routes/+layout.svelte");
   const rootLayoutPath = path.join(

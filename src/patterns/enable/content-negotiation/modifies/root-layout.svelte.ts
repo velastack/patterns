@@ -24,9 +24,7 @@ const NOT_FOUND_HINT = [
   MARKUP_SNIPPET.trim(),
 ].join("\n");
 
-export function modifyRootLayoutNegotiate(
-  layoutPath: string,
-): ModifyOutcome {
+export function modifyRootLayoutNegotiate(layoutPath: string): ModifyOutcome {
   if (!fs.existsSync(layoutPath)) {
     return { status: "not-found", message: NOT_FOUND_HINT };
   }

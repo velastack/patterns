@@ -1,10 +1,5 @@
 import fs from "node:fs";
-import {
-  Project,
-  QuoteKind,
-  SyntaxKind,
-  type SourceFile,
-} from "ts-morph";
+import { Project, QuoteKind, SyntaxKind, type SourceFile } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
 
 function removeNegotiateImport(sourceFile: SourceFile): boolean {
@@ -43,14 +38,15 @@ function removeSequenceImportIfUnused(sourceFile: SourceFile): void {
       const parent = id.getParent();
       const kind = parent?.getKind();
       return (
-        kind !== SyntaxKind.ImportSpecifier &&
-        kind !== SyntaxKind.ImportClause
+        kind !== SyntaxKind.ImportSpecifier && kind !== SyntaxKind.ImportClause
       );
     });
 
   if (stillReferenced) return;
 
-  const named = decl.getNamedImports().find((ni) => ni.getName() === "sequence");
+  const named = decl
+    .getNamedImports()
+    .find((ni) => ni.getName() === "sequence");
   if (!named) return;
 
   if (decl.getNamedImports().length === 1 && !decl.getDefaultImport()) {

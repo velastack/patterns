@@ -38,9 +38,7 @@ export async function generate(options: Options): Promise<Result> {
   const collections = await loadCollections(options);
   const collection = collections.find((c) => c.name === collectionName);
   if (!collection) {
-    throw new InvalidArgumentError(
-      `Collection "${collectionName}" not found`,
-    );
+    throw new InvalidArgumentError(`Collection "${collectionName}" not found`);
   }
 
   const parent = parseModel(collectionName, options);
@@ -51,7 +49,10 @@ export async function generate(options: Options): Promise<Result> {
     const fieldDefs =
       op === "references"
         ? [referencesFieldDef(rest)]
-        : requireNonEmpty(rest, "Expected at least one field definition for add");
+        : requireNonEmpty(
+            rest,
+            "Expected at least one field definition for add",
+          );
 
     const { fields } = resolveFields(fieldDefs, parent, collections, options);
     for (const field of fields) {

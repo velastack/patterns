@@ -1,0 +1,17 @@
+dist
+node_modules
+package-lock.json
+.integration-tests
+
+# Pattern templates copied verbatim into user projects.
+# Formatting happens (or doesn't) in the consuming project, not here.
+src/baselines
+**/creates/**
+**/creates-app-mode/**
+**/creates-with-negotiation/**
+**/creates-with-blog/**
+**/preview-modifies/**
+**/variants/**
+
+# Test fixtures must match input/expected output byte-for-byte.
+**/fixtures/**

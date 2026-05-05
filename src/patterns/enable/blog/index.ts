@@ -46,14 +46,7 @@ export default {
     contentNegotiation: false,
   },
   category: "content" as const,
-  tags: [
-    "sveltekit",
-    "blog",
-    "mdsvex",
-    "markdown",
-    "content",
-    "rss",
-  ],
+  tags: ["sveltekit", "blog", "mdsvex", "markdown", "content", "rss"],
 
   command: {
     raw: "vela enable blog",

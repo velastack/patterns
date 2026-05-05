@@ -1,10 +1,11 @@
 import type { Options, Result } from "../../../core/types";
 import { appRelativePath, languageFromPath } from "../../../core/util";
 
-const createsRaw = import.meta.glob<string>(
-  "../../enable/api/creates/**",
-  { query: "?raw", import: "default", eager: true },
-);
+const createsRaw = import.meta.glob<string>("../../enable/api/creates/**", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
 
 const CREATES_PREFIX = "../../enable/api/creates/";
 

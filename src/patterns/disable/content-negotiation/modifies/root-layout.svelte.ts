@@ -6,9 +6,7 @@ import {
 } from "../../../../runtime/ts-morph-helpers";
 import type { ModifyOutcome } from "../../../../core/types";
 
-export function unmodifyRootLayoutNegotiate(
-  layoutPath: string,
-): ModifyOutcome {
+export function unmodifyRootLayoutNegotiate(layoutPath: string): ModifyOutcome {
   if (!fs.existsSync(layoutPath)) {
     return { status: "success", changed: false };
   }

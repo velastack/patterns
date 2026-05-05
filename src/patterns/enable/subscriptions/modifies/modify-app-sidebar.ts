@@ -92,9 +92,7 @@ export function modifyAppSidebar(filePath: string): ModifyOutcome {
     return { status: "failed", message: FAILURE_HINT };
   }
 
-  const scriptChanged = file.modifyScript(
-    (src) => updateScript(src).source,
-  );
+  const scriptChanged = file.modifyScript((src) => updateScript(src).source);
 
   const templateChanged = !file.hasAttribute("NavUser", "subscription")
     ? file.appendToAttributes("NavUser", " {subscription}")

@@ -1,8 +1,4 @@
-import type {
-  CollectionDropSpec,
-  File,
-  Options,
-} from "../../core/types";
+import type { CollectionDropSpec, File, Options } from "../../core/types";
 import { languageFromPath } from "../../core/util";
 
 export function toDeleteEntry(path: string): File {
