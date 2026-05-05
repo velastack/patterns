@@ -7,9 +7,9 @@ import {
 } from "../../../../runtime/ts-morph-helpers";
 
 const SUBSCRIPTION_CASE_VALUES = new Set([
-  '"customer.subscription.created"',
-  '"customer.subscription.updated"',
-  '"customer.subscription.deleted"',
+  "customer.subscription.created",
+  "customer.subscription.updated",
+  "customer.subscription.deleted",
 ]);
 
 export function unmodifyWebhookServer(filePath: string): ModifyOutcome {
@@ -38,8 +38,12 @@ export function unmodifyWebhookServer(filePath: string): ModifyOutcome {
       .filter((clause) => {
         if (clause.getKind() !== SyntaxKind.CaseClause) return false;
         const caseClause = clause.asKindOrThrow(SyntaxKind.CaseClause);
-        const exprText = caseClause.getExpression().getText();
-        return SUBSCRIPTION_CASE_VALUES.has(exprText);
+        const expr = caseClause.getExpression();
+        const literal =
+          expr.asKind(SyntaxKind.StringLiteral) ??
+          expr.asKind(SyntaxKind.NoSubstitutionTemplateLiteral);
+        if (!literal) return false;
+        return SUBSCRIPTION_CASE_VALUES.has(literal.getLiteralValue());
       })
       .map((c) => c.asKindOrThrow(SyntaxKind.CaseClause));
 

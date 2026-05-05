@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { goto, invalidate } from '$app/navigation';
+	import { page } from '$app/state';
 	import { toast } from 'svelte-sonner';
 	import BellIcon from '@lucide/svelte/icons/bell';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+	import { timeAgo } from '$lib/utils';
 
 	interface NotificationItem {
 		id: string;
@@ -16,44 +18,44 @@
 	}
 
 	const POLL_MS = 30_000;
+	const INVALIDATE_KEY = 'app:notifications';
 
-	let count = $state(0);
-	let items = $state<NotificationItem[]>([]);
-	let lastSeenId = $state<string | null>(null);
-	let firstLoad = true;
-
-	async function tick() {
-		if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
-		try {
-			const res = await fetch('/api/notifications');
-			if (!res.ok) return;
-			const data = (await res.json()) as { count: number; items: NotificationItem[] };
-			const previousId = lastSeenId;
-			count = data.count;
-			items = data.items;
-
-			const newest = data.items[0]?.id ?? null;
-			if (!firstLoad && newest && newest !== previousId) {
-				for (const item of data.items) {
-					if (previousId && item.id <= previousId) break;
-					toast.info(item.title, {
-						description: item.body || undefined,
-						action: { label: 'View', onClick: () => goto('/notifications') }
-					});
-				}
-			}
-			lastSeenId = newest;
-			firstLoad = false;
-		} catch {
-			// Network blips: leave state as-is until next tick.
+	const notifications = $derived(
+		(page.data.notifications ?? { count: 0, items: [] }) as {
+			count: number;
+			items: NotificationItem[];
 		}
-	}
+	);
+	const badgeText = $derived(notifications.count > 99 ? '99+' : String(notifications.count));
+
+	let lastSeenId: string | null = null;
+	let primed = false;
+
+	$effect(() => {
+		const newest = notifications.items[0]?.id ?? null;
+		if (!primed) {
+			primed = true;
+			lastSeenId = newest;
+			return;
+		}
+		if (!newest || newest === lastSeenId) return;
+		for (const item of notifications.items) {
+			if (lastSeenId && item.id <= lastSeenId) break;
+			toast.info(item.title, {
+				description: item.body || undefined,
+				action: { label: 'View', onClick: () => goto('/notifications') }
+			});
+		}
+		lastSeenId = newest;
+	});
 
 	onMount(() => {
-		tick();
-		const id = setInterval(tick, POLL_MS);
+		const id = setInterval(() => {
+			if (document.visibilityState === 'hidden') return;
+			invalidate(INVALIDATE_KEY);
+		}, POLL_MS);
 		const onVisible = () => {
-			if (document.visibilityState === 'visible') tick();
+			if (document.visibilityState === 'visible') invalidate(INVALIDATE_KEY);
 		};
 		document.addEventListener('visibilitychange', onVisible);
 		return () => {
@@ -61,16 +63,14 @@
 			document.removeEventListener('visibilitychange', onVisible);
 		};
 	});
-
-	const badgeText = $derived(count > 99 ? '99+' : String(count));
 </script>
 
-<DropdownMenu.Root>
+<DropdownMenu.Root onOpenChange={(open) => open && invalidate(INVALIDATE_KEY)}>
 	<DropdownMenu.Trigger>
 		{#snippet child({ props })}
 			<Button variant="ghost" size="icon" class="relative" aria-label="Notifications" {...props}>
 				<BellIcon class="size-5" />
-				{#if count > 0}
+				{#if notifications.count > 0}
 					<Badge
 						variant="destructive"
 						class="absolute -top-1 -right-1 h-4 min-w-4 px-1 text-[10px] leading-none"
@@ -81,21 +81,29 @@
 			</Button>
 		{/snippet}
 	</DropdownMenu.Trigger>
-	<DropdownMenu.Content align="end" class="w-80">
+	<DropdownMenu.Content align="end" class="w-80 shadow-2xl shadow-black/40">
 		<DropdownMenu.Label>Notifications</DropdownMenu.Label>
 		<DropdownMenu.Separator />
-		{#if items.length === 0}
+		{#if notifications.items.length === 0}
 			<div class="px-2 py-6 text-center text-sm text-muted-foreground">
 				You're all caught up.
 			</div>
 		{:else}
-			{#each items as item (item.id)}
+			{#each notifications.items as item (item.id)}
 				<DropdownMenu.Item class="p-0">
 					<a
 						href="/notifications"
-						class="flex w-full flex-col gap-1 px-2 py-2 cursor-default"
+						class="flex w-full flex-col gap-0.5 px-2 py-2 cursor-default"
 					>
-						<span class="text-sm font-medium">{item.title}</span>
+						<div class="flex items-center justify-between gap-2">
+							<span class="text-sm font-medium truncate">{item.title}</span>
+							<span
+								class="shrink-0 text-[10px] text-muted-foreground tabular-nums"
+								title={new Date(item.created).toLocaleString()}
+							>
+								{timeAgo(item.created)}
+							</span>
+						</div>
 						{#if item.body}
 							<span class="text-xs text-muted-foreground line-clamp-2">{item.body}</span>
 						{/if}

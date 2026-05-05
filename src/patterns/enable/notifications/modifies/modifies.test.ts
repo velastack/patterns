@@ -4,6 +4,7 @@ import path from "node:path";
 import fs from "node:fs";
 
 import { modifyAppLayout } from "./modify-app-layout";
+import { modifyLayoutServer } from "./+layout.server";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,6 +16,8 @@ const appLayoutTestCases = [
   "already-has-bell.svelte",
   "no-header-layout.svelte",
 ] as const;
+
+const layoutServerCases = ["+layout.server.ts"] as const;
 
 describe("modifyAppLayout", () => {
   beforeEach(() => {
@@ -61,5 +64,45 @@ describe("modifyAppLayout", () => {
   it("returns not-found when the file does not exist", () => {
     const result = modifyAppLayout(path.join(tempDir, "does-not-exist.svelte"));
     expect(result.status).toBe("not-found");
+  });
+});
+
+describe("modifyLayoutServer", () => {
+  beforeEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+    fs.cpSync(path.join(fixturesPath, "original"), tempDir, {
+      recursive: true,
+    });
+  });
+
+  afterEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it.each(layoutServerCases)(
+    "should modify %s correctly",
+    async (testCase) => {
+      modifyLayoutServer(path.join(tempDir, testCase));
+
+      const modifiedFile = fs.readFileSync(
+        path.join(tempDir, testCase),
+        "utf8",
+      );
+      const expectedFile = fs.readFileSync(
+        path.join(fixturesPath, "expect", testCase),
+        "utf8",
+      );
+
+      await expect(modifiedFile).toMatchFormatted(expectedFile, testCase);
+    },
+  );
+
+  it("is idempotent on a second run", () => {
+    const target = path.join(tempDir, "+layout.server.ts");
+    modifyLayoutServer(target);
+    const afterFirst = fs.readFileSync(target, "utf8");
+    const result = modifyLayoutServer(target);
+    expect(result).toEqual({ status: "success", changed: false });
+    expect(fs.readFileSync(target, "utf8")).toBe(afterFirst);
   });
 });

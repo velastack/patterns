@@ -33,7 +33,10 @@ const layoutSvelteTestCases = [
 
 const hooksServerTestCases = ["hooks.server.ts"] as const;
 
-const sidebarMenuButtonTestCases = ["sidebar-menu-button.svelte"] as const;
+const sidebarMenuButtonTestCases = [
+  "sidebar-menu-button.svelte",
+  "sidebar-menu-button-double-quotes.svelte",
+] as const;
 
 describe("modifyLayoutServer", () => {
   beforeEach(() => {

@@ -13,7 +13,9 @@ import {
   withPocketbase,
 } from "../../../runtime/pocketbase";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
+import { modifyUtils } from "../../../runtime/modify-utils";
 import { modifyAppLayout } from "./modifies/modify-app-layout";
+import { modifyLayoutServer } from "./modifies/+layout.server";
 import { NOTIFICATION_RULE_PATCHES } from "./runtime/pocketbase";
 
 async function pushMigrationCreates(
@@ -130,6 +132,25 @@ export async function generate(options: Options) {
   pushResult(
     modifyOutcomeToFile(appLayoutPath, modifyAppLayout(appLayoutPath)),
   );
+
+  logger.info("Modifying (app) +layout.server.ts");
+  const appLayoutServerPath = path.join(
+    options.root,
+    "src",
+    "routes",
+    "(app)",
+    "+layout.server.ts",
+  );
+  pushResult(
+    modifyOutcomeToFile(
+      appLayoutServerPath,
+      modifyLayoutServer(appLayoutServerPath),
+    ),
+  );
+
+  logger.info("Modifying utils.ts");
+  const utilsPath = path.join(options.root, "src", "lib", "utils.ts");
+  pushResult(modifyOutcomeToFile(utilsPath, modifyUtils(utilsPath)));
 
   return {
     creates,

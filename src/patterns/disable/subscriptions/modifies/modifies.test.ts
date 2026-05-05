@@ -192,6 +192,25 @@ describe("disable subscriptions modifies (AST)", () => {
       changed: false,
     });
   });
+
+  it("removes single-quoted subscription case clauses", () => {
+    const target = path.join(tempDir, "webhook-server.ts");
+    const original = fs.readFileSync(target, "utf8");
+    const singleQuoted = original.replace(
+      /"customer\.subscription\.(created|updated|deleted)"/g,
+      "'customer.subscription.$1'",
+    );
+    expect(singleQuoted).toContain("'customer.subscription.created'");
+    fs.writeFileSync(target, singleQuoted, "utf8");
+
+    unmodifyWebhookServer(target);
+
+    const modified = fs.readFileSync(target, "utf8");
+    expect(modified).not.toContain("customer.subscription.created");
+    expect(modified).not.toContain("customer.subscription.updated");
+    expect(modified).not.toContain("customer.subscription.deleted");
+    expect(modified).not.toContain("handleSubscriptionCreated");
+  });
 });
 
 describe("disable subscriptions modifies (template revert)", () => {

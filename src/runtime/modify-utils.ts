@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import dedent from "dedent";
 import { Project, QuoteKind } from "ts-morph";
-import type { ModifyOutcome } from "../../../../core/types";
+import type { ModifyOutcome } from "../core/types";
 
 const TIME_AGO_SNIPPET = dedent`
   const TIME_AGO_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [

@@ -1,4 +1,4 @@
-import type PocketBase from 'pocketbase';
+import type PocketBase from "pocketbase-sveltekit";
 
 export interface NotifyInput {
 	title: string;

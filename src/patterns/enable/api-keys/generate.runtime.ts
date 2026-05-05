@@ -2,9 +2,9 @@ import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
+import { modifyUtils } from "../../../runtime/modify-utils";
 import { modifyHooksServer } from "./modifies/hooks.server";
 import { modifyNavUser } from "./modifies/nav-user.svelte";
-import { modifyUtils } from "./modifies/utils";
 
 export async function generate(options: Options) {
   const logger = getLogger(options);

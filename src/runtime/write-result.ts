@@ -85,6 +85,13 @@ function toTargetPath(root: string, filePath: string): string {
   return path.join(root, filePath);
 }
 
+function toRelativePath(root: string, filePath: string): string {
+  if (path.isAbsolute(filePath)) {
+    return path.relative(root, filePath);
+  }
+  return filePath;
+}
+
 function writeFile(filePath: string, content: string): void {
   mkdirSync(path.dirname(filePath), { recursive: true });
   writeFileSync(filePath, content, "utf8");
@@ -347,26 +354,37 @@ export async function writeResult(
     if (file.status !== "success") continue;
     if (!existsSync(toTargetPath(options.root, file.path))) {
       writeFile(toTargetPath(options.root, file.path), file.content);
-      writtenResult.creates.push(file);
+      writtenResult.creates.push({
+        ...file,
+        path: toRelativePath(options.root, file.path),
+      });
     }
   }
 
   for (const file of result.modifies) {
     if (file.status !== "success") continue;
     writeFile(toTargetPath(options.root, file.path), file.content);
+    writtenResult.modifies.push({
+      ...file,
+      path: toRelativePath(options.root, file.path),
+    });
   }
 
   for (const file of result.deletes) {
     if (file.status !== "success") continue;
     if (existsSync(toTargetPath(options.root, file.path))) {
       removeFile(toTargetPath(options.root, file.path));
-      writtenResult.deletes.push(file);
+      writtenResult.deletes.push({
+        ...file,
+        path: toRelativePath(options.root, file.path),
+      });
     }
   }
 
   return {
     ...result,
     creates: writtenResult.creates,
+    modifies: writtenResult.modifies,
     deletes: writtenResult.deletes,
     components: componentInstalls.components,
     packages: [...new Set([...packageInstalls, ...componentInstalls.packages])],

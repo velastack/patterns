@@ -4,7 +4,8 @@ export const load = async ({ locals }) => {
 	const userId = locals.pb.authStore.record!.id;
 	const items = await locals.pb.collection('notifications').getFullList({
 		filter: `user = "${userId}"`,
-		sort: '-created'
+		sort: '-created',
+		requestKey: 'notifications'
 	});
 	const unread = items.filter((n) => !n.read).length;
 	const breadcrumbs = [
