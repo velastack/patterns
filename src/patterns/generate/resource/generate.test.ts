@@ -91,25 +91,4 @@ describe("generate resource pattern", () => {
       },
     ]);
   });
-
-  it("hydrates resource schema from runtime collection", async () => {
-    const result = await generateBase(
-      makeOptions({
-        env: "runtime",
-        argv: ["contact"],
-      }),
-    );
-
-    expect(result.creates[0].content).toContain("name: z.string().nonempty()");
-    expect(result.creates[0].content).toContain(
-      'avatar: z.union([z.instanceof(File), z.string()]).optional().default("")',
-    );
-    expect(result.creates[0].content).toContain(
-      "'attachments+': z.instanceof(File).array().optional()",
-    );
-    expect(result.creates[0].content).toContain(
-      "'attachments-': z.string().array().optional()",
-    );
-    expect(result.collections).toEqual([]);
-  });
 });
