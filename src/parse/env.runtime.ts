@@ -2,13 +2,12 @@ import { getCollections as getCollectionsFromPB } from "@velastack/pocketbase/in
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
-import { DATA_DIR } from "../core/constants";
 import type { Collection } from "./types";
 
 function hasProjectMarkers(dir: string): boolean {
   return (
     fs.existsSync(path.join(dir, "package.json")) &&
-    fs.existsSync(path.join(dir, DATA_DIR))
+    fs.existsSync(path.join(dir, "src", "routes"))
   );
 }
 
@@ -28,7 +27,7 @@ export function resolveProjectRoot(startDir = process.cwd()): string {
   }
 
   throw new Error(
-    `Could not resolve project root from "${startDir}". Expected package.json, and ${DATA_DIR}.`,
+    `Could not resolve project root from "${startDir}". Expected package.json and src/routes.`,
   );
 }
 

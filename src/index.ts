@@ -11,6 +11,7 @@ import enableAuth from "./patterns/enable/auth";
 import enableAuthRemote from "./patterns/enable/auth-remote";
 import enableApi from "./patterns/enable/api";
 import enableApiKeys from "./patterns/enable/api-keys";
+import enableBackend from "./patterns/enable/backend";
 import enableBlog from "./patterns/enable/blog";
 import enableContentNegotiation from "./patterns/enable/content-negotiation";
 import enableI18n from "./patterns/enable/i18n";
@@ -25,6 +26,7 @@ import destroyScaffold from "./patterns/destroy/scaffold";
 import disableApi from "./patterns/disable/api";
 import disableApiKeys from "./patterns/disable/api-keys";
 import disableAuth from "./patterns/disable/auth";
+import disableBackend from "./patterns/disable/backend";
 import disableContentNegotiation from "./patterns/disable/content-negotiation";
 import disableI18n from "./patterns/disable/i18n";
 import disableTeams from "./patterns/disable/teams";
@@ -45,6 +47,7 @@ export const patterns = [
   enableAuthRemote,
   enableApi,
   enableApiKeys,
+  enableBackend,
   enableBlog,
   enableContentNegotiation,
   enableI18n,
@@ -59,6 +62,7 @@ export const patterns = [
   disableApi,
   disableApiKeys,
   disableAuth,
+  disableBackend,
   disableContentNegotiation,
   disableI18n,
   disableTeams,

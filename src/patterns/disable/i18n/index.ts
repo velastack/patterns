@@ -40,6 +40,7 @@ export default {
     auth: false,
     api: false,
     apiKeys: false,
+    backend: false,
     i18n: true,
     teams: false,
     payments: false,

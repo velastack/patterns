@@ -29,6 +29,7 @@ function makeOptions(root: string): Options {
       auth: false,
       api: false,
       apiKeys: false,
+      backend: false,
       i18n: false,
       teams: false,
       payments: false,
