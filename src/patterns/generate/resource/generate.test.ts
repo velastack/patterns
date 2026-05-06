@@ -36,7 +36,7 @@ function makeOptions(
       auth: false,
       api: false,
       apiKeys: false,
-      backend: false,
+      backend: true,
       i18n: false,
       teams: false,
       payments: false,

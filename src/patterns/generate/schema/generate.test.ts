@@ -83,6 +83,17 @@ describe("generate schema pattern", () => {
       makeOptions({
         env: "runtime",
         argv: ["contact"],
+        features: {
+          auth: false,
+          api: false,
+          apiKeys: false,
+          backend: true,
+          i18n: false,
+          teams: false,
+          payments: false,
+          blog: false,
+          contentNegotiation: false,
+        },
       }),
     );
 
@@ -105,6 +116,17 @@ describe("generate schema pattern", () => {
       makeOptions({
         env: "preview",
         argv: ["contact"],
+        features: {
+          auth: false,
+          api: false,
+          apiKeys: false,
+          backend: true,
+          i18n: false,
+          teams: false,
+          payments: false,
+          blog: false,
+          contentNegotiation: false,
+        },
       }),
     );
 
@@ -116,6 +138,19 @@ describe("generate schema pattern", () => {
     );
     expect(result.creates[0].content).toContain(
       'status: z.enum(["draft", "published"]).optional()',
+    );
+  });
+
+  it("throws when no fields are passed and backend is disabled", async () => {
+    await expect(
+      generateBase(
+        makeOptions({
+          env: "preview",
+          argv: ["contact"],
+        }),
+      ),
+    ).rejects.toThrow(
+      /Cannot derive fields from a collection without a backend/,
     );
   });
 });

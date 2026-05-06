@@ -1,6 +1,7 @@
 import * as changeCase from "change-case";
 import dedent from "dedent";
 import pluralize from "pluralize";
+import { InvalidArgumentError } from "./errors";
 import type { CollectionFieldSpec, CollectionSpec, Options } from "./types";
 import {
   collectionDisplayFieldMap,
@@ -198,7 +199,9 @@ export async function resolveInputFields(
 ): Promise<ResolvedInput> {
   validateModelName(modelPath);
   const model = parseModel(modelPath, options);
-  const collections = await loadCollections(options);
+  const collections = options.features.backend
+    ? await loadCollections(options)
+    : [];
 
   if (fieldDefs.length > 0) {
     const { fields, auth } = resolveFields(
@@ -214,6 +217,12 @@ export async function resolveInputFields(
       shouldCreateCollection: true,
       collections,
     };
+  }
+
+  if (!options.features.backend) {
+    throw new InvalidArgumentError(
+      "Cannot derive fields from a collection without a backend. Pass field definitions (e.g. `name:text email:email`) or run `vela enable backend` first.",
+    );
   }
 
   const fields = fieldsFromCollection(model, collections, options);
