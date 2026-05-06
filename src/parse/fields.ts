@@ -256,7 +256,17 @@ function resolveField(
   const namesSingular = names.map((c) => pluralize.singular(c));
 
   // current_user: special auth-mode relation to users
-  if (options.features.auth && type === "current_user" && ids["users"]) {
+  if (type === "current_user") {
+    if (!options.features.auth) {
+      throw new InvalidArgumentError(
+        `Field type "current_user" requires the auth feature. Run \`vela enable auth\` to enable it.`,
+      );
+    }
+    if (!ids["users"]) {
+      throw new InvalidArgumentError(
+        `Field type "current_user" requires a "users" collection but none was found.`,
+      );
+    }
     const rel = resolveRelation(
       name,
       "users",
@@ -282,7 +292,17 @@ function resolveField(
   }
 
   // current_team: special teams-mode relation to teams
-  if (options.features.teams && type === "current_team" && ids["teams"]) {
+  if (type === "current_team") {
+    if (!options.features.teams) {
+      throw new InvalidArgumentError(
+        `Field type "current_team" requires the teams feature. Run \`vela enable teams\` to enable it.`,
+      );
+    }
+    if (!ids["teams"]) {
+      throw new InvalidArgumentError(
+        `Field type "current_team" requires a "teams" collection but none was found.`,
+      );
+    }
     const rel = resolveRelation(
       name,
       "teams",
