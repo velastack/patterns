@@ -40,9 +40,7 @@ export function modifySvelteConfig(svelteConfigPath: string): ModifyOutcome {
     return { status: "failed", message: FAILURE_HINT };
   }
 
-  if (
-    adapterImport.getModuleSpecifierValue() === "@sveltejs/adapter-static"
-  ) {
+  if (adapterImport.getModuleSpecifierValue() === "@sveltejs/adapter-static") {
     adapterImport.setModuleSpecifier("@sveltejs/adapter-auto");
   }
 
@@ -66,9 +64,7 @@ export function modifySvelteConfig(svelteConfigPath: string): ModifyOutcome {
   };
 }
 
-export function unmodifySvelteConfig(
-  svelteConfigPath: string,
-): ModifyOutcome {
+export function unmodifySvelteConfig(svelteConfigPath: string): ModifyOutcome {
   if (!fs.existsSync(svelteConfigPath)) {
     return { status: "success", changed: false };
   }
