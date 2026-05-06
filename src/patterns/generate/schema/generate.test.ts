@@ -4,6 +4,12 @@ import { generate as generateBase } from "./generate";
 
 const mockCollections = [
   {
+    id: "_pb_users_auth_",
+    name: "users",
+    type: "auth",
+    fields: [{ name: "id", type: "text", system: true }],
+  },
+  {
     id: "contacts",
     name: "contacts",
     type: "base",
@@ -17,6 +23,13 @@ const mockCollections = [
         maxSelect: 1,
       },
       { name: "attachments", type: "file", maxSelect: 5, required: false },
+      {
+        name: "user",
+        type: "relation",
+        collectionId: "_pb_users_auth_",
+        maxSelect: 1,
+        required: true,
+      },
     ],
   },
 ];
@@ -139,6 +152,29 @@ describe("generate schema pattern", () => {
     expect(result.creates[0].content).toContain(
       'status: z.enum(["draft", "published"]).optional()',
     );
+  });
+
+  it("preserves required: true for relation fields named user when auth is enabled", async () => {
+    const result = await generateBase(
+      makeOptions({
+        env: "runtime",
+        argv: ["contact"],
+        features: {
+          auth: true,
+          api: false,
+          apiKeys: false,
+          backend: true,
+          i18n: false,
+          teams: false,
+          payments: false,
+          blog: false,
+          contentNegotiation: false,
+        },
+      }),
+    );
+
+    expect(result.creates[0].content).toContain("user: z.string()");
+    expect(result.creates[0].content).not.toContain("user: z.string().optional()");
   });
 
   it("throws when no fields are passed and backend is disabled", async () => {

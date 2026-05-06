@@ -117,16 +117,39 @@ describe("generate scaffold pattern", () => {
     expect(schemaFile?.content).toContain(
       "'attachments-': z.string().array().optional()",
     );
+    expect(schemaFile?.content).toContain("owner: z.string()");
+    expect(schemaFile?.content).not.toContain("owner: z.string().optional()");
 
     expect(listServer?.content).toContain(
       'getFullList({ expand: "category" })',
     );
     expect(newPage?.content).toContain("const statusLabels =");
     expect(newPage?.content).toContain('name="category"');
+    expect(newPage?.content).toContain(
+      '<input type="hidden" name="owner" bind:value={$formData.owner} />',
+    );
     expect(showPage?.content).toContain("Contact details");
     expect(showPage?.content).toContain("Back to list");
     expect(editServer?.content).toContain(
       "await superValidate(contact, zod4(contactSchema))",
+    );
+
+    const newServer = result.creates.find((file) =>
+      file.path.endsWith("/contacts/new/+page.server.ts"),
+    );
+    expect(newServer?.content).toContain(
+      'await superValidate({ owner: "current_user" }, zod4(contactSchema))',
+    );
+    expect(newServer?.content).toContain(
+      "owner: locals.pb.authStore.record?.id",
+    );
+    expect(editServer?.content).toContain("owner: contact.owner");
+
+    const editPage = result.creates.find((file) =>
+      file.path.endsWith("/contacts/[id]/edit/+page.svelte"),
+    );
+    expect(editPage?.content).toContain(
+      '<input type="hidden" name="owner" bind:value={$formData.owner} />',
     );
     expect(scaffoldServerTest?.content).toContain('describe("GET /contacts"');
     expect(scaffoldServerTest?.content).toContain(

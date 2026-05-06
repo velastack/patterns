@@ -275,19 +275,9 @@ export function generateSchemaSnippet(
       });
       continue;
     }
-    // Server-injected fields (current_user/current_team) are excluded from the
-    // UI form, so the form schema must accept submissions that omit them even
-    // though the underlying field is required in the database.
-    const isServerInjected =
-      options.forForm &&
-      field.type === "relation" &&
-      (field.isCurrentUser || field.isCurrentTeam);
     entries.push({
       name: field.name,
-      schema: zodSchemaForField(
-        isServerInjected ? { ...field, required: false } : field,
-        options,
-      ),
+      schema: zodSchemaForField(field, options),
     });
   }
 

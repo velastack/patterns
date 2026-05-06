@@ -85,10 +85,61 @@ function hasRelations(fields: Field[]): boolean {
   return uniqueRelationCollections(fields).length > 0;
 }
 
+type InjectableField = Extract<Field, { type: "relation" }>;
+
+interface Injectables {
+  currentUserField?: InjectableField;
+  currentTeamField?: InjectableField;
+}
+
+function findInjectables(fields: Field[]): Injectables {
+  return {
+    currentUserField: fields.find(
+      (field): field is InjectableField =>
+        field.type === "relation" && field.isCurrentUser,
+    ),
+    currentTeamField: fields.find(
+      (field): field is InjectableField =>
+        field.type === "relation" && field.isCurrentTeam,
+    ),
+  };
+}
+
+function newHiddenInputs(injectables: Injectables): string {
+  const sentinels: Array<[InjectableField, string]> = [];
+  if (injectables.currentUserField) {
+    sentinels.push([injectables.currentUserField, "current_user"]);
+  }
+  if (injectables.currentTeamField) {
+    sentinels.push([injectables.currentTeamField, "current_team"]);
+  }
+  return sentinels
+    .map(
+      ([field, value]) =>
+        `<input type="hidden" name="${field.name}" value="${value}" />`,
+    )
+    .join("\n");
+}
+
+function editHiddenInputs(
+  model: Model,
+  injectables: Injectables,
+): string {
+  const fields = [injectables.currentUserField, injectables.currentTeamField]
+    .filter((field): field is InjectableField => Boolean(field));
+  return fields
+    .map(
+      (field) =>
+        `<input type="hidden" name="${field.name}" value={data.${model.name}.${field.name}} />`,
+    )
+    .join("\n");
+}
+
 function newPageSnippet(
   model: Model,
   urls: ReturnType<typeof modelUrls>,
   fields: Field[],
+  injectables: Injectables,
 ): string {
   const formVar = createFormIdentifier(model);
   const components = getRemoteFieldComponents(fields);
@@ -101,6 +152,7 @@ function newPageSnippet(
   const fieldContent = fields
     .map((field) => renderRemoteField(field, { formVar }))
     .join("\n");
+  const hiddenInputs = newHiddenInputs(injectables);
   const enctype = hasFiles(fields) ? ' enctype="multipart/form-data"' : "";
 
   return dedent`
@@ -122,6 +174,7 @@ function newPageSnippet(
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             ${fieldContent}
           </div>
+          ${hiddenInputs}
           <div class="mt-4 flex gap-2 border-t pt-4 -mx-4 px-4">
             <Button type="submit" size="sm">Save</Button>
             <Button href="${urls.list}" variant="outline" size="sm">Cancel</Button>
@@ -136,6 +189,7 @@ function editPageSnippet(
   model: Model,
   urls: ReturnType<typeof modelUrls>,
   fields: Field[],
+  injectables: Injectables,
 ): string {
   const formVar = updateFormIdentifier(model);
   const components = getRemoteFieldComponents(fields);
@@ -148,6 +202,7 @@ function editPageSnippet(
   const fieldContent = fields
     .map((field) => renderRemoteField(field, { formVar }))
     .join("\n");
+  const hiddenInputs = editHiddenInputs(model, injectables);
   const enctype = hasFiles(fields) ? ' enctype="multipart/form-data"' : "";
 
   return dedent`
@@ -169,6 +224,7 @@ function editPageSnippet(
       <div class="bg-card rounded-lg shadow-sm border p-4">
         <form {...${formVar}}${enctype}>
           <input type="hidden" name="id" value={data.${model.name}.id} />
+          ${hiddenInputs}
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             ${fieldContent}
           </div>
@@ -609,9 +665,33 @@ function editServerSnippet(model: Model, fields: Field[], pb: string): string {
 function editRemoteSnippet(
   model: Model,
   urls: ReturnType<typeof modelUrls>,
+  injectables: Injectables,
   pb: string,
 ): string {
   const formVar = updateFormIdentifier(model);
+  const { currentUserField, currentTeamField } = injectables;
+  const hasPreservations = Boolean(currentUserField || currentTeamField);
+  const preservations: string[] = [];
+  if (currentUserField) {
+    preservations.push(
+      `${currentUserField.name}: existing.${currentUserField.name}`,
+    );
+  }
+  if (currentTeamField) {
+    preservations.push(
+      `${currentTeamField.name}: existing.${currentTeamField.name}`,
+    );
+  }
+  const updateBody = hasPreservations
+    ? dedent`
+        const existing = await ${pb}.collection("${model.tableName}").getOne(id);
+        await ${pb}.collection("${model.tableName}").update(id, {
+          ...rest,
+          ${preservations.join(",\n  ")}
+        });
+      `
+    : `await ${pb}.collection("${model.tableName}").update(id, rest);`;
+
   return dedent`
     import { form, getRequestEvent, error } from "$app/server";
     import { redirect } from "@sveltejs/kit";
@@ -621,7 +701,7 @@ function editRemoteSnippet(
       const { locals } = getRequestEvent();
       const { id, collectionId, ...rest } = data;
       if (!id) error(400, "id is required");
-      await ${pb}.collection("${model.tableName}").update(id, rest);
+      ${updateBody}
       redirect(303, \`${urls.list}/\${id}\`);
     });
   `;
@@ -641,6 +721,7 @@ export async function generate(options: Options) {
         (field.isCurrentUser || field.isCurrentTeam)
       ),
   );
+  const injectables = findInjectables(fields);
 
   const creates: File[] = [
     toFile(
@@ -669,7 +750,10 @@ export async function generate(options: Options) {
       `${paths.new}/form.remote.ts`,
       newRemoteSnippet(model, urls, fields, pb, options.features.auth),
     ),
-    toFile(`${paths.new}/+page.svelte`, newPageSnippet(model, urls, uiFields)),
+    toFile(
+      `${paths.new}/+page.svelte`,
+      newPageSnippet(model, urls, uiFields, injectables),
+    ),
     toFile(
       `${paths.show}/+page.server.ts`,
       showServerSnippet(model, urls, uiFields, pb),
@@ -682,10 +766,13 @@ export async function generate(options: Options) {
       `${paths.edit}/+page.server.ts`,
       editServerSnippet(model, uiFields, pb),
     ),
-    toFile(`${paths.edit}/form.remote.ts`, editRemoteSnippet(model, urls, pb)),
+    toFile(
+      `${paths.edit}/form.remote.ts`,
+      editRemoteSnippet(model, urls, injectables, pb),
+    ),
     toFile(
       `${paths.edit}/+page.svelte`,
-      editPageSnippet(model, urls, uiFields),
+      editPageSnippet(model, urls, uiFields, injectables),
     ),
     toFile(
       `${paths.list}/server.test.ts`,

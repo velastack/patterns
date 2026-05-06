@@ -78,6 +78,37 @@ function pbInstance(
   return options.features.auth ? "locals.pb" : "locals.admin";
 }
 
+type InjectableField = Extract<Field, { type: "relation" }>;
+
+interface Injectables {
+  currentUserField?: InjectableField;
+  currentTeamField?: InjectableField;
+}
+
+function findInjectables(fields: Field[]): Injectables {
+  return {
+    currentUserField: fields.find(
+      (field): field is InjectableField =>
+        field.type === "relation" && field.isCurrentUser,
+    ),
+    currentTeamField: fields.find(
+      (field): field is InjectableField =>
+        field.type === "relation" && field.isCurrentTeam,
+    ),
+  };
+}
+
+function injectableHiddenInputs(injectables: Injectables): string {
+  const fields = [injectables.currentUserField, injectables.currentTeamField]
+    .filter((field): field is InjectableField => Boolean(field));
+  return fields
+    .map(
+      (field) =>
+        `<input type="hidden" name="${field.name}" bind:value={$formData.${field.name}} />`,
+    )
+    .join("\n");
+}
+
 function formScript(
   model: Model,
   fields: Field[],
@@ -104,6 +135,7 @@ function newPageSnippet(
   model: Model,
   urls: ReturnType<typeof modelUrls>,
   fields: Field[],
+  injectables: Injectables,
 ): string {
   const hasSelectFields = fields.some((field) => field.type === "select");
   const imports = uniqueImports([
@@ -120,6 +152,7 @@ function newPageSnippet(
       : "",
   ]).join("\n");
   const fieldContent = fields.map((field) => renderField(field)).join("\n");
+  const hiddenInputs = injectableHiddenInputs(injectables);
   const enctype = hasFiles(fields) ? ' enctype="multipart/form-data"' : "";
 
   return dedent`
@@ -142,6 +175,7 @@ function newPageSnippet(
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             ${fieldContent}
           </div>
+          ${hiddenInputs}
           <div class="mt-4 flex gap-2 border-t pt-4 -mx-4 px-4">
             <Form.Button size="sm">Save</Form.Button>
             <Button href="${urls.list}" variant="outline" size="sm">Cancel</Button>
@@ -156,6 +190,7 @@ function editPageSnippet(
   model: Model,
   urls: ReturnType<typeof modelUrls>,
   fields: Field[],
+  injectables: Injectables,
 ): string {
   const hasSelectFields = fields.some((field) => field.type === "select");
   const imports = uniqueImports([
@@ -172,6 +207,7 @@ function editPageSnippet(
       : "",
   ]).join("\n");
   const fieldContent = fields.map((field) => renderField(field)).join("\n");
+  const hiddenInputs = injectableHiddenInputs(injectables);
   const enctype = hasFiles(fields) ? ' enctype="multipart/form-data"' : "";
   return dedent`
     <script lang="ts">
@@ -193,6 +229,7 @@ function editPageSnippet(
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             ${fieldContent}
           </div>
+          ${hiddenInputs}
           <div class="mt-4 flex gap-2 border-t pt-4 -mx-4 px-4">
             <Form.Button size="sm">Save changes</Form.Button>
             <Button href="${urls.list}/\${params.id}" variant="outline" size="sm">Cancel</Button>
@@ -457,6 +494,7 @@ function newServerSnippet(
   model: Model,
   urls: ReturnType<typeof modelUrls>,
   fields: Field[],
+  injectables: Injectables,
   pb: string,
   authMode: boolean,
 ): string {
@@ -464,21 +502,21 @@ function newServerSnippet(
   const relationLoads = relationLoadLines(fields, pb);
   const relationVars = relationLoadReturnVars(fields);
   const relationReturn = relationVars ? `, ${relationVars}` : "";
-  const currentUserField = fields.find(
-    (field): field is Extract<Field, { type: "relation" }> =>
-      field.type === "relation" && field.isCurrentUser,
-  );
-  const currentTeamField = fields.find(
-    (field): field is Extract<Field, { type: "relation" }> =>
-      field.type === "relation" && field.isCurrentTeam,
-  );
+  const { currentUserField, currentTeamField } = injectables;
+  const sentinels: string[] = [];
   const injections: string[] = [];
   if (authMode && currentUserField) {
+    sentinels.push(`${currentUserField.name}: "current_user"`);
     injections.push(`${currentUserField.name}: locals.pb.authStore.record?.id`);
   }
   if (currentTeamField) {
+    sentinels.push(`${currentTeamField.name}: "current_team"`);
     injections.push(`${currentTeamField.name}: locals.team`);
   }
+  const validateArg =
+    sentinels.length > 0
+      ? `{ ${sentinels.join(", ")} }, zod4(${model.schemaName})`
+      : `zod4(${model.schemaName})`;
   const createPayload =
     injections.length > 0
       ? dedent`
@@ -498,7 +536,7 @@ function newServerSnippet(
 
     export const load = async ({ locals }) => {
       ${relationLoads}
-      return { form: await superValidate(zod4(${model.schemaName}))${relationReturn} };
+      return { form: await superValidate(${validateArg})${relationReturn} };
     };
 
     export const actions = {
@@ -622,12 +660,35 @@ function editServerSnippet(
   model: Model,
   urls: ReturnType<typeof modelUrls>,
   fields: Field[],
+  injectables: Injectables,
   pb: string,
 ): string {
   const withFiles = hasFiles(fields);
   const relationLoads = relationLoadLines(fields, pb);
   const relationVars = relationLoadReturnVars(fields);
   const relationReturn = relationVars ? `, ${relationVars}` : "";
+  const { currentUserField, currentTeamField } = injectables;
+  const preservations: string[] = [];
+  if (currentUserField) {
+    preservations.push(
+      `${currentUserField.name}: ${model.name}.${currentUserField.name}`,
+    );
+  }
+  if (currentTeamField) {
+    preservations.push(
+      `${currentTeamField.name}: ${model.name}.${currentTeamField.name}`,
+    );
+  }
+  const updatePayload =
+    preservations.length > 0
+      ? dedent`
+        {
+          ...form.data,
+          ${preservations.join(",\n  ")}
+        }
+      `
+      : "form.data";
+
   return dedent`
     import { error, fail, redirect } from "@sveltejs/kit";
     import { setPocketbaseErrors, setDefaultData } from "@velastack/pocketbase";
@@ -657,7 +718,7 @@ function editServerSnippet(
         }
 
         try {
-          await ${pb}.collection("${model.tableName}").update(params.id, form.data);
+          await ${pb}.collection("${model.tableName}").update(params.id, ${updatePayload});
           return redirect(303, \`${urls.list}/\${params.id}\`);
         } catch (error) {
           setPocketbaseErrors(form, error);
@@ -693,6 +754,7 @@ export async function generate(options: Options) {
         (field.isCurrentUser || field.isCurrentTeam)
       ),
   );
+  const injectables = findInjectables(fields);
 
   const creates: File[] = [
     toFile(
@@ -712,9 +774,19 @@ export async function generate(options: Options) {
     ),
     toFile(
       `${paths.new}/+page.server.ts`,
-      newServerSnippet(model, urls, uiFields, pb, options.features.auth),
+      newServerSnippet(
+        model,
+        urls,
+        uiFields,
+        injectables,
+        pb,
+        options.features.auth,
+      ),
     ),
-    toFile(`${paths.new}/+page.svelte`, newPageSnippet(model, urls, uiFields)),
+    toFile(
+      `${paths.new}/+page.svelte`,
+      newPageSnippet(model, urls, uiFields, injectables),
+    ),
     toFile(
       `${paths.show}/+page.server.ts`,
       showServerSnippet(model, urls, uiFields, pb),
@@ -725,11 +797,11 @@ export async function generate(options: Options) {
     ),
     toFile(
       `${paths.edit}/+page.server.ts`,
-      editServerSnippet(model, urls, uiFields, pb),
+      editServerSnippet(model, urls, uiFields, injectables, pb),
     ),
     toFile(
       `${paths.edit}/+page.svelte`,
-      editPageSnippet(model, urls, uiFields),
+      editPageSnippet(model, urls, uiFields, injectables),
     ),
     toFile(
       `${paths.list}/server.test.ts`,
