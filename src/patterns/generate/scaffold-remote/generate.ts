@@ -458,12 +458,23 @@ function newRemoteSnippet(
     (field): field is Extract<Field, { type: "relation" }> =>
       field.type === "relation" && field.isCurrentUser,
   );
+  const currentTeamField = fields.find(
+    (field): field is Extract<Field, { type: "relation" }> =>
+      field.type === "relation" && field.isCurrentTeam,
+  );
+  const injections: string[] = [];
+  if (authMode && currentUserField) {
+    injections.push(`${currentUserField.name}: locals.pb.authStore.record?.id`);
+  }
+  if (currentTeamField) {
+    injections.push(`${currentTeamField.name}: locals.team`);
+  }
   const createPayload =
-    authMode && currentUserField
+    injections.length > 0
       ? dedent`
         {
           ...data,
-          ${currentUserField.name}: locals.pb.authStore.record?.id
+          ${injections.join(",\n  ")}
         }
       `
       : "data";
@@ -624,7 +635,11 @@ export async function generate(options: Options) {
   const urls = modelUrls(model);
   const pb = pbInstance(options);
   const uiFields = fields.filter(
-    (field) => !(field.type === "relation" && field.isCurrentUser),
+    (field) =>
+      !(
+        field.type === "relation" &&
+        (field.isCurrentUser || field.isCurrentTeam)
+      ),
   );
 
   const creates: File[] = [

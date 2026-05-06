@@ -277,6 +277,33 @@ function resolveField(
       singularRelationName: rel.singularRelationName,
       pluralRelationName: rel.pluralRelationName,
       isCurrentUser: true,
+      isCurrentTeam: false,
+    };
+  }
+
+  // current_team: special teams-mode relation to teams
+  if (options.features.teams && type === "current_team" && ids["teams"]) {
+    const rel = resolveRelation(
+      name,
+      "teams",
+      parent,
+      ids,
+      displayFields,
+      options,
+    );
+    return {
+      type: "relation",
+      name,
+      title,
+      required,
+      collectionId: rel.collectionId,
+      maxSelect: 1,
+      displayField: rel.displayField,
+      relatedModel: rel.relatedModel,
+      singularRelationName: rel.singularRelationName,
+      pluralRelationName: rel.pluralRelationName,
+      isCurrentUser: false,
+      isCurrentTeam: true,
     };
   }
 
@@ -339,6 +366,7 @@ function resolveField(
       required,
       ...rel,
       isCurrentUser: false,
+      isCurrentTeam: false,
     };
   }
 
@@ -359,6 +387,7 @@ function resolveField(
       required,
       ...rel,
       isCurrentUser: false,
+      isCurrentTeam: false,
     };
   }
   if (namesSingular.includes(type)) {
@@ -384,6 +413,7 @@ function resolveField(
         pluralRelationName: rel.pluralRelationName,
         maxSelect: 1,
         isCurrentUser: false,
+        isCurrentTeam: false,
       };
     }
   }
@@ -406,6 +436,7 @@ function resolveField(
       "file",
       "relation",
       ...(options.features.auth ? ["current_user"] : []),
+      ...(options.features.teams ? ["current_team"] : []),
       ...names,
     ]),
   ];

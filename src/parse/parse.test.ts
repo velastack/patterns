@@ -42,6 +42,19 @@ const withAuth = {
     contentNegotiation: false,
   },
 };
+const withTeams = {
+  features: {
+    auth: true,
+    api: false,
+    apiKeys: false,
+    backend: false,
+    i18n: false,
+    teams: true,
+    payments: false,
+    blog: false,
+    contentNegotiation: false,
+  },
+};
 
 // A parent model used across resolveFields tests
 const parent: Model = {
@@ -436,6 +449,7 @@ describe("resolveFields", () => {
         singularRelationName: "birdUser",
         pluralRelationName: "birdUsers",
         isCurrentUser: false,
+        isCurrentTeam: false,
       },
       {
         type: "relation",
@@ -449,6 +463,7 @@ describe("resolveFields", () => {
         singularRelationName: "birdUser",
         pluralRelationName: "birdUsers",
         isCurrentUser: false,
+        isCurrentTeam: false,
       },
     ]);
   });
@@ -662,6 +677,27 @@ describe("resolveFields", () => {
     const field = fields[0] as RelationField;
     expect(field.isCurrentUser).toBe(true);
     expect(field.collectionId).toBe("u1");
+    expect(field.maxSelect).toBe(1);
+  });
+
+  it("should handle current_team when teams is enabled", () => {
+    const teamsCollection: Collection = {
+      id: "t1",
+      name: "teams",
+      type: "base",
+      fields: [],
+    };
+    const { fields } = resolveFields(
+      ["team:current_team"],
+      parent,
+      [usersCollection, teamsCollection],
+      withTeams,
+    );
+    expect(fields[0].type).toBe("relation");
+    const field = fields[0] as RelationField;
+    expect(field.isCurrentTeam).toBe(true);
+    expect(field.isCurrentUser).toBe(false);
+    expect(field.collectionId).toBe("t1");
     expect(field.maxSelect).toBe(1);
   });
 });

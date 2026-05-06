@@ -118,6 +118,7 @@ describe("renderField", () => {
       singularRelationName: "owner",
       pluralRelationName: "owners",
       isCurrentUser: false,
+      isCurrentTeam: false,
     });
 
     expect(field).toContain('placeholder="Select hotel owner"');
@@ -209,6 +210,7 @@ describe("renderDisplayField", () => {
       singularRelationName: "hotelOwner",
       pluralRelationName: "hotelOwners",
       isCurrentUser: false,
+      isCurrentTeam: false,
     });
     expect(singleDisplay).toContain("{#if data.user.expand?.owner}");
     expect(singleDisplay).toContain(
@@ -227,6 +229,7 @@ describe("renderDisplayField", () => {
       singularRelationName: "hotelOwner",
       pluralRelationName: "hotelOwners",
       isCurrentUser: false,
+      isCurrentTeam: false,
     });
     expect(multiDisplay).toContain(
       "{#each data.user.expand?.owners ?? [] as hotelOwner}",

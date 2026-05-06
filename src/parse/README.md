@@ -116,3 +116,9 @@ model projects title:text team:references
 ```
 
 In this example, the `users` model is associated with the `teams` model. Access to the `projects` model is restricted to users who are members of the project's team.
+
+If teams are enabled with the `vela enable teams` command, a model field can be associated with the user's currently-active team via the special `current_team` field type, which automatically sets the field to `locals.team` on creation and excludes it from the frontend form.
+
+```
+model posts title:string team:current_team
+```

@@ -91,6 +91,7 @@ export interface RelationField extends FieldBase {
   singularRelationName: string;
   pluralRelationName: string;
   isCurrentUser: boolean;
+  isCurrentTeam: boolean;
 }
 
 export type Field =

@@ -361,6 +361,10 @@ export function fieldsFromCollection(
           options.features.auth &&
           relatedCollection.name === "users" &&
           /user|owner|author/i.test(raw.name),
+        isCurrentTeam:
+          options.features.teams &&
+          relatedCollection.name === "teams" &&
+          /team/i.test(raw.name),
       });
       continue;
     }
