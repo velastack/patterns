@@ -156,6 +156,61 @@ describe("generate form-remote pattern", () => {
     );
   });
 
+  it("generates a form-remote without a backend when given simple field types", async () => {
+    const result = await generateBase(
+      makeOptions({
+        env: "preview",
+        features: {
+          auth: false,
+          api: false,
+          apiKeys: false,
+          backend: false,
+          i18n: false,
+          teams: false,
+          payments: false,
+          blog: false,
+          contentNegotiation: false,
+        },
+        argv: ["note", "title:text!", "body:editor"],
+      }),
+    );
+
+    expect(result.creates.map((file) => file.path)).toEqual([
+      "src/routes/(public)/note/+page.svelte",
+      "src/routes/(public)/note/form.remote.ts",
+      "src/routes/(public)/note/server.test.ts",
+      "src/lib/schemas/note.ts",
+    ]);
+
+    const schema = result.creates.find((file) =>
+      file.path.endsWith("src/lib/schemas/note.ts"),
+    );
+    expect(schema?.content).not.toContain("@velastack/pocketbase");
+    expect(schema?.content).toContain("title: z.string().nonempty()");
+  });
+
+  it("throws when a relation field is requested without a backend", async () => {
+    await expect(
+      generateBase(
+        makeOptions({
+          env: "preview",
+          features: {
+            auth: false,
+            api: false,
+            apiKeys: false,
+            backend: false,
+            i18n: false,
+            teams: false,
+            payments: false,
+            blog: false,
+            contentNegotiation: false,
+          },
+          argv: ["note", "title:text!", "owner:users"],
+        }),
+      ),
+    ).rejects.toThrow();
+  });
+
   it("returns the same create output in preview and runtime", async () => {
     const argv = ["note", "title:text", "body:editor"];
 
