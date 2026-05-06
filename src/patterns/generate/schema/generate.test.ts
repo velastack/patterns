@@ -174,7 +174,9 @@ describe("generate schema pattern", () => {
     );
 
     expect(result.creates[0].content).toContain("user: z.string()");
-    expect(result.creates[0].content).not.toContain("user: z.string().optional()");
+    expect(result.creates[0].content).not.toContain(
+      "user: z.string().optional()",
+    );
   });
 
   it("throws when no fields are passed and backend is disabled", async () => {

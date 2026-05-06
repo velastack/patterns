@@ -121,12 +121,11 @@ function newHiddenInputs(injectables: Injectables): string {
     .join("\n");
 }
 
-function editHiddenInputs(
-  model: Model,
-  injectables: Injectables,
-): string {
-  const fields = [injectables.currentUserField, injectables.currentTeamField]
-    .filter((field): field is InjectableField => Boolean(field));
+function editHiddenInputs(model: Model, injectables: Injectables): string {
+  const fields = [
+    injectables.currentUserField,
+    injectables.currentTeamField,
+  ].filter((field): field is InjectableField => Boolean(field));
   return fields
     .map(
       (field) =>

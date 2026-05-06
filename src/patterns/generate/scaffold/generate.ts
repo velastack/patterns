@@ -99,8 +99,10 @@ function findInjectables(fields: Field[]): Injectables {
 }
 
 function injectableHiddenInputs(injectables: Injectables): string {
-  const fields = [injectables.currentUserField, injectables.currentTeamField]
-    .filter((field): field is InjectableField => Boolean(field));
+  const fields = [
+    injectables.currentUserField,
+    injectables.currentTeamField,
+  ].filter((field): field is InjectableField => Boolean(field));
   return fields
     .map(
       (field) =>
