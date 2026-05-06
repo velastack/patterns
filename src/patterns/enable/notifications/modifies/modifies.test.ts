@@ -79,23 +79,17 @@ describe("modifyLayoutServer", () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it.each(layoutServerCases)(
-    "should modify %s correctly",
-    async (testCase) => {
-      modifyLayoutServer(path.join(tempDir, testCase));
+  it.each(layoutServerCases)("should modify %s correctly", async (testCase) => {
+    modifyLayoutServer(path.join(tempDir, testCase));
 
-      const modifiedFile = fs.readFileSync(
-        path.join(tempDir, testCase),
-        "utf8",
-      );
-      const expectedFile = fs.readFileSync(
-        path.join(fixturesPath, "expect", testCase),
-        "utf8",
-      );
+    const modifiedFile = fs.readFileSync(path.join(tempDir, testCase), "utf8");
+    const expectedFile = fs.readFileSync(
+      path.join(fixturesPath, "expect", testCase),
+      "utf8",
+    );
 
-      await expect(modifiedFile).toMatchFormatted(expectedFile, testCase);
-    },
-  );
+    await expect(modifiedFile).toMatchFormatted(expectedFile, testCase);
+  });
 
   it("is idempotent on a second run", () => {
     const target = path.join(tempDir, "+layout.server.ts");

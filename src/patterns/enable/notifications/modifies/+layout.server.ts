@@ -13,7 +13,7 @@ const FETCH_STATEMENT = dedent`
 `;
 
 const NOTIFICATIONS_STATEMENT =
-  'const notifications = { count: notificationsList.totalItems, items: notificationsList.items };';
+  "const notifications = { count: notificationsList.totalItems, items: notificationsList.items };";
 
 const DEPENDS_STATEMENT = 'depends("app:notifications");';
 
@@ -175,18 +175,16 @@ export function modifyLayoutServer(layoutServerPath: string): ModifyOutcome {
     const hasDependsCall = statements.some(
       (stmt) =>
         stmt.getKind() === SyntaxKind.ExpressionStatement &&
-        stmt
-          .getDescendantsOfKind(SyntaxKind.CallExpression)
-          .some((ce) => {
-            if (ce.getExpression().getText() !== "depends") return false;
-            const args = ce.getArguments();
-            const argText = args[0]?.getText() ?? "";
-            return (
-              args.length === 1 &&
-              (argText === "'app:notifications'" ||
-                argText === '"app:notifications"')
-            );
-          }),
+        stmt.getDescendantsOfKind(SyntaxKind.CallExpression).some((ce) => {
+          if (ce.getExpression().getText() !== "depends") return false;
+          const args = ce.getArguments();
+          const argText = args[0]?.getText() ?? "";
+          return (
+            args.length === 1 &&
+            (argText === "'app:notifications'" ||
+              argText === '"app:notifications"')
+          );
+        }),
     );
 
     const hasNotificationsList = declaresVar("notificationsList");
@@ -222,9 +220,7 @@ export function modifyLayoutServer(layoutServerPath: string): ModifyOutcome {
       const expr = ret.getExpression();
       if (!expr) return;
       if (expr.getKind() === SyntaxKind.ObjectLiteralExpression) {
-        augmentReturnObject(
-          expr as import("ts-morph").ObjectLiteralExpression,
-        );
+        augmentReturnObject(expr as import("ts-morph").ObjectLiteralExpression);
       } else if (expr.getKind() === SyntaxKind.ParenthesizedExpression) {
         const inner = (
           expr as import("ts-morph").ParenthesizedExpression
