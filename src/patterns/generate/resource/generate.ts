@@ -29,8 +29,14 @@ function toFile(path: string, content: string): File {
 
 export async function generate(options: Options) {
   const { modelPath, fields: fieldDefs } = parsePatternArgs(options.argv);
-  const { model, fields, auth, shouldCreateCollection } =
+  const { model, fields, auth, shouldCreateCollection, collections } =
     await resolveInputFields(options, modelPath, fieldDefs);
+
+  if (collections.some((collection) => collection.name === model.tableName)) {
+    throw new InvalidArgumentError(
+      `Collection "${model.tableName}" already exists. To update the schema to the latest definition, run vela generate schema ${model.tableName}`,
+    );
+  }
 
   const schemaPath = `src/lib/schemas/${model.name}.ts`;
   const schema = generateSchemaSnippet(model, fields, {

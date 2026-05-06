@@ -673,6 +673,16 @@ export async function generate(options: Options) {
   const { modelPath, fields: fieldDefs } = parsePatternArgs(options.argv);
   const { model, fields, auth, shouldCreateCollection, collections } =
     await resolveInputFields(options, modelPath, fieldDefs);
+
+  if (
+    fieldDefs.length > 0 &&
+    collections.some((collection) => collection.name === model.tableName)
+  ) {
+    throw new InvalidArgumentError(
+      `Collection "${model.tableName}" already exists. To run scaffold with an existing collection, omit the field definitions.`,
+    );
+  }
+
   const paths = modelPaths(model);
   const urls = modelUrls(model);
   const pb = pbInstance(options);

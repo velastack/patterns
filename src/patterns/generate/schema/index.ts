@@ -3,7 +3,7 @@ import { formatResult } from "../../../core/format-result";
 import { generate as generateBase } from "./generate";
 
 const SLUG = "generate-schema" as const;
-const VERSION = "1.0.7";
+const VERSION = "1.0.8";
 const SOURCE = "src/patterns/generate/schema";
 const DOCS = "/generate/schema";
 

@@ -352,9 +352,18 @@ export async function writeResult(
 
   for (const file of [...result.creates, ...dropMigrationCreates]) {
     if (file.status !== "success") continue;
-    if (!existsSync(toTargetPath(options.root, file.path))) {
-      writeFile(toTargetPath(options.root, file.path), file.content);
+    const target = toTargetPath(options.root, file.path);
+    if (!existsSync(target)) {
+      writeFile(target, file.content);
       writtenResult.creates.push({
+        ...file,
+        path: toRelativePath(options.root, file.path),
+      });
+      continue;
+    }
+    if (readFileSync(target, "utf8") !== file.content) {
+      writeFile(target, file.content);
+      writtenResult.modifies.push({
         ...file,
         path: toRelativePath(options.root, file.path),
       });
