@@ -154,7 +154,7 @@ describe("generate scaffold pattern", () => {
         {
           name: "owner",
           type: "relation",
-          required: false,
+          required: true,
           maxSelect: 1,
           collectionId: "users_preview",
         },

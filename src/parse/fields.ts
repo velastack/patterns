@@ -256,6 +256,7 @@ function resolveField(
   const namesSingular = names.map((c) => pluralize.singular(c));
 
   // current_user: special auth-mode relation to users
+  // Always required: the server injects locals.pb.authStore.record?.id on create.
   if (type === "current_user") {
     if (!options.features.auth) {
       throw new InvalidArgumentError(
@@ -279,7 +280,7 @@ function resolveField(
       type: "relation",
       name,
       title,
-      required,
+      required: true,
       collectionId: rel.collectionId,
       maxSelect: 1,
       displayField: rel.displayField,
@@ -292,6 +293,7 @@ function resolveField(
   }
 
   // current_team: special teams-mode relation to teams
+  // Always required: the server injects locals.team on create.
   if (type === "current_team") {
     if (!options.features.teams) {
       throw new InvalidArgumentError(
@@ -315,7 +317,7 @@ function resolveField(
       type: "relation",
       name,
       title,
-      required,
+      required: true,
       collectionId: rel.collectionId,
       maxSelect: 1,
       displayField: rel.displayField,
