@@ -17,13 +17,22 @@ export async function generate(options: Options) {
     return formatResult(mergeResults([baseRes, previewRes]));
   }
 
+  const { writeResult } = await import("../../../runtime/write-result");
+
+  // Install components and write creates first so runtime modifies that
+  // read from disk (e.g. the shadcn-installed sidebar) see the post-install
+  // state. Without this, modifies targeting installed components run against
+  // a non-existent file, return `not-found`, and are silently dropped.
+  const writtenBase = await writeResult(await formatResult(baseRes), options);
+
   const { generate: generateRuntime } = await import("./generate.runtime");
   const runtimeRes = await generateRuntime(options);
-  const { writeResult } = await import("../../../runtime/write-result");
-  return writeResult(
-    await formatResult(mergeResults([baseRes, runtimeRes])),
+  const writtenRuntime = await writeResult(
+    await formatResult(runtimeRes),
     options,
   );
+
+  return mergeResults([writtenBase, writtenRuntime]);
 }
 
 export default {
