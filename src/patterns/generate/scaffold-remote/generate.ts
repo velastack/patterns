@@ -2,7 +2,13 @@ import dedent from "dedent";
 import type { Component, File, Options, Result } from "../../../core/types";
 import { InvalidArgumentError } from "../../../core/errors";
 import { languageFromPath } from "../../../core/util";
-import { modelPaths, modelUrls, type Field, type Model } from "../../../parse";
+import {
+  parseRoute,
+  scaffoldFilePaths,
+  scaffoldUrls,
+  type Field,
+  type Model,
+} from "../../../parse";
 import { renderDisplayField, selectFieldLabelMap } from "../../../core/field";
 import {
   getRemoteFieldComponents,
@@ -136,7 +142,7 @@ function editHiddenInputs(model: Model, injectables: Injectables): string {
 
 function newPageSnippet(
   model: Model,
-  urls: ReturnType<typeof modelUrls>,
+  urls: ReturnType<typeof scaffoldUrls>,
   fields: Field[],
   injectables: Injectables,
 ): string {
@@ -186,7 +192,7 @@ function newPageSnippet(
 
 function editPageSnippet(
   model: Model,
-  urls: ReturnType<typeof modelUrls>,
+  urls: ReturnType<typeof scaffoldUrls>,
   fields: Field[],
   injectables: Injectables,
 ): string {
@@ -239,7 +245,7 @@ function editPageSnippet(
 
 function listPageSnippet(
   model: Model,
-  urls: ReturnType<typeof modelUrls>,
+  urls: ReturnType<typeof scaffoldUrls>,
   fields: Field[],
 ): string {
   const hasSelectFields = fields.some((field) => field.type === "select");
@@ -503,7 +509,7 @@ function newServerSnippet(model: Model, fields: Field[], pb: string): string {
 
 function newRemoteSnippet(
   model: Model,
-  urls: ReturnType<typeof modelUrls>,
+  urls: ReturnType<typeof scaffoldUrls>,
   fields: Field[],
   pb: string,
   authMode: boolean,
@@ -551,7 +557,7 @@ function newRemoteSnippet(
 
 function showServerSnippet(
   model: Model,
-  urls: ReturnType<typeof modelUrls>,
+  urls: ReturnType<typeof scaffoldUrls>,
   fields: Field[],
   pb: string,
 ): string {
@@ -580,7 +586,7 @@ function showServerSnippet(
 
 function showPageSnippet(
   model: Model,
-  urls: ReturnType<typeof modelUrls>,
+  urls: ReturnType<typeof scaffoldUrls>,
   fields: Field[],
 ): string {
   const hasSelectFields = fields.some((field) => field.type === "select");
@@ -663,7 +669,7 @@ function editServerSnippet(model: Model, fields: Field[], pb: string): string {
 
 function editRemoteSnippet(
   model: Model,
-  urls: ReturnType<typeof modelUrls>,
+  urls: ReturnType<typeof scaffoldUrls>,
   injectables: Injectables,
   pb: string,
 ): string {
@@ -710,8 +716,9 @@ export async function generate(options: Options) {
   const { modelPath, fields: fieldDefs } = parsePatternArgs(options.argv);
   const { model, fields, auth, shouldCreateCollection, collections } =
     await resolveInputFields(options, modelPath, fieldDefs);
-  const paths = modelPaths(model);
-  const urls = modelUrls(model);
+  const route = parseRoute(undefined, model, options, "scaffold");
+  const paths = scaffoldFilePaths(route);
+  const urls = scaffoldUrls(route);
   const pb = pbInstance(options);
   const uiFields = fields.filter(
     (field) =>

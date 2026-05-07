@@ -6,18 +6,24 @@ export interface Model {
   displayName: string;
   pluralDisplayName: string;
   schemaName: string;
-  routeSegment: string;
-  routesDir: string;
 }
 
-export interface ModelPaths {
+export type RouteKind = "form" | "scaffold";
+
+export interface RouteInfo {
+  fileBase: string;
+  urlBase: string;
+  dynamicParams: string[];
+}
+
+export interface ScaffoldFilePaths {
   list: string;
   new: string;
   show: string;
   edit: string;
 }
 
-export interface ModelUrls {
+export interface ScaffoldUrls {
   list: string;
   new: string;
   show: string;

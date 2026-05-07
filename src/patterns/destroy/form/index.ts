@@ -1,7 +1,7 @@
 import type { Options, Pattern, Result } from "../../../core/types";
 import { formatResult } from "../../../core/format-result";
 import { InvalidArgumentError } from "../../../core/errors";
-import { parseModel } from "../../../parse/model";
+import { parseModel, parseRoute } from "../../../parse";
 import { toDeleteEntry } from "../shared";
 
 const SLUG = "destroy-form" as const;
@@ -17,9 +17,9 @@ export async function generate(options: Options) {
     );
   }
 
-  const model = parseModel(modelPath, options);
-  const normalizedModelPath = modelPath.replace(/^\/+|\/+$/g, "");
-  const routeDir = `${model.routesDir}/${normalizedModelPath}`;
+  const model = parseModel(modelPath);
+  const route = parseRoute(undefined, model, options, "form");
+  const routeDir = route.fileBase;
   const schemaPath = `src/lib/schemas/${model.name}.ts`;
 
   const result: Result = {

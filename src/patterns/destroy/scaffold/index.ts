@@ -1,7 +1,7 @@
 import type { Options, Pattern, Result } from "../../../core/types";
 import { formatResult } from "../../../core/format-result";
 import { InvalidArgumentError } from "../../../core/errors";
-import { modelPaths, parseModel } from "../../../parse";
+import { parseModel, parseRoute, scaffoldFilePaths } from "../../../parse";
 import { planDropsForCollections, toDeleteEntry } from "../shared";
 
 const SLUG = "destroy-scaffold" as const;
@@ -17,8 +17,9 @@ export async function generate(options: Options) {
     );
   }
 
-  const model = parseModel(modelPath, options);
-  const paths = modelPaths(model);
+  const model = parseModel(modelPath);
+  const route = parseRoute(undefined, model, options, "scaffold");
+  const paths = scaffoldFilePaths(route);
   const schemaPath = `src/lib/schemas/${model.name}.ts`;
   const collectionDrops = await planDropsForCollections(
     [model.tableName],

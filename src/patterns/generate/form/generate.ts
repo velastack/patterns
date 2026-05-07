@@ -8,24 +8,12 @@ import {
   renderField,
   selectFieldLabelMap,
 } from "../../../core/field";
-import { type Field, type Model } from "../../../parse";
+import { parseRoute, type Field, type Model } from "../../../parse";
 import { generateFormServerTestSnippet } from "../../../core/tests";
 import {
   generateSchemaSnippet,
   resolveInputFields,
 } from "../../../core/shared";
-
-// Different from parse/model since we don't want to use the plural name
-function formPaths(modelPath: string, routesDir: string) {
-  const normalizedModelPath = modelPath.replace(/^\/+|\/+$/g, "");
-  const basePath = `${routesDir}/${normalizedModelPath}`;
-  const baseUrl = `/${normalizedModelPath}`;
-
-  return {
-    pagePath: basePath,
-    pageUrl: baseUrl,
-  };
-}
 
 function parsePatternArgs(argv: string[]) {
   const [modelPath, ...fields] = argv;
@@ -161,16 +149,16 @@ export async function generate(options: Options) {
     modelPath,
     fieldDefs,
   );
-  const { pagePath, pageUrl } = formPaths(modelPath, model.routesDir);
+  const route = parseRoute(undefined, model, options, "form");
 
   const creates = [
-    toFile(`${pagePath}/+page.svelte`, pageSnippet(model, fields)),
-    toFile(`${pagePath}/+page.server.ts`, serverSnippet(model, fields)),
+    toFile(`${route.fileBase}/+page.svelte`, pageSnippet(model, fields)),
+    toFile(`${route.fileBase}/+page.server.ts`, serverSnippet(model, fields)),
     toFile(
-      `${pagePath}/server.test.ts`,
+      `${route.fileBase}/server.test.ts`,
       generateFormServerTestSnippet(
         model,
-        pageUrl,
+        route.urlBase,
         fields,
         options,
         collections,

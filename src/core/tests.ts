@@ -365,7 +365,7 @@ function relationDependencyContext(
 
   for (const dependency of dependencies) {
     const varName = uniqueVarName(
-      parseModel(dependency.name, options).name,
+      parseModel(dependency.name).name,
       usedVarNames,
     );
     dependencyVars.push({ varName, collection: dependency });

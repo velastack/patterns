@@ -66,8 +66,8 @@ export default {
       description: "Enum field and a one-to-many relation to user.",
     },
     {
-      command: "users/pets name:text! author:current_user",
-      description: "Nested resource with auth-bound author.",
+      command: "pet name:text! breed:text! owner:current_user",
+      description: "Auth-bound owner relation.",
     },
   ],
 

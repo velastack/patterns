@@ -7,23 +7,12 @@ import {
   getRemoteFieldImports,
   renderRemoteField,
 } from "../../../core/field/remote";
-import { type Field, type Model } from "../../../parse";
+import { parseRoute, type Field, type Model } from "../../../parse";
 import { generateFormRemoteServerTestSnippet } from "../../../core/tests";
 import {
   generateSchemaSnippet,
   resolveInputFields,
 } from "../../../core/shared";
-
-function formPaths(modelPath: string, routesDir: string) {
-  const normalizedModelPath = modelPath.replace(/^\/+|\/+$/g, "");
-  const basePath = `${routesDir}/${normalizedModelPath}`;
-  const baseUrl = `/${normalizedModelPath}`;
-
-  return {
-    pagePath: basePath,
-    pageUrl: baseUrl,
-  };
-}
 
 function parsePatternArgs(argv: string[]) {
   const [modelPath, ...fields] = argv;
@@ -120,17 +109,20 @@ export async function generate(options: Options) {
     modelPath,
     fieldDefs,
   );
-  const { pagePath, pageUrl } = formPaths(modelPath, model.routesDir);
+  const route = parseRoute(undefined, model, options, "form");
   const formVar = submitFormIdentifier(model);
 
   const creates = [
-    toFile(`${pagePath}/+page.svelte`, pageSnippet(model, fields, formVar)),
-    toFile(`${pagePath}/form.remote.ts`, remoteSnippet(model, formVar)),
     toFile(
-      `${pagePath}/server.test.ts`,
+      `${route.fileBase}/+page.svelte`,
+      pageSnippet(model, fields, formVar),
+    ),
+    toFile(`${route.fileBase}/form.remote.ts`, remoteSnippet(model, formVar)),
+    toFile(
+      `${route.fileBase}/server.test.ts`,
       generateFormRemoteServerTestSnippet(
         model,
-        pageUrl,
+        route.urlBase,
         fields,
         options,
         collections,

@@ -1,3 +1,4 @@
+import * as changeCase from "change-case";
 import dedent from "dedent";
 import type { Field, Model } from "../../parse";
 
@@ -517,7 +518,7 @@ function renderDisplayFileField(
 }
 
 function relationListUrl(field: Extract<Field, { type: "relation" }>): string {
-  return `/${field.relatedModel.routeSegment}`;
+  return `/${changeCase.kebabCase(field.relatedModel.pluralDisplayName)}`;
 }
 
 function renderDisplayRelationField(

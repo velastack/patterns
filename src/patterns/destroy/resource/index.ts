@@ -17,7 +17,7 @@ export async function generate(options: Options) {
     );
   }
 
-  const model = parseModel(modelPath, options);
+  const model = parseModel(modelPath);
   const schemaPath = `src/lib/schemas/${model.name}.ts`;
   const collectionDrops = await planDropsForCollections(
     [model.tableName],

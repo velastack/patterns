@@ -215,7 +215,6 @@ function resolveRelation(
   parent: Model,
   ids: Record<string, string>,
   displayFields: Record<string, string>,
-  options: Pick<Options, "features">,
 ): {
   collectionId: string;
   displayField: string;
@@ -224,7 +223,7 @@ function resolveRelation(
   pluralRelationName: string;
   maxSelect: number;
 } {
-  const relatedModel = parseModel(collectionName, options);
+  const relatedModel = parseModel(collectionName);
   const singular = pluralize.singular(name);
   const plural = pluralize.plural(singular);
   return {
@@ -268,14 +267,7 @@ function resolveField(
         `Field type "current_user" requires a "users" collection but none was found.`,
       );
     }
-    const rel = resolveRelation(
-      name,
-      "users",
-      parent,
-      ids,
-      displayFields,
-      options,
-    );
+    const rel = resolveRelation(name, "users", parent, ids, displayFields);
     return {
       type: "relation",
       name,
@@ -305,14 +297,7 @@ function resolveField(
         `Field type "current_team" requires a "teams" collection but none was found.`,
       );
     }
-    const rel = resolveRelation(
-      name,
-      "teams",
-      parent,
-      ids,
-      displayFields,
-      options,
-    );
+    const rel = resolveRelation(name, "teams", parent, ids, displayFields);
     return {
       type: "relation",
       name,
@@ -373,14 +358,7 @@ function resolveField(
         `Invalid relation field: ${name}. Must be one of ${names.join(", ")} (singular or plural)`,
       );
     }
-    const rel = resolveRelation(
-      name,
-      plural,
-      parent,
-      ids,
-      displayFields,
-      options,
-    );
+    const rel = resolveRelation(name, plural, parent, ids, displayFields);
     return {
       type: "relation",
       name,
@@ -394,14 +372,7 @@ function resolveField(
 
   // relation via collection name as type: `owners:users` or `owner:user`
   if (names.includes(type)) {
-    const rel = resolveRelation(
-      name,
-      type,
-      parent,
-      ids,
-      displayFields,
-      options,
-    );
+    const rel = resolveRelation(name, type, parent, ids, displayFields);
     return {
       type: "relation",
       name,
@@ -415,14 +386,7 @@ function resolveField(
   if (namesSingular.includes(type)) {
     const plural = pluralize.plural(type);
     if (names.includes(plural)) {
-      const rel = resolveRelation(
-        name,
-        plural,
-        parent,
-        ids,
-        displayFields,
-        options,
-      );
+      const rel = resolveRelation(name, plural, parent, ids, displayFields);
       return {
         type: "relation",
         name,

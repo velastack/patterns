@@ -1,9 +1,7 @@
 import * as changeCase from "change-case";
 import pluralize from "pluralize";
-import { APP_DIR, PUBLIC_DIR } from "../core/constants";
 import { InvalidArgumentError } from "../core/errors";
-import type { Options } from "../core/types";
-import type { Model, ModelPaths, ModelUrls } from "./types";
+import type { Model } from "./types";
 
 const RESERVED_WORDS = new Set([
   "break",
@@ -117,34 +115,17 @@ export function safeVarName(str: string): string {
 }
 
 export function validateModelName(model: string): void {
-  if (!/^[a-zA-Z][a-zA-Z0-9-_/]*$/.test(model)) {
+  if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(model)) {
     throw new InvalidArgumentError(
-      "Model path must start with a letter and contain only alphanumeric characters, dash, slash, or underscore",
+      "Model name must start with a letter and contain only alphanumeric characters, dash, or underscore. Use --route to specify a custom route path.",
     );
   }
 }
 
-function routesDir(options: Pick<Options, "features">): string {
-  if (options.features.auth) {
-    return `src/routes/${APP_DIR}`;
-  }
-  return `src/routes/${PUBLIC_DIR}`;
-}
-
-export function parseModel(
-  modelPath: string,
-  options: Pick<Options, "features">,
-): Model {
-  const parts = modelPath.split("/");
-  const finalPart = parts[parts.length - 1];
-  const restParts = parts.slice(0, -1);
-
-  const displayName = pluralize.singular(changeCase.capitalCase(finalPart));
+export function parseModel(modelName: string): Model {
+  const displayName = pluralize.singular(changeCase.capitalCase(modelName));
   const pluralDisplay = pluralize.plural(displayName);
-
   const name = changeCase.camelCase(displayName);
-  const urlName = changeCase.kebabCase(pluralDisplay);
-  const segment = [...restParts, urlName].join("/");
 
   return {
     name: safeVarName(name),
@@ -154,27 +135,5 @@ export function parseModel(
     displayName,
     pluralDisplayName: pluralDisplay,
     schemaName: `${safeVarName(name)}Schema`,
-    routeSegment: segment,
-    routesDir: routesDir(options),
-  };
-}
-
-export function modelPaths(model: Model): ModelPaths {
-  const base = `${model.routesDir}/${model.routeSegment}`;
-  return {
-    list: base,
-    new: `${base}/new`,
-    show: `${base}/[id]`,
-    edit: `${base}/[id]/edit`,
-  };
-}
-
-export function modelUrls(model: Model): ModelUrls {
-  const base = `/${model.routeSegment}`;
-  return {
-    list: base,
-    new: `${base}/new`,
-    show: `${base}/[id]`,
-    edit: `${base}/[id]/edit`,
   };
 }

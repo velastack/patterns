@@ -41,7 +41,7 @@ export async function generate(options: Options): Promise<Result> {
     throw new InvalidArgumentError(`Collection "${collectionName}" not found`);
   }
 
-  const parent = parseModel(collectionName, options);
+  const parent = parseModel(collectionName);
   const existingNames = new Set(collection.fields.map((f) => f.name));
   const changes: FieldChange[] = [];
 

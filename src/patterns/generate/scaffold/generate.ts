@@ -2,7 +2,13 @@ import dedent from "dedent";
 import type { Component, File, Options, Result } from "../../../core/types";
 import { InvalidArgumentError } from "../../../core/errors";
 import { languageFromPath } from "../../../core/util";
-import { modelPaths, modelUrls, type Field, type Model } from "../../../parse";
+import {
+  parseRoute,
+  scaffoldFilePaths,
+  scaffoldUrls,
+  type Field,
+  type Model,
+} from "../../../parse";
 import {
   getFieldComponents,
   getFieldImports,
@@ -135,7 +141,7 @@ function formScript(
 
 function newPageSnippet(
   model: Model,
-  urls: ReturnType<typeof modelUrls>,
+  urls: ReturnType<typeof scaffoldUrls>,
   fields: Field[],
   injectables: Injectables,
 ): string {
@@ -190,7 +196,7 @@ function newPageSnippet(
 
 function editPageSnippet(
   model: Model,
-  urls: ReturnType<typeof modelUrls>,
+  urls: ReturnType<typeof scaffoldUrls>,
   fields: Field[],
   injectables: Injectables,
 ): string {
@@ -244,7 +250,7 @@ function editPageSnippet(
 
 function listPageSnippet(
   model: Model,
-  urls: ReturnType<typeof modelUrls>,
+  urls: ReturnType<typeof scaffoldUrls>,
   fields: Field[],
 ): string {
   const hasSelectFields = fields.some((field) => field.type === "select");
@@ -494,7 +500,7 @@ function listServerSnippet(model: Model, fields: Field[], pb: string): string {
 
 function newServerSnippet(
   model: Model,
-  urls: ReturnType<typeof modelUrls>,
+  urls: ReturnType<typeof scaffoldUrls>,
   fields: Field[],
   injectables: Injectables,
   pb: string,
@@ -568,7 +574,7 @@ function newServerSnippet(
 
 function showServerSnippet(
   model: Model,
-  urls: ReturnType<typeof modelUrls>,
+  urls: ReturnType<typeof scaffoldUrls>,
   fields: Field[],
   pb: string,
 ): string {
@@ -597,7 +603,7 @@ function showServerSnippet(
 
 function showPageSnippet(
   model: Model,
-  urls: ReturnType<typeof modelUrls>,
+  urls: ReturnType<typeof scaffoldUrls>,
   fields: Field[],
 ): string {
   const hasSelectFields = fields.some((field) => field.type === "select");
@@ -660,7 +666,7 @@ function showPageSnippet(
 
 function editServerSnippet(
   model: Model,
-  urls: ReturnType<typeof modelUrls>,
+  urls: ReturnType<typeof scaffoldUrls>,
   fields: Field[],
   injectables: Injectables,
   pb: string,
@@ -746,8 +752,9 @@ export async function generate(options: Options) {
     );
   }
 
-  const paths = modelPaths(model);
-  const urls = modelUrls(model);
+  const route = parseRoute(undefined, model, options, "scaffold");
+  const paths = scaffoldFilePaths(route);
+  const urls = scaffoldUrls(route);
   const pb = pbInstance(options);
   const uiFields = fields.filter(
     (field) =>

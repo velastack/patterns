@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  parseModel,
-  modelPaths,
-  modelUrls,
-  validateModelName,
-  safeVarName,
-} from "./model";
+import { parseModel, validateModelName, safeVarName } from "./model";
+import { parseRoute, scaffoldFilePaths, scaffoldUrls } from "./route";
 import { resolveFields, splitFieldDef, parseSelectOptions } from "./fields";
 import {
   pickDisplayField,
@@ -65,16 +60,13 @@ const parent: Model = {
   displayName: "Bird",
   pluralDisplayName: "Birds",
   schemaName: "birdSchema",
-  routeSegment: "birds",
-  routesDir: "src/routes/(app)",
 };
 
 // ─── parseModel ──────────────────────────────────────────
 
 describe("parseModel", () => {
   it("should parse a simple model", () => {
-    const model = parseModel("birds", noAuth);
-    expect(model).toEqual({
+    expect(parseModel("birds")).toEqual({
       name: "bird",
       pluralName: "birds",
       typeName: "Bird",
@@ -82,14 +74,11 @@ describe("parseModel", () => {
       displayName: "Bird",
       pluralDisplayName: "Birds",
       schemaName: "birdSchema",
-      routeSegment: "birds",
-      routesDir: "src/routes/(public)",
     });
   });
 
-  it("should parse nested routes", () => {
-    const model = parseModel("dashboard/admin-users", noAuth);
-    expect(model).toEqual({
+  it("should normalize multi-word names", () => {
+    expect(parseModel("admin-users")).toEqual({
       name: "adminUser",
       pluralName: "adminUsers",
       typeName: "AdminUser",
@@ -97,39 +86,114 @@ describe("parseModel", () => {
       displayName: "Admin User",
       pluralDisplayName: "Admin Users",
       schemaName: "adminUserSchema",
-      routeSegment: "dashboard/admin-users",
-      routesDir: "src/routes/(public)",
     });
-  });
-
-  it("should use (app) routes dir when auth is enabled", () => {
-    const model = parseModel("birds", withAuth);
-    expect(model.routesDir).toBe("src/routes/(app)");
-    expect(model.routeSegment).toBe("birds");
-  });
-
-  it("should use (public) routes dir when auth is disabled", () => {
-    const model = parseModel("birds", noAuth);
-    expect(model.routesDir).toBe("src/routes/(public)");
   });
 });
 
-// ─── modelPaths / modelUrls ──────────────────────────────
+// ─── parseRoute / scaffoldFilePaths / scaffoldUrls ───────
 
-describe("modelPaths", () => {
-  it("should derive correct paths for simple model", () => {
-    const model = parseModel("birds", noAuth);
-    expect(modelPaths(model)).toEqual({
-      list: "src/routes/(public)/birds",
-      new: "src/routes/(public)/birds/new",
-      show: "src/routes/(public)/birds/[id]",
-      edit: "src/routes/(public)/birds/[id]/edit",
+describe("parseRoute", () => {
+  const birdModel = parseModel("birds");
+
+  it("uses default (public) group for scaffold without auth", () => {
+    const route = parseRoute(undefined, birdModel, noAuth, "scaffold");
+    expect(route).toEqual({
+      fileBase: "src/routes/(public)/birds",
+      urlBase: "/birds",
+      dynamicParams: [],
     });
   });
 
-  it("should derive correct paths for auth model", () => {
-    const model = parseModel("birds", withAuth);
-    expect(modelPaths(model)).toEqual({
+  it("uses default (app) group for scaffold with auth", () => {
+    const route = parseRoute(undefined, birdModel, withAuth, "scaffold");
+    expect(route).toEqual({
+      fileBase: "src/routes/(app)/birds",
+      urlBase: "/birds",
+      dynamicParams: [],
+    });
+  });
+
+  it("uses singular default for form (not plural)", () => {
+    const route = parseRoute(undefined, birdModel, withAuth, "form");
+    expect(route.fileBase).toBe("src/routes/(app)/bird");
+    expect(route.urlBase).toBe("/bird");
+  });
+
+  it("accepts an explicit route with a route group", () => {
+    const route = parseRoute(
+      "(app)/[team_id]/projects",
+      birdModel,
+      withAuth,
+      "scaffold",
+    );
+    expect(route).toEqual({
+      fileBase: "src/routes/(app)/[team_id]/projects",
+      urlBase: "/[team_id]/projects",
+      dynamicParams: ["team_id"],
+    });
+  });
+
+  it("auto-prepends the default route group when missing", () => {
+    const route = parseRoute("admin/users", birdModel, withAuth, "scaffold");
+    expect(route.fileBase).toBe("src/routes/(app)/admin/users");
+    expect(route.urlBase).toBe("/admin/users");
+  });
+
+  it("strips multiple route groups from the URL base", () => {
+    const route = parseRoute(
+      "(app)/(dashboard)/projects",
+      birdModel,
+      withAuth,
+      "scaffold",
+    );
+    expect(route.urlBase).toBe("/projects");
+  });
+
+  it("extracts multiple dynamic params", () => {
+    const route = parseRoute(
+      "(app)/[team_id]/projects/[project_id]/tasks",
+      birdModel,
+      withAuth,
+      "scaffold",
+    );
+    expect(route.dynamicParams).toEqual(["team_id", "project_id"]);
+  });
+
+  it("rejects routes that start with a slash", () => {
+    expect(() =>
+      parseRoute("/admin/users", birdModel, withAuth, "scaffold"),
+    ).toThrow(/must not start with "\/"/);
+  });
+
+  it("rejects routes that include the src/routes prefix", () => {
+    expect(() =>
+      parseRoute("src/routes/admin", birdModel, withAuth, "scaffold"),
+    ).toThrow(/must not start with "src\/routes\/"/);
+  });
+
+  it("rejects routes with empty segments", () => {
+    expect(() =>
+      parseRoute("admin//users", birdModel, withAuth, "scaffold"),
+    ).toThrow(/empty segments/);
+  });
+
+  it("rejects segments starting with underscore", () => {
+    expect(() =>
+      parseRoute("_internal/users", birdModel, withAuth, "scaffold"),
+    ).toThrow(/must not start with underscore/);
+  });
+
+  it("rejects ..", () => {
+    expect(() =>
+      parseRoute("admin/../users", birdModel, withAuth, "scaffold"),
+    ).toThrow(/"\." or "\.\." segments/);
+  });
+});
+
+describe("scaffoldFilePaths", () => {
+  it("derives all CRUD file paths from the route base", () => {
+    const route = parseRoute(undefined, parent, withAuth, "scaffold");
+    expect(scaffoldFilePaths(route)).toEqual({
       list: "src/routes/(app)/birds",
       new: "src/routes/(app)/birds/new",
       show: "src/routes/(app)/birds/[id]",
@@ -137,21 +201,26 @@ describe("modelPaths", () => {
     });
   });
 
-  it("should derive correct paths for nested routes", () => {
-    const model = parseModel("dashboard/admin-users", withAuth);
-    expect(modelPaths(model)).toEqual({
-      list: "src/routes/(app)/dashboard/admin-users",
-      new: "src/routes/(app)/dashboard/admin-users/new",
-      show: "src/routes/(app)/dashboard/admin-users/[id]",
-      edit: "src/routes/(app)/dashboard/admin-users/[id]/edit",
+  it("derives paths for an explicit route with dynamic params", () => {
+    const route = parseRoute(
+      "(app)/[team_id]/projects",
+      parent,
+      withAuth,
+      "scaffold",
+    );
+    expect(scaffoldFilePaths(route)).toEqual({
+      list: "src/routes/(app)/[team_id]/projects",
+      new: "src/routes/(app)/[team_id]/projects/new",
+      show: "src/routes/(app)/[team_id]/projects/[id]",
+      edit: "src/routes/(app)/[team_id]/projects/[id]/edit",
     });
   });
 });
 
-describe("modelUrls", () => {
-  it("should derive correct URLs", () => {
-    const model = parseModel("birds", withAuth);
-    expect(modelUrls(model)).toEqual({
+describe("scaffoldUrls", () => {
+  it("derives all CRUD URLs from the route base", () => {
+    const route = parseRoute(undefined, parent, withAuth, "scaffold");
+    expect(scaffoldUrls(route)).toEqual({
       list: "/birds",
       new: "/birds/new",
       show: "/birds/[id]",
@@ -159,13 +228,18 @@ describe("modelUrls", () => {
     });
   });
 
-  it("should derive correct URLs for nested routes", () => {
-    const model = parseModel("dashboard/admin-users", noAuth);
-    expect(modelUrls(model)).toEqual({
-      list: "/dashboard/admin-users",
-      new: "/dashboard/admin-users/new",
-      show: "/dashboard/admin-users/[id]",
-      edit: "/dashboard/admin-users/[id]/edit",
+  it("preserves dynamic params in URLs", () => {
+    const route = parseRoute(
+      "(app)/[team_id]/projects",
+      parent,
+      withAuth,
+      "scaffold",
+    );
+    expect(scaffoldUrls(route)).toEqual({
+      list: "/[team_id]/projects",
+      new: "/[team_id]/projects/new",
+      show: "/[team_id]/projects/[id]",
+      edit: "/[team_id]/projects/[id]/edit",
     });
   });
 });
@@ -175,7 +249,7 @@ describe("modelUrls", () => {
 describe("validateModelName", () => {
   it("should throw for invalid model name starting with number", () => {
     expect(() => validateModelName("1abc")).toThrow(
-      /Model path must start with a letter/,
+      /Model name must start with a letter/,
     );
   });
 
@@ -183,8 +257,10 @@ describe("validateModelName", () => {
     expect(() => validateModelName("abc")).not.toThrow();
   });
 
-  it("should allow names with a slash", () => {
-    expect(() => validateModelName("abc/def")).not.toThrow();
+  it("should reject names with a slash (use --route for paths)", () => {
+    expect(() => validateModelName("abc/def")).toThrow(
+      /Model name must start with a letter/,
+    );
   });
 });
 
@@ -432,8 +508,6 @@ describe("resolveFields", () => {
       displayName: "User",
       pluralDisplayName: "Users",
       schemaName: "userSchema",
-      routeSegment: "users",
-      routesDir: "src/routes/(app)",
     };
 
     expect(fields).toEqual([

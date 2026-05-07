@@ -10,8 +10,6 @@ const model: Model = {
   displayName: "User",
   pluralDisplayName: "Users",
   schemaName: "userSchema",
-  routeSegment: "users",
-  routesDir: "src/routes",
 };
 
 const relatedModel: Model = {
@@ -22,8 +20,6 @@ const relatedModel: Model = {
   displayName: "Hotel owner",
   pluralDisplayName: "Hotel owners",
   schemaName: "hotelOwnerSchema",
-  routeSegment: "hotel-owners",
-  routesDir: "src/routes",
 };
 
 function compact(input: string): string {

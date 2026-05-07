@@ -198,7 +198,7 @@ export async function resolveInputFields(
   fieldDefs: string[],
 ): Promise<ResolvedInput> {
   validateModelName(modelPath);
-  const model = parseModel(modelPath, options);
+  const model = parseModel(modelPath);
   const collections = options.features.backend
     ? await loadCollections(options)
     : [];
@@ -341,7 +341,7 @@ export function fieldsFromCollection(
       if (!relatedCollection) {
         continue;
       }
-      const relatedModel = parseModel(relatedCollection.name, options);
+      const relatedModel = parseModel(relatedCollection.name);
       resolvedFields.push({
         name: raw.name,
         title,
@@ -451,11 +451,8 @@ export function uniqueRelationCollections(
   return models;
 }
 
-export function routeWithId(
-  routeSegment: string,
-  idExpression: string,
-): string {
-  return `/${routeSegment}/\${${idExpression}}`;
+export function routeWithId(baseUrl: string, idExpression: string): string {
+  return `/${baseUrl}/\${${idExpression}}`;
 }
 
 export function inferModelCollectionName(name: string): string {

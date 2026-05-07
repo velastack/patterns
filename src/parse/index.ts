@@ -1,10 +1,6 @@
-export {
-  parseModel,
-  modelPaths,
-  modelUrls,
-  validateModelName,
-  safeVarName,
-} from "./model";
+export { parseModel, validateModelName, safeVarName } from "./model";
+
+export { parseRoute, scaffoldFilePaths, scaffoldUrls } from "./route";
 
 export {
   parseFields,
@@ -25,8 +21,10 @@ export { generateAuthRule } from "./permissions";
 
 export type {
   Model,
-  ModelPaths,
-  ModelUrls,
+  RouteInfo,
+  RouteKind,
+  ScaffoldFilePaths,
+  ScaffoldUrls,
   FieldBase,
   SimpleField,
   AutodateField,

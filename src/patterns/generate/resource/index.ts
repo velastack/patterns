@@ -66,8 +66,8 @@ export default {
       description: "Resource with an enum status field.",
     },
     {
-      command: "users/posts title:text! published:bool",
-      description: "Nested resource scoped under users.",
+      command: "comment body:editor! author:current_user",
+      description: "Auth-bound comment with rich-text body.",
     },
   ],
 
