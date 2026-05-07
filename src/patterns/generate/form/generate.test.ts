@@ -161,16 +161,21 @@ describe("generate form pattern", () => {
     const server = result.creates.find((file) =>
       file.path.endsWith("+page.server.ts"),
     );
-    // Sentinel value seeded into the form on load, replaced server-side on submit.
-    expect(server?.content).toContain('owner: "current_user"');
+    // load() does NOT seed sentinel data into superValidate — that slot is for
+    // existing record data only (edit page). Sentinel rides along on the hidden
+    // input as a literal value, then the action replaces it with the real id.
+    expect(server?.content).toContain(
+      "form: await superValidate(zod4(postSchema))",
+    );
+    expect(server?.content).not.toContain('owner: "current_user"');
     expect(server?.content).toContain("owner: locals.pb.authStore.record?.id");
 
     const page = result.creates.find((file) =>
       file.path.endsWith("+page.svelte"),
     );
-    // current_user field is hidden, not rendered as a relation picker.
+    // current_user field is hidden with literal sentinel value, not bound to $formData.
     expect(page?.content).toContain(
-      '<input type="hidden" name="owner" bind:value={$formData.owner} />',
+      '<input type="hidden" name="owner" value="current_user" />',
     );
   });
 

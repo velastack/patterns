@@ -126,7 +126,7 @@ describe("generate scaffold pattern", () => {
     expect(newPage?.content).toContain("const statusLabels =");
     expect(newPage?.content).toContain('name="category"');
     expect(newPage?.content).toContain(
-      '<input type="hidden" name="owner" bind:value={$formData.owner} />',
+      '<input type="hidden" name="owner" value="current_user" />',
     );
     expect(showPage?.content).toContain("Contact details");
     expect(showPage?.content).toContain("Back to list");
@@ -137,9 +137,12 @@ describe("generate scaffold pattern", () => {
     const newServer = result.creates.find((file) =>
       file.path.endsWith("/contacts/new/+page.server.ts"),
     );
+    // load() does not seed the form — that slot is for existing record data
+    // (edit page only). The current_user sentinel rides on the hidden input.
     expect(newServer?.content).toContain(
-      'await superValidate({ owner: "current_user" }, zod4(contactSchema))',
+      "await superValidate(zod4(contactSchema))",
     );
+    expect(newServer?.content).not.toContain('owner: "current_user"');
     expect(newServer?.content).toContain(
       "owner: locals.pb.authStore.record?.id",
     );

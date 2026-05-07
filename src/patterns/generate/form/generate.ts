@@ -51,14 +51,17 @@ function findInjectables(fields: Field[]): Injectables {
 }
 
 function injectableHiddenInputs(injectables: Injectables): string {
-  const fields = [
-    injectables.currentUserField,
-    injectables.currentTeamField,
-  ].filter((field): field is InjectableField => Boolean(field));
-  return fields
+  const sentinels: Array<[InjectableField, string]> = [];
+  if (injectables.currentUserField) {
+    sentinels.push([injectables.currentUserField, "current_user"]);
+  }
+  if (injectables.currentTeamField) {
+    sentinels.push([injectables.currentTeamField, "current_team"]);
+  }
+  return sentinels
     .map(
-      (field) =>
-        `<input type="hidden" name="${field.name}" bind:value={$formData.${field.name}} />`,
+      ([field, value]) =>
+        `<input type="hidden" name="${field.name}" value="${value}" />`,
     )
     .join("\n");
 }
@@ -182,20 +185,13 @@ function createServerSnippet(
 ): string {
   const withFiles = hasFiles(fields);
   const { currentUserField, currentTeamField } = injectables;
-  const sentinels: string[] = [];
   const injections: string[] = [];
   if (authMode && currentUserField) {
-    sentinels.push(`${currentUserField.name}: "current_user"`);
     injections.push(`${currentUserField.name}: locals.pb.authStore.record?.id`);
   }
   if (currentTeamField) {
-    sentinels.push(`${currentTeamField.name}: "current_team"`);
     injections.push(`${currentTeamField.name}: locals.team`);
   }
-  const validateArg =
-    sentinels.length > 0
-      ? `{ ${sentinels.join(", ")} }, zod4(${model.schemaName})`
-      : `zod4(${model.schemaName})`;
   const createPayload =
     injections.length > 0
       ? dedent`
@@ -214,8 +210,8 @@ function createServerSnippet(
     import { setFlash } from "sveltekit-flash-message/server";
     import { ${model.schemaName} } from "$lib/schemas/${model.name}";
 
-    export const load = async ({ locals }) => {
-      return { form: await superValidate(${validateArg}) };
+    export const load = async () => {
+      return { form: await superValidate(zod4(${model.schemaName})) };
     };
 
     export const actions = {

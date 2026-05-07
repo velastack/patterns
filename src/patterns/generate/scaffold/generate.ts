@@ -109,7 +109,23 @@ function findInjectables(fields: Field[]): Injectables {
   };
 }
 
-function injectableHiddenInputs(injectables: Injectables): string {
+function newHiddenInputs(injectables: Injectables): string {
+  const sentinels: Array<[InjectableField, string]> = [];
+  if (injectables.currentUserField) {
+    sentinels.push([injectables.currentUserField, "current_user"]);
+  }
+  if (injectables.currentTeamField) {
+    sentinels.push([injectables.currentTeamField, "current_team"]);
+  }
+  return sentinels
+    .map(
+      ([field, value]) =>
+        `<input type="hidden" name="${field.name}" value="${value}" />`,
+    )
+    .join("\n");
+}
+
+function editHiddenInputs(injectables: Injectables): string {
   const fields = [
     injectables.currentUserField,
     injectables.currentTeamField,
@@ -166,7 +182,7 @@ function newPageSnippet(
       : "",
   ]).join("\n");
   const fieldContent = fields.map((field) => renderField(field)).join("\n");
-  const hiddenInputs = injectableHiddenInputs(injectables);
+  const hiddenInputs = newHiddenInputs(injectables);
   const enctype = hasFiles(fields) ? ' enctype="multipart/form-data"' : "";
   const listHref = urlSvelteAttrValue(urls.list, dynamicParams);
 
@@ -223,7 +239,7 @@ function editPageSnippet(
       : "",
   ]).join("\n");
   const fieldContent = fields.map((field) => renderField(field)).join("\n");
-  const hiddenInputs = injectableHiddenInputs(injectables);
+  const hiddenInputs = editHiddenInputs(injectables);
   const enctype = hasFiles(fields) ? ' enctype="multipart/form-data"' : "";
   const listHref = urlSvelteAttrValue(urls.list, dynamicParams);
   const cancelHref = urlSvelteAttrValue(
@@ -543,20 +559,13 @@ function newServerSnippet(
   const relationVars = relationLoadReturnVars(fields);
   const relationReturn = relationVars ? `, ${relationVars}` : "";
   const { currentUserField, currentTeamField } = injectables;
-  const sentinels: string[] = [];
   const injections: string[] = [];
   if (authMode && currentUserField) {
-    sentinels.push(`${currentUserField.name}: "current_user"`);
     injections.push(`${currentUserField.name}: locals.pb.authStore.record?.id`);
   }
   if (currentTeamField) {
-    sentinels.push(`${currentTeamField.name}: "current_team"`);
     injections.push(`${currentTeamField.name}: locals.team`);
   }
-  const validateArg =
-    sentinels.length > 0
-      ? `{ ${sentinels.join(", ")} }, zod4(${model.schemaName})`
-      : `zod4(${model.schemaName})`;
   const createPayload =
     injections.length > 0
       ? dedent`
@@ -576,7 +585,7 @@ function newServerSnippet(
 
     export const load = async ({ locals }) => {
       ${relationLoads}
-      return { form: await superValidate(${validateArg})${relationReturn} };
+      return { form: await superValidate(zod4(${model.schemaName}))${relationReturn} };
     };
 
     export const actions = {
