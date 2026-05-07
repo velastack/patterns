@@ -19,12 +19,7 @@ function parsePatternArgs(argv: string[]) {
   const [modelPath, ...fields] = argv;
   if (!modelPath) {
     throw new InvalidArgumentError(
-      "Invalid command arguments. Expected: <model> <fields...>",
-    );
-  }
-  if (fields.length === 0) {
-    throw new InvalidArgumentError(
-      "At least one field definition is required.",
+      "Invalid command arguments. Expected: <model> [fields...]",
     );
   }
 
@@ -33,6 +28,45 @@ function parsePatternArgs(argv: string[]) {
 
 function hasFiles(fields: Field[]): boolean {
   return fields.some((field) => field.type === "file");
+}
+
+type InjectableField = Extract<Field, { type: "relation" }>;
+
+interface Injectables {
+  currentUserField?: InjectableField;
+  currentTeamField?: InjectableField;
+}
+
+function findInjectables(fields: Field[]): Injectables {
+  return {
+    currentUserField: fields.find(
+      (field): field is InjectableField =>
+        field.type === "relation" && field.isCurrentUser,
+    ),
+    currentTeamField: fields.find(
+      (field): field is InjectableField =>
+        field.type === "relation" && field.isCurrentTeam,
+    ),
+  };
+}
+
+function injectableHiddenInputs(injectables: Injectables): string {
+  const fields = [
+    injectables.currentUserField,
+    injectables.currentTeamField,
+  ].filter((field): field is InjectableField => Boolean(field));
+  return fields
+    .map(
+      (field) =>
+        `<input type="hidden" name="${field.name}" bind:value={$formData.${field.name}} />`,
+    )
+    .join("\n");
+}
+
+function pbInstance(
+  options: Pick<Options, "features">,
+): "locals.pb" | "locals.admin" {
+  return options.features.auth ? "locals.pb" : "locals.admin";
 }
 
 function pageImports(model: Model, fields: Field[]): string[] {
@@ -68,10 +102,15 @@ function pageScriptSnippet(model: Model, fields: Field[]): string {
   `;
 }
 
-function pageSnippet(model: Model, fields: Field[]): string {
+function pageSnippet(
+  model: Model,
+  fields: Field[],
+  injectables: Injectables,
+): string {
   const imports = pageImports(model, fields).join("\n");
   const scriptSnippet = pageScriptSnippet(model, fields);
   const fieldSnippet = fields.map((field) => renderField(field)).join("\n");
+  const hiddenInputs = injectableHiddenInputs(injectables);
   const enctype = hasFiles(fields) ? ' enctype="multipart/form-data"' : "";
 
   return dedent`
@@ -91,6 +130,7 @@ function pageSnippet(model: Model, fields: Field[]): string {
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             ${fieldSnippet}
           </div>
+          ${hiddenInputs}
           <div class="mt-4 flex gap-2 border-t pt-4 -mx-4 px-4">
             <Form.Button>Submit</Form.Button>
           </div>
@@ -100,7 +140,7 @@ function pageSnippet(model: Model, fields: Field[]): string {
   `;
 }
 
-function serverSnippet(model: Model, fields: Field[]): string {
+function genericServerSnippet(model: Model, fields: Field[]): string {
   const withFiles = hasFiles(fields);
   const imports = dedent`
     import { fail, superValidate${withFiles ? ", withFiles" : ""} } from "sveltekit-superforms";
@@ -133,6 +173,76 @@ function serverSnippet(model: Model, fields: Field[]): string {
   `;
 }
 
+function createServerSnippet(
+  model: Model,
+  fields: Field[],
+  injectables: Injectables,
+  pb: string,
+  authMode: boolean,
+): string {
+  const withFiles = hasFiles(fields);
+  const { currentUserField, currentTeamField } = injectables;
+  const sentinels: string[] = [];
+  const injections: string[] = [];
+  if (authMode && currentUserField) {
+    sentinels.push(`${currentUserField.name}: "current_user"`);
+    injections.push(`${currentUserField.name}: locals.pb.authStore.record?.id`);
+  }
+  if (currentTeamField) {
+    sentinels.push(`${currentTeamField.name}: "current_team"`);
+    injections.push(`${currentTeamField.name}: locals.team`);
+  }
+  const validateArg =
+    sentinels.length > 0
+      ? `{ ${sentinels.join(", ")} }, zod4(${model.schemaName})`
+      : `zod4(${model.schemaName})`;
+  const createPayload =
+    injections.length > 0
+      ? dedent`
+        {
+          ...form.data,
+          ${injections.join(",\n  ")}
+        }
+      `
+      : "form.data";
+
+  return dedent`
+    import { fail } from "@sveltejs/kit";
+    import { superValidate${withFiles ? ", withFiles" : ""} } from "sveltekit-superforms";
+    import { zod4 } from "sveltekit-superforms/adapters";
+    import { setPocketbaseErrors } from "@velastack/pocketbase";
+    import { setFlash } from "sveltekit-flash-message/server";
+    import { ${model.schemaName} } from "$lib/schemas/${model.name}";
+
+    export const load = async ({ locals }) => {
+      return { form: await superValidate(${validateArg}) };
+    };
+
+    export const actions = {
+      default: async ({ locals, request, cookies }) => {
+        const form = await superValidate(request, zod4(${model.schemaName}));
+
+        if (!form.valid) {
+          return fail(400, ${withFiles ? "withFiles({ form })" : "{ form }"});
+        }
+
+        try {
+          await ${pb}.collection("${model.tableName}").create(
+            ${createPayload}
+          );
+        } catch (error) {
+          setPocketbaseErrors(form, error);
+          return fail(400, ${withFiles ? "withFiles({ form })" : "{ form }"});
+        }
+
+        setFlash({ type: "toast", message: "${model.displayName} created" }, cookies);
+
+        return ${withFiles ? "withFiles({ form })" : "{ form }"};
+      }
+    };
+  `;
+}
+
 function toFile(path: string, content: string): File {
   return {
     path,
@@ -144,16 +254,42 @@ function toFile(path: string, content: string): File {
 
 export async function generate(options: Options) {
   const { modelPath, fieldDefs } = parsePatternArgs(options.argv);
-  const { model, fields, collections } = await resolveInputFields(
-    options,
-    modelPath,
-    fieldDefs,
-  );
+  const { model, fields, shouldCreateCollection, collections } =
+    await resolveInputFields(options, modelPath, fieldDefs);
   const route = parseRoute(options.input.route, model, options, "form");
 
+  // When fields were derived from an existing collection (no fieldDefs given),
+  // generate a server action that creates a record in that collection. When
+  // fields were explicitly provided, keep generic-form behavior (validate +
+  // flash, no DB write) — the user has signaled custom field shape.
+  const createMode = !shouldCreateCollection;
+  const injectables = createMode ? findInjectables(fields) : {};
+  const uiFields = createMode
+    ? fields.filter(
+        (field) =>
+          !(
+            field.type === "relation" &&
+            (field.isCurrentUser || field.isCurrentTeam)
+          ),
+      )
+    : fields;
+
+  const serverContent = createMode
+    ? createServerSnippet(
+        model,
+        uiFields,
+        injectables,
+        pbInstance(options),
+        options.features.auth,
+      )
+    : genericServerSnippet(model, uiFields);
+
   const creates = [
-    toFile(`${route.fileBase}/+page.svelte`, pageSnippet(model, fields)),
-    toFile(`${route.fileBase}/+page.server.ts`, serverSnippet(model, fields)),
+    toFile(
+      `${route.fileBase}/+page.svelte`,
+      pageSnippet(model, uiFields, injectables),
+    ),
+    toFile(`${route.fileBase}/+page.server.ts`, serverContent),
     toFile(
       `${route.fileBase}/server.test.ts`,
       generateFormServerTestSnippet(
@@ -174,7 +310,7 @@ export async function generate(options: Options) {
     ),
   ];
 
-  const components = getFieldComponents(fields) as Component[];
+  const components = getFieldComponents(uiFields) as Component[];
 
   return {
     creates,

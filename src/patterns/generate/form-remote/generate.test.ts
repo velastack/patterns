@@ -9,6 +9,47 @@ vi.mock("../../../parse/env.runtime", () => {
   };
 });
 
+vi.mock("../../../parse/env.preview", () => {
+  return {
+    getPreviewCollections: () => [
+      {
+        id: "users_preview",
+        name: "users",
+        type: "auth",
+        fields: [
+          { name: "email", type: "email" },
+          { name: "name", type: "text" },
+        ],
+      },
+      {
+        id: "contacts_preview",
+        name: "contacts",
+        type: "base",
+        fields: [
+          { name: "name", type: "text", required: true },
+          { name: "email", type: "email" },
+          { name: "bio", type: "editor" },
+        ],
+      },
+      {
+        id: "posts_preview",
+        name: "posts",
+        type: "base",
+        fields: [
+          { name: "title", type: "text", required: true },
+          {
+            name: "owner",
+            type: "relation",
+            collectionId: "users_preview",
+            maxSelect: 1,
+            required: true,
+          },
+        ],
+      },
+    ],
+  };
+});
+
 vi.mock("../../../runtime/write-result", () => {
   return {
     writeResult: async (result: unknown) => result,
@@ -38,15 +79,92 @@ function makeOptions(
 }
 
 describe("generate form-remote pattern", () => {
-  it("throws when no fields are provided", async () => {
+  it("errors when no fields are provided and there is no backend to derive from", async () => {
     await expect(
       generateBase(
         makeOptions({
           env: "preview",
+          features: {
+            auth: false,
+            api: false,
+            apiKeys: false,
+            backend: false,
+            i18n: false,
+            teams: false,
+            payments: false,
+            blog: false,
+            contentNegotiation: false,
+          },
           argv: ["contact"],
         }),
       ),
-    ).rejects.toThrow(/At least one field definition is required/);
+    ).rejects.toThrow(
+      /Cannot derive fields from a collection without a backend/,
+    );
+  });
+
+  it("derives fields from an existing collection and creates a record on submit", async () => {
+    const result = await generateBase(
+      makeOptions({
+        env: "preview",
+        argv: ["contact"],
+      }),
+    );
+
+    const schema = result.creates.find((file) =>
+      file.path.endsWith("src/lib/schemas/contact.ts"),
+    );
+    expect(schema?.content).toContain("name: z.string().nonempty()");
+    expect(schema?.content).toContain("email: z.email().optional()");
+    expect(schema?.content).toContain("bio: z.string().optional()");
+
+    // Remote form action creates a record (no redirect — flash + return success).
+    const remote = result.creates.find((file) =>
+      file.path.endsWith("form.remote.ts"),
+    );
+    expect(remote?.content).toContain(
+      'await locals.admin.collection("contacts").create',
+    );
+    expect(remote?.content).toContain("setFlash");
+    expect(remote?.content).toContain("Contact created");
+    expect(remote?.content).not.toContain("redirect(303");
+  });
+
+  it("injects current_user when deriving from a collection with an auth-bound relation", async () => {
+    const result = await generateBase(
+      makeOptions({
+        env: "preview",
+        features: {
+          auth: true,
+          api: false,
+          apiKeys: false,
+          backend: true,
+          i18n: false,
+          teams: false,
+          payments: false,
+          blog: false,
+          contentNegotiation: false,
+        },
+        argv: ["post"],
+      }),
+    );
+
+    const remote = result.creates.find((file) =>
+      file.path.endsWith("form.remote.ts"),
+    );
+    expect(remote?.content).toContain("owner: locals.pb.authStore.record?.id");
+
+    const page = result.creates.find((file) =>
+      file.path.endsWith("+page.svelte"),
+    );
+    // current_user field is hidden with sentinel value, not a relation picker.
+    expect(page?.content).toContain(
+      '<input type="hidden" name="owner" value="current_user" />',
+    );
+    // No TODO emitted for the injected relation.
+    expect(page?.content).not.toContain(
+      'relation field "owner" is not yet supported',
+    );
   });
 
   it("generates page, remote and schema files from parsed fields", async () => {
