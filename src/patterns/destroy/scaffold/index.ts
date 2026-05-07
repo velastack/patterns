@@ -18,7 +18,7 @@ export async function generate(options: Options) {
   }
 
   const model = parseModel(modelPath);
-  const route = parseRoute(undefined, model, options, "scaffold");
+  const route = parseRoute(options.input.route, model, options, "scaffold");
   const paths = scaffoldFilePaths(route);
   const schemaPath = `src/lib/schemas/${model.name}.ts`;
   const collectionDrops = await planDropsForCollections(
@@ -79,6 +79,11 @@ export default {
     {
       command: "todos",
       description: "Remove a todos scaffold.",
+    },
+    {
+      command: 'project --route "(app)/[team_id]/projects"',
+      description:
+        "Remove a scaffold generated under a custom route. --route must match the create command.",
     },
   ],
 

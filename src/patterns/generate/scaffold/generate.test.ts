@@ -195,4 +195,98 @@ describe("generate scaffold pattern", () => {
       result.collections[0].listRule,
     );
   });
+
+  it("emits files at a custom --route with dynamic params", async () => {
+    const result = await generateBase(
+      makeOptions({
+        env: "preview",
+        features: {
+          auth: true,
+          api: false,
+          apiKeys: false,
+          backend: true,
+          i18n: false,
+          teams: false,
+          payments: false,
+          blog: false,
+          contentNegotiation: false,
+        },
+        argv: ["project", "name:text!"],
+        input: { route: "(app)/[team_id]/projects" },
+      }),
+    );
+
+    expect(result.creates.map((file) => file.path)).toEqual([
+      "src/lib/schemas/project.ts",
+      "src/routes/(app)/[team_id]/projects/+page.server.ts",
+      "src/routes/(app)/[team_id]/projects/+page.svelte",
+      "src/routes/(app)/[team_id]/projects/new/+page.server.ts",
+      "src/routes/(app)/[team_id]/projects/new/+page.svelte",
+      "src/routes/(app)/[team_id]/projects/[id]/+page.server.ts",
+      "src/routes/(app)/[team_id]/projects/[id]/+page.svelte",
+      "src/routes/(app)/[team_id]/projects/[id]/edit/+page.server.ts",
+      "src/routes/(app)/[team_id]/projects/[id]/edit/+page.svelte",
+      "src/routes/(app)/[team_id]/projects/server.test.ts",
+    ]);
+
+    const listPage = result.creates.find((file) =>
+      file.path.endsWith("/projects/+page.svelte"),
+    );
+    // "New project" button uses Svelte expression with template literal substitution
+    expect(listPage?.content).toContain(
+      "<Button href={`/${params.team_id}/projects/new`}",
+    );
+
+    const showServer = result.creates.find((file) =>
+      file.path.endsWith("/projects/[id]/+page.server.ts"),
+    );
+    // delete redirect interpolates params.team_id
+    expect(showServer?.content).toContain(
+      "throw redirect(303, `/${params.team_id}/projects`);",
+    );
+
+    const editServer = result.creates.find((file) =>
+      file.path.endsWith("/projects/[id]/edit/+page.server.ts"),
+    );
+    // edit redirect chains both team_id and id
+    expect(editServer?.content).toContain(
+      "redirect(303, `/${params.team_id}/projects/${params.id}`);",
+    );
+
+    const newServer = result.creates.find((file) =>
+      file.path.endsWith("/projects/new/+page.server.ts"),
+    );
+    // create redirect chains team_id and the freshly-created project id
+    expect(newServer?.content).toContain(
+      "return redirect(303, `/${params.team_id}/projects/${project.id}`);",
+    );
+
+    const newPage = result.creates.find((file) =>
+      file.path.endsWith("/projects/new/+page.svelte"),
+    );
+    // Cancel button uses dynamic href via Svelte expression
+    expect(newPage?.content).toContain(
+      "<Button href={`/${params.team_id}/projects`}",
+    );
+
+    const showPage = result.creates.find((file) =>
+      file.path.endsWith("/projects/[id]/+page.svelte"),
+    );
+    // Edit href in show page uses Svelte expression with both team_id and data.project.id
+    expect(showPage?.content).toContain(
+      "<Button href={`/${params.team_id}/projects/${data.project.id}/edit`}",
+    );
+
+    const test = result.creates.find((file) =>
+      file.path.endsWith("/projects/server.test.ts"),
+    );
+    // Test URLs substitute placeholder values for dynamic params
+    expect(test?.content).toContain(
+      "// TODO: customize test fixture values for dynamic route params: team_id",
+    );
+    expect(test?.content).toContain('describe("GET /test_team_id/projects"');
+    expect(test?.content).toContain(
+      "agent.get(`/test_team_id/projects/${id}`)",
+    );
+  });
 });

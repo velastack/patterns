@@ -17,6 +17,19 @@ export interface Options {
   env: "runtime" | "preview";
   root: string;
   features: Features;
+  /**
+   * Pattern-specific named inputs (separate from positional argv).
+   *
+   * Conventional keys consumed by built-in patterns:
+   * - `route` (string): override the default SvelteKit route for generators that
+   *   produce pages. Format: `(group)/segment[/segment]*` (route group required;
+   *   if omitted, the auth-aware default group is prepended). Dynamic segments
+   *   like `[team_id]` are recognized and threaded into generated href/redirect
+   *   expressions and test placeholders.
+   * - `destructive` (boolean): consent flag for destroy patterns to perform
+   *   filesystem and collection deletions.
+   * - `variant` (string): selects an alternate template under `variants/`.
+   */
   input: Record<string, any>;
   logger?: Logger;
 }

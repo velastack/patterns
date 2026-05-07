@@ -94,6 +94,12 @@ export default {
       command: "pet name:text! breed:text! owner:current_user",
       description: "Auth-bound owner relation.",
     },
+    {
+      command:
+        'project name:text! status:select(active,done) --route "(app)/[team_id]/projects"',
+      description:
+        "Team-scoped CRUD via dynamic route param. Generated hrefs and redirects interpolate params.team_id.",
+    },
   ],
 
   tests: 6,

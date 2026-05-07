@@ -60,6 +60,12 @@ export default {
       command: "feedback rating:select(1,2,3,4,5) comment:editor",
       description: "Select enum with a long-form comment.",
     },
+    {
+      command:
+        'project name:text! description:editor --route "(app)/[team_id]/projects/new"',
+      description:
+        "Team-scoped create form. Schema lives at /lib/schemas/project.ts; the form lives under the dynamic team route.",
+    },
   ],
 
   tests: 2,

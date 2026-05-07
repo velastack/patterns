@@ -179,6 +179,43 @@ describe("generate form pattern", () => {
     ).rejects.toThrow();
   });
 
+  it("emits files at a custom --route with dynamic params", async () => {
+    const result = await generateBase(
+      makeOptions({
+        env: "preview",
+        features: {
+          auth: true,
+          api: false,
+          apiKeys: false,
+          backend: false,
+          i18n: false,
+          teams: false,
+          payments: false,
+          blog: false,
+          contentNegotiation: false,
+        },
+        argv: ["project", "name:text!"],
+        input: { route: "(app)/[team_id]/projects/new" },
+      }),
+    );
+
+    expect(result.creates.map((file) => file.path)).toEqual([
+      "src/routes/(app)/[team_id]/projects/new/+page.svelte",
+      "src/routes/(app)/[team_id]/projects/new/+page.server.ts",
+      "src/routes/(app)/[team_id]/projects/new/server.test.ts",
+      "src/lib/schemas/project.ts",
+    ]);
+
+    const test = result.creates.find((file) =>
+      file.path.endsWith("/projects/new/server.test.ts"),
+    );
+    expect(test?.content).toContain(
+      "// TODO: customize test fixture values for dynamic route params: team_id",
+    );
+    expect(test?.content).toContain('describe("/test_team_id/projects/new"');
+    expect(test?.content).toContain('agent.get("/test_team_id/projects/new")');
+  });
+
   it("returns the same create output in preview and runtime", async () => {
     const argv = ["note", "title:text", "body:editor"];
 

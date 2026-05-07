@@ -23,6 +23,11 @@ import {
   uniqueRelationCollections,
 } from "../../../core/shared";
 import { generateScaffoldRemoteServerTestSnippet } from "../../../core/tests";
+import {
+  urlJsExpr,
+  urlJsExprWithSuffix,
+  urlSvelteAttrValue,
+} from "../../../core/url";
 
 function parsePatternArgs(argv: string[]) {
   const [modelPath, ...fields] = argv;
@@ -145,6 +150,7 @@ function newPageSnippet(
   urls: ReturnType<typeof scaffoldUrls>,
   fields: Field[],
   injectables: Injectables,
+  dynamicParams: string[],
 ): string {
   const formVar = createFormIdentifier(model);
   const components = getRemoteFieldComponents(fields);
@@ -159,6 +165,7 @@ function newPageSnippet(
     .join("\n");
   const hiddenInputs = newHiddenInputs(injectables);
   const enctype = hasFiles(fields) ? ' enctype="multipart/form-data"' : "";
+  const listHref = urlSvelteAttrValue(urls.list, dynamicParams);
 
   return dedent`
     <script lang="ts">
@@ -168,7 +175,7 @@ function newPageSnippet(
     <section data-role="content">
       <div class="flex justify-between items-center mb-4">
         <h1 class="text-3xl font-bold tracking-tight">New ${model.displayName.toLowerCase()}</h1>
-        <Button href="${urls.list}" variant="outline" size="sm">
+        <Button href${listHref} variant="outline" size="sm">
           <ArrowLeftIcon class="w-4 h-4" />
           Back to list
         </Button>
@@ -182,7 +189,7 @@ function newPageSnippet(
           ${hiddenInputs}
           <div class="mt-4 flex gap-2 border-t pt-4 -mx-4 px-4">
             <Button type="submit" size="sm">Save</Button>
-            <Button href="${urls.list}" variant="outline" size="sm">Cancel</Button>
+            <Button href${listHref} variant="outline" size="sm">Cancel</Button>
           </div>
         </form>
       </div>
@@ -195,6 +202,7 @@ function editPageSnippet(
   urls: ReturnType<typeof scaffoldUrls>,
   fields: Field[],
   injectables: Injectables,
+  dynamicParams: string[],
 ): string {
   const formVar = updateFormIdentifier(model);
   const components = getRemoteFieldComponents(fields);
@@ -209,6 +217,12 @@ function editPageSnippet(
     .join("\n");
   const hiddenInputs = editHiddenInputs(model, injectables);
   const enctype = hasFiles(fields) ? ' enctype="multipart/form-data"' : "";
+  const listHref = urlSvelteAttrValue(urls.list, dynamicParams);
+  const cancelHref = urlSvelteAttrValue(
+    urls.list,
+    dynamicParams,
+    "/${params.id}",
+  );
 
   return dedent`
     <script lang="ts">
@@ -220,7 +234,7 @@ function editPageSnippet(
     <section data-role="content">
       <div class="flex justify-between items-center mb-4">
         <h1 class="text-3xl font-bold tracking-tight">Edit ${model.displayName.toLowerCase()}</h1>
-        <Button href="${urls.list}" variant="outline" size="sm">
+        <Button href${listHref} variant="outline" size="sm">
           <ArrowLeftIcon class="w-4 h-4" />
           Back to list
         </Button>
@@ -235,7 +249,7 @@ function editPageSnippet(
           </div>
           <div class="mt-4 flex gap-2 border-t pt-4 -mx-4 px-4">
             <Button type="submit" size="sm">Save changes</Button>
-            <Button href="${urls.list}/\${params.id}" variant="outline" size="sm">Cancel</Button>
+            <Button href${cancelHref} variant="outline" size="sm">Cancel</Button>
           </div>
         </form>
       </div>
@@ -247,11 +261,28 @@ function listPageSnippet(
   model: Model,
   urls: ReturnType<typeof scaffoldUrls>,
   fields: Field[],
+  dynamicParams: string[],
 ): string {
   const hasSelectFields = fields.some((field) => field.type === "select");
   const selectFieldsLabelMaps = hasSelectFields
     ? `${selectLabelMaps(fields)}`
     : "";
+  const newHref = urlSvelteAttrValue(urls.new, dynamicParams);
+  const viewPath = urlJsExprWithSuffix(
+    urls.list,
+    dynamicParams,
+    "/${row.original.id}",
+  );
+  const editPath = urlJsExprWithSuffix(
+    urls.list,
+    dynamicParams,
+    "/${row.original.id}/edit",
+  );
+  const deletePath = urlJsExprWithSuffix(
+    urls.list,
+    dynamicParams,
+    "/${row.original.id}",
+  );
   const columnDefs = fields
     .map((field) => {
       let cellParams = "{ getValue }";
@@ -353,9 +384,9 @@ function listPageSnippet(
           id: "actions",
           cell: ({ row }) =>
             renderComponent(RowActions, {
-              viewPath: \`${urls.list}/\${row.original.id}\`,
-              editPath: \`${urls.list}/\${row.original.id}/edit\`,
-              deletePath: \`${urls.list}/\${row.original.id}\`
+              viewPath: ${viewPath},
+              editPath: ${editPath},
+              deletePath: ${deletePath}
             }),
           meta: { class: "w-0 text-right" },
         })
@@ -436,7 +467,7 @@ function listPageSnippet(
             {/if}
           </div>
 
-          <Button href="${urls.new}" variant="outline" size="sm">
+          <Button href${newHref} variant="outline" size="sm">
             <PlusIcon class="w-4 h-4" />
             New ${model.displayName.toLowerCase()}
           </Button>
@@ -513,6 +544,7 @@ function newRemoteSnippet(
   fields: Field[],
   pb: string,
   authMode: boolean,
+  dynamicParams: string[],
 ): string {
   const formVar = createFormIdentifier(model);
   const currentUserField = fields.find(
@@ -550,7 +582,7 @@ function newRemoteSnippet(
       const ${model.name} = await ${pb}.collection("${model.tableName}").create(
         ${createPayload}
       );
-      redirect(303, \`${urls.list}/\${${model.name}.id}\`);
+      redirect(303, ${urlJsExprWithSuffix(urls.list, dynamicParams, `/\${${model.name}.id}`)});
     });
   `;
 }
@@ -560,6 +592,7 @@ function showServerSnippet(
   urls: ReturnType<typeof scaffoldUrls>,
   fields: Field[],
   pb: string,
+  dynamicParams: string[],
 ): string {
   const expand = relationExpandParam(fields);
   const getOneArgs = expand ? `, { expand: "${expand}" }` : "";
@@ -578,7 +611,7 @@ function showServerSnippet(
     export const actions = {
       default: async ({ locals, params }) => {
         await ${pb}.collection("${model.tableName}").delete(params.id);
-        throw redirect(303, "${urls.list}");
+        throw redirect(303, ${urlJsExpr(urls.list, dynamicParams)});
       },
     };
   `;
@@ -588,6 +621,7 @@ function showPageSnippet(
   model: Model,
   urls: ReturnType<typeof scaffoldUrls>,
   fields: Field[],
+  dynamicParams: string[],
 ): string {
   const hasSelectFields = fields.some((field) => field.type === "select");
   const hasRelationFields = fields.some((field) => field.type === "relation");
@@ -612,6 +646,13 @@ function showPageSnippet(
     .map((field) => renderDisplayField(model, field))
     .join("\n");
 
+  const listHref = urlSvelteAttrValue(urls.list, dynamicParams);
+  const editHref = urlSvelteAttrValue(
+    urls.list,
+    dynamicParams,
+    `/{data.${model.name}.id}/edit`,
+  );
+
   return dedent`
     <script lang="ts">
       ${imports}
@@ -623,7 +664,7 @@ function showPageSnippet(
     <section data-role="content">
       <div class="flex justify-between items-center mb-4">
         <h1 class="text-3xl font-bold tracking-tight">${model.displayName} details</h1>
-        <Button href="${urls.list}" variant="outline" size="sm">
+        <Button href${listHref} variant="outline" size="sm">
           <ArrowLeftIcon class="w-4 h-4" />
           Back to list
         </Button>
@@ -635,7 +676,7 @@ function showPageSnippet(
         </div>
 
         <div class="mt-4 flex gap-2 border-t pt-4 -mx-4 px-4 justify-between">
-          <Button href="${urls.list}/{data.${model.name}.id}/edit" variant="outline" size="sm">
+          <Button href${editHref} variant="outline" size="sm">
             Edit
           </Button>
           <form method="POST">
@@ -672,6 +713,7 @@ function editRemoteSnippet(
   urls: ReturnType<typeof scaffoldUrls>,
   injectables: Injectables,
   pb: string,
+  dynamicParams: string[],
 ): string {
   const formVar = updateFormIdentifier(model);
   const { currentUserField, currentTeamField } = injectables;
@@ -707,7 +749,7 @@ function editRemoteSnippet(
       const { id, collectionId, ...rest } = data;
       if (!id) error(400, "id is required");
       ${updateBody}
-      redirect(303, \`${urls.list}/\${id}\`);
+      redirect(303, ${urlJsExprWithSuffix(urls.list, dynamicParams, "/${id}")});
     });
   `;
 }
@@ -716,9 +758,10 @@ export async function generate(options: Options) {
   const { modelPath, fields: fieldDefs } = parsePatternArgs(options.argv);
   const { model, fields, auth, shouldCreateCollection, collections } =
     await resolveInputFields(options, modelPath, fieldDefs);
-  const route = parseRoute(undefined, model, options, "scaffold");
+  const route = parseRoute(options.input.route, model, options, "scaffold");
   const paths = scaffoldFilePaths(route);
   const urls = scaffoldUrls(route);
+  const dynamicParams = route.dynamicParams;
   const pb = pbInstance(options);
   const uiFields = fields.filter(
     (field) =>
@@ -743,7 +786,7 @@ export async function generate(options: Options) {
     ),
     toFile(
       `${paths.list}/+page.svelte`,
-      listPageSnippet(model, urls, uiFields),
+      listPageSnippet(model, urls, uiFields, dynamicParams),
     ),
   ];
 
@@ -754,19 +797,26 @@ export async function generate(options: Options) {
   creates.push(
     toFile(
       `${paths.new}/form.remote.ts`,
-      newRemoteSnippet(model, urls, fields, pb, options.features.auth),
+      newRemoteSnippet(
+        model,
+        urls,
+        fields,
+        pb,
+        options.features.auth,
+        dynamicParams,
+      ),
     ),
     toFile(
       `${paths.new}/+page.svelte`,
-      newPageSnippet(model, urls, uiFields, injectables),
+      newPageSnippet(model, urls, uiFields, injectables, dynamicParams),
     ),
     toFile(
       `${paths.show}/+page.server.ts`,
-      showServerSnippet(model, urls, uiFields, pb),
+      showServerSnippet(model, urls, uiFields, pb, dynamicParams),
     ),
     toFile(
       `${paths.show}/+page.svelte`,
-      showPageSnippet(model, urls, uiFields),
+      showPageSnippet(model, urls, uiFields, dynamicParams),
     ),
     toFile(
       `${paths.edit}/+page.server.ts`,
@@ -774,11 +824,11 @@ export async function generate(options: Options) {
     ),
     toFile(
       `${paths.edit}/form.remote.ts`,
-      editRemoteSnippet(model, urls, injectables, pb),
+      editRemoteSnippet(model, urls, injectables, pb, dynamicParams),
     ),
     toFile(
       `${paths.edit}/+page.svelte`,
-      editPageSnippet(model, urls, uiFields, injectables),
+      editPageSnippet(model, urls, uiFields, injectables, dynamicParams),
     ),
     toFile(
       `${paths.list}/server.test.ts`,
@@ -788,6 +838,7 @@ export async function generate(options: Options) {
         fields,
         options,
         collections,
+        dynamicParams,
       ),
     ),
   );

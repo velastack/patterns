@@ -18,7 +18,7 @@ export async function generate(options: Options) {
   }
 
   const model = parseModel(modelPath);
-  const route = parseRoute(undefined, model, options, "form");
+  const route = parseRoute(options.input.route, model, options, "form");
   const routeDir = route.fileBase;
   const schemaPath = `src/lib/schemas/${model.name}.ts`;
 
@@ -75,6 +75,11 @@ export default {
     {
       command: "login",
       description: "Remove the login form.",
+    },
+    {
+      command: 'project --route "(app)/[team_id]/projects/new"',
+      description:
+        "Remove a form generated under a custom route. --route must match the create command.",
     },
   ],
 

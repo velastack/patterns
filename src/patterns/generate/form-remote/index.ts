@@ -87,6 +87,12 @@ export default {
       command: "feedback rating:select(1,2,3,4,5) comment:editor",
       description: "Select enum with a long-form comment.",
     },
+    {
+      command:
+        'project name:text! description:editor --route "(app)/[team_id]/projects/new"',
+      description:
+        "Team-scoped create form using remote functions and a dynamic route param.",
+    },
   ],
 
   tests: 1,

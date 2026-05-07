@@ -98,6 +98,18 @@ function relationUrl(url: string, idExpression: string): string {
   return url.replace("[id]", `\${${idExpression}}`);
 }
 
+function testizeUrl(url: string, dynamicParams: string[]): string {
+  if (dynamicParams.length === 0) return url;
+  return url.replace(/\[([^\]]+)\]/g, (match, name) =>
+    dynamicParams.includes(name) ? `test_${name}` : match,
+  );
+}
+
+function dynamicParamsTodo(dynamicParams: string[]): string {
+  if (dynamicParams.length === 0) return "";
+  return `// TODO: customize test fixture values for dynamic route params: ${dynamicParams.join(", ")}\n`;
+}
+
 function mockValueForField(
   field: Pick<Field, "name" | "type"> & Partial<Field>,
   relationIdsByCollectionId: Record<string, string>,
@@ -449,6 +461,7 @@ export function generateScaffoldServerTestSnippet(
   fields: Field[],
   options: Options,
   collections: Collection[],
+  dynamicParams: string[] = [],
 ): string {
   const {
     declarations,
@@ -458,29 +471,35 @@ export function generateScaffoldServerTestSnippet(
     modelFormData,
   } = relationDependencyContext(model, fields, options, collections);
 
+  const list = testizeUrl(urls.list, dynamicParams);
+  const newUrl = testizeUrl(urls.new, dynamicParams);
+  const show = testizeUrl(urls.show, dynamicParams);
+  const edit = testizeUrl(urls.edit, dynamicParams);
+  const todo = dynamicParamsTodo(dynamicParams);
+
   return dedent`
     import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-    describe("${model.pluralName}", () => {
+    ${todo}describe("${model.pluralName}", () => {
       ${declarations}${setupSection}
 
-      describe("GET ${urls.list}", () => {
+      describe("GET ${list}", () => {
         it("should return a 200 status code", async (context) => {
-          const response = await ${requestAgent}.get("${urls.list}");
+          const response = await ${requestAgent}.get("${list}");
           expect(response.status).toBe(200);
         });
       });
 
-      describe("GET ${urls.new}", () => {
+      describe("GET ${newUrl}", () => {
         it("should return a 200 status code", async (context) => {
-          const response = await ${requestAgent}.get("${urls.new}");
+          const response = await ${requestAgent}.get("${newUrl}");
           expect(response.status).toBe(200);
         });
       });
 
-      describe("POST ${urls.new}", () => {
+      describe("POST ${newUrl}", () => {
         it("should create a new ${model.displayName.toLowerCase()}", async (context) => {
-          const response = await ${requestAgent}.post("${urls.new}").type("form").send(${modelFormData});
+          const response = await ${requestAgent}.post("${newUrl}").type("form").send(${modelFormData});
           expect(response.body.status).toBe(303);
 
           const response2 = await ${requestAgent}.get(response.body.location);
@@ -488,47 +507,47 @@ export function generateScaffoldServerTestSnippet(
         });
       });
 
-      describe("GET ${urls.show}", () => {
+      describe("GET ${show}", () => {
         it("should return a 200 status code", async (context) => {
           const { id } = await context.admin.collection("${model.tableName}").create(${modelDbData});
-          const response = await ${requestAgent}.get(\`${relationUrl(urls.show, "id")}\`);
+          const response = await ${requestAgent}.get(\`${relationUrl(show, "id")}\`);
           expect(response.status).toBe(200);
         });
 
         it("should return a 404 status code", async (context) => {
-          const response = await ${requestAgent}.get("${urls.show.replace("[id]", "non-existent")}");
+          const response = await ${requestAgent}.get("${show.replace("[id]", "non-existent")}");
           expect(response.status).toBe(404);
         });
       });
 
-      describe("POST ${urls.show}", () => {
+      describe("POST ${show}", () => {
         it("should delete a ${model.displayName.toLowerCase()}", async (context) => {
           const { id } = await context.admin.collection("${model.tableName}").create(${modelDbData});
-          const response = await ${requestAgent}.post(\`${relationUrl(urls.show, "id")}\`).type("form");
+          const response = await ${requestAgent}.post(\`${relationUrl(show, "id")}\`).type("form");
           expect(response.body.status).toBe(303);
 
-          const response2 = await ${requestAgent}.get(\`${relationUrl(urls.show, "id")}\`);
+          const response2 = await ${requestAgent}.get(\`${relationUrl(show, "id")}\`);
           expect(response2.status).toBe(404);
         });
       });
 
-      describe("GET ${urls.edit}", () => {
+      describe("GET ${edit}", () => {
         it("should return a 200 status code", async (context) => {
           const { id } = await context.admin.collection("${model.tableName}").create(${modelDbData});
-          const response = await ${requestAgent}.get(\`${relationUrl(urls.edit, "id")}\`);
+          const response = await ${requestAgent}.get(\`${relationUrl(edit, "id")}\`);
           expect(response.status).toBe(200);
         });
       });
 
-      describe("POST ${urls.edit}", () => {
+      describe("POST ${edit}", () => {
         it("should update a ${model.displayName.toLowerCase()}", async (context) => {
           const { id } = await context.admin.collection("${model.tableName}").create(${modelDbData});
           const response = await ${requestAgent}
-            .post(\`${relationUrl(urls.edit, "id")}\`)
+            .post(\`${relationUrl(edit, "id")}\`)
             .type("form")
             .send(${modelFormData});
           expect(response.body.status).toBe(303);
-          expect(response.body.location).toBe(\`${relationUrl(urls.show, "id")}\`);
+          expect(response.body.location).toBe(\`${relationUrl(show, "id")}\`);
         });
       });
     });
@@ -541,58 +560,65 @@ export function generateScaffoldRemoteServerTestSnippet(
   fields: Field[],
   options: Options,
   collections: Collection[],
+  dynamicParams: string[] = [],
 ): string {
   const { declarations, setupSection, requestAgent, modelDbData } =
     relationDependencyContext(model, fields, options, collections);
 
+  const list = testizeUrl(urls.list, dynamicParams);
+  const newUrl = testizeUrl(urls.new, dynamicParams);
+  const show = testizeUrl(urls.show, dynamicParams);
+  const edit = testizeUrl(urls.edit, dynamicParams);
+  const todo = dynamicParamsTodo(dynamicParams);
+
   return dedent`
     import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-    describe("${model.pluralName}", () => {
+    ${todo}describe("${model.pluralName}", () => {
       ${declarations}${setupSection}
 
-      describe("GET ${urls.list}", () => {
+      describe("GET ${list}", () => {
         it("should return a 200 status code", async (context) => {
-          const response = await ${requestAgent}.get("${urls.list}");
+          const response = await ${requestAgent}.get("${list}");
           expect(response.status).toBe(200);
         });
       });
 
-      describe("GET ${urls.new}", () => {
+      describe("GET ${newUrl}", () => {
         it("should return a 200 status code", async (context) => {
-          const response = await ${requestAgent}.get("${urls.new}");
+          const response = await ${requestAgent}.get("${newUrl}");
           expect(response.status).toBe(200);
         });
       });
 
-      describe("GET ${urls.show}", () => {
+      describe("GET ${show}", () => {
         it("should return a 200 status code", async (context) => {
           const { id } = await context.admin.collection("${model.tableName}").create(${modelDbData});
-          const response = await ${requestAgent}.get(\`${relationUrl(urls.show, "id")}\`);
+          const response = await ${requestAgent}.get(\`${relationUrl(show, "id")}\`);
           expect(response.status).toBe(200);
         });
 
         it("should return a 404 status code", async (context) => {
-          const response = await ${requestAgent}.get("${urls.show.replace("[id]", "non-existent")}");
+          const response = await ${requestAgent}.get("${show.replace("[id]", "non-existent")}");
           expect(response.status).toBe(404);
         });
       });
 
-      describe("POST ${urls.show}", () => {
+      describe("POST ${show}", () => {
         it("should delete a ${model.displayName.toLowerCase()}", async (context) => {
           const { id } = await context.admin.collection("${model.tableName}").create(${modelDbData});
-          const response = await ${requestAgent}.post(\`${relationUrl(urls.show, "id")}\`).type("form");
+          const response = await ${requestAgent}.post(\`${relationUrl(show, "id")}\`).type("form");
           expect(response.body.status).toBe(303);
 
-          const response2 = await ${requestAgent}.get(\`${relationUrl(urls.show, "id")}\`);
+          const response2 = await ${requestAgent}.get(\`${relationUrl(show, "id")}\`);
           expect(response2.status).toBe(404);
         });
       });
 
-      describe("GET ${urls.edit}", () => {
+      describe("GET ${edit}", () => {
         it("should return a 200 status code", async (context) => {
           const { id } = await context.admin.collection("${model.tableName}").create(${modelDbData});
-          const response = await ${requestAgent}.get(\`${relationUrl(urls.edit, "id")}\`);
+          const response = await ${requestAgent}.get(\`${relationUrl(edit, "id")}\`);
           expect(response.status).toBe(200);
         });
       });
@@ -606,26 +632,30 @@ export function generateFormServerTestSnippet(
   fields: Field[],
   options: Options,
   collections: Collection[],
+  dynamicParams: string[] = [],
 ): string {
   const { declarations, setupSection, requestAgent, modelFormData } =
     relationDependencyContext(model, fields, options, collections);
 
+  const url = testizeUrl(formUrl, dynamicParams);
+  const todo = dynamicParamsTodo(dynamicParams);
+
   return dedent`
     import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-    describe("${formUrl}", () => {
+    ${todo}describe("${url}", () => {
       ${declarations}${setupSection}
 
-      describe("GET ${formUrl}", () => {
+      describe("GET ${url}", () => {
         it("should return a 200 status code", async (context) => {
-          const response = await ${requestAgent}.get("${formUrl}");
+          const response = await ${requestAgent}.get("${url}");
           expect(response.status).toBe(200);
         });
       });
 
-      describe("POST ${formUrl}", () => {
+      describe("POST ${url}", () => {
         it("should submit the form successfully", async (context) => {
-          const response = await ${requestAgent}.post("${formUrl}").type("form").send(${modelFormData});
+          const response = await ${requestAgent}.post("${url}").type("form").send(${modelFormData});
           expect(response.body.status).toBe(200);
         });
       });
@@ -639,19 +669,23 @@ export function generateFormRemoteServerTestSnippet(
   fields: Field[],
   options: Options,
   collections: Collection[],
+  dynamicParams: string[] = [],
 ): string {
   const { declarations, setupSection, requestAgent } =
     relationDependencyContext(model, fields, options, collections);
 
+  const url = testizeUrl(formUrl, dynamicParams);
+  const todo = dynamicParamsTodo(dynamicParams);
+
   return dedent`
     import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-    describe("${formUrl}", () => {
+    ${todo}describe("${url}", () => {
       ${declarations}${setupSection}
 
-      describe("GET ${formUrl}", () => {
+      describe("GET ${url}", () => {
         it("should return a 200 status code", async (context) => {
-          const response = await ${requestAgent}.get("${formUrl}");
+          const response = await ${requestAgent}.get("${url}");
           expect(response.status).toBe(200);
         });
       });

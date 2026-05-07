@@ -109,7 +109,7 @@ export async function generate(options: Options) {
     modelPath,
     fieldDefs,
   );
-  const route = parseRoute(undefined, model, options, "form");
+  const route = parseRoute(options.input.route, model, options, "form");
   const formVar = submitFormIdentifier(model);
 
   const creates = [
@@ -126,6 +126,7 @@ export async function generate(options: Options) {
         fields,
         options,
         collections,
+        route.dynamicParams,
       ),
     ),
     toFile(
