@@ -43,6 +43,7 @@ export async function generate(options: Options) {
       "src",
       "routes",
       "(public)",
+      "(auth)",
       "signup",
       "+page.server.ts",
     );

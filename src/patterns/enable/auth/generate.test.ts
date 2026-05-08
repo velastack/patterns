@@ -22,8 +22,8 @@ function makeOptions(input: Record<string, unknown>): Options {
   };
 }
 
-const LOGIN_PATH = "src/routes/(public)/login/+page.svelte";
-const SIGNUP_PATH = "src/routes/(public)/signup/+page.svelte";
+const LOGIN_PATH = "src/routes/(public)/(auth)/login/+page.svelte";
+const SIGNUP_PATH = "src/routes/(public)/(auth)/signup/+page.svelte";
 
 describe("auth generate (variants)", () => {
   it("returns the base creates files when no variant is selected", async () => {
@@ -45,7 +45,7 @@ describe("auth generate (variants)", () => {
   it("leaves sibling files (e.g. +page.server.ts) untouched in the split variant", async () => {
     const result = await generate(makeOptions({ variant: "split" }));
     const loginServer = result.creates.find(
-      (f) => f.path === "src/routes/(public)/login/+page.server.ts",
+      (f) => f.path === "src/routes/(public)/(auth)/login/+page.server.ts",
     );
     expect(loginServer).toBeDefined();
     expect(loginServer!.content.length).toBeGreaterThan(0);

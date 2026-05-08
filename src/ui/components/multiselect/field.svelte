@@ -20,7 +20,7 @@
 		required?: boolean;
 	} & WithoutChildren<WithElementRef<HTMLAttributes<HTMLDivElement>>> = $props();
 
-	const { form: formData } = form;
+	const { form: formData } = $derived(form);
 
 	const toggleSelected = (value: string) => {
 		if (type === 'single') {
@@ -54,9 +54,15 @@
 	};
 
 	setContext('multiselect-field', {
-		form,
-		name,
-		type,
+		get form() {
+			return form;
+		},
+		get name() {
+			return name;
+		},
+		get type() {
+			return type;
+		},
 		toggleSelected,
 		isSelected
 	});

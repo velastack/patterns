@@ -70,7 +70,7 @@ const FAILURE_HINT = [
 ].join("\n");
 
 const NOT_FOUND_HINT = [
-  "Create src/routes/(public)/signup/+page.server.ts before enabling payments.",
+  "Create src/routes/(public)/(auth)/signup/+page.server.ts before enabling payments.",
 ].join("\n");
 
 export function modifyUserSignup(userSignupPath: string): ModifyOutcome {
