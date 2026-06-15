@@ -1,62 +1,41 @@
-import fs from "node:fs";
 import dedent from "dedent";
 import {
-  Project,
-  QuoteKind,
   SyntaxKind,
   type ArrayLiteralExpression,
   type ObjectLiteralExpression,
 } from "ts-morph";
-import type { ModifyOutcome } from "../../../../core/types";
+import {
+  modifyConfig,
+  type ConfigModifyResult,
+} from "../../../../runtime/config-target";
 import { ensureImports } from "../../../../runtime/ts-morph-helpers";
 
 const FAILURE_HINT = dedent`
-  Enable mdsvex in your svelte.config.js:
+  Enable mdsvex in your config (sveltekit() arg in vite.config, or svelte.config):
 
   import { mdsvex } from 'mdsvex';
 
-  const config = {
-    extensions: ['.svelte', '.svx'],
-    preprocess: [mdsvex()],
-    // ...
-  };
+  // ...
+  extensions: ['.svelte', '.svx'],
+  preprocess: [mdsvex()],
 `;
 
 const NOT_FOUND_HINT = dedent`
-  Create a Svelte config with mdsvex enabled:
+  Enable mdsvex by passing config to the sveltekit() plugin in vite.config.ts:
 
-  import adapter from '@sveltejs/adapter-auto';
+  import { sveltekit } from '@sveltejs/kit/vite';
   import { mdsvex } from 'mdsvex';
+  import { defineConfig } from 'vite';
 
-  const config = {
-    extensions: ['.svelte', '.svx'],
-    preprocess: [mdsvex()],
-    kit: { adapter: adapter() },
-  };
-
-  export default config;
+  export default defineConfig({
+    plugins: [
+      sveltekit({
+        extensions: ['.svelte', '.svx'],
+        preprocess: [mdsvex()],
+      }),
+    ],
+  });
 `;
-
-function getConfigObject(
-  sourceFile: import("ts-morph").SourceFile,
-): ObjectLiteralExpression | null {
-  const defaultExport = sourceFile.getExportAssignment(
-    (ea) => !ea.isExportEquals(),
-  );
-  const exportedExpr = defaultExport?.getExpression();
-  if (exportedExpr?.getKind() === SyntaxKind.ObjectLiteralExpression) {
-    return exportedExpr as ObjectLiteralExpression;
-  }
-  if (exportedExpr?.getKind() === SyntaxKind.Identifier) {
-    const ident = exportedExpr.getText();
-    const varDecl = sourceFile.getVariableDeclaration(ident);
-    const init = varDecl?.getInitializer();
-    if (init?.getKind() === SyntaxKind.ObjectLiteralExpression) {
-      return init as ObjectLiteralExpression;
-    }
-  }
-  return null;
-}
 
 function ensureExtensionsSvx(obj: ObjectLiteralExpression): boolean {
   const existing = obj.getProperty("extensions");
@@ -122,42 +101,23 @@ function ensurePreprocessMdsvex(obj: ObjectLiteralExpression): boolean {
   return true;
 }
 
-export function modifySvelteConfigMdsvex(
-  svelteConfigPath: string,
-): ModifyOutcome {
-  if (!fs.existsSync(svelteConfigPath)) {
-    return { status: "not-found", message: NOT_FOUND_HINT };
-  }
-
-  const project = new Project({
-    compilerOptions: { allowJs: true },
-    manipulationSettings: { quoteKind: QuoteKind.Single },
-  });
-  const sourceFile = project.addSourceFileAtPath(svelteConfigPath);
-  const originalText = sourceFile.getFullText();
-
-  const configObj = getConfigObject(sourceFile);
-  if (!configObj) {
-    return { status: "failed", message: FAILURE_HINT };
-  }
-
-  let changed = false;
-  if (ensureExtensionsSvx(configObj)) changed = true;
-  if (ensurePreprocessMdsvex(configObj)) changed = true;
-
-  if (!changed) {
-    return { status: "success", changed: false };
-  }
-
-  ensureImports(sourceFile, [
-    { namedImports: ["mdsvex"], moduleSpecifier: "mdsvex" },
-  ]);
-
-  sourceFile.formatText();
-  const newText = sourceFile.getFullText();
-  if (newText === originalText) {
-    return { status: "success", changed: false };
-  }
-  sourceFile.saveSync();
-  return { status: "success", changed: true };
+/**
+ * Enable mdsvex: ensure `extensions` includes `.svx`, `preprocess` includes
+ * `mdsvex()`, and the `mdsvex` import is present. All root-level, so they apply
+ * identically to svelte.config and the inline sveltekit() arg; the import lands
+ * in whichever file was resolved.
+ */
+export function modifySvelteConfigMdsvex(root: string): ConfigModifyResult {
+  return modifyConfig(
+    root,
+    { notFound: NOT_FOUND_HINT, failed: FAILURE_HINT },
+    (target) => {
+      ensureExtensionsSvx(target.configObject);
+      ensurePreprocessMdsvex(target.configObject);
+      ensureImports(target.sourceFile, [
+        { namedImports: ["mdsvex"], moduleSpecifier: "mdsvex" },
+      ]);
+      return true;
+    },
+  );
 }

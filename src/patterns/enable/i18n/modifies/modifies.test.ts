@@ -40,11 +40,15 @@ describe("enable i18n modifiers", () => {
     await expect(modified).toMatchFormatted(expected, "vite.config.ts");
   });
 
-  it("modifies svelte.config.js", async () => {
-    const filePath = path.join(tempDir, "svelte.config.js");
-    modifySvelteConfig(filePath);
+  it("modifies svelte.config.js (legacy: present alongside a bare sveltekit())", async () => {
+    // The fixture has both a svelte.config.js and a vite.config.ts whose
+    // sveltekit() has no inline arg, so the resolver targets svelte.config.
+    modifySvelteConfig(tempDir);
 
-    const modified = fs.readFileSync(filePath, "utf8");
+    const modified = fs.readFileSync(
+      path.join(tempDir, "svelte.config.js"),
+      "utf8",
+    );
     const expected = fs.readFileSync(
       path.join(fixturesPath, "expect", "svelte.config.js"),
       "utf8",

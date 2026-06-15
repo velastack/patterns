@@ -29,15 +29,12 @@ export async function generate(options: Options) {
   );
 
   const { modifyOutcomeToFile } = await import("../../../runtime/modify-file");
-  const { findSvelteConfigPath, modifySvelteConfigRemote } =
+  const { modifySvelteConfigRemote } =
     await import("../../../runtime/modify-svelte-config-remote");
   const logger = getLogger(options);
-  logger.info("Modifying svelte.config for remote");
-  const svelteConfigPath = findSvelteConfigPath(options.root);
-  const svelteConfigFile = modifyOutcomeToFile(
-    svelteConfigPath,
-    modifySvelteConfigRemote(svelteConfigPath),
-  );
+  logger.info("Modifying config for remote functions");
+  const remote = modifySvelteConfigRemote(options.root);
+  const svelteConfigFile = modifyOutcomeToFile(remote.filePath, remote.outcome);
 
   const runtimeRes = {
     ...baseRes,

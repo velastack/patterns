@@ -3,7 +3,6 @@ import fs from "node:fs";
 import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
-import { findSvelteConfigPath } from "../../../runtime/modify-svelte-config-remote";
 import { modifySvelteConfigMdsvex } from "./modifies/svelte.config";
 import { modifyRootLayoutSvelte } from "./modifies/root-layout-svelte";
 import { modifyPublicRootLayout } from "./modifies/public-root-layout-svelte";
@@ -16,14 +15,9 @@ export async function generate(options: Options) {
     if (file) modifies.push(file);
   };
 
-  logger.info("Modifying svelte.config");
-  const svelteConfigPath = findSvelteConfigPath(options.root);
-  pushResult(
-    modifyOutcomeToFile(
-      svelteConfigPath,
-      modifySvelteConfigMdsvex(svelteConfigPath),
-    ),
-  );
+  logger.info("Modifying config for mdsvex");
+  const mdsvex = modifySvelteConfigMdsvex(options.root);
+  pushResult(modifyOutcomeToFile(mdsvex.filePath, mdsvex.outcome));
 
   logger.info("Modifying src/routes/+layout.svelte");
   const rootLayoutPath = path.join(

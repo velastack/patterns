@@ -3,6 +3,10 @@ import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
+import {
+  probeFirstExisting,
+  VITE_CONFIG_CANDIDATES,
+} from "../../../runtime/config-target";
 import { modifyViteConfig } from "./modifies/vite-config";
 import { modifySvelteConfig } from "./modifies/svelte-config";
 import { modifyHooksServerI18n } from "./modifies/hooks.server";
@@ -10,16 +14,6 @@ import { modifyAppHtml } from "./modifies/app-html";
 import { modifyGitignore } from "./modifies/gitignore";
 import { ensureRootLayoutI18n } from "./modifies/+layout";
 import { modifyRootLayoutLanguageSelect } from "./modifies/root-layout.svelte";
-
-function findFirstExistingFile(root: string, candidates: string[]): string {
-  for (const relPath of candidates) {
-    const absPath = path.join(root, relPath);
-    if (fs.existsSync(absPath)) {
-      return absPath;
-    }
-  }
-  return path.join(root, candidates[0]);
-}
 
 export async function generate(options: Options) {
   const logger = getLogger(options);
@@ -30,26 +24,16 @@ export async function generate(options: Options) {
   };
 
   logger.info("Modifying vite.config");
-  const viteConfigPath = findFirstExistingFile(options.root, [
-    "vite.config.ts",
-    "vite.config.js",
-    "vite.config.mjs",
-    "vite.config.cjs",
-  ]);
+  const viteConfigPath =
+    probeFirstExisting(options.root, VITE_CONFIG_CANDIDATES) ??
+    path.join(options.root, VITE_CONFIG_CANDIDATES[0]);
   pushResult(
     modifyOutcomeToFile(viteConfigPath, modifyViteConfig(viteConfigPath)),
   );
 
-  logger.info("Modifying svelte.config");
-  const svelteConfigPath = findFirstExistingFile(options.root, [
-    "svelte.config.ts",
-    "svelte.config.js",
-    "svelte.config.mjs",
-    "svelte.config.cjs",
-  ]);
-  pushResult(
-    modifyOutcomeToFile(svelteConfigPath, modifySvelteConfig(svelteConfigPath)),
-  );
+  logger.info("Modifying config for i18n alias");
+  const alias = modifySvelteConfig(options.root);
+  pushResult(modifyOutcomeToFile(alias.filePath, alias.outcome));
 
   logger.info("Modifying hooks.server.ts");
   const hooksServerPath = path.join(options.root, "src", "hooks.server.ts");

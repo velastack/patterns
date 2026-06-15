@@ -10,12 +10,9 @@ export async function generate(options: Options) {
   const logger = getLogger(options);
   const modifies: File[] = [];
 
-  logger.info("Reverting svelte.config.js");
-  const svelteConfigPath = path.join(options.root, "svelte.config.js");
-  const svelteConfigFile = modifyOutcomeToFile(
-    svelteConfigPath,
-    unmodifySvelteConfig(svelteConfigPath),
-  );
+  logger.info("Reverting adapter config");
+  const revert = unmodifySvelteConfig(options.root);
+  const svelteConfigFile = modifyOutcomeToFile(revert.filePath, revert.outcome);
   if (svelteConfigFile) modifies.push(svelteConfigFile);
 
   logger.info("Reverting .gitignore");

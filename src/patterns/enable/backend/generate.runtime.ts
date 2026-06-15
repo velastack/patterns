@@ -10,11 +10,11 @@ export async function generate(options: Options) {
   const logger = getLogger(options);
   const modifies: File[] = [];
 
-  logger.info("Modifying svelte.config.js");
-  const svelteConfigPath = path.join(options.root, "svelte.config.js");
+  logger.info("Modifying adapter config");
+  const adapter = modifySvelteConfig(options.root);
   const svelteConfigFile = modifyOutcomeToFile(
-    svelteConfigPath,
-    modifySvelteConfig(svelteConfigPath),
+    adapter.filePath,
+    adapter.outcome,
   );
   if (svelteConfigFile) modifies.push(svelteConfigFile);
 

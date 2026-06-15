@@ -8,10 +8,7 @@ import {
   withPocketbase,
 } from "../../../runtime/pocketbase";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
-import {
-  findSvelteConfigPath,
-  modifySvelteConfigRemote,
-} from "../../../runtime/modify-svelte-config-remote";
+import { modifySvelteConfigRemote } from "../../../runtime/modify-svelte-config-remote";
 
 import { modifyLayoutServer } from "./modifies/+layout.server";
 import { modifyRootLayoutSvelte } from "./modifies/root-layout.svelte";
@@ -127,14 +124,9 @@ export async function generate(options: Options) {
     modifyOutcomeToFile(hooksServerFile, modifyHooksServer(hooksServerFile)),
   );
 
-  logger.info("Modifying svelte.config for remote");
-  const svelteConfigPath = findSvelteConfigPath(options.root);
-  pushResult(
-    modifyOutcomeToFile(
-      svelteConfigPath,
-      modifySvelteConfigRemote(svelteConfigPath),
-    ),
-  );
+  logger.info("Modifying config for remote functions");
+  const remote = modifySvelteConfigRemote(options.root);
+  pushResult(modifyOutcomeToFile(remote.filePath, remote.outcome));
 
   return {
     creates: [],
