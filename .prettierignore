@@ -5,7 +5,6 @@ package-lock.json
 
 # Pattern templates copied verbatim into user projects.
 # Formatting happens (or doesn't) in the consuming project, not here.
-src/baselines
 **/creates/**
 **/creates-app-mode/**
 **/creates-with-negotiation/**

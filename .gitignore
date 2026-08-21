@@ -3,8 +3,6 @@ node_modules
 .integration-tests
 .cursor
 .claude
-src/baselines/**/node_modules
-src/baselines/**/.svelte-kit
 
 # OS / editor cruft
 .DS_Store

@@ -101,11 +101,7 @@ export interface RelationField extends FieldBase {
 }
 
 export type Field =
-  | SimpleField
-  | AutodateField
-  | SelectField
-  | FileField
-  | RelationField;
+  SimpleField | AutodateField | SelectField | FileField | RelationField;
 
 export interface CollectionField {
   name: string;

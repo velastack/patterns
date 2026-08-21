@@ -60,7 +60,6 @@ export default defineConfig({
       insertTypesEntry: true,
       exclude: [
         "**/node_modules/**",
-        "src/baselines/**",
         "**/fixtures/**",
         "**/preview-modifies/**",
         "**/creates/**",

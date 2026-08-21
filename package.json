@@ -38,21 +38,21 @@
     "lint": "npm run lint:ts && npm run lint:format",
     "lint:ts": "tsc --noEmit",
     "lint:format": "prettier --check .",
-    "test": "vitest run --exclude **/integration.test.ts",
-    "test:watch": "vitest --watch --exclude **/integration.test.ts",
-    "test:integration": "vitest run **/integration.test.ts",
+    "test": "vitest run --exclude '**/integration.test.ts'",
+    "test:watch": "vitest --watch --exclude '**/integration.test.ts'",
+    "test:integration": "vitest run integration.test.ts",
     "prepare": "npm run build"
   },
   "dependencies": {
     "prettier": "^3.8.2",
-    "prettier-plugin-svelte": "^3.5.1"
+    "prettier-plugin-svelte": "^4.1.1"
   },
   "peerDependencies": {
     "@velastack/pocketbase": "^0.0.52",
     "cross-spawn": "^7.0.6",
     "magic-string": "^0.30.21",
     "package-manager-detector": "^1.6.0",
-    "pocketbase": "^0.26.8",
+    "pocketbase": ">=0.26.8 <0.29.0",
     "stripe": "^19.0.0",
     "svelte": "^5.55.4",
     "ts-morph": "^28.0.0"
@@ -94,7 +94,7 @@
     "magic-string": "^0.30.21",
     "package-manager-detector": "^1.6.0",
     "pluralize": "^8.0.0",
-    "pocketbase": "^0.26.8",
+    "pocketbase": "^0.28.0",
     "stripe": "^19.3.0",
     "svelte": "^5.55.4",
     "ts-morph": "^28.0.0",
