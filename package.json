@@ -48,7 +48,7 @@
     "prettier-plugin-svelte": "^4.1.1"
   },
   "peerDependencies": {
-    "@velastack/pocketbase": "^0.0.54",
+    "@velastack/pocketbase": "^0.0.55",
     "cross-spawn": "^7.0.6",
     "magic-string": "^0.30.21",
     "package-manager-detector": "^1.6.0",
