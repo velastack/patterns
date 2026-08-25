@@ -1,8 +1,7 @@
-import PocketBase from "pocketbase-sveltekit";
 import { generateApiKeySecret, hashApiKey } from "@velastack/pocketbase/api-key";
 
 export const createApiKey = async (
-  pb: PocketBase,
+  pb: App.Locals['pb'],
   userId: string | undefined,
   label: string,
 ) => {
