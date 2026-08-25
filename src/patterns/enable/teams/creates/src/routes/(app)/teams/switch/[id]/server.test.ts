@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import type { Match } from "@velastack/pocketbase";
+import type { Match } from "@velastack/kit";
 import type { RouteId } from "./$types";
 
 let team: { id: string; name: string; owner: string };

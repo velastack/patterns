@@ -3,12 +3,6 @@ import type { Options } from "../../../core/types";
 import { generate as generateBase } from "./generate";
 import formRemotePattern from "./index";
 
-vi.mock("../../../parse/env.runtime", () => {
-  return {
-    getCollections: async () => [],
-  };
-});
-
 vi.mock("../../../parse/env.preview", () => {
   return {
     getPreviewCollections: () => [
@@ -56,12 +50,15 @@ vi.mock("../../../runtime/write-result", () => {
   };
 });
 
+const runtimeCollections = async () => [];
+
 function makeOptions(
   overrides: Partial<Options> & Pick<Options, "argv" | "env">,
 ): Options {
   return {
     argv: overrides.argv,
     env: overrides.env,
+    getCollections: overrides.getCollections ?? (runtimeCollections as never),
     root: "/tmp/project",
     features: overrides.features ?? {
       auth: false,

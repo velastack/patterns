@@ -2,7 +2,7 @@ import { fail, superValidate } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
 import { redirect } from "sveltekit-flash-message/server";
 import { apiKeySchema } from "$lib/schemas/apiKey";
-import { setPocketbaseErrors } from "@velastack/pocketbase";
+import { setPocketbaseErrors } from "@velastack/pocketbase/form";
 import { createApiKey } from "./create-api-key";
 
 export const load = async () => {

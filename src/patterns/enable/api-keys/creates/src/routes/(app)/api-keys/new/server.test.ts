@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import type { Match } from "@velastack/pocketbase";
+import type { Match } from "@velastack/kit";
 import { createApiKey } from "./create-api-key";
 import type { RouteId } from "./$types";
 

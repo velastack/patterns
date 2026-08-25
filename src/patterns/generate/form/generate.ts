@@ -206,7 +206,7 @@ function createServerSnippet(
     import { fail } from "@sveltejs/kit";
     import { superValidate${withFiles ? ", withFiles" : ""} } from "sveltekit-superforms";
     import { zod4 } from "sveltekit-superforms/adapters";
-    import { setPocketbaseErrors } from "@velastack/pocketbase";
+    import { setPocketbaseErrors } from "@velastack/pocketbase/form";
     import { setFlash } from "sveltekit-flash-message/server";
     import { ${model.schemaName} } from "$lib/schemas/${model.name}";
 

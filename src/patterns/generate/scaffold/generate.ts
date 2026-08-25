@@ -580,7 +580,7 @@ function newServerSnippet(
     import { fail, redirect } from "@sveltejs/kit";
     import { superValidate${withFiles ? ", withFiles" : ""} } from "sveltekit-superforms";
     import { zod4 } from "sveltekit-superforms/adapters";
-    import { setPocketbaseErrors } from "@velastack/pocketbase";
+    import { setPocketbaseErrors } from "@velastack/pocketbase/form";
     import { ${model.schemaName} } from "$lib/schemas/${model.name}";
 
     export const load = async ({ locals }) => {
@@ -750,7 +750,7 @@ function editServerSnippet(
 
   return dedent`
     import { error, fail, redirect } from "@sveltejs/kit";
-    import { setPocketbaseErrors, setDefaultData } from "@velastack/pocketbase";
+    import { setPocketbaseErrors, setDefaultData } from "@velastack/pocketbase/form";
     import { superValidate${withFiles ? ", withFiles" : ""} } from "sveltekit-superforms";
     import { zod4 } from "sveltekit-superforms/adapters";
     import { ${model.schemaName} } from "$lib/schemas/${model.name}";

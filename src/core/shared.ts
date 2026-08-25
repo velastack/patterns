@@ -174,11 +174,16 @@ function zodSchemaForField(
 }
 
 export async function loadCollections(
-  options: Pick<Options, "env" | "features">,
+  options: Pick<Options, "env" | "features" | "getCollections">,
 ): Promise<Collection[]> {
   if (options.env === "runtime") {
-    const { getCollections } = await import("../parse/env.runtime");
-    return (await getCollections()) as Collection[];
+    if (!options.getCollections) {
+      throw new Error(
+        'A `getCollections` provider is required when env is "runtime". ' +
+          "It is supplied by the vela CLI; upgrade to vela >= 0.10.0.",
+      );
+    }
+    return (await options.getCollections()) as Collection[];
   }
   const { getPreviewCollections } = await import("../parse/env.preview");
   return getPreviewCollections(options);

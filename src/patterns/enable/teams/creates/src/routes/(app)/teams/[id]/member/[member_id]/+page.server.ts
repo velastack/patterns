@@ -2,7 +2,7 @@ import { fail, superValidate } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
 import { teamRoleSchema } from "$lib/schemas/teamRole";
 import { redirect } from "sveltekit-flash-message/server";
-import { setPocketbaseErrors } from "@velastack/pocketbase";
+import { setPocketbaseErrors } from "@velastack/pocketbase/form";
 
 export const load = async ({ locals, params }) => {
   const member = await locals.pb

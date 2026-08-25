@@ -27,7 +27,11 @@ export async function generate(_options: Options) {
     modifies: [],
     deletes: [],
     components: [],
-    packages: ["@velastack/pocketbase", "pocketbase-sveltekit"],
+    packages: [
+      "@velastack/pocketbase",
+      "@velastack/kit",
+      "pocketbase-sveltekit",
+    ],
     collections: [],
     collectionPatches: [],
     collectionDrops: [],

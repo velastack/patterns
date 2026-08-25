@@ -2,12 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 import type { Options } from "../../../core/types";
 import { generate as generateBase } from "./generate";
 
-vi.mock("../../../parse/env.runtime", () => {
-  return {
-    getCollections: async () => [],
-  };
-});
-
 vi.mock("../../../parse/env.preview", () => {
   return {
     getPreviewCollections: () => [
@@ -30,12 +24,15 @@ vi.mock("../../../parse/env.preview", () => {
   };
 });
 
+const runtimeCollections = async () => [];
+
 function makeOptions(
   overrides: Partial<Options> & Pick<Options, "argv" | "env">,
 ): Options {
   return {
     argv: overrides.argv,
     env: overrides.env,
+    getCollections: overrides.getCollections ?? (runtimeCollections as never),
     root: "/tmp/project",
     features: overrides.features ?? {
       auth: false,

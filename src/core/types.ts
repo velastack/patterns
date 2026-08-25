@@ -1,3 +1,4 @@
+import type { Collection } from "../parse/types";
 import type { Logger } from "./logger";
 
 export interface Features {
@@ -17,6 +18,14 @@ export interface Options {
   env: "runtime" | "preview";
   root: string;
   features: Features;
+  /**
+   * Reads the live collection schema. Required when `env` is `"runtime"`.
+   *
+   * Injected by the caller (`vela`) rather than resolved here, because reading
+   * the schema may mean spawning a throwaway PocketBase, and only the CLI owns
+   * that. Keeps this package free of process-spawning dependencies.
+   */
+  getCollections?: () => Promise<Collection[]>;
   /**
    * Pattern-specific named inputs (separate from positional argv).
    *

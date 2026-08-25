@@ -24,13 +24,11 @@ const mockCollections = [
   },
 ];
 
-vi.mock("../../../parse/env.runtime", () => ({
-  getCollections: async () => mockCollections,
-}));
-
 vi.mock("../../../parse/env.preview", () => ({
   getPreviewCollections: () => mockCollections,
 }));
+
+const runtimeCollections = async () => mockCollections;
 
 function makeOptions(
   overrides: Partial<Options> & Pick<Options, "argv" | "env">,
@@ -38,6 +36,7 @@ function makeOptions(
   return {
     argv: overrides.argv,
     env: overrides.env,
+    getCollections: overrides.getCollections ?? (runtimeCollections as never),
     root: "/tmp/project",
     features: overrides.features ?? {
       auth: false,

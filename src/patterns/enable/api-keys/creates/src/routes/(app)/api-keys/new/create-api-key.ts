@@ -1,5 +1,5 @@
 import PocketBase from "pocketbase-sveltekit";
-import { generateApiKeySecret, hashApiKey } from "@velastack/pocketbase";
+import { generateApiKeySecret, hashApiKey } from "@velastack/pocketbase/api-key";
 
 export const createApiKey = async (
   pb: PocketBase,

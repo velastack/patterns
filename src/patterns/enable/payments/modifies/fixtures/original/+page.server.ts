@@ -2,7 +2,7 @@ import { redirect } from "@sveltejs/kit";
 import { fail, superValidate } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
 import { setFlash } from "sveltekit-flash-message/server";
-import { setPocketbaseErrors } from "@velastack/pocketbase";
+import { setPocketbaseErrors } from "@velastack/pocketbase/form";
 import { dev } from "$app/environment";
 import { signupSchema } from "$lib/schemas/signup";
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import type { Match } from "@velastack/pocketbase";
+import type { Match } from "@velastack/kit";
 import * as devalue from "devalue";
 import type { RouteId } from "./$types";
 

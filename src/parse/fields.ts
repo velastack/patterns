@@ -503,12 +503,17 @@ export function resolveFields(
 export async function parseFields(
   fields: string[],
   parent: Model,
-  options: Pick<Options, "env" | "features">,
+  options: Pick<Options, "env" | "features" | "getCollections">,
 ): Promise<{ fields: Field[]; auth: OwnershipResult | undefined }> {
   let collections: Collection[];
   if (options.env === "runtime") {
-    const { getCollections } = await import("./env.runtime");
-    collections = await getCollections();
+    if (!options.getCollections) {
+      throw new Error(
+        'A `getCollections` provider is required when env is "runtime". ' +
+          "It is supplied by the vela CLI; upgrade to vela >= 0.10.0.",
+      );
+    }
+    collections = await options.getCollections();
   } else {
     const { getPreviewCollections } = await import("./env.preview");
     collections = getPreviewCollections(options);

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import * as devalue from "devalue";
-import type { Match } from "@velastack/pocketbase";
+import type { Match } from "@velastack/kit";
 import type { RouteId } from "./$types";
 
 describe("GET /login", () => {

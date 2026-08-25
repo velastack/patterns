@@ -14,7 +14,7 @@ const FAILURE_HINT = dedent`
 const NOT_FOUND_HINT = dedent`
   Create src/hooks.server.ts with handlePocketbase:
 
-  import { handlePocketbase } from 'velastack/handle';
+  import { handlePocketbase } from '@velastack/pocketbase';
 
   export const handle = handlePocketbase({
     auth: { protectedRoutes: ['/(app)'] },

@@ -3,7 +3,7 @@ import { redirect } from "sveltekit-flash-message/server";
 import { zod4 } from "sveltekit-superforms/adapters";
 import { superValidate } from "sveltekit-superforms";
 import { teamSchema } from "$lib/schemas/team";
-import { setPocketbaseErrors } from "@velastack/pocketbase";
+import { setPocketbaseErrors } from "@velastack/pocketbase/form";
 
 export const actions = {
   updateTeam: async ({ locals, params, request, cookies }) => {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { RouteId } from "./$types";
-import type { Match } from "@velastack/pocketbase";
+import type { Match } from "@velastack/kit";
 import type Stripe from "stripe";
 import stripe from "$lib/stripe";
 

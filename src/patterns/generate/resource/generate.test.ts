@@ -2,28 +2,24 @@ import { describe, expect, it, vi } from "vitest";
 import type { Options } from "../../../core/types";
 import { generate as generateBase } from "./generate";
 
-vi.mock("../../../parse/env.runtime", () => {
-  return {
-    getCollections: async () => [
+const runtimeCollections = async () => [
+  {
+    id: "contacts",
+    name: "contacts",
+    type: "base",
+    fields: [
+      { name: "id", type: "text", system: true },
+      { name: "name", type: "text", required: true },
+      { name: "avatar", type: "file", maxSelect: 1, required: false },
       {
-        id: "contacts",
-        name: "contacts",
-        type: "base",
-        fields: [
-          { name: "id", type: "text", system: true },
-          { name: "name", type: "text", required: true },
-          { name: "avatar", type: "file", maxSelect: 1, required: false },
-          {
-            name: "attachments",
-            type: "file",
-            maxSelect: 5,
-            required: false,
-          },
-        ],
+        name: "attachments",
+        type: "file",
+        maxSelect: 5,
+        required: false,
       },
     ],
-  };
-});
+  },
+];
 
 function makeOptions(
   overrides: Partial<Options> & Pick<Options, "argv" | "env">,
@@ -31,6 +27,7 @@ function makeOptions(
   return {
     argv: overrides.argv,
     env: overrides.env,
+    getCollections: overrides.getCollections ?? (runtimeCollections as never),
     root: "/tmp/project",
     features: overrides.features ?? {
       auth: false,

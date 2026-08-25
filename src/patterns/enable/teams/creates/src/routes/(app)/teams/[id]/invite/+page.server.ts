@@ -2,7 +2,7 @@ import { fail, superValidate } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
 import { teamInviteSchema } from "$lib/schemas/teamInvite";
 import { redirect } from "sveltekit-flash-message/server";
-import { setPocketbaseErrors } from "@velastack/pocketbase";
+import { setPocketbaseErrors } from "@velastack/pocketbase/form";
 
 export const load = async () => {
   const form = await superValidate(zod4(teamInviteSchema));
