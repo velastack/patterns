@@ -5,7 +5,7 @@ import { generate as generateBase } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
 
 const SLUG = "enable-i18n" as const;
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
 const SOURCE = "src/patterns/enable/i18n";
 const DOCS = "/enable/i18n";
 

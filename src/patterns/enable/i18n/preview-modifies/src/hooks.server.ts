@@ -9,8 +9,8 @@ import * as main from "$locales/main.loader.server.svelte.js";
 import * as js from "$locales/js.loader.server.js";
 
 // [!code highlight:2]
-loadLocales(main.key, main.loadIDs, main.loadCatalog, locales);
-loadLocales(js.key, js.loadIDs, js.loadCatalog, locales);
+loadLocales(main.key, main.loadCount, main.loadCatalog, locales);
+loadLocales(js.key, js.loadCount, js.loadCatalog, locales);
 
 // [!code highlight:9]
 const handleWuchale = async ({ event, resolve }: any) => {

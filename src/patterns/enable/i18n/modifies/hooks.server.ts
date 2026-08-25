@@ -13,8 +13,8 @@ const FAILURE_HINT = dedent`
   import * as main from '$locales/main.loader.server.svelte.js';
   import * as js from '$locales/js.loader.server.js';
 
-  loadLocales(main.key, main.loadIDs, main.loadCatalog, locales);
-  loadLocales(js.key, js.loadIDs, js.loadCatalog, locales);
+  loadLocales(main.key, main.loadCount, main.loadCatalog, locales);
+  loadLocales(js.key, js.loadCount, js.loadCatalog, locales);
 
   const handleWuchale = async ({ event, resolve }: any) => {
     const locale = getLocale(event.url);
@@ -39,8 +39,8 @@ const NOT_FOUND_HINT = dedent`
   import * as main from '$locales/main.loader.server.svelte.js';
   import * as js from '$locales/js.loader.server.js';
 
-  loadLocales(main.key, main.loadIDs, main.loadCatalog, locales);
-  loadLocales(js.key, js.loadIDs, js.loadCatalog, locales);
+  loadLocales(main.key, main.loadCount, main.loadCatalog, locales);
+  loadLocales(js.key, js.loadCount, js.loadCatalog, locales);
 
   const handleWuchale = async ({ event, resolve }: any) => {
     const locale = getLocale(event.url);
@@ -128,8 +128,8 @@ export function modifyHooksServerI18n(hooksServerPath: string): ModifyOutcome {
   const i18nHandleName = "handleWuchale";
 
   const startupSnippet = dedent`
-    loadLocales(main.key, main.loadIDs, main.loadCatalog, locales);
-    loadLocales(js.key, js.loadIDs, js.loadCatalog, locales);
+    loadLocales(main.key, main.loadCount, main.loadCatalog, locales);
+    loadLocales(js.key, js.loadCount, js.loadCatalog, locales);
   `;
 
   const i18nHandleSnippet = dedent`

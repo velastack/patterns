@@ -70,7 +70,7 @@ export async function generate(_options: Options) {
     modifies: [],
     deletes: [],
     components: ["alert-dialog", "button", "badge"],
-    packages: ["argon2", "@types/node"],
+    packages: ["@types/node"],
     collections: [apiKeysCollection],
     collectionPatches: [],
     collectionDrops: [],

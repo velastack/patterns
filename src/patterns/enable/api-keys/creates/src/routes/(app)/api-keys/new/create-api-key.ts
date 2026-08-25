@@ -1,17 +1,15 @@
 import PocketBase from "pocketbase-sveltekit";
-import argon2 from "argon2";
-import { randomBytes } from "node:crypto";
+import { generateApiKeySecret, hashApiKey } from "@velastack/pocketbase";
 
 export const createApiKey = async (
   pb: PocketBase,
   userId: string | undefined,
   label: string,
 ) => {
-  const keySecret = randomBytes(10).toString("hex");
-  const keyHash = await argon2.hash(keySecret, { type: argon2.argon2id });
+  const keySecret = generateApiKeySecret();
   const apiKey = await pb
     .collection("api_keys")
-    .create({ key_hash: keyHash, user: userId, label });
+    .create({ key_hash: hashApiKey(keySecret), user: userId, label });
 
   return `${apiKey.id}.${keySecret}`;
 };

@@ -8,7 +8,7 @@ export default defineConfig({
   adapters: {
     main: svelte({
       loader: "sveltekit",
-      url: { localize: true, patterns: ["/"] },
+      url: { localize: "src/lib/url.ts", patterns: ["/"] },
     }),
     js: js({
       loader: "vite",
