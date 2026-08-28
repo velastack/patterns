@@ -1,4 +1,6 @@
 <script lang="ts">
+  import favicon from "$lib/assets/favicon.svg";
+
   import type { ComponentProps } from "svelte";
   import HomeIcon from "@lucide/svelte/icons/home";
   import * as Sidebar from "$lib/components/ui/sidebar";
@@ -54,7 +56,7 @@ import * as Avatar from '$lib/components/ui/avatar';
 						<div
 							class="bg-sidebar-accent text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg"
 						>
-							<img src="/favicon.svg" alt="logo" class="size-6" />
+							<img src={favicon} alt="logo" class="size-6" />
 						</div>
 						<div class="grid flex-1 text-left text-sm leading-tight">
 							<span class="truncate font-medium">{meta.appName}</span>

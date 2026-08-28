@@ -27,7 +27,7 @@ const NEW_HEADER = `<Sidebar.Header>
 						<div
 							class="bg-sidebar-accent text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg"
 						>
-							<img src="/favicon.svg" alt="logo" class="size-6" />
+							<img src={favicon} alt="logo" class="size-6" />
 						</div>
 						<div class="grid flex-1 text-left text-sm leading-tight">
 							<span class="truncate font-medium">{meta.appName}</span>
@@ -40,6 +40,7 @@ const NEW_HEADER = `<Sidebar.Header>
 	</Sidebar.Header>`;
 
 const IMPORT_SNIPPET = [
+  "import favicon from '$lib/assets/favicon.svg';",
   "import TeamSwitcher from '$lib/components/team-switcher.svelte';",
   "import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';",
   "import * as Avatar from '$lib/components/ui/avatar';",
@@ -72,6 +73,10 @@ const NOT_FOUND_HINT = [
 function updateAppSidebarScript(source: string): string {
   const { source: out } = withInMemoryScript(source, (sf) => {
     ensureImports(sf, [
+      {
+        defaultImport: "favicon",
+        moduleSpecifier: "$lib/assets/favicon.svg",
+      },
       {
         defaultImport: "TeamSwitcher",
         moduleSpecifier: "$lib/components/team-switcher.svelte",

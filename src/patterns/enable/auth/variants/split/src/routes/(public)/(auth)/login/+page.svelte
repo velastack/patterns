@@ -1,4 +1,6 @@
 <script lang="ts">
+  import favicon from "$lib/assets/favicon.svg";
+
   import { untrack } from "svelte";
   import { Button } from "$lib/components/ui/button";
   import { superForm } from "sveltekit-superforms";
@@ -46,7 +48,7 @@
         <div
           class="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md"
         >
-          <img src="/favicon.svg" alt="logo" class="size-4" />
+          <img src={favicon} alt="logo" class="size-4" />
         </div>
         {data.meta.appName}
       </a>
@@ -200,7 +202,7 @@
   </div>
   <div class="bg-muted relative hidden lg:block">
     <img
-      src="/favicon.svg"
+      src={favicon}
       alt=""
       class="absolute inset-0 m-auto size-32 opacity-20"
     />
