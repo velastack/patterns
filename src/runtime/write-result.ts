@@ -176,6 +176,18 @@ function installedPackagesFromProject(root: string): Set<string> {
   ]);
 }
 
+/**
+ * Splits an npm install spec into its package name, dropping any range.
+ * `wuchale@^0.26.3` -> `wuchale`, `@wuchale/svelte@^0.21.1` -> `@wuchale/svelte`.
+ *
+ * The name is what `package.json` records, so it -- not the full spec -- is what
+ * the already-installed check has to compare against.
+ */
+export function packageName(spec: string): string {
+  const at = spec.indexOf("@", spec.startsWith("@") ? 1 : 0);
+  return at === -1 ? spec : spec.slice(0, at);
+}
+
 async function installPackages(
   root: string,
   packages: string[],
@@ -187,7 +199,9 @@ async function installPackages(
   }
 
   const installed = installedPackagesFromProject(root);
-  const toInstall = [...new Set(packages)].filter((pkg) => !installed.has(pkg));
+  const toInstall = [...new Set(packages)].filter(
+    (pkg) => !installed.has(packageName(pkg)),
+  );
   if (toInstall.length === 0) {
     return [];
   }

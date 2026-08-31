@@ -27,7 +27,7 @@ export async function generate(_options: Options) {
     modifies: [],
     deletes: [],
     components: ["select"],
-    packages: ["wuchale", "@wuchale/svelte"],
+    packages: ["wuchale@^0.26.3", "@wuchale/svelte@^0.21.1"],
     collections: [],
     collectionPatches: [],
     collectionDrops: [],

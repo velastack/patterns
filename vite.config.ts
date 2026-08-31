@@ -46,7 +46,7 @@ export default defineConfig({
     outDir: "dist",
     emptyOutDir: true,
     sourcemap: true,
-    rollupOptions: {
+    rolldownOptions: {
       external: (id) => nodeBuiltinIds.has(id) || isExternalDependency(id),
       output: {
         entryFileNames: "index.js",

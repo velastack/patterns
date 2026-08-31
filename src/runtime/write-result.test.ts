@@ -10,7 +10,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Options, Result } from "../core/types";
-import { writeResult } from "./write-result";
+import { packageName, writeResult } from "./write-result";
 
 const tempDirs: string[] = [];
 
@@ -170,5 +170,65 @@ describe("writeResult", () => {
 
     expect(result.components).toEqual(["column-header", "dropdown-menu"]);
     expect(result.packages).toEqual(["new-package", "@tanstack/table-core"]);
+  });
+
+  it("installs a pinned spec but skips it once the name is present", async () => {
+    const root = makeTempRoot();
+    writeFileSync(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        name: "tmp",
+        devDependencies: { "@wuchale/svelte": "^0.21.1" },
+      }),
+      "utf8",
+    );
+
+    const executeCommand = vi.fn<
+      (
+        cwd: string,
+        operation: "execute" | "install",
+        args: string[],
+      ) => Promise<void>
+    >(async () => {});
+
+    const result = await writeResult(
+      {
+        ...emptyResult(),
+        // Ranges are what the i18n pattern declares. The already-installed
+        // check compares names, so the scoped package below must be recognized
+        // as present despite the spec carrying a range.
+        packages: ["wuchale@^0.26.3", "@wuchale/svelte@^0.21.1"],
+      },
+      makeOptions(root),
+      { executeCommand },
+    );
+
+    expect(executeCommand).toHaveBeenCalledTimes(1);
+    expect(executeCommand).toHaveBeenNthCalledWith(1, root, "install", [
+      "wuchale@^0.26.3",
+    ]);
+    expect(result.packages).toEqual(["wuchale@^0.26.3"]);
+  });
+});
+
+describe("packageName", () => {
+  it("returns a bare name unchanged", () => {
+    expect(packageName("wuchale")).toBe("wuchale");
+  });
+
+  it("strips a range from an unscoped package", () => {
+    expect(packageName("wuchale@^0.26.3")).toBe("wuchale");
+  });
+
+  it("keeps the scope on a scoped package with no range", () => {
+    expect(packageName("@wuchale/svelte")).toBe("@wuchale/svelte");
+  });
+
+  it("strips a range from a scoped package", () => {
+    expect(packageName("@wuchale/svelte@^0.21.1")).toBe("@wuchale/svelte");
+  });
+
+  it("handles a pinned exact version", () => {
+    expect(packageName("stripe@19.3.0")).toBe("stripe");
   });
 });

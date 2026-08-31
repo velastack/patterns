@@ -19,7 +19,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [20, 22, 24]
+        # 20.19 is the real floor, not 20: vite 8 and vite-node 6 both declare
+        # `^20.19.0 || >=22.12.0`, and .npmrc sets engine-strict=true. A bare
+        # `20` resolves to whatever 20.x is latest, so it would drift past the
+        # floor instead of testing it.
+        node-version: ["20.19", 22, 24]
 
     steps:
       - uses: actions/checkout@v6

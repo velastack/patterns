@@ -44,6 +44,12 @@ export interface Options {
 }
 
 export type Component = string;
+
+/**
+ * An npm install spec: either a bare name (`wuchale`, `@wuchale/svelte`) or a
+ * name with a range (`wuchale@^0.26.3`). Ranges pin what a pattern installs;
+ * without one, `npm install` resolves to whatever is latest at run time.
+ */
 export type Package = string;
 
 export interface Example {
