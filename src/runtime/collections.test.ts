@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -9,15 +9,27 @@ import type {
 } from "../core/types";
 import { applyCollectionRulePatches, createCollections } from "./collections";
 
-const withPocketbaseMock = vi.fn();
-const getMigrationFileMock = vi.fn();
+// Hoisted because `vi.mock` is itself hoisted above these declarations: the
+// factory below runs before a plain `const` has initialized, which fails with
+// "Cannot access 'withPocketbaseMock' before initialization".
+const { withPocketbaseMock, getMigrationFileMock, migrationDelayMock } =
+  vi.hoisted(() => ({
+    withPocketbaseMock: vi.fn(),
+    getMigrationFileMock: vi.fn(),
+    // The real one sleeps 1.1s between migrations so PocketBase orders their
+    // filenames distinctly. Nothing here reads the clock, so resolve at once.
+    migrationDelayMock: vi.fn(async () => {}),
+  }));
 
 const getFirstListItemMock = vi.fn();
 const collectionsUpdateMock = vi.fn();
 
+// `vi.mock` replaces the module wholesale, so every binding `collections.ts`
+// imports from it has to appear here or it arrives undefined.
 vi.mock("./pocketbase", () => ({
   withPocketbase: withPocketbaseMock,
   getMigrationFile: getMigrationFileMock,
+  migrationDelay: migrationDelayMock,
 }));
 
 function makeOptions(root: string): Options {
@@ -56,6 +68,7 @@ describe("createCollections", () => {
   it("creates collections and appends created migration files", async () => {
     const root = mkdtempSync(path.join(os.tmpdir(), "collections-runtime-"));
     tempDirs.push(root);
+    mkdirSync(path.join(root, "migrations"), { recursive: true });
     const migrationPath = path.join(
       root,
       "migrations",
@@ -98,16 +111,45 @@ describe("createCollections", () => {
     ]);
   });
 
-  it("throws a clear error when collection already exists", async () => {
+  it("skips a collection that already exists and emits no migration", async () => {
+    const root = mkdtempSync(path.join(os.tmpdir(), "collections-runtime-"));
+    tempDirs.push(root);
+
+    const getOneMock = vi.fn().mockResolvedValue({ id: "existing" });
+    withPocketbaseMock.mockImplementation(async (_cwd, fn) => {
+      await fn({
+        collections: {
+          create: vi.fn().mockRejectedValue({
+            response: {
+              data: { name: { code: "validation_collection_name_exists" } },
+            },
+          }),
+          getOne: getOneMock,
+        },
+      });
+    });
+
+    const migrations = await createCollections(
+      [{ name: "contacts", type: "base", fields: [] }],
+      makeOptions(root),
+    );
+
+    // Creating over an existing collection is idempotent, not an error: the
+    // existing one is adopted and no migration is recorded, because nothing
+    // changed on the server.
+    expect(getOneMock).toHaveBeenCalledWith("contacts");
+    expect(migrations).toEqual([]);
+    expect(getMigrationFileMock).not.toHaveBeenCalled();
+  });
+
+  it("rethrows a create failure that is not a name collision", async () => {
     const root = mkdtempSync(path.join(os.tmpdir(), "collections-runtime-"));
     tempDirs.push(root);
 
     withPocketbaseMock.mockImplementation(async (_cwd, fn) => {
       await fn({
         collections: {
-          create: vi.fn().mockRejectedValue({
-            response: { data: { name: { code: "validation_not_unique" } } },
-          }),
+          create: vi.fn().mockRejectedValue(new Error("connection refused")),
         },
       });
     });
@@ -117,9 +159,7 @@ describe("createCollections", () => {
         [{ name: "contacts", type: "base", fields: [] }],
         makeOptions(root),
       ),
-    ).rejects.toThrow(
-      'Collection "contacts" already exists. Choose a different model name or remove the existing collection first.',
-    );
+    ).rejects.toThrow("connection refused");
   });
 });
 
@@ -127,6 +167,7 @@ describe("applyCollectionRulePatches", () => {
   it("updates collections in patch order and collects migration files", async () => {
     const root = mkdtempSync(path.join(os.tmpdir(), "collections-rules-"));
     tempDirs.push(root);
+    mkdirSync(path.join(root, "migrations"), { recursive: true });
     const migrationPath = path.join(
       root,
       "migrations",

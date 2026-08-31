@@ -29,11 +29,10 @@ function isExternalDependency(id: string): boolean {
 
 export default defineConfig({
   test: {
-    include: [
-      "src/core/**/*.test.ts",
-      "src/parse/**/*.test.ts",
-      "src/patterns/**/*.test.ts",
-    ],
+    include: ["src/**/*.test.ts"],
+    // Everything under a pattern's own `src/` is a template destined for a
+    // generated project, not a test of this package. Listing source dirs
+    // individually instead let `src/runtime` sit uncollected for months.
     exclude: ["src/patterns/**/src/**"],
     setupFiles: ["./src/core/test-utils.ts"],
   },
