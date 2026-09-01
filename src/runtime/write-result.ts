@@ -365,7 +365,19 @@ export async function writeResult(
   );
 
   for (const file of [...result.creates, ...dropMigrationCreates]) {
-    if (file.status !== "success") continue;
+    if (file.status !== "success") {
+      // A modifier that could not recognise the file it was asked to edit
+      // reports `failed` / `not-found` with a paste-ready remediation snippet.
+      // Nothing is written, but the entry has to survive into the result: this
+      // loop used to `continue` before pushing, so the entry never reached the
+      // caller at all and the snippet was lost. The pattern reported success
+      // and simply said nothing about the file it had given up on.
+      writtenResult.creates.push({
+        ...file,
+        path: toRelativePath(options.root, file.path),
+      });
+      continue;
+    }
     const target = toTargetPath(options.root, file.path);
     if (!existsSync(target)) {
       writeFile(target, file.content);
@@ -385,7 +397,15 @@ export async function writeResult(
   }
 
   for (const file of result.modifies) {
-    if (file.status !== "success") continue;
+    if (file.status !== "success") {
+      // Carried through unwritten, so the caller can report the failure. See
+      // the note in the creates loop above.
+      writtenResult.modifies.push({
+        ...file,
+        path: toRelativePath(options.root, file.path),
+      });
+      continue;
+    }
     writeFile(toTargetPath(options.root, file.path), file.content);
     writtenResult.modifies.push({
       ...file,
@@ -394,7 +414,13 @@ export async function writeResult(
   }
 
   for (const file of result.deletes) {
-    if (file.status !== "success") continue;
+    if (file.status !== "success") {
+      writtenResult.deletes.push({
+        ...file,
+        path: toRelativePath(options.root, file.path),
+      });
+      continue;
+    }
     if (existsSync(toTargetPath(options.root, file.path))) {
       removeFile(toTargetPath(options.root, file.path));
       writtenResult.deletes.push({

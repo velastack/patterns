@@ -110,6 +110,78 @@ describe("writeResult", () => {
     expect(result.packages).toEqual([]);
   });
 
+  it("carries failed and not-found files through without writing them", async () => {
+    // A modifier that cannot recognise the file it was asked to edit reports
+    // `failed` with a paste-ready snippet. Nothing should be written, but the
+    // entry has to reach the caller — these loops used to drop it, so the
+    // snippet never left this function and the run looked entirely clean.
+    const root = makeTempRoot();
+    const result = await writeResult(
+      {
+        ...emptyResult(),
+        modifies: [
+          {
+            path: "src/hooks.server.ts",
+            language: "ts",
+            content: "",
+            status: "failed",
+            message: "Add `handleCms` to your handle sequence.",
+          },
+        ],
+        creates: [
+          {
+            path: "vite.config.ts",
+            language: "ts",
+            content: "",
+            status: "not-found",
+            message: "Create a Vite config first.",
+          },
+        ],
+      },
+      makeOptions(root),
+    );
+
+    expect(existsSync(path.join(root, "src/hooks.server.ts"))).toBe(false);
+    expect(existsSync(path.join(root, "vite.config.ts"))).toBe(false);
+
+    expect(result.modifies).toHaveLength(1);
+    expect(result.modifies[0]).toMatchObject({
+      path: "src/hooks.server.ts",
+      status: "failed",
+      message: "Add `handleCms` to your handle sequence.",
+    });
+
+    expect(result.creates).toHaveLength(1);
+    expect(result.creates[0]).toMatchObject({
+      path: "vite.config.ts",
+      status: "not-found",
+      message: "Create a Vite config first.",
+    });
+  });
+
+  it("does not let a failed entry overwrite an existing file", async () => {
+    const root = makeTempRoot();
+    writeFileSync(path.join(root, "keep.ts"), "original", "utf8");
+
+    await writeResult(
+      {
+        ...emptyResult(),
+        creates: [
+          {
+            path: "keep.ts",
+            language: "ts",
+            content: "clobbered",
+            status: "failed",
+            message: "nope",
+          },
+        ],
+      },
+      makeOptions(root),
+    );
+
+    expect(readFileSync(path.join(root, "keep.ts"), "utf8")).toBe("original");
+  });
+
   it("installs only missing packages and components", async () => {
     const root = makeTempRoot();
     writeFileSync(
