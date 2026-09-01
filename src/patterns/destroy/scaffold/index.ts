@@ -36,7 +36,7 @@ export async function generate(options: Options) {
     collectionPatches: [],
     collectionDrops,
   };
-  const formatted = await formatResult(result);
+  const formatted = await formatResult(result, options);
 
   if (options.env !== "runtime" || options.input.destructive !== true) {
     return formatted;

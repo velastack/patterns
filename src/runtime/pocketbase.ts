@@ -136,6 +136,7 @@ export async function withPocketbase(
 
   // Start the PocketBase server process
   const serverProcess = spawn(command, args, {
+    cwd,
     stdio: "ignore",
   });
 

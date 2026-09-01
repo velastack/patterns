@@ -14,7 +14,7 @@ export async function generate(options: Options) {
 
   if (options.env === "preview") {
     const previewRes = await generatePreview(options);
-    return formatResult(mergeResults([baseRes, previewRes]));
+    return formatResult(mergeResults([baseRes, previewRes]), options);
   }
 
   const { writeResult } = await import("../../../runtime/write-result");
@@ -23,12 +23,15 @@ export async function generate(options: Options) {
   // read from disk (e.g. the shadcn-installed sidebar) see the post-install
   // state. Without this, modifies targeting installed components run against
   // a non-existent file, return `not-found`, and are silently dropped.
-  const writtenBase = await writeResult(await formatResult(baseRes), options);
+  const writtenBase = await writeResult(
+    await formatResult(baseRes, options),
+    options,
+  );
 
   const { generate: generateRuntime } = await import("./generate.runtime");
   const runtimeRes = await generateRuntime(options);
   const writtenRuntime = await writeResult(
-    await formatResult(runtimeRes),
+    await formatResult(runtimeRes, options),
     options,
   );
 
