@@ -11,10 +11,15 @@ function escapeXml(value: string) {
     .replace(/'/g, "&apos;");
 }
 
-export const GET = async ({ locals }) => {
-  const { appName, appURL } = locals.meta;
+export const GET = async ({ locals, url }) => {
+  const { appName } = locals.meta;
   const posts = getBlogPosts();
-  const siteURL = appURL.replace(/\/$/, "");
+  // `url.origin`, not `locals.meta.appURL`: this feed is prerendered, and the
+  // origin comes from the build's own configuration rather than from whichever
+  // database the build could reach. Every `<link>` and `<guid>` below is
+  // permanent once published, so pointing them at a developer's localhost is
+  // not something a later deploy can take back.
+  const siteURL = url.origin.replace(/\/$/, "");
   const feedURL = `${siteURL}/blog/rss.xml`;
   const lastBuild = (
     posts[0]?.updatedDate ??

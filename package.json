@@ -1,6 +1,6 @@
 {
   "name": "@velastack/patterns",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Registry of VelaStack patterns: generators and modifications applied to SvelteKit projects by the VelaStack CLI.",
   "type": "module",
   "private": false,
@@ -48,7 +48,7 @@
     "prettier-plugin-svelte": "^4.1.1"
   },
   "peerDependencies": {
-    "@velastack/kit": "^0.1.0",
+    "@velastack/kit": ">=0.1.0 <1.0.0",
     "@velastack/pocketbase": "^0.2.0",
     "@velastack/pocketbase-codegen": "^0.1.0",
     "cross-spawn": "^7.0.6",
@@ -95,7 +95,7 @@
     "@types/cross-spawn": "^6.0.6",
     "@types/node": "^22.0.0",
     "@types/pluralize": "^0.0.33",
-    "@velastack/kit": "^0.1.0",
+    "@velastack/kit": "^0.3.0",
     "@velastack/pocketbase": "^0.2.0",
     "@velastack/pocketbase-codegen": "^0.1.0",
     "change-case": "^5.4.4",
