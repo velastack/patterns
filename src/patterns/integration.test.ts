@@ -154,6 +154,7 @@ function makeOptions(root: string, argv: string[]): Options {
       payments: false,
       blog: false,
       contentNegotiation: false,
+      cms: false,
     },
     input: {},
   };

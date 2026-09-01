@@ -46,6 +46,7 @@ export default {
     payments: false,
     blog: false,
     contentNegotiation: false,
+    cms: false,
   },
   category: "auth" as const,
   tags: ["auth", "sveltekit", "pocketbase", "velastack"],

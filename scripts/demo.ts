@@ -29,6 +29,9 @@ const SLUG_TO_FEATURE: Partial<Record<string, keyof Features>> = {
   "enable-i18n": "i18n",
   "enable-teams": "teams",
   "enable-payments": "payments",
+  "enable-blog": "blog",
+  "enable-content-negotiation": "contentNegotiation",
+  "enable-cms": "cms",
 };
 
 function usage(): never {
@@ -229,6 +232,7 @@ let features: Features = {
   payments: false,
   blog: false,
   contentNegotiation: false,
+  cms: false,
 };
 
 for (const [index, { slug, argv, pattern }] of commands.entries()) {
@@ -246,6 +250,7 @@ for (const [index, { slug, argv, pattern }] of commands.entries()) {
     contentNegotiation:
       features.contentNegotiation ||
       (pattern.requires.contentNegotiation ?? false),
+    cms: features.cms || (pattern.requires.cms ?? false),
   };
 
   console.log(

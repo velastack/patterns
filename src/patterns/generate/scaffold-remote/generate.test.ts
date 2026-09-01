@@ -44,6 +44,7 @@ function makeOptions(
       payments: false,
       blog: false,
       contentNegotiation: false,
+      cms: false,
     },
     input: overrides.input ?? {},
   };
@@ -64,6 +65,7 @@ describe("generate scaffold-remote pattern", () => {
           payments: false,
           blog: false,
           contentNegotiation: false,
+          cms: false,
         },
         argv: [
           "contact",

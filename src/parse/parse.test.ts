@@ -22,6 +22,7 @@ const noAuth = {
     payments: false,
     blog: false,
     contentNegotiation: false,
+    cms: false,
   },
 };
 const withAuth = {
@@ -35,6 +36,7 @@ const withAuth = {
     payments: false,
     blog: false,
     contentNegotiation: false,
+    cms: false,
   },
 };
 const withTeams = {
@@ -48,6 +50,7 @@ const withTeams = {
     payments: false,
     blog: false,
     contentNegotiation: false,
+    cms: false,
   },
 };
 

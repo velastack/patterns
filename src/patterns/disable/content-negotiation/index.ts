@@ -46,6 +46,7 @@ export default {
     payments: false,
     blog: false,
     contentNegotiation: true,
+    cms: false,
   },
   category: "api" as const,
   tags: ["sveltekit", "content-negotiation", "markdown", "json", "api"],

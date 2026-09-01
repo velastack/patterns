@@ -13,6 +13,7 @@ import enableApi from "./patterns/enable/api";
 import enableApiKeys from "./patterns/enable/api-keys";
 import enableBackend from "./patterns/enable/backend";
 import enableBlog from "./patterns/enable/blog";
+import enableCms from "./patterns/enable/cms";
 import enableContentNegotiation from "./patterns/enable/content-negotiation";
 import enableI18n from "./patterns/enable/i18n";
 import enableNotifications from "./patterns/enable/notifications";
@@ -49,6 +50,7 @@ export const patterns = [
   enableApiKeys,
   enableBackend,
   enableBlog,
+  enableCms,
   enableContentNegotiation,
   enableI18n,
   enableNotifications,

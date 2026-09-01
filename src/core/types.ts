@@ -11,6 +11,7 @@ export interface Features {
   payments: boolean;
   blog: boolean;
   contentNegotiation: boolean;
+  cms: boolean;
 }
 
 export interface Options {

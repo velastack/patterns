@@ -17,6 +17,7 @@ function makeOptions(input: Record<string, unknown>): Options {
       payments: false,
       blog: false,
       contentNegotiation: false,
+      cms: false,
     },
     input,
   };

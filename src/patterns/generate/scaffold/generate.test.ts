@@ -44,6 +44,7 @@ function makeOptions(
       payments: false,
       blog: false,
       contentNegotiation: false,
+      cms: false,
     },
     input: overrides.input ?? {},
   };
@@ -64,6 +65,7 @@ describe("generate scaffold pattern", () => {
           payments: false,
           blog: false,
           contentNegotiation: false,
+          cms: false,
         },
         argv: [
           "contact",
@@ -210,6 +212,7 @@ describe("generate scaffold pattern", () => {
           payments: false,
           blog: false,
           contentNegotiation: false,
+          cms: false,
         },
         argv: ["project", "name:text!"],
         input: { route: "(app)/[team_id]/projects" },

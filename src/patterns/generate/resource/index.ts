@@ -46,6 +46,7 @@ export default {
     payments: false,
     blog: false,
     contentNegotiation: false,
+    cms: false,
   },
   category: "generators" as const,
   tags: ["pocketbase", "resource", "schema"],

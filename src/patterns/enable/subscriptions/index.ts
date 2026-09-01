@@ -56,6 +56,7 @@ export default {
     payments: true,
     blog: false,
     contentNegotiation: false,
+    cms: false,
   },
   category: "payments" as const,
   tags: [

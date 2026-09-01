@@ -60,6 +60,7 @@ function makeOptions(
       payments: false,
       blog: false,
       contentNegotiation: false,
+      cms: false,
     },
     input: overrides.input ?? {},
   };
@@ -103,6 +104,7 @@ describe("generate schema pattern", () => {
           payments: false,
           blog: false,
           contentNegotiation: false,
+          cms: false,
         },
       }),
     );
@@ -136,6 +138,7 @@ describe("generate schema pattern", () => {
           payments: false,
           blog: false,
           contentNegotiation: false,
+          cms: false,
         },
       }),
     );
@@ -166,6 +169,7 @@ describe("generate schema pattern", () => {
           payments: false,
           blog: false,
           contentNegotiation: false,
+          cms: false,
         },
       }),
     );
