@@ -40,8 +40,50 @@ jobs:
         run: npm run lint
 
       - name: Test
-        # Integration tests are skipped in CI; they run locally via `npm run test:integration`.
         run: npm test
+
+      - name: Integration case coverage
+        # Registry-vs-case-table guard from the integration suite; needs no CLI.
+        run: npx vitest run --config vitest.integration.config.ts integration/coverage.test.ts
 
       - name: Build
         run: npm run build
+
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      # The CLI (and therefore the project templates) under test. Bump on purpose.
+      VELA_VERSION: 0.10.9
+      # Payments cases skip themselves when these are unset (e.g. fork PRs).
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+      STRIPE_PRICE_ID: ${{ secrets.STRIPE_PRICE_ID }}
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [enable, generate, disable, stacks, lifecycle]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install vela ${{ env.VELA_VERSION }}
+        run: npm install -g vela@${{ env.VELA_VERSION }}
+
+      - name: Integration (${{ matrix.suite }})
+        run: npm run test:integration -- integration/${{ matrix.suite }}.test.ts
+
+      - name: Upload harness logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-${{ matrix.suite }}
+          path: .integration-tests/**/.integration/**
+          if-no-files-found: ignore
