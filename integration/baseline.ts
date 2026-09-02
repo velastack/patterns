@@ -1,9 +1,13 @@
 import {
   copyFileSync,
   existsSync,
+  linkSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
+  readlinkSync,
   rmSync,
+  symlinkSync,
 } from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
@@ -74,17 +78,32 @@ export function cacheKey(packageJsonPath: string): string {
  * Files are shared inodes, so nothing may edit a hard-linked file in place;
  * npm and Vite replace files rather than rewriting them, which is why this is
  * safe for `node_modules` and only `node_modules`.
+ *
+ * Symlinks are recreated as symlinks. `node_modules/.bin` entries are
+ * relative symlinks into their packages, and a bin that becomes a hard-linked
+ * copy resolves its relative imports from `.bin/` instead (`cp -Rl` does
+ * exactly that on Linux, which broke `npx shadcn-svelte` and
+ * `npx pocketbase-server` in CI).
  */
-export function hardLinkTree(from: string, to: string, logFile?: string): void {
-  mkdirSync(path.dirname(to), { recursive: true });
-  run("cp", ["-Rl", from, to], { cwd: path.dirname(to), logFile });
+export function hardLinkTree(from: string, to: string): void {
+  mkdirSync(to, { recursive: true });
+  for (const entry of readdirSync(from, { withFileTypes: true })) {
+    const source = path.join(from, entry.name);
+    const target = path.join(to, entry.name);
+    if (entry.isSymbolicLink()) {
+      symlinkSync(readlinkSync(source), target);
+    } else if (entry.isDirectory()) {
+      hardLinkTree(source, target);
+    } else {
+      linkSync(source, target);
+    }
+  }
 }
 
 function restoreCache(cacheDir: string, projectRoot: string, logFile?: string) {
   hardLinkTree(
     path.join(cacheDir, "node_modules"),
     path.join(projectRoot, "node_modules"),
-    logFile,
   );
   const lockFile = path.join(cacheDir, "package-lock.json");
   if (existsSync(lockFile)) {
@@ -100,7 +119,6 @@ function saveCache(cacheDir: string, projectRoot: string, logFile?: string) {
   hardLinkTree(
     path.join(projectRoot, "node_modules"),
     path.join(cacheDir, "node_modules"),
-    logFile,
   );
   const lockFile = path.join(projectRoot, "package-lock.json");
   if (existsSync(lockFile)) {

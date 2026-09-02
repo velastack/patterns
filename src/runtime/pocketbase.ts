@@ -145,10 +145,28 @@ export async function withPocketbase(
     detached,
   });
 
+  // A wrapper that dies before the server listens (missing binary, bad
+  // arguments) would otherwise only surface as a port timeout a minute later.
+  const exited = new Promise<never>((_, reject) => {
+    serverProcess.once("exit", (code, signal) => {
+      reject(
+        new Error(
+          `pocketbase-server exited before listening on ${host}:${port} (${signal ?? `code ${code}`})`,
+        ),
+      );
+    });
+    serverProcess.once("error", reject);
+  });
+
   try {
     // Wait for the server to be ready
-    await waitForPort(port, host);
-    await waitForHealth(`http://${host}:${port}`);
+    await Promise.race([
+      (async () => {
+        await waitForPort(port, host);
+        await waitForHealth(`http://${host}:${port}`);
+      })(),
+      exited,
+    ]);
 
     const pb = new PocketBase(`http://${host}:${port}`);
     await authWithRetries(

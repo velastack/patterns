@@ -93,11 +93,7 @@ export function cloneProject(baselineRoot: string, project: Project): void {
 
   const baselineModules = path.join(baselineRoot, "node_modules");
   if (existsSync(baselineModules)) {
-    hardLinkTree(
-      baselineModules,
-      path.join(project.root, "node_modules"),
-      project.logFile,
-    );
+    hardLinkTree(baselineModules, path.join(project.root, "node_modules"));
     // npm rewrites its hidden lockfile in place; give the clone its own copy
     // so an install inside the case cannot leak into the shared baseline.
     const hiddenLock = path.join(
