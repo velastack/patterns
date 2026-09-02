@@ -134,15 +134,39 @@ export async function withPocketbase(
   // adding --yes as the first parameter helps avoiding the "Need to install the following packages:" message
   if (packageManager === "npm") args.unshift("--yes");
 
-  // Start the PocketBase server process
+  // Start the PocketBase server process. The package manager wrapper (`npx`)
+  // spawns the real binary as a grandchild; put the tree in its own process
+  // group so it can be killed as a whole, otherwise `pocketbase serve` outlives
+  // us and keeps the data directory open.
+  const detached = process.platform !== "win32";
   const serverProcess = spawn(command, args, {
+    cwd,
     stdio: "ignore",
+    detached,
+  });
+
+  // A wrapper that dies before the server listens (missing binary, bad
+  // arguments) would otherwise only surface as a port timeout a minute later.
+  const exited = new Promise<never>((_, reject) => {
+    serverProcess.once("exit", (code, signal) => {
+      reject(
+        new Error(
+          `pocketbase-server exited before listening on ${host}:${port} (${signal ?? `code ${code}`})`,
+        ),
+      );
+    });
+    serverProcess.once("error", reject);
   });
 
   try {
     // Wait for the server to be ready
-    await waitForPort(port, host);
-    await waitForHealth(`http://${host}:${port}`);
+    await Promise.race([
+      (async () => {
+        await waitForPort(port, host);
+        await waitForHealth(`http://${host}:${port}`);
+      })(),
+      exited,
+    ]);
 
     const pb = new PocketBase(`http://${host}:${port}`);
     await authWithRetries(
@@ -152,7 +176,22 @@ export async function withPocketbase(
     );
     await fn(pb);
   } finally {
-    // Ensure we always clean up the process
-    serverProcess.kill();
+    // Ensure we always clean up the process tree
+    stopProcessTree(serverProcess, detached);
   }
+}
+
+function stopProcessTree(
+  child: ReturnType<typeof spawn>,
+  detached: boolean,
+): void {
+  if (detached && child.pid) {
+    try {
+      process.kill(-child.pid, "SIGTERM");
+      return;
+    } catch {
+      // Group already gone or unsupported; fall through to the plain kill.
+    }
+  }
+  child.kill();
 }

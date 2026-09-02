@@ -11,7 +11,7 @@ export async function generate(options: Options) {
   const baseRes = await generateBase(options);
 
   if (options.env !== "runtime") {
-    return formatResult(baseRes);
+    return formatResult(baseRes, options);
   }
 
   const { createCollections } = await import("../../../runtime/collections");
@@ -25,7 +25,7 @@ export async function generate(options: Options) {
   };
 
   const { writeResult } = await import("../../../runtime/write-result");
-  return writeResult(await formatResult(runtimeRes), options);
+  return writeResult(await formatResult(runtimeRes, options), options);
 }
 
 export default {

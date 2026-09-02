@@ -15,11 +15,11 @@ export async function generate(options: Options) {
 
   if (options.env === "preview") {
     const previewRes = await generatePreview(options);
-    return formatResult(mergeResults([baseRes, previewRes]));
+    return formatResult(mergeResults([baseRes, previewRes]), options);
   }
 
   if (options.env !== "runtime") {
-    return formatResult(baseRes);
+    return formatResult(baseRes, options);
   }
 
   const { createCollections } = await import("../../../runtime/collections");
@@ -46,7 +46,7 @@ export async function generate(options: Options) {
   };
 
   const { writeResult } = await import("../../../runtime/write-result");
-  return writeResult(await formatResult(runtimeRes), options);
+  return writeResult(await formatResult(runtimeRes, options), options);
 }
 
 export default {

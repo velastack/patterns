@@ -1,6 +1,6 @@
 {
   "name": "@velastack/patterns",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Registry of VelaStack patterns: generators and modifications applied to SvelteKit projects by the VelaStack CLI.",
   "type": "module",
   "private": false,
@@ -38,9 +38,9 @@
     "lint": "npm run lint:ts && npm run lint:format",
     "lint:ts": "tsc --noEmit",
     "lint:format": "prettier --check .",
-    "test": "vitest run --exclude '**/integration.test.ts'",
-    "test:watch": "vitest --watch --exclude '**/integration.test.ts'",
-    "test:integration": "vitest run integration.test.ts",
+    "test": "vitest run",
+    "test:watch": "vitest --watch",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "prepare": "npm run build"
   },
   "dependencies": {

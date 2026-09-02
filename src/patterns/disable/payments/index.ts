@@ -13,12 +13,15 @@ export async function generate(options: Options) {
   const baseRes = await generateBase(options);
 
   if (options.env !== "runtime") {
-    return formatResult(baseRes);
+    return formatResult(baseRes, options);
   }
 
   const { generate: generateRuntime } = await import("./generate.runtime");
   const runtimeRes = await generateRuntime(options);
-  const merged = await formatResult(mergeResults([baseRes, runtimeRes]));
+  const merged = await formatResult(
+    mergeResults([baseRes, runtimeRes]),
+    options,
+  );
 
   if (options.input.destructive !== true) {
     return merged;

@@ -14,7 +14,7 @@ export async function generate(options: Options) {
 
   if (options.env === "preview") {
     const previewRes = await generatePreview(options);
-    return formatResult(mergeResults([baseRes, previewRes]));
+    return formatResult(mergeResults([baseRes, previewRes]), options);
   }
 
   const { createCollections } = await import("../../../runtime/collections");
@@ -32,6 +32,7 @@ export async function generate(options: Options) {
         { ...baseRes, creates: [...baseRes.creates, ...migrationCreates] },
         runtimeRes,
       ]),
+      options,
     ),
     options,
   );

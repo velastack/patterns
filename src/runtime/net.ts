@@ -5,11 +5,12 @@ export function randomPort() {
   return Math.floor(Math.random() * 10000) + 10000;
 }
 
-// Wait for the port to be available
+// Wait for the port to be available. A cold `npx pocketbase-server` on a CI
+// runner can take well over the five seconds the old default allowed.
 export function waitForPort(
   port: number,
   host: string,
-  maxAttempts = 10,
+  maxAttempts = 60,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     let attempts = 0;
@@ -45,7 +46,7 @@ export function waitForPort(
 }
 
 // Wait for the health check to be successful
-export function waitForHealth(url: string, maxAttempts = 10): Promise<void> {
+export function waitForHealth(url: string, maxAttempts = 60): Promise<void> {
   return new Promise((resolve, reject) => {
     let attempts = 0;
 

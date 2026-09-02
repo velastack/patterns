@@ -9,7 +9,7 @@ const DOCS = "/destroy/schema";
 
 export async function generate(options: Options) {
   const baseRes = await generateBase(options);
-  const formatted = await formatResult(baseRes);
+  const formatted = await formatResult(baseRes, options);
 
   if (options.env !== "runtime" || options.input.destructive !== true) {
     return formatted;
