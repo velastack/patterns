@@ -134,10 +134,15 @@ export async function withPocketbase(
   // adding --yes as the first parameter helps avoiding the "Need to install the following packages:" message
   if (packageManager === "npm") args.unshift("--yes");
 
-  // Start the PocketBase server process
+  // Start the PocketBase server process. The package manager wrapper (`npx`)
+  // spawns the real binary as a grandchild; put the tree in its own process
+  // group so it can be killed as a whole, otherwise `pocketbase serve` outlives
+  // us and keeps the data directory open.
+  const detached = process.platform !== "win32";
   const serverProcess = spawn(command, args, {
     cwd,
     stdio: "ignore",
+    detached,
   });
 
   try {
@@ -153,7 +158,22 @@ export async function withPocketbase(
     );
     await fn(pb);
   } finally {
-    // Ensure we always clean up the process
-    serverProcess.kill();
+    // Ensure we always clean up the process tree
+    stopProcessTree(serverProcess, detached);
   }
+}
+
+function stopProcessTree(
+  child: ReturnType<typeof spawn>,
+  detached: boolean,
+): void {
+  if (detached && child.pid) {
+    try {
+      process.kill(-child.pid, "SIGTERM");
+      return;
+    } catch {
+      // Group already gone or unsupported; fall through to the plain kill.
+    }
+  }
+  child.kill();
 }
