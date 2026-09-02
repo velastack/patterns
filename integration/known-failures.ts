@@ -198,6 +198,15 @@ export const KNOWN_FAILURES: KnownFailure[] = [
     match: /\$locales\/|Config file not found|language-select\.svelte/,
   },
   {
+    id: "disable-i18n-still-detected",
+    reason:
+      "disable-i18n deletes the files enable-i18n created, wuchale.config.js included, but " +
+      "uninstalls nothing, so the wuchale dependency keeps i18n detected afterwards.",
+    kind: "features",
+    step: "disable-i18n",
+    match: /expected i18n=false/,
+  },
+  {
     id: "disable-teams-drop-order",
     reason:
       "disable-teams drops team_invite_links, team_invites, team_memberships and teams but not " +
