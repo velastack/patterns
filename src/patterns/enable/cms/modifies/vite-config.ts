@@ -36,11 +36,15 @@ function elementName(text: string): string {
 }
 
 /**
- * Registers `cms()` from `@velastack/cms/vite` in the Vite plugin list, just
+ * Registers `cms(...)` from `@velastack/cms/vite` in the Vite plugin list, just
  * ahead of `sveltekit()`. Only the plugin array is touched, so the inline
  * `sveltekit({ ... })` shape the templates use is left alone.
  */
-export function modifyViteConfig(viteConfigPath: string): ModifyOutcome {
+export function modifyViteConfig(
+  viteConfigPath: string,
+  pluginArgs = "",
+): ModifyOutcome {
+  const call = `cms(${pluginArgs})`;
   if (!fs.existsSync(viteConfigPath)) {
     return { status: "not-found", message: NOT_FOUND_HINT };
   }
@@ -83,7 +87,7 @@ export function modifyViteConfig(viteConfigPath: string): ModifyOutcome {
     if (!pluginsProp) {
       configObj.addPropertyAssignment({
         name: "plugins",
-        initializer: "[cms()]",
+        initializer: `[${call}]`,
       });
       changed = true;
     } else if (pluginsProp.getKind() !== SyntaxKind.PropertyAssignment) {
@@ -92,7 +96,7 @@ export function modifyViteConfig(viteConfigPath: string): ModifyOutcome {
       const pluginsInit = (pluginsProp as PropertyAssignment).getInitializer();
 
       if (!pluginsInit) {
-        (pluginsProp as PropertyAssignment).setInitializer("[cms()]");
+        (pluginsProp as PropertyAssignment).setInitializer(`[${call}]`);
         changed = true;
       } else if (pluginsInit.getKind() !== SyntaxKind.ArrayLiteralExpression) {
         failed = true;
@@ -107,10 +111,7 @@ export function modifyViteConfig(viteConfigPath: string): ModifyOutcome {
           const sveltekitIndex = elements.findIndex((el) =>
             elementName(el.getText()).startsWith("sveltekit("),
           );
-          arr.insertElement(
-            sveltekitIndex === -1 ? 0 : sveltekitIndex,
-            "cms()",
-          );
+          arr.insertElement(sveltekitIndex === -1 ? 0 : sveltekitIndex, call);
           changed = true;
         }
       }

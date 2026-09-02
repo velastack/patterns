@@ -6,6 +6,7 @@ import fs from "node:fs";
 import { modifyViteConfig } from "./vite-config";
 import { modifyLayoutServer, WUCHALE_LOCALE } from "./layout.server";
 import { modifyLayoutSvelte } from "./layout.svelte";
+import { modifyLayoutUniversal } from "./layout";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,6 +15,7 @@ const tempDir = path.join(__dirname, "temp");
 
 const LAYOUT_SERVER = path.join("src", "routes", "+layout.server.ts");
 const LAYOUT_SVELTE = path.join("src", "routes", "+layout.svelte");
+const LAYOUT_UNIVERSAL = path.join("src", "routes", "+layout.ts");
 
 function read(rel: string): string {
   return fs.readFileSync(path.join(tempDir, rel), "utf8");
@@ -257,16 +259,6 @@ describe("enable cms modifiers", () => {
     },
   );
 
-  it("reports not-found when +layout.server.ts is missing", () => {
-    const outcome = modifyLayoutServer(
-      path.join(tempDir, "src", "routes", "missing.server.ts"),
-    );
-    expect(outcome.status).toBe("not-found");
-    if (outcome.status === "not-found") {
-      expect(outcome.message).toContain("loadCms");
-    }
-  });
-
   // --- src/routes/+layout.svelte ---
 
   it("mounts <AdminBar /> in +layout.svelte", async () => {
@@ -314,4 +306,195 @@ describe("enable cms modifiers", () => {
     );
     expect(outcome.status).toBe("not-found");
   });
+});
+
+describe("enable cms modifiers on the static template", () => {
+  const STATIC = "static";
+  const ENDPOINT = "https://velastack.dev/v1/projects/demo/cms";
+  const ARGS = `{ endpoint: '${ENDPOINT}', locales: ['en'] }`;
+
+  beforeEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+    fs.cpSync(path.join(fixturesPath, "original"), tempDir, {
+      recursive: true,
+    });
+  });
+
+  afterEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it("registers cms() with a hosted endpoint and locales", async () => {
+    const filePath = path.join(tempDir, STATIC, "vite.config.ts");
+    const outcome = modifyViteConfig(filePath, ARGS);
+
+    expect(outcome).toEqual({ status: "success", changed: true });
+    await expect(read(path.join(STATIC, "vite.config.ts"))).toMatchFormatted(
+      expected(path.join(STATIC, "vite.config.ts")),
+      "vite.config.ts",
+    );
+  });
+
+  it("is idempotent with plugin arguments", () => {
+    const filePath = path.join(tempDir, STATIC, "vite.config.ts");
+    modifyViteConfig(filePath, ARGS);
+    const first = read(path.join(STATIC, "vite.config.ts"));
+
+    const outcome = modifyViteConfig(filePath, ARGS);
+    expect(outcome).toEqual({ status: "success", changed: false });
+    expect(read(path.join(STATIC, "vite.config.ts"))).toBe(first);
+  });
+
+  it("creates +layout.server.ts when the project has none", async () => {
+    const filePath = path.join(tempDir, STATIC, LAYOUT_SERVER);
+    expect(fs.existsSync(filePath)).toBe(false);
+
+    const outcome = modifyLayoutServer(filePath);
+
+    expect(outcome).toEqual({ status: "success", changed: true });
+    await expect(read(path.join(STATIC, LAYOUT_SERVER))).toMatchFormatted(
+      expected(path.join(STATIC, LAYOUT_SERVER)),
+      "+layout.server.ts",
+    );
+  });
+
+  it("creates a wuchale-aware +layout.server.ts when asked", () => {
+    const filePath = path.join(tempDir, STATIC, LAYOUT_SERVER);
+    modifyLayoutServer(filePath, WUCHALE_LOCALE);
+    const created = read(path.join(STATIC, LAYOUT_SERVER));
+
+    expect(created).toContain("import { getLocale } from '$locales/main.url';");
+    expect(created).toContain("locale: getLocale(event.url)");
+  });
+
+  it("is idempotent for a created +layout.server.ts", () => {
+    const filePath = path.join(tempDir, STATIC, LAYOUT_SERVER);
+    modifyLayoutServer(filePath);
+    const first = read(path.join(STATIC, LAYOUT_SERVER));
+
+    const outcome = modifyLayoutServer(filePath);
+    expect(outcome).toEqual({ status: "success", changed: false });
+    expect(read(path.join(STATIC, LAYOUT_SERVER))).toBe(first);
+  });
+
+  it("forwards server data through the universal +layout.ts", async () => {
+    const filePath = path.join(tempDir, STATIC, LAYOUT_UNIVERSAL);
+    const outcome = modifyLayoutUniversal(filePath);
+
+    expect(outcome).toEqual({ status: "success", changed: true });
+    await expect(read(path.join(STATIC, LAYOUT_UNIVERSAL))).toMatchFormatted(
+      expected(path.join(STATIC, LAYOUT_UNIVERSAL)),
+      "+layout.ts",
+    );
+  });
+
+  it("is idempotent for +layout.ts", () => {
+    const filePath = path.join(tempDir, STATIC, LAYOUT_UNIVERSAL);
+    modifyLayoutUniversal(filePath);
+    const first = read(path.join(STATIC, LAYOUT_UNIVERSAL));
+
+    const outcome = modifyLayoutUniversal(filePath);
+    expect(outcome).toEqual({ status: "success", changed: false });
+    expect(read(path.join(STATIC, LAYOUT_UNIVERSAL))).toBe(first);
+  });
+
+  it("mounts <AdminBar /> in the static +layout.svelte", () => {
+    const filePath = path.join(tempDir, STATIC, LAYOUT_SVELTE);
+    const outcome = modifyLayoutSvelte(filePath);
+
+    expect(outcome).toEqual({ status: "success", changed: true });
+    const modified = read(path.join(STATIC, LAYOUT_SVELTE));
+    expect(modified).toContain("import { AdminBar } from '@velastack/cms';");
+    expect(modified.trimEnd().endsWith("<AdminBar />")).toBe(true);
+  });
+});
+
+describe("universal +layout.ts shapes", () => {
+  beforeEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+    fs.mkdirSync(path.join(tempDir, "src", "routes"), { recursive: true });
+  });
+
+  afterEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  function writeLayout(source: string): string {
+    const filePath = path.join(tempDir, LAYOUT_UNIVERSAL);
+    fs.writeFileSync(filePath, source);
+    return filePath;
+  }
+
+  it("needs nothing when the file is missing", () => {
+    const outcome = modifyLayoutUniversal(path.join(tempDir, LAYOUT_UNIVERSAL));
+    expect(outcome).toEqual({ status: "success", changed: false });
+  });
+
+  it("needs nothing when there is no load", () => {
+    const filePath = writeLayout("export const prerender = true;\n");
+    const original = fs.readFileSync(filePath, "utf8");
+
+    const outcome = modifyLayoutUniversal(filePath);
+    expect(outcome).toEqual({ status: "success", changed: false });
+    expect(fs.readFileSync(filePath, "utf8")).toBe(original);
+  });
+
+  it("needs nothing when the load already returns data", () => {
+    const filePath = writeLayout(
+      "export const load = async ({ data }) => {\n  return data;\n};\n",
+    );
+    const outcome = modifyLayoutUniversal(filePath);
+    expect(outcome).toEqual({ status: "success", changed: false });
+  });
+
+  it("uses the event parameter's name when there is one", () => {
+    const filePath = writeLayout(
+      "export const load = (e) => {\n  return { path: e.url.pathname };\n};\n",
+    );
+    const outcome = modifyLayoutUniversal(filePath);
+    expect(outcome).toEqual({ status: "success", changed: true });
+    expect(fs.readFileSync(filePath, "utf8")).toMatch(
+      /return \{\s*\.\.\.e\.data,\s*path: e\.url\.pathname\s*\};/,
+    );
+  });
+
+  it("adds a parameter to a load that had none", () => {
+    const filePath = writeLayout(
+      "export function load() {\n  return { ok: true };\n}\n",
+    );
+    const outcome = modifyLayoutUniversal(filePath);
+    expect(outcome).toEqual({ status: "success", changed: true });
+    const modified = fs.readFileSync(filePath, "utf8");
+    expect(modified).toContain("load({ data })");
+    expect(modified).toMatch(/return \{\s*\.\.\.data,\s*ok: true\s*\};/);
+  });
+
+  it.each([
+    [
+      "an expression-bodied load",
+      "export const load = ({ url }) => ({ path: url.pathname });\n",
+    ],
+    [
+      "an early return",
+      "export const load = ({ url }) => {\n  if (url.pathname === '/') return { home: true };\n  return { home: false };\n};\n",
+    ],
+    [
+      "a non-literal return",
+      "export const load = ({ url }) => {\n  const out = { path: url.pathname };\n  return out;\n};\n",
+    ],
+  ])(
+    "reports failure and leaves the file untouched for %s",
+    (_label, source) => {
+      const filePath = writeLayout(source);
+      const original = fs.readFileSync(filePath, "utf8");
+
+      const outcome = modifyLayoutUniversal(filePath);
+
+      expect(outcome.status).toBe("failed");
+      if (outcome.status === "failed") {
+        expect(outcome.message).toContain("...data");
+      }
+      expect(fs.readFileSync(filePath, "utf8")).toBe(original);
+    },
+  );
 });

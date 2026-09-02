@@ -9,7 +9,7 @@ package-lock.json
 **/creates-app-mode/**
 **/creates-with-negotiation/**
 **/creates-with-blog/**
-**/creates-i18n/**
+**/creates-backend/**
 **/preview-modifies/**
 **/variants/**
 

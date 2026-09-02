@@ -7,12 +7,14 @@ import {
   probeFirstExisting,
   VITE_CONFIG_CANDIDATES,
 } from "../../../runtime/config-target";
+import { resolveMode, type CmsMode } from "./generate";
 import { modifyViteConfig } from "./modifies/vite-config";
 import {
   DEFAULT_LOCALE,
   WUCHALE_LOCALE,
   modifyLayoutServer,
 } from "./modifies/layout.server";
+import { modifyLayoutUniversal } from "./modifies/layout";
 import { modifyLayoutSvelte } from "./modifies/layout.svelte";
 
 /**
@@ -28,9 +30,36 @@ export function keepMissing(creates: File[], root: string): File[] {
   return creates.filter((file) => !fs.existsSync(path.join(root, file.path)));
 }
 
+/** The locale list from `wuchale.config.js`, or null when it cannot be read. */
+export function readWuchaleLocales(root: string): string[] | null {
+  const configPath = path.join(root, "wuchale.config.js");
+  if (!fs.existsSync(configPath)) return null;
+  const match = fs
+    .readFileSync(configPath, "utf8")
+    .match(/locales:\s*\[([^\]]*)\]/);
+  if (!match) return null;
+  const locales = [...match[1].matchAll(/['"]([^'"]+)['"]/g)].map((m) => m[1]);
+  return locales.length > 0 ? locales : null;
+}
+
+/**
+ * Arguments for the `cms()` Vite plugin.
+ *
+ * A hosted CMS needs the endpoint and locales at build time so media can be
+ * downloaded into the prerendered site. An app hosting the backend itself
+ * needs nothing: the media steps are no-ops without an endpoint.
+ */
+export function vitePluginArgs(mode: CmsMode, locales: string[]): string {
+  if (mode.local) return "";
+  const list = locales.map((locale) => `'${locale}'`).join(", ");
+  return `{ endpoint: '${mode.endpoint}', locales: [${list}] }`;
+}
+
 export async function generate(options: Options) {
   const logger = getLogger(options);
   const modifies: File[] = [];
+  const mode = resolveMode(options);
+  const i18n = options.features.i18n;
 
   const pushResult = (file: File | null) => {
     if (file) modifies.push(file);
@@ -40,8 +69,12 @@ export async function generate(options: Options) {
   const viteConfigPath =
     probeFirstExisting(options.root, VITE_CONFIG_CANDIDATES) ??
     path.join(options.root, VITE_CONFIG_CANDIDATES[0]);
+  const locales = (i18n && readWuchaleLocales(options.root)) || ["en"];
   pushResult(
-    modifyOutcomeToFile(viteConfigPath, modifyViteConfig(viteConfigPath)),
+    modifyOutcomeToFile(
+      viteConfigPath,
+      modifyViteConfig(viteConfigPath, vitePluginArgs(mode, locales)),
+    ),
   );
 
   logger.info("Modifying src/routes/+layout.server.ts");
@@ -51,11 +84,27 @@ export async function generate(options: Options) {
     "routes",
     "+layout.server.ts",
   );
-  const locale = options.features.i18n ? WUCHALE_LOCALE : DEFAULT_LOCALE;
+  const locale = i18n ? WUCHALE_LOCALE : DEFAULT_LOCALE;
   pushResult(
     modifyOutcomeToFile(
       layoutServerPath,
       modifyLayoutServer(layoutServerPath, locale),
+    ),
+  );
+
+  // A universal root layout has to pass the server load's data along, or
+  // `cms` never reaches the page. The static template has one.
+  logger.info("Modifying src/routes/+layout.ts");
+  const layoutUniversalPath = path.join(
+    options.root,
+    "src",
+    "routes",
+    "+layout.ts",
+  );
+  pushResult(
+    modifyOutcomeToFile(
+      layoutUniversalPath,
+      modifyLayoutUniversal(layoutUniversalPath),
     ),
   );
 
