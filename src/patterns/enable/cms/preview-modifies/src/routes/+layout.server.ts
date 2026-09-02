@@ -26,8 +26,10 @@ export const load = loadFlash(async (event) => {
 		}
 	});
 
-	// [!code highlight:4]
-	const { cms, notFound, gone, redirectTo } = await loadCms(event, { locale: 'en' });
+	// [!code highlight:6]
+	const { cms, notFound, gone, redirectTo } = await loadCms(event, {
+		locale: 'en'
+	});
 	if (redirectTo) redirect(308, redirectTo);
 	if (gone) error(410, 'Gone');
 	if (notFound) error(404, 'Not found');
