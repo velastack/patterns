@@ -9,6 +9,7 @@
 	import { page } from '$app/state';
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { MetaTags, deepMerge } from 'svelte-meta-tags';
+	// [!code highlight:1]
 	import { AdminBar } from '@velastack/cms';
 
 	let { data, children } = $props();
