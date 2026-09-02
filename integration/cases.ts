@@ -39,6 +39,7 @@ const FEATURE_ENABLER: Partial<Record<keyof Features, Slug>> = {
   i18n: "enable-i18n",
   blog: "enable-blog",
   contentNegotiation: "enable-content-negotiation",
+  cms: "enable-cms",
 };
 
 /** The order prerequisites are applied in; each entry's own `requires` precede it. */
@@ -51,6 +52,7 @@ export const PREREQ_ORDER: Slug[] = [
   "enable-i18n",
   "enable-blog",
   "enable-content-negotiation",
+  "enable-cms",
 ];
 
 const STRIPE_SLUGS = new Set<Slug>([
@@ -163,6 +165,7 @@ export const enableCases: CaseSpec[] = [
   singleCase("enable-api-keys"),
   singleCase("enable-backend"),
   singleCase("enable-blog"),
+  singleCase("enable-cms"),
   singleCase("enable-content-negotiation"),
   singleCase("enable-i18n"),
   singleCase("enable-notifications"),
@@ -241,6 +244,11 @@ export const stackCases: CaseSpec[] = [
   makeCase("negotiation-then-i18n", "minimal", [
     step("enable-content-negotiation"),
     step("enable-i18n", { check: true }),
+  ]),
+  // With i18n on, the CMS takes its locales from wuchale instead of a literal.
+  makeCase("i18n-then-cms", "minimal", [
+    step("enable-i18n"),
+    step("enable-cms", { check: true }),
   ]),
   makeCase("auth-then-i18n", "auth", [step("enable-i18n", { check: true })]),
   makeCase("i18n-then-auth", "minimal", [

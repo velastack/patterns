@@ -26,6 +26,7 @@ function options(root: string): Options {
       payments: false,
       blog: false,
       contentNegotiation: false,
+      cms: false,
     },
     input: {},
   };

@@ -22,11 +22,12 @@ export function detectFeatures(root: string): Features {
     api: has("src/routes/api"),
     apiKeys: has("src/routes/api/api-keys") || has("src/routes/(app)/api-keys"),
     backend: has("data"),
-    i18n: has("src/lib/i18n") || has("messages"),
+    i18n: has("wuchale.config.js") || hasDep("wuchale"),
     teams: has("src/routes/(app)/teams") || has("src/lib/teams"),
     payments: has("src/routes/webhooks/stripe"),
     blog: hasDep("mdsvex"),
     contentNegotiation: hasDep("sveltekit-negotiate"),
+    cms: hasDep("@velastack/cms"),
   };
 }
 
@@ -50,6 +51,7 @@ export const SLUG_TO_FEATURE: Partial<Record<string, keyof Features>> = {
   "enable-payments": "payments",
   "enable-blog": "blog",
   "enable-content-negotiation": "contentNegotiation",
+  "enable-cms": "cms",
 };
 
 /**
@@ -83,4 +85,5 @@ export const ALL_FEATURES_OFF: Features = {
   payments: false,
   blog: false,
   contentNegotiation: false,
+  cms: false,
 };

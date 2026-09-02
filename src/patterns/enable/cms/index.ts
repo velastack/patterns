@@ -14,7 +14,7 @@ export async function generate(options: Options) {
 
   if (options.env === "preview") {
     const previewRes = await generatePreview(options);
-    return formatResult(mergeResults([baseRes, previewRes]));
+    return formatResult(mergeResults([baseRes, previewRes]), options);
   }
 
   // Runtime-only modules stay behind dynamic imports so the website's preview
@@ -29,6 +29,7 @@ export async function generate(options: Options) {
         { ...baseRes, creates: keepMissing(baseRes.creates, options.root) },
         runtimeRes,
       ]),
+      options,
     ),
     options,
   );

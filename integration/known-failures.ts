@@ -93,15 +93,6 @@ export const KNOWN_FAILURES: KnownFailure[] = [
     step: "enable-i18n",
     match: /src\/app\.html/,
   },
-  {
-    id: "i18n-not-detected",
-    reason:
-      "The CLI's detectFeatures (velastack-cli/src/lib/workspace.ts) looks for src/lib/i18n or " +
-      "messages/; enable-i18n creates wuchale.config.js, so later patterns never see i18n: true.",
-    kind: "features",
-    step: "enable-i18n",
-    match: /expected i18n=true/,
-  },
 
   // --- generators -------------------------------------------------------------
   {
