@@ -5,6 +5,11 @@ import { defineConfig } from "wuchale";
 
 export default defineConfig({
   locales: ["en", "es"],
+  // `vela test:server` stubs every +page.svelte. In the default `refs` dev mode
+  // the extractor would take those stubs at face value, drop the pages'
+  // references from the .po files and recompile the catalogs while requests
+  // are in flight. Under TEST wuchale neither transforms nor writes anything.
+  ...(process.env.TEST === "true" ? { dev: false } : {}),
   adapters: {
     main: svelte({
       loader: "sveltekit",
