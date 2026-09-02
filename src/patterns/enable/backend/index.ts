@@ -14,14 +14,14 @@ export async function generate(options: Options) {
 
   if (options.env === "preview") {
     const previewRes = await generatePreview(options);
-    return formatResult(mergeResults([baseRes, previewRes]));
+    return formatResult(mergeResults([baseRes, previewRes]), options);
   }
 
   const { generate: generateRuntime } = await import("./generate.runtime");
   const runtimeRes = await generateRuntime(options);
   const { writeResult } = await import("../../../runtime/write-result");
   return writeResult(
-    await formatResult(mergeResults([baseRes, runtimeRes])),
+    await formatResult(mergeResults([baseRes, runtimeRes]), options),
     options,
   );
 }

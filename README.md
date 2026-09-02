@@ -72,3 +72,25 @@ The `preview-modifies` directory is the mock modify output used only for preview
 - Use the demo script to generate a temporary project with the pattern to see applied changes.
 - In the temporary project, run `npm run test:server` to run the tests.
 - Run `npm run lint` and `npm run check` to make sure the code is correct.
+- Add the pattern to a case table in `integration/cases.ts` (`integration/coverage.test.ts` fails until every registered pattern is covered) and run its case.
+
+# Integration tests
+
+`npm run test:integration` scaffolds real projects with `vela create`, applies patterns the way the CLI
+does (feature flags re-detected from disk between steps, `getCollections` reading the live schema) and
+then requires zero svelte-check errors with `noUnusedLocals`, zero `failed` / `not-found` file entries and
+prettier-clean output. `integration/cases.ts` holds one case per pattern plus stacks for patterns whose
+output depends on feature detection. CI runs the five suites in parallel; see `.github/workflows/ci.yml`.
+
+```sh
+npm run test:integration -- integration/enable.test.ts            # one suite
+npm run test:integration -- integration/stacks.test.ts -t "teams" # one case
+```
+
+- `VELA_BIN=/path/to/vela` picks the CLI (default: `vela` on PATH).
+- `INTEGRATION_KEEP=1` keeps generated projects; failed cases are always kept.
+- `INTEGRATION_SERVER_TESTS=1` also runs `vela test:server` after each checked step.
+- `STRIPE_SECRET_KEY` + `STRIPE_PUBLISHABLE_KEY` enable the payments cases; they skip otherwise.
+- Failures point at `.integration-tests/<suite>/<case>/.integration/` (`commands.log`, `steps.json`,
+  the raw svelte-check output). Expected failures live in `integration/known-failures.ts`, scoped per
+  step or case, and turn into visible skips until they stop reproducing.

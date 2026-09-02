@@ -1,6 +1,7 @@
 import {
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -97,12 +98,31 @@ function writeFile(filePath: string, content: string): void {
   writeFileSync(filePath, content, "utf8");
 }
 
-function removeFile(filePath: string): void {
+function removeFile(filePath: string, root: string): void {
   if (!existsSync(filePath)) {
     return;
   }
 
   rmSync(filePath, { force: true, recursive: true });
+  pruneEmptyDirectories(path.dirname(filePath), root);
+}
+
+/**
+ * Deleting a feature's files must also delete the directories it added, up
+ * to the first one that still has content. The CLI detects features by
+ * directory (`src/routes/(app)` means auth is on), so an empty leftover
+ * directory keeps a disabled feature "enabled".
+ */
+function pruneEmptyDirectories(dir: string, root: string): void {
+  const stop = path.resolve(root);
+  let current = path.resolve(dir);
+  while (current !== stop && current.startsWith(stop)) {
+    if (!existsSync(current) || readdirSync(current).length > 0) {
+      return;
+    }
+    rmSync(current, { recursive: true, force: true });
+    current = path.dirname(current);
+  }
 }
 
 async function executeWithDetectedPackageManager(
@@ -422,7 +442,7 @@ export async function writeResult(
       continue;
     }
     if (existsSync(toTargetPath(options.root, file.path))) {
-      removeFile(toTargetPath(options.root, file.path));
+      removeFile(toTargetPath(options.root, file.path), options.root);
       writtenResult.deletes.push({
         ...file,
         path: toRelativePath(options.root, file.path),
