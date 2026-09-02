@@ -38,4 +38,5 @@
 
 {@render children?.()}
 
+<!-- [!code highlight:1] -->
 <AdminBar />

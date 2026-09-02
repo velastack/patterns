@@ -1,3 +1,4 @@
+// [!code highlight:1]
 import { cms } from '@velastack/cms/vite';
 import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
@@ -7,6 +8,7 @@ import adapter from '@sveltejs/adapter-auto';
 export default defineConfig({
 	plugins: [
 		tailwindcss(),
+		// [!code highlight:1]
 		cms(),
 		sveltekit({
 			compilerOptions: {
