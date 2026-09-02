@@ -1,22 +1,19 @@
 import fs from "node:fs";
+import path from "node:path";
 import dedent from "dedent";
-import {
-  Node,
-  Project,
-  QuoteKind,
-  SyntaxKind,
-  type ArrowFunction,
-  type Block,
-  type FunctionDeclaration,
-  type FunctionExpression,
-  type ObjectLiteralExpression,
-  type ReturnStatement,
-  type SourceFile,
-} from "ts-morph";
+import { Node } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
 import type { ImportSpec } from "../../../../runtime/ts-morph-helpers";
-
-type LoadFunction = ArrowFunction | FunctionExpression | FunctionDeclaration;
+import {
+  ensureImportSpec,
+  ensureNamedImports,
+  findFinalReturn,
+  findLoadFunction,
+  hasProperty,
+  inspectEventParameter,
+  newProject,
+  returnedObject,
+} from "./load-function";
 
 export interface LayoutServerLocale {
   /**
@@ -50,149 +47,53 @@ function cmsSnippet(eventName: string, locale: string): string {
   `;
 }
 
-const LOAD_SNIPPET = dedent`
-  import { error, redirect } from '@sveltejs/kit';
-  import { loadCms } from '$lib/cms';
+function importLine(spec: ImportSpec): string {
+  const parts: string[] = [];
+  if (spec.defaultImport) parts.push(spec.defaultImport);
+  if (spec.namespaceImport) parts.push(`* as ${spec.namespaceImport}`);
+  if (spec.namedImports?.length)
+    parts.push(`{ ${spec.namedImports.join(", ")} }`);
+  return `import ${parts.join(", ")} from '${spec.moduleSpecifier}';`;
+}
 
-  export const load = async (event) => {
-    ${cmsSnippet("event", "'en'").split("\n").join("\n    ")}
+/**
+ * A root `+layout.server.ts` written from scratch, for a project that has
+ * none — the static template keeps its layout load universal.
+ */
+export function createdLayoutServer(locale: LayoutServerLocale): string {
+  const imports = [
+    "import { error, redirect } from '@sveltejs/kit';",
+    "import { loadCms } from '$lib/cms';",
+    ...(locale.imports ?? []).map(importLine),
+    "import type { LayoutServerLoad } from './$types';",
+  ].join("\n");
+  const snippet = cmsSnippet("event", locale.expression("event"))
+    .split("\n")
+    .join("\n\t");
 
-    return { cms };
-  };
-`;
+  return dedent`
+    ${imports}
+
+    export const load: LayoutServerLoad = async (event) => {
+    	${snippet}
+
+    	return { cms };
+    };
+  `.concat("\n");
+}
 
 const FAILURE_HINT = [
   "Call loadCms from the root +layout.server.ts load and return `cms`:",
   "",
-  LOAD_SNIPPET,
+  createdLayoutServer(DEFAULT_LOCALE).trimEnd(),
   "",
   "loadCms needs the whole event, so a destructured parameter has to become",
   "`event` with the destructuring moved into the body.",
 ].join("\n");
 
-const NOT_FOUND_HINT = [
-  "Create src/routes/+layout.server.ts with a load that calls loadCms:",
-  "",
-  LOAD_SNIPPET,
-].join("\n");
-
-function ensureNamedImports(
-  sourceFile: SourceFile,
-  moduleSpecifier: string,
-  names: string[],
-) {
-  const existing = sourceFile
-    .getImportDeclarations()
-    .find((d) => d.getModuleSpecifierValue() === moduleSpecifier);
-  if (!existing) {
-    sourceFile.addImportDeclaration({ namedImports: names, moduleSpecifier });
-    return;
-  }
-  for (const name of names) {
-    const has = existing.getNamedImports().some((ni) => ni.getName() === name);
-    if (!has) existing.addNamedImport(name);
-  }
-}
-
-function ensureImportSpec(sourceFile: SourceFile, spec: ImportSpec) {
-  if (spec.namedImports?.length) {
-    ensureNamedImports(sourceFile, spec.moduleSpecifier, spec.namedImports);
-  }
-  const existing = sourceFile
-    .getImportDeclarations()
-    .find((d) => d.getModuleSpecifierValue() === spec.moduleSpecifier);
-  if (existing) return;
-  sourceFile.addImportDeclaration({
-    moduleSpecifier: spec.moduleSpecifier,
-    defaultImport: spec.defaultImport,
-    namespaceImport: spec.namespaceImport,
-  });
-}
-
-/** Peel wrappers (`loadFlash(fn)`, `(fn)`, `fn satisfies X`) down to the function. */
-function unwrapFunction(node: Node): ArrowFunction | FunctionExpression | null {
-  if (Node.isArrowFunction(node) || Node.isFunctionExpression(node)) {
-    return node;
-  }
-  if (
-    Node.isParenthesizedExpression(node) ||
-    Node.isAsExpression(node) ||
-    Node.isSatisfiesExpression(node)
-  ) {
-    return unwrapFunction(node.getExpression());
-  }
-  if (Node.isCallExpression(node)) {
-    for (const arg of node.getArguments()) {
-      const fn = unwrapFunction(arg);
-      if (fn) return fn;
-    }
-  }
-  return null;
-}
-
-/** The exported `load`, whether declared as a function or wrapped in a const. */
-function findLoadFunction(sourceFile: SourceFile): LoadFunction | null {
-  const declaration = sourceFile.getFunction("load");
-  if (declaration) {
-    return declaration.isExported() ? declaration : null;
-  }
-
-  const variable = sourceFile.getVariableDeclaration("load");
-  if (!variable) return null;
-  if (!variable.getVariableStatement()?.isExported()) return null;
-
-  const initializer = variable.getInitializer();
-  return initializer ? unwrapFunction(initializer) : null;
-}
-
-function isFunctionNode(node: Node): boolean {
-  return (
-    Node.isArrowFunction(node) ||
-    Node.isFunctionExpression(node) ||
-    Node.isFunctionDeclaration(node) ||
-    Node.isMethodDeclaration(node)
-  );
-}
-
-/** The single, final `return { ... }` of the load body, or null for any other shape. */
-function findReturnedObject(
-  fn: LoadFunction,
-  body: Block,
-): { statement: ReturnStatement; object: ObjectLiteralExpression } | null {
-  const statements = body.getStatements();
-  const last = statements[statements.length - 1];
-  if (!last || !Node.isReturnStatement(last)) return null;
-
-  // Early returns would need the cms block hoisted above them; refuse rather
-  // than guess where it belongs.
-  const returns = body
-    .getDescendantsOfKind(SyntaxKind.ReturnStatement)
-    .filter((r) => r.getFirstAncestor(isFunctionNode) === fn);
-  if (returns.length !== 1) return null;
-
-  let expression = last.getExpression();
-  while (expression && Node.isParenthesizedExpression(expression)) {
-    expression = expression.getExpression();
-  }
-  if (!expression || !Node.isObjectLiteralExpression(expression)) return null;
-
-  return { statement: last, object: expression };
-}
-
-function hasProperty(object: ObjectLiteralExpression, name: string): boolean {
-  return object.getProperties().some((property) => {
-    if (
-      Node.isPropertyAssignment(property) ||
-      Node.isShorthandPropertyAssignment(property)
-    ) {
-      return property.getName() === name;
-    }
-    return false;
-  });
-}
-
 /**
- * Wires `loadCms` into the root `+layout.server.ts`:
+ * Wires `loadCms` into the root `+layout.server.ts`, creating the file when
+ * the project has none:
  *
  * - `loadCms` needs the whole request event, so a destructured parameter is
  *   renamed to `event` and the destructuring becomes the first statement.
@@ -210,7 +111,9 @@ export function modifyLayoutServer(
   locale: LayoutServerLocale = DEFAULT_LOCALE,
 ): ModifyOutcome {
   if (!fs.existsSync(layoutServerPath)) {
-    return { status: "not-found", message: NOT_FOUND_HINT };
+    fs.mkdirSync(path.dirname(layoutServerPath), { recursive: true });
+    fs.writeFileSync(layoutServerPath, createdLayoutServer(locale));
+    return { status: "success", changed: true };
   }
 
   const original = fs.readFileSync(layoutServerPath, "utf8");
@@ -218,11 +121,7 @@ export function modifyLayoutServer(
     return { status: "success", changed: false };
   }
 
-  const project = new Project({
-    compilerOptions: { allowJs: true },
-    manipulationSettings: { quoteKind: QuoteKind.Single },
-  });
-  const sourceFile = project.addSourceFileAtPath(layoutServerPath);
+  const sourceFile = newProject().addSourceFileAtPath(layoutServerPath);
 
   // --- Inspect everything before touching anything. ---
   const fn = findLoadFunction(sourceFile);
@@ -233,54 +132,45 @@ export function modifyLayoutServer(
     return { status: "failed", message: FAILURE_HINT };
   }
 
-  const params = fn.getParameters();
-  if (params.length > 1) return { status: "failed", message: FAILURE_HINT };
-
-  const param = params[0];
-  let eventName = "event";
-  let destructuring: string | null = null;
-  if (param) {
-    if (param.getInitializer() || param.isRestParameter()) {
-      return { status: "failed", message: FAILURE_HINT };
-    }
-    const nameNode = param.getNameNode();
-    if (Node.isIdentifier(nameNode)) {
-      eventName = nameNode.getText();
-    } else if (Node.isObjectBindingPattern(nameNode)) {
-      destructuring = nameNode.getText();
-    } else {
-      return { status: "failed", message: FAILURE_HINT };
-    }
+  const event = inspectEventParameter(fn);
+  if (event.kind === "unsupported") {
+    return { status: "failed", message: FAILURE_HINT };
   }
 
-  const returned = findReturnedObject(fn, body);
-  if (!returned) return { status: "failed", message: FAILURE_HINT };
+  const returned = findFinalReturn(fn, body);
+  const object = returned && returnedObject(returned);
+  if (!returned || !object) {
+    return { status: "failed", message: FAILURE_HINT };
+  }
+
+  const eventName = event.kind === "identifier" ? event.name : "event";
 
   // --- Mutate bottom-up so earlier node references stay valid. ---
-  if (!hasProperty(returned.object, "cms")) {
-    const spreadIndex = returned.object
+  if (!hasProperty(object, "cms")) {
+    const spreadIndex = object
       .getProperties()
       .findIndex((property) => Node.isSpreadAssignment(property));
     if (spreadIndex === -1) {
-      returned.object.addShorthandPropertyAssignment({ name: "cms" });
+      object.addShorthandPropertyAssignment({ name: "cms" });
     } else {
-      returned.object.insertShorthandPropertyAssignment(spreadIndex, {
-        name: "cms",
-      });
+      object.insertShorthandPropertyAssignment(spreadIndex, { name: "cms" });
     }
   }
 
-  const returnIndex = body.getStatements().indexOf(returned.statement);
+  const returnIndex = body.getStatements().indexOf(returned);
   body.insertStatements(
     returnIndex,
     `\n${cmsSnippet(eventName, locale.expression(eventName))}\n`,
   );
 
-  if (destructuring && param) {
+  if (event.kind === "binding") {
+    const destructuring = event.pattern.getText();
     body.insertStatements(0, `const ${destructuring} = ${eventName};`);
-    const typeText = param.getTypeNode()?.getText();
-    param.replaceWithText(typeText ? `${eventName}: ${typeText}` : eventName);
-  } else if (!param) {
+    const typeText = event.param.getTypeNode()?.getText();
+    event.param.replaceWithText(
+      typeText ? `${eventName}: ${typeText}` : eventName,
+    );
+  } else if (event.kind === "none") {
     fn.addParameter({ name: eventName });
   }
 

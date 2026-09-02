@@ -5,7 +5,7 @@ import { generate as generateBase } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
 
 const SLUG = "enable-cms" as const;
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const SOURCE = "src/patterns/enable/cms";
 const DOCS = "/enable/cms";
 
@@ -43,15 +43,14 @@ export default {
   plan: "open",
   title: "Enable CMS",
   summary:
-    "Adds an inline-editing CMS with an admin bar, served from the app's own backend.",
+    "Adds an inline-editing CMS with an admin bar, served from the app's own backend or a hosted one.",
   requires: {
     auth: false,
     api: false,
     apiKeys: false,
-    // The backend runs inside the app's server, so the site needs a runtime.
-    // A prerendered site would fetch a `prerender = false` endpoint during
-    // its own build.
-    backend: true,
+    // An app with a server hosts the backend itself; a static site reads from
+    // a hosted CMS via --endpoint. Neither needs PocketBase.
+    backend: false,
     i18n: false,
     teams: false,
     payments: false,
@@ -75,7 +74,13 @@ export default {
     argv: [],
   },
 
-  examples: [],
+  examples: [
+    {
+      command: "--endpoint https://velastack.dev/v1/projects/<project>/cms",
+      description:
+        "Read from a hosted CMS instead of running the backend in the app — the only shape a static site can use.",
+    },
+  ],
 
   tests: 0,
 

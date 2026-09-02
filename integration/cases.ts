@@ -250,6 +250,13 @@ export const stackCases: CaseSpec[] = [
     step("enable-i18n"),
     step("enable-cms", { check: true }),
   ]),
+  // A static site has no server for the backend; it reads from a hosted CMS.
+  makeCase("static-cms", "static", [
+    step("enable-cms", {
+      input: { endpoint: "https://velastack.dev/v1/projects/demo/cms" },
+      check: true,
+    }),
+  ]),
   makeCase("auth-then-i18n", "auth", [step("enable-i18n", { check: true })]),
   makeCase("i18n-then-auth", "minimal", [
     step("enable-i18n"),
