@@ -48,7 +48,7 @@ export const KNOWN_FAILURES: KnownFailure[] = [
     kind: "check",
     step: "enable-auth-remote",
     match:
-      /(\(auth\)\/(login|otp|signup)\/\+page\.svelte.*ts\(2339\) Property '(message|password)' does not exist)|(settings\/\+page\.svelte.*ts\(2322\) Type '\{ name: string; type: "checkbox")/,
+      /(\(auth\)\/(login|otp\/\[token\]|signup)\/\+page\.svelte.*ts\(2339\) Property '(message|password)' does not exist)|(settings\/\+page\.svelte.*ts\(2322\) Type '\{ name: string; type: "checkbox")/,
   },
 
   // --- enable-backend (static template) -------------------------------------
@@ -103,6 +103,36 @@ export const KNOWN_FAILURES: KnownFailure[] = [
     match: /expected i18n=true/,
   },
 
+  // --- generators -------------------------------------------------------------
+  {
+    id: "scaffold-data-table-not-in-registry",
+    reason:
+      "generate-scaffold asks shadcn-svelte for a `data-table` component; shadcn-svelte 1.6's " +
+      "registry has no such item (`CLI Error: Registry item 'data-table' does not exist`), so the " +
+      "component install aborts the pattern.",
+    kind: "apply",
+    step: "generate-scaffold",
+    match: /npx exited with code 1/,
+  },
+  {
+    id: "scaffold-remote-data-table-not-in-registry",
+    reason:
+      "Same as scaffold-data-table-not-in-registry, for the remote-functions variant.",
+    kind: "apply",
+    step: "generate-scaffold-remote",
+    match: /npx exited with code 1/,
+  },
+  {
+    id: "form-test-unused-hooks",
+    reason:
+      "Without auth, the server.test.ts that generate-form emits (src/core/tests.ts) imports " +
+      "afterEach and beforeEach from vitest but has no hooks to put in them.",
+    kind: "check",
+    case: /^generate-form(-remote)?$/,
+    match:
+      /server\.test\.ts.*'(afterEach|beforeEach)' is declared but its value is never read/,
+  },
+
   // --- enable-teams -----------------------------------------------------------
   {
     id: "teams-page-spread-types",
@@ -123,5 +153,80 @@ export const KNOWN_FAILURES: KnownFailure[] = [
     step: "enable-teams",
     match:
       /teams\/\[id\]\/.*'(user|TestContext)' is declared but its value is never read/,
+  },
+
+  // --- disable-* --------------------------------------------------------------
+  {
+    id: "disable-api-template-readme",
+    reason:
+      "The minimal template ships src/routes/api/README.md, which the CLI's detectFeatures reads " +
+      "as `api: true`; disable-api only deletes what enable-api created, so api stays detected.",
+    kind: "features",
+    step: "disable-api",
+    match: /expected api=false/,
+  },
+  {
+    id: "disable-api-keys-unused-icon",
+    reason:
+      "disable-api-keys removes the API keys menu item from nav-user.svelte but leaves the " +
+      "KeyRoundIcon import behind.",
+    kind: "check",
+    step: "disable-api-keys",
+    match:
+      /nav-user\.svelte.*'KeyRoundIcon' is declared but its value is never read/,
+  },
+  {
+    id: "disable-backend-incomplete-revert",
+    reason:
+      "disable-backend switches vite.config.ts to @sveltejs/adapter-static without installing it, " +
+      "leaves `locals.meta` usages in src/routes/+layout.server.ts although app.d.ts no longer " +
+      "declares it, and leaves server.test.ts files that rely on the removed test/setup.ts context.",
+    kind: "check",
+    step: "disable-backend",
+    match:
+      /adapter-static|Property 'meta' does not exist on type 'Locals'|Property '(request|agent|user)' does not exist on type 'TestContext/,
+  },
+  {
+    id: "disable-content-negotiation-hooks-enoent",
+    reason:
+      "src/patterns/disable/content-negotiation/modifies/hooks.ts deletes src/hooks.ts when the " +
+      "reroute was its only content, and modifyOutcomeToFile then re-reads the deleted file.",
+    kind: "apply",
+    step: "disable-content-negotiation",
+    match: /ENOENT.*src\/hooks\.ts/,
+  },
+  {
+    id: "disable-i18n-manual-remediation",
+    reason:
+      "disable-i18n only reverts .gitignore and prints manual steps; the $locales imports in " +
+      "src/hooks.server.ts and src/routes/+layout.ts, the language-select import in the root " +
+      "layout and the wuchale Vite plugin stay behind, so the project no longer type-checks or " +
+      "loads its config.",
+    kind: "check",
+    step: "disable-i18n",
+    match: /\$locales\/|Config file not found|language-select\.svelte/,
+  },
+  {
+    id: "disable-teams-drop-order",
+    reason:
+      "disable-teams drops team_invite_links, team_invites, team_memberships and teams but not " +
+      "team_users, which still references teams, so PocketBase refuses the drop " +
+      "(`Failed to delete collection probably due to existing reference in team_users`).",
+    kind: "apply",
+    step: "disable-teams",
+    match: /Failed to delete collection/,
+  },
+
+  // --- stacks -----------------------------------------------------------------
+  {
+    id: "static-backend-auth-missing-deps",
+    reason:
+      "enable-auth on a static-template project turned backend expects the minimal template's " +
+      "extras: sveltekit-flash-message is not installed and test/setup.ts (request/agent/user on " +
+      "the vitest context) does not exist.",
+    kind: "check",
+    case: /^static-backend-auth$/,
+    match:
+      /sveltekit-flash-message|Property '(request|agent|user)' does not exist on type 'TestContext/,
   },
 ];

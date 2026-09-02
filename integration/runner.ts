@@ -172,9 +172,14 @@ function settle(
     }
   }
 
-  const stale = KNOWN_FAILURES.filter(
-    (rule) => !matched.has(rule) && ruleTargets(rule, caseName, steps),
-  );
+  // A chain that stopped early never reached the steps or checks a rule is
+  // about, so silence there says nothing about whether it still reproduces.
+  const aborted = errors.some((e) => e.fatal);
+  const stale = aborted
+    ? []
+    : KNOWN_FAILURES.filter(
+        (rule) => !matched.has(rule) && ruleTargets(rule, caseName, steps),
+      );
 
   if (unknown.length === 0 && stale.length === 0) {
     if (project && !keepProjects()) removeProject(project);
