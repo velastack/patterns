@@ -204,11 +204,25 @@ const TEAM_ROUTE = "(app)/[team_id]/projects";
 
 /** Combinations where one pattern's output depends on another being detected. */
 export const stackCases: CaseSpec[] = [
+  // One model per generator: the examples all use `contact`, and
+  // generate-resource refuses a collection an earlier step created.
   makeCase("auth-generators", "auth", [
-    step("generate-scaffold", { check: true }),
-    step("generate-form", { check: true }),
-    step("generate-resource", { check: true }),
-    step("generate-schema", { check: true }),
+    step("generate-scaffold", {
+      argv: ["product", "name:text", "price:number"],
+      check: true,
+    }),
+    step("generate-form", {
+      argv: ["feedback", "name:text", "email:email"],
+      check: true,
+    }),
+    step("generate-resource", {
+      argv: ["invoice", "amount:number", "paid:bool"],
+      check: true,
+    }),
+    step("generate-schema", {
+      argv: ["author", "bio:text", "website:url"],
+      check: true,
+    }),
   ]),
   makeCase("teams-scaffold-roundtrip", "auth", [
     step("enable-teams"),
@@ -264,7 +278,11 @@ export const stackCases: CaseSpec[] = [
   ]),
   makeCase("remote-functions", "minimal", [
     step("enable-auth-remote"),
-    step("generate-scaffold-remote"),
+    // Not the `contact` example: the form step would regenerate its schema
+    // without the id the scaffold's edit form reads.
+    step("generate-scaffold-remote", {
+      argv: ["product", "name:text", "price:number"],
+    }),
     step("generate-form-remote", { check: true }),
   ]),
   makeCase("static-backend-auth", "static", [
@@ -297,12 +315,14 @@ export const lifecycleCases: CaseSpec[] = [
     step("generate-resource", {
       argv: ["invoice", "amount:number", "paid:bool"],
     }),
-    step("generate-schema", { argv: ["profile", "bio:text", "website:url"] }),
+    // Not `profile`: enable-auth owns src/lib/schemas/profile.ts and its
+    // settings page imports it, so a generated one would replace it.
+    step("generate-schema", { argv: ["author", "bio:text", "website:url"] }),
     step("generate-migration", {
       argv: ["users", "add", "birthday:date"],
       check: true,
     }),
-    step("destroy-schema", { argv: ["profile"] }),
+    step("destroy-schema", { argv: ["author"] }),
     step("destroy-resource", { argv: ["invoices"] }),
     step("destroy-form", { argv: ["feedback"] }),
     step("destroy-scaffold", { argv: ["products"] }),

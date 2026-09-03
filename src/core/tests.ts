@@ -417,8 +417,11 @@ function relationDependencyContext(
     ? "await context.agent.authenticateUser();\n      "
     : "";
 
+  const hasBeforeEach = setupLines.length > 0 || options.features.auth;
+  const hasAfterEach = cleanupLines.length > 0;
+
   let setupSection = "";
-  if (setupLines.length > 0 || options.features.auth) {
+  if (hasBeforeEach) {
     setupSection += dedent`
       beforeEach(async (context) => {
         ${authSetup}${setupLines.join("\n        ")}
@@ -426,7 +429,7 @@ function relationDependencyContext(
     `;
   }
 
-  if (cleanupLines.length > 0) {
+  if (hasAfterEach) {
     setupSection +=
       "\n\n" +
       dedent`
@@ -436,8 +439,18 @@ function relationDependencyContext(
       `;
   }
 
+  // Only the hooks that are used: the projects type-check with noUnusedLocals.
+  const vitestImport = `import { ${[
+    ...(hasAfterEach ? ["afterEach"] : []),
+    ...(hasBeforeEach ? ["beforeEach"] : []),
+    "describe",
+    "expect",
+    "it",
+  ].join(", ")} } from "vitest";`;
+
   return {
     declarations,
+    vitestImport,
     setupSection,
     requestAgent,
     modelDbData: fixtureObjectToCode(
@@ -465,6 +478,7 @@ export function generateScaffoldServerTestSnippet(
 ): string {
   const {
     declarations,
+    vitestImport,
     setupSection,
     requestAgent,
     modelDbData,
@@ -478,7 +492,7 @@ export function generateScaffoldServerTestSnippet(
   const todo = dynamicParamsTodo(dynamicParams);
 
   return dedent`
-    import { afterEach, beforeEach, describe, expect, it } from "vitest";
+    ${vitestImport}
 
     ${todo}describe("${model.pluralName}", () => {
       ${declarations}${setupSection}
@@ -562,8 +576,13 @@ export function generateScaffoldRemoteServerTestSnippet(
   collections: Collection[],
   dynamicParams: string[] = [],
 ): string {
-  const { declarations, setupSection, requestAgent, modelDbData } =
-    relationDependencyContext(model, fields, options, collections);
+  const {
+    declarations,
+    vitestImport,
+    setupSection,
+    requestAgent,
+    modelDbData,
+  } = relationDependencyContext(model, fields, options, collections);
 
   const list = testizeUrl(urls.list, dynamicParams);
   const newUrl = testizeUrl(urls.new, dynamicParams);
@@ -572,7 +591,7 @@ export function generateScaffoldRemoteServerTestSnippet(
   const todo = dynamicParamsTodo(dynamicParams);
 
   return dedent`
-    import { afterEach, beforeEach, describe, expect, it } from "vitest";
+    ${vitestImport}
 
     ${todo}describe("${model.pluralName}", () => {
       ${declarations}${setupSection}
@@ -634,14 +653,19 @@ export function generateFormServerTestSnippet(
   collections: Collection[],
   dynamicParams: string[] = [],
 ): string {
-  const { declarations, setupSection, requestAgent, modelFormData } =
-    relationDependencyContext(model, fields, options, collections);
+  const {
+    declarations,
+    vitestImport,
+    setupSection,
+    requestAgent,
+    modelFormData,
+  } = relationDependencyContext(model, fields, options, collections);
 
   const url = testizeUrl(formUrl, dynamicParams);
   const todo = dynamicParamsTodo(dynamicParams);
 
   return dedent`
-    import { afterEach, beforeEach, describe, expect, it } from "vitest";
+    ${vitestImport}
 
     ${todo}describe("${url}", () => {
       ${declarations}${setupSection}
@@ -671,14 +695,14 @@ export function generateFormRemoteServerTestSnippet(
   collections: Collection[],
   dynamicParams: string[] = [],
 ): string {
-  const { declarations, setupSection, requestAgent } =
+  const { declarations, vitestImport, setupSection, requestAgent } =
     relationDependencyContext(model, fields, options, collections);
 
   const url = testizeUrl(formUrl, dynamicParams);
   const todo = dynamicParamsTodo(dynamicParams);
 
   return dedent`
-    import { afterEach, beforeEach, describe, expect, it } from "vitest";
+    ${vitestImport}
 
     ${todo}describe("${url}", () => {
       ${declarations}${setupSection}

@@ -94,18 +94,6 @@ export const KNOWN_FAILURES: KnownFailure[] = [
     match: /src\/app\.html/,
   },
 
-  // --- generators -------------------------------------------------------------
-  {
-    id: "form-test-unused-hooks",
-    reason:
-      "Without auth, the server.test.ts that generate-form and generate-scaffold emit (src/core/tests.ts) imports " +
-      "afterEach and beforeEach from vitest but has no hooks to put in them.",
-    kind: "check",
-    case: /^generate-(form|scaffold)(-remote)?$/,
-    match:
-      /server\.test\.ts.*'(afterEach|beforeEach)' is declared but its value is never read/,
-  },
-
   // --- enable-teams -----------------------------------------------------------
   {
     id: "teams-page-spread-types",
@@ -167,6 +155,17 @@ export const KNOWN_FAILURES: KnownFailure[] = [
     kind: "apply",
     step: "disable-content-negotiation",
     match: /ENOENT.*src\/hooks\.ts/,
+  },
+  {
+    id: "disable-content-negotiation-still-detected",
+    reason:
+      "disable-content-negotiation deletes what enable-content-negotiation created and reverts the " +
+      "hooks and root layout but uninstalls nothing, so the sveltekit-negotiate dependency keeps " +
+      "contentNegotiation detected afterwards. Only reached when src/hooks.ts has other content " +
+      "(i18n on); otherwise disable-content-negotiation-hooks-enoent aborts the step first.",
+    kind: "features",
+    step: "disable-content-negotiation",
+    match: /expected contentNegotiation=false/,
   },
   {
     id: "disable-i18n-manual-remediation",

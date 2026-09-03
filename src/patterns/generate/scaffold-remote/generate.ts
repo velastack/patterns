@@ -146,6 +146,19 @@ function editHiddenInputs(model: Model, injectables: Injectables): string {
     .join("\n");
 }
 
+/**
+ * SvelteKit hands every page `params`; it is declared only where a link
+ * interpolates a dynamic route segment, since the projects type-check with
+ * noUnusedLocals.
+ */
+function propsLine(dynamicParams: string[], withData = true): string {
+  const names = [
+    ...(withData ? ["data"] : []),
+    ...(dynamicParams.length > 0 ? ["params"] : []),
+  ];
+  return names.length > 0 ? `let { ${names.join(", ")} } = $props();` : "";
+}
+
 function newPageSnippet(
   model: Model,
   urls: ReturnType<typeof scaffoldUrls>,
@@ -171,6 +184,7 @@ function newPageSnippet(
   return dedent`
     <script lang="ts">
       ${imports}
+      ${propsLine(dynamicParams, false)}
     </script>
 
     <section data-role="content">
@@ -350,7 +364,7 @@ function listPageSnippet(
       import PlusIcon from "@lucide/svelte/icons/plus";
       import type { Models } from "@velastack/pocketbase";
 
-      let { data } = $props();
+      ${propsLine(dynamicParams)}
       let rowSelection = $state<RowSelectionState>({});
       let columnVisibility = $state<VisibilityState>({});
       let columnFilters = $state<ColumnFiltersState>([]);
@@ -579,7 +593,7 @@ function newRemoteSnippet(
     import { ${model.schemaName} } from "$lib/schemas/${model.name}";
 
     export const ${formVar} = form(${model.schemaName}, async (data) => {
-      const { locals } = getRequestEvent();
+      const { locals${dynamicParams.length > 0 ? ", params" : ""} } = getRequestEvent();
       const ${model.name} = await ${pb}.collection("${model.tableName}").create(
         ${createPayload}
       );
@@ -659,7 +673,7 @@ function showPageSnippet(
       ${imports}
       ${labels}
 
-      let { data } = $props();
+      ${propsLine(dynamicParams)}
     </script>
 
     <section data-role="content">
@@ -746,7 +760,7 @@ function editRemoteSnippet(
     import { ${model.schemaName} } from "$lib/schemas/${model.name}";
 
     export const ${formVar} = form(${model.schemaName}, async (data) => {
-      const { locals } = getRequestEvent();
+      const { locals${dynamicParams.length > 0 ? ", params" : ""} } = getRequestEvent();
       const { id, collectionId, ...rest } = data;
       if (!id) error(400, "id is required");
       ${updateBody}

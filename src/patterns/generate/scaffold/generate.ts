@@ -139,19 +139,27 @@ function editHiddenInputs(injectables: Injectables): string {
     .join("\n");
 }
 
+/**
+ * SvelteKit hands every page `params`; it is declared only where a link or
+ * redirect interpolates a dynamic route segment, since the projects
+ * type-check with noUnusedLocals.
+ */
+function propsLine(withParams: boolean): string {
+  return withParams
+    ? "let { data, params } = $props();"
+    : "let { data } = $props();";
+}
+
 function formScript(
   model: Model,
   fields: Field[],
   includeParams = false,
 ): string {
   const labels = selectLabelMaps(fields);
-  const paramsLine = includeParams
-    ? "let { data, params } = $props();"
-    : "let { data } = $props();";
 
   return dedent`
     ${labels}
-    ${paramsLine}
+    ${propsLine(includeParams)}
 
     const form = superForm(untrack(() => data.form), {
       validators: zod4Client(${model.schemaName}),
@@ -190,7 +198,7 @@ function newPageSnippet(
   return dedent`
     <script lang="ts">
       ${imports}
-      ${formScript(model, fields)}
+      ${formScript(model, fields, dynamicParams.length > 0)}
     </script>
 
     <section data-role="content">
@@ -371,7 +379,7 @@ function listPageSnippet(
       import PlusIcon from "@lucide/svelte/icons/plus";
       import type { Models } from "@velastack/pocketbase";
 
-      let { data } = $props();
+      ${propsLine(dynamicParams.length > 0)}
       let rowSelection = $state<RowSelectionState>({});
       let columnVisibility = $state<VisibilityState>({});
       let columnFilters = $state<ColumnFiltersState>([]);
@@ -590,7 +598,7 @@ function newServerSnippet(
     };
 
     export const actions = {
-      default: async ({ locals, request }) => {
+      default: async ({ locals, request${dynamicParams.length > 0 ? ", params" : ""} }) => {
         const form = await superValidate(request, zod4(${model.schemaName}));
 
         if (!form.valid) {
@@ -685,7 +693,7 @@ function showPageSnippet(
       ${imports}
       ${labels}
 
-      let { data } = $props();
+      ${propsLine(dynamicParams.length > 0)}
     </script>
 
     <section data-role="content">

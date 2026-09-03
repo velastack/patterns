@@ -280,6 +280,15 @@ describe("generate scaffold pattern", () => {
       "<Button href={`/${params.team_id}/projects/${data.project.id}/edit`}",
     );
 
+    // Every page that links into the dynamic route declares `params`, and the
+    // create action reads it for its redirect.
+    for (const page of [listPage, newPage, showPage]) {
+      expect(page?.content).toContain("let { data, params } = $props();");
+    }
+    expect(newServer?.content).toContain(
+      "default: async ({ locals, request, params }) =>",
+    );
+
     const test = result.creates.find((file) =>
       file.path.endsWith("/projects/server.test.ts"),
     );

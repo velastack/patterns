@@ -221,4 +221,36 @@ describe("generate scaffold-remote pattern", () => {
         .includes("src/routes/(public)/todos/new/form.remote.ts"),
     ).toBe(true);
   });
+
+  it("declares params where a dynamic route segment is interpolated", async () => {
+    const result = await generateBase(
+      makeOptions({
+        env: "preview",
+        argv: ["project", "name:text!"],
+        input: { route: "(app)/[team_id]/projects" },
+      }),
+    );
+    const content = (suffix: string) =>
+      result.creates.find((file) => file.path.endsWith(suffix))?.content;
+
+    expect(content("/projects/+page.svelte")).toContain(
+      "let { data, params } = $props();",
+    );
+    expect(content("/projects/[id]/+page.svelte")).toContain(
+      "let { data, params } = $props();",
+    );
+    expect(content("/projects/new/+page.svelte")).toContain(
+      "let { params } = $props();",
+    );
+    // The remote functions read `params` off the request event for their redirects.
+    expect(content("/projects/new/form.remote.ts")).toContain(
+      "const { locals, params } = getRequestEvent();",
+    );
+    expect(content("/projects/[id]/edit/form.remote.ts")).toContain(
+      "const { locals, params } = getRequestEvent();",
+    );
+    expect(content("/projects/new/form.remote.ts")).toContain(
+      "redirect(303, `/${params.team_id}/projects/${project.id}`);",
+    );
+  });
 });
