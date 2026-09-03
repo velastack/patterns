@@ -106,6 +106,7 @@
     "package-manager-detector": "^1.6.0",
     "pluralize": "^8.0.0",
     "pocketbase": "^0.28.0",
+    "shadcn-svelte": "^1.6.0",
     "stripe": "^19.3.0",
     "svelte": "^5.56.10",
     "ts-morph": "^28.0.0",

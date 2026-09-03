@@ -60,9 +60,13 @@ export type ExecuteCommand = (
   args: string[],
 ) => Promise<void>;
 
-/** Replaces the package-manager spawn; the test seam for anything that installs. */
+/**
+ * The seams for anything that leaves the process: the package-manager spawn
+ * and the HTTP client the shadcn-svelte registry is read with.
+ */
 export interface WriteResultRuntime {
   executeCommand?: ExecuteCommand;
+  fetch?: typeof fetch;
 }
 
 export interface InstallComponentsOptions {
@@ -89,6 +93,83 @@ export interface InstallComponentsResult {
   skipped: Component[];
   /** npm specs installed for the custom components, in install order. */
   packages: Package[];
+}
+
+/** One entry of a style's registry index (`/registry/styles/<style>/index.json`). */
+export interface RegistryItem {
+  name: string;
+  /** `registry:ui`, `registry:block`, `registry:hook`, `registry:lib`, `registry:font`, ... */
+  type: string;
+}
+
+export interface ListComponentsOptions {
+  root: string;
+}
+
+export interface ListComponentsResult {
+  /** The style `components.json` names (shadcn-svelte's default when it names none). */
+  style: string;
+  /** Directories under the project's ui directory, sorted. */
+  installed: Component[];
+  /** The components this package ships (`data-table`, `multiselect`, ...), sorted. */
+  custom: Component[];
+  /** Every item the style's registry index lists; empty when the registry could not be read. */
+  registry: RegistryItem[];
+  /** Why `registry` is empty, when the registry could not be read. */
+  registryUnavailable?: string;
+}
+
+export interface SwitchStyleOptions {
+  root: string;
+  /** One of shadcn-svelte's styles: `nova`, `vega`, `maia`, ... */
+  style: string;
+  /**
+   * Also apply the style's preset font (fontsource import, `--font-sans`,
+   * `html { @apply font-sans }`), which is most of what makes a style look
+   * as designed. Defaults to true.
+   */
+  font?: boolean;
+  /**
+   * Called with the components about to be re-added from the new style's
+   * registry, before anything is written; return false to abort.
+   */
+  confirm?: (components: Component[]) => Promise<boolean> | boolean;
+  logger?: Logger;
+}
+
+export interface SwitchStyleResult {
+  /** `unchanged` when the project already had the style, `cancelled` when `confirm` said no. */
+  status: "switched" | "unchanged" | "cancelled";
+  style: string;
+  /** Registry components re-added from the new style, sorted. */
+  reinstalled: Component[];
+  /** Relative paths written this run. */
+  filesModified: string[];
+  /** Packages that appeared in `package.json` this run (the preset font). */
+  packages: Package[];
+  /** Things worth a look afterwards, such as a previous font import left in the stylesheet. */
+  hints: string[];
+}
+
+export interface ApplyBaseColorOptions {
+  root: string;
+  /** One of shadcn-svelte's base colors: `neutral`, `stone`, `zinc`, `mauve`, `olive`, `mist`, `taupe`. */
+  color: string;
+}
+
+export interface ApplyThemeOptions {
+  root: string;
+  /** A base color or an accent (`blue`, `rose`, `emerald`, ...). */
+  theme: string;
+}
+
+export interface ApplyColorsResult {
+  /** What `components.json` records after the run. */
+  baseColor: string;
+  /** The accent applied to the tokens; the base color itself for `applyBaseColor`. */
+  theme: string;
+  /** Relative paths written this run. */
+  filesModified: string[];
 }
 
 export interface Example {

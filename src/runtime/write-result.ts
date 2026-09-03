@@ -4,6 +4,7 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
@@ -11,6 +12,7 @@ import { detect } from "package-manager-detector";
 import { resolveCommand } from "package-manager-detector/commands";
 import spawn from "cross-spawn";
 import type {
+  Component,
   InstallComponentsOptions,
   InstallComponentsResult,
   Options,
@@ -18,9 +20,11 @@ import type {
   Result,
   WriteResultRuntime,
 } from "../core/types";
+import { InvalidArgumentError, RegistryUnavailableError } from "../core/errors";
 import { getLogger, NOOP_LOGGER, type Logger } from "../core/logger";
 import { formatSource } from "../core/format-result";
 import { FORMSNAP, TANSTACK_TABLE_CORE } from "../core/constants";
+import { fetchRegistryIndex, readComponentsConfig } from "./registry";
 
 type CustomNpmPackages = Record<string, string[]>;
 
@@ -67,7 +71,8 @@ const customComponentAssets = import.meta.glob<string>("../ui/components/**", {
   eager: true,
 });
 
-function getAllCustomComponents() {
+/** The components this package ships, by directory name, sorted. */
+export function getAllCustomComponents(): Component[] {
   return [
     ...new Set(
       Object.keys(customComponentAssets).map(componentNameFromAssetPath),
@@ -171,7 +176,7 @@ async function executeWithDetectedPackageManager(
   });
 }
 
-async function executeCommand(
+export async function executeCommand(
   cwd: string,
   operation: PackageManagerOperation,
   args: string[],
@@ -185,7 +190,8 @@ async function executeCommand(
   await executeWithDetectedPackageManager(cwd, operation, args);
 }
 
-function installedPackagesFromProject(root: string): Set<string> {
+/** Package names `package.json` records, whichever dependency block they sit in. */
+export function installedPackagesFromProject(root: string): Set<string> {
   const packageJsonPath = path.join(root, "package.json");
   if (!existsSync(packageJsonPath)) {
     return new Set();
@@ -241,7 +247,7 @@ async function installPackages(
   return toInstall;
 }
 
-function isCustomComponent(component: string): boolean {
+export function isCustomComponent(component: string): boolean {
   return getAllCustomComponents().includes(component);
 }
 
@@ -276,30 +282,45 @@ function copyCustomComponent(
 }
 
 const DEFAULT_UI_DIR = ["src", "lib", "components", "ui"];
-const FORMATTABLE_EXTENSIONS = new Set([".ts", ".js", ".svelte", ".json"]);
+const FORMATTABLE_EXTENSIONS = new Set([
+  ".ts",
+  ".js",
+  ".svelte",
+  ".json",
+  ".css",
+]);
+
+function* filesUnder(target: string): Generator<string> {
+  if (!existsSync(target)) {
+    return;
+  }
+  if (statSync(target).isFile()) {
+    yield target;
+    return;
+  }
+  const entries = readdirSync(target, { recursive: true, withFileTypes: true });
+  for (const entry of entries) {
+    if (entry.isFile()) {
+      yield path.join(entry.parentPath, entry.name);
+    }
+  }
+}
 
 /**
- * `shadcn-svelte add` writes files in the registry's style and the bundled
- * components carry this repo's; the project's `npm run lint` expects its own.
- * Runs the project's prettier over every file in the installed directories.
+ * `shadcn-svelte add` and `apply` write files in the registry's style and the
+ * bundled components carry this repo's; the project's `npm run lint` expects
+ * its own. Runs the project's prettier over the given files and directories
+ * (relative to the root or absolute) and returns the relative paths it
+ * changed. Paths that do not exist are skipped.
  */
-async function formatComponentDirs(
+export async function formatPaths(
   root: string,
-  componentsDir: string,
-  components: string[],
-): Promise<void> {
+  paths: string[],
+): Promise<string[]> {
   const context = { env: "runtime" as const, root };
-  for (const component of components) {
-    const dir = path.join(componentsDir, component);
-    if (!existsSync(dir)) {
-      continue;
-    }
-    const entries = readdirSync(dir, { recursive: true, withFileTypes: true });
-    for (const entry of entries) {
-      if (!entry.isFile()) {
-        continue;
-      }
-      const filePath = path.join(entry.parentPath, entry.name);
+  const changed: string[] = [];
+  for (const target of paths) {
+    for (const filePath of filesUnder(toTargetPath(root, target))) {
       if (!FORMATTABLE_EXTENSIONS.has(path.extname(filePath))) {
         continue;
       }
@@ -307,9 +328,11 @@ async function formatComponentDirs(
       const formatted = await formatSource(content, filePath, context);
       if (formatted !== content) {
         writeFileSync(filePath, formatted, "utf8");
+        changed.push(path.relative(root, filePath));
       }
     }
   }
+  return changed;
 }
 
 /**
@@ -320,26 +343,65 @@ async function formatComponentDirs(
  * the CLI creates.
  */
 export function resolveUiDir(root: string): string {
-  const fallback = path.join(root, ...DEFAULT_UI_DIR);
-  const configPath = path.join(root, "components.json");
-  if (!existsSync(configPath)) {
-    return fallback;
+  const alias = readComponentsConfig(root).aliases.ui;
+  if (alias === "$lib") {
+    return path.join(root, "src", "lib");
   }
+  if (alias?.startsWith("$lib/")) {
+    return path.join(root, "src", "lib", ...alias.slice(5).split("/"));
+  }
+  return path.join(root, ...DEFAULT_UI_DIR);
+}
+
+/** The component directories a project has, sorted. */
+export function installedComponents(root: string): Component[] {
+  const uiDir = resolveUiDir(root);
+  if (!existsSync(uiDir)) {
+    return [];
+  }
+  return readdirSync(uiDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+}
+
+/** Bare item names are checked against the index; URLs and `@scope/item` are shadcn's to resolve. */
+const BARE_ITEM_NAME = /^[a-z0-9][a-z0-9-]*$/i;
+
+/**
+ * A name the style's registry does not list would otherwise reach
+ * `shadcn-svelte add`, which fails after a fetch with a message that never
+ * mentions the style. Skipped when the registry cannot be read: shadcn will
+ * report that itself.
+ */
+async function assertKnownRegistryItems(
+  root: string,
+  components: Component[],
+  runtime: WriteResultRuntime | undefined,
+  logger: Logger,
+): Promise<void> {
+  const bare = components.filter((component) => BARE_ITEM_NAME.test(component));
+  if (bare.length === 0) {
+    return;
+  }
+  let known: Set<string>;
   try {
-    const config = JSON.parse(readFileSync(configPath, "utf8")) as {
-      aliases?: { ui?: string };
-    };
-    const alias = config.aliases?.ui;
-    if (alias === "$lib") {
-      return path.join(root, "src", "lib");
-    }
-    if (alias?.startsWith("$lib/")) {
-      return path.join(root, "src", "lib", ...alias.slice(5).split("/"));
-    }
-    return fallback;
-  } catch {
-    return fallback;
+    const index = await fetchRegistryIndex(root, { runtime });
+    known = new Set(index.map((item) => item.name));
+  } catch (error) {
+    if (!(error instanceof RegistryUnavailableError)) throw error;
+    logger.info(`${error.message}; leaving component names to shadcn-svelte`);
+    return;
   }
+  const unknown = bare.filter((component) => !known.has(component));
+  if (unknown.length === 0) {
+    return;
+  }
+  const { style } = readComponentsConfig(root);
+  const names = unknown.map((component) => `"${component}"`).join(", ");
+  throw new InvalidArgumentError(
+    `Unknown component${unknown.length > 1 ? "s" : ""} ${names} for style ${style}. Run \`vela ui list\` to see what is available.`,
+  );
 }
 
 export async function installComponents(
@@ -411,6 +473,7 @@ export async function installComponents(
 
   const publicList = [...publicToInstall].sort();
   if (publicList.length > 0) {
+    await assertKnownRegistryItems(root, publicList, runtime, logger);
     logger.info(
       `Installing shadcn-svelte components: ${publicList.join(", ")}`,
     );
@@ -424,7 +487,10 @@ export async function installComponents(
   }
 
   const installedList = [...new Set(installed)].sort();
-  await formatComponentDirs(root, componentsDir, installedList);
+  await formatPaths(
+    root,
+    installedList.map((component) => path.join(componentsDir, component)),
+  );
 
   return { installed: installedList, skipped, packages };
 }

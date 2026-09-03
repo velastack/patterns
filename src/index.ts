@@ -1,15 +1,30 @@
 import packageJson from "../package.json";
 import type {
+  ApplyBaseColorOptions,
+  ApplyColorsResult,
+  ApplyThemeOptions,
   InstallComponentsOptions,
   InstallComponentsResult,
+  ListComponentsOptions,
+  ListComponentsResult,
+  SwitchStyleOptions,
+  SwitchStyleResult,
   WriteResultRuntime,
 } from "./core/types";
-export { InvalidArgumentError } from "./core/errors";
+export { InvalidArgumentError, RegistryUnavailableError } from "./core/errors";
 export type {
+  ApplyBaseColorOptions,
+  ApplyColorsResult,
+  ApplyThemeOptions,
   Component,
   InstallComponentsOptions,
   InstallComponentsResult,
+  ListComponentsOptions,
+  ListComponentsResult,
   Package,
+  RegistryItem,
+  SwitchStyleOptions,
+  SwitchStyleResult,
   WriteResultRuntime,
 } from "./core/types";
 import generateForm from "./patterns/generate/form";
@@ -114,5 +129,45 @@ export async function installComponents(
   runtime?: WriteResultRuntime,
 ): Promise<InstallComponentsResult> {
   const { installComponents: run } = await import("./runtime/write-result");
+  return run(options, runtime);
+}
+
+/**
+ * What a project has installed, what this package can copy in, and what the
+ * configured style's registry offers. Node-only, loaded on first call like
+ * `installComponents`.
+ */
+export async function listComponents(
+  options: ListComponentsOptions,
+  runtime?: WriteResultRuntime,
+): Promise<ListComponentsResult> {
+  const { listComponents: run } = await import("./runtime/ui");
+  return run(options, runtime);
+}
+
+/** Moves a project to another shadcn-svelte style, re-adding its registry components. */
+export async function switchStyle(
+  options: SwitchStyleOptions,
+  runtime?: WriteResultRuntime,
+): Promise<SwitchStyleResult> {
+  const { switchStyle: run } = await import("./runtime/ui");
+  return run(options, runtime);
+}
+
+/** Sets the base palette through `shadcn-svelte apply`. */
+export async function applyBaseColor(
+  options: ApplyBaseColorOptions,
+  runtime?: WriteResultRuntime,
+): Promise<ApplyColorsResult> {
+  const { applyBaseColor: run } = await import("./runtime/ui");
+  return run(options, runtime);
+}
+
+/** Sets the accent color through `shadcn-svelte apply`, keeping the base palette. */
+export async function applyTheme(
+  options: ApplyThemeOptions,
+  runtime?: WriteResultRuntime,
+): Promise<ApplyColorsResult> {
+  const { applyTheme: run } = await import("./runtime/ui");
   return run(options, runtime);
 }

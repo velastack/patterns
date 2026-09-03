@@ -10,12 +10,16 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ExecuteCommand, Options, Result } from "../core/types";
+import { InvalidArgumentError } from "../core/errors";
 import {
+  formatPaths,
   installComponents,
+  installedComponents,
   packageName,
   resolveUiDir,
   writeResult,
 } from "./write-result";
+import { offlineFetch, registryFetch } from "./registry.mock";
 
 const tempDirs: string[] = [];
 
@@ -104,7 +108,7 @@ describe("writeResult", () => {
         ],
       },
       makeOptions(root),
-      { executeCommand: vi.fn() },
+      { executeCommand: vi.fn(), fetch: registryFetch() },
     );
 
     expect(readFileSync(path.join(root, "src", "new.ts"), "utf8")).toBe(
@@ -215,7 +219,7 @@ describe("writeResult", () => {
         components: ["button", "column-header"],
       },
       makeOptions(root),
-      { executeCommand },
+      { executeCommand, fetch: registryFetch() },
     );
 
     expect(executeCommand).toHaveBeenNthCalledWith(1, root, "install", [
@@ -272,7 +276,7 @@ describe("writeResult", () => {
     const result = await writeResult(
       { ...emptyResult(), components: ["data-table"] },
       makeOptions(root),
-      { executeCommand },
+      { executeCommand, fetch: registryFetch() },
     );
 
     expect(executeCommand).toHaveBeenCalledTimes(1);
@@ -323,7 +327,7 @@ describe("writeResult", () => {
         packages: ["wuchale@^0.26.3", "@wuchale/svelte@^0.21.1"],
       },
       makeOptions(root),
-      { executeCommand },
+      { executeCommand, fetch: registryFetch() },
     );
 
     expect(executeCommand).toHaveBeenCalledTimes(1);
@@ -367,7 +371,7 @@ describe("installComponents", () => {
 
     const result = await installComponents(
       { root, components: ["button", "card", "badge"] },
-      { executeCommand },
+      { executeCommand, fetch: registryFetch() },
     );
 
     expect(executeCommand).toHaveBeenCalledTimes(1);
@@ -388,7 +392,7 @@ describe("installComponents", () => {
 
     const result = await installComponents(
       { root, components: ["button", "data-table"] },
-      { executeCommand },
+      { executeCommand, fetch: registryFetch() },
     );
 
     expect(executeCommand).not.toHaveBeenCalled();
@@ -411,7 +415,7 @@ describe("installComponents", () => {
 
     const result = await installComponents(
       { root, components: ["column-header"], overwrite: true },
-      { executeCommand },
+      { executeCommand, fetch: registryFetch() },
     );
 
     expect(readFileSync(stale, "utf8")).not.toBe("old");
@@ -429,7 +433,7 @@ describe("installComponents", () => {
 
     const result = await installComponents(
       { root, components: ["button"], overwrite: true },
-      { executeCommand },
+      { executeCommand, fetch: registryFetch() },
     );
 
     expect(executeCommand).toHaveBeenCalledWith(root, "execute", [
@@ -455,7 +459,7 @@ describe("installComponents", () => {
 
     await installComponents(
       { root, components: ["data-table"] },
-      { executeCommand: execSpy() },
+      { executeCommand: execSpy(), fetch: registryFetch() },
     );
 
     expect(
@@ -502,7 +506,7 @@ describe("installComponents", () => {
 
     await installComponents(
       { root, components: ["data-table", "badge"] },
-      { executeCommand },
+      { executeCommand, fetch: registryFetch() },
     );
 
     expect(readFileSync(uiPath(root, "data-table", "index.ts"), "utf8")).toBe(
@@ -524,7 +528,7 @@ describe("installComponents", () => {
 
     const result = await installComponents(
       { root, components: ["cells"] },
-      { executeCommand },
+      { executeCommand, fetch: registryFetch() },
     );
 
     expect(executeCommand).toHaveBeenCalledTimes(1);
@@ -541,7 +545,7 @@ describe("installComponents", () => {
 
     const result = await installComponents(
       { root, components: ["file-form"] },
-      { executeCommand },
+      { executeCommand, fetch: registryFetch() },
     );
 
     expect(executeCommand).toHaveBeenNthCalledWith(1, root, "install", [
@@ -564,7 +568,7 @@ describe("installComponents", () => {
 
     await installComponents(
       { root, components: ["multiselect"] },
-      { executeCommand },
+      { executeCommand, fetch: registryFetch() },
     );
 
     expect(executeCommand).toHaveBeenCalledTimes(1);
@@ -574,6 +578,128 @@ describe("installComponents", () => {
       "command",
       "popover",
     ]);
+  });
+
+  it("rejects a name the style's registry does not list before spawning anything", async () => {
+    const root = makeProject();
+    writeFileSync(
+      path.join(root, "components.json"),
+      JSON.stringify({ style: "vega" }),
+      "utf8",
+    );
+    const executeCommand = execSpy();
+
+    await expect(
+      installComponents(
+        { root, components: ["button", "nope", "also-nope"] },
+        { executeCommand, fetch: registryFetch() },
+      ),
+    ).rejects.toThrow(
+      new InvalidArgumentError(
+        'Unknown components "also-nope", "nope" for style vega. Run `vela ui list` to see what is available.',
+      ),
+    );
+    expect(executeCommand).not.toHaveBeenCalled();
+  });
+
+  it("asks the configured style's index and leaves URLs and scoped items to shadcn", async () => {
+    const root = makeProject();
+    writeFileSync(
+      path.join(root, "components.json"),
+      JSON.stringify({ style: "lyra", registry: "https://r.example/reg/" }),
+      "utf8",
+    );
+    const calls: string[] = [];
+    const executeCommand = execSpy();
+
+    await installComponents(
+      {
+        root,
+        components: ["button", "https://r.example/x.json", "@acme/thing"],
+      },
+      { executeCommand, fetch: registryFetch(["button"], calls) },
+    );
+
+    expect(calls).toEqual(["https://r.example/reg/styles/lyra/index.json"]);
+    expect(executeCommand).toHaveBeenCalledWith(root, "execute", [
+      ...SHADCN_ADD,
+      "@acme/thing",
+      "button",
+      "https://r.example/x.json",
+    ]);
+  });
+
+  it("skips the name check when the registry cannot be read", async () => {
+    const root = makeProject();
+    const executeCommand = execSpy();
+    const messages: string[] = [];
+
+    await installComponents(
+      { root, components: ["nope"], logger: { info: (m) => messages.push(m) } },
+      { executeCommand, fetch: offlineFetch() },
+    );
+
+    expect(executeCommand).toHaveBeenCalledWith(root, "execute", [
+      ...SHADCN_ADD,
+      "nope",
+    ]);
+    expect(messages.some((m) => m.includes("Could not read"))).toBe(true);
+  });
+});
+
+describe("installedComponents", () => {
+  it("lists the directories under the ui directory, sorted", () => {
+    const root = makeTempRoot();
+    expect(installedComponents(root)).toEqual([]);
+    for (const name of ["sonner", "button", "data-table"]) {
+      mkdirSync(path.join(root, "src", "lib", "components", "ui", name), {
+        recursive: true,
+      });
+    }
+    writeFileSync(
+      path.join(root, "src", "lib", "components", "ui", "stray.ts"),
+      "",
+      "utf8",
+    );
+    expect(installedComponents(root)).toEqual([
+      "button",
+      "data-table",
+      "sonner",
+    ]);
+  });
+});
+
+describe("formatPaths", () => {
+  it("formats files and directories with the project's settings and reports what changed", async () => {
+    const root = makeTempRoot();
+    writeFileSync(
+      path.join(root, ".prettierrc"),
+      JSON.stringify({ singleQuote: true }),
+      "utf8",
+    );
+    mkdirSync(path.join(root, "src", "dir"), { recursive: true });
+    writeFileSync(
+      path.join(root, "src", "app.css"),
+      '@import "tailwindcss";\n',
+      "utf8",
+    );
+    writeFileSync(
+      path.join(root, "src", "dir", "index.ts"),
+      "export const a = 'b';\n",
+      "utf8",
+    );
+    writeFileSync(path.join(root, "src", "dir", "notes.md"), "# x\n", "utf8");
+
+    const changed = await formatPaths(root, [
+      "src/app.css",
+      "src/dir",
+      "src/missing.ts",
+    ]);
+
+    expect(changed).toEqual(["src/app.css"]);
+    expect(readFileSync(path.join(root, "src", "app.css"), "utf8")).toBe(
+      "@import 'tailwindcss';\n",
+    );
   });
 });
 

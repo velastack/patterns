@@ -77,7 +77,16 @@ lists in `components` is handed to `shadcn-svelte add`, which resolves it from t
 - `customDependencies` must list every `$lib/components/ui/<x>` a shipped component imports, and
   `customNpmPackages` every npm package no shadcn item installs for it.
 - `installComponents()` is also exported from the package; `vela ui add` calls it. It is node-only and is
-  loaded on the first call, the same rule as `generate.runtime.ts`.
+  loaded on the first call, the same rule as `generate.runtime.ts`. Before spawning `shadcn-svelte add` it
+  checks bare item names against the style's registry index (`src/runtime/registry.ts`) and rejects
+  unknown ones with an `InvalidArgumentError`; when the registry cannot be read the check is skipped.
+- `listComponents()`, `switchStyle()`, `applyBaseColor()` and `applyTheme()` (`src/runtime/ui.ts`) back
+  `vela ui list`, `vela ui style`, `vela ui base` and `vela ui theme`. Palette and font changes go through
+  `shadcn-svelte apply --preset <code> --only theme|font`; the preset code is produced by the project's own
+  `shadcn-svelte/preset` (`src/runtime/shadcn-preset.ts`), so the value lists never drift from what `apply`
+  accepts. The one vendored table is `STYLE_FONTS` (each style's designed font), guarded by a test against
+  the `shadcn-svelte` devDependency.
+- `WriteResultRuntime.fetch` is the test seam for the registry, next to `executeCommand` for the spawns.
 
 # Workflow for adding new patterns
 
