@@ -4,7 +4,7 @@ import PocketBase from "pocketbase";
 import { detect } from "package-manager-detector";
 import { resolveCommand } from "package-manager-detector/commands";
 import spawn from "cross-spawn";
-import { randomPort, waitForPort, waitForHealth } from "./net";
+import { freePort, waitForPort, waitForHealth } from "./net";
 import type { Options } from "../core/types";
 import { DATA_DIR, MIGRATIONS_DIR } from "../core/constants";
 
@@ -112,7 +112,7 @@ export async function withPocketbase(
     }
   }
 
-  const port = randomPort();
+  const port = await freePort(host);
   const commandArgs = [
     "pocketbase-server",
     "serve",
