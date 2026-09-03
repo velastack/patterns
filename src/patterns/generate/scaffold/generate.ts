@@ -1,5 +1,6 @@
 import dedent from "dedent";
 import type { Component, File, Options, Result } from "../../../core/types";
+import { TANSTACK_TABLE_CORE } from "../../../core/constants";
 import { InvalidArgumentError } from "../../../core/errors";
 import { languageFromPath } from "../../../core/util";
 import {
@@ -902,7 +903,7 @@ export async function generate(options: Options) {
     modifies: [],
     deletes: [],
     components: [...new Set(components)],
-    packages: ["@tanstack/table-core"],
+    packages: [TANSTACK_TABLE_CORE],
     collections: shouldCreateCollection
       ? [collectionSpecFromModelFields(model, fields, auth)]
       : [],

@@ -24,7 +24,7 @@ function canFormatFile(file: File): boolean {
  * it by string, which would resolve relative to this package instead.
  */
 async function projectOptions(
-  file: File,
+  file: Pick<File, "path">,
   context?: FormatContext,
 ): Promise<prettier.Options> {
   if (context?.env !== "runtime" || !context.root) return {};
@@ -39,25 +39,37 @@ async function projectOptions(
   return { ...resolved, plugins };
 }
 
+/**
+ * Formats one source text the way pattern output is formatted; the content
+ * comes back unchanged when prettier cannot parse it. Also used for component
+ * files that arrive on disk from `shadcn-svelte add` or the bundled
+ * components, so `npm run lint` in the project stays clean after an install.
+ */
+export async function formatSource(
+  content: string,
+  filePath: string,
+  context?: FormatContext,
+): Promise<string> {
+  try {
+    const options = await projectOptions({ path: filePath }, context);
+    return await prettier.format(content, {
+      ...options,
+      filepath: filePath,
+      plugins: [...(options.plugins ?? []), sveltePlugin],
+    });
+  } catch {
+    return content;
+  }
+}
+
 async function formatFile(file: File, context?: FormatContext): Promise<File> {
   if (file.status !== "success" || !canFormatFile(file)) {
     return file;
   }
-
-  try {
-    const options = await projectOptions(file, context);
-    const content = await prettier.format(file.content, {
-      ...options,
-      filepath: file.path,
-      plugins: [...(options.plugins ?? []), sveltePlugin],
-    });
-    return {
-      ...file,
-      content,
-    };
-  } catch {
-    return file;
-  }
+  return {
+    ...file,
+    content: await formatSource(file.content, file.path, context),
+  };
 }
 
 async function formatFiles(

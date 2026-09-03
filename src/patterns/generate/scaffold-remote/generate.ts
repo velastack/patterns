@@ -1,5 +1,6 @@
 import dedent from "dedent";
 import type { Component, File, Options, Result } from "../../../core/types";
+import { TANSTACK_TABLE_CORE } from "../../../core/constants";
 import { InvalidArgumentError } from "../../../core/errors";
 import { languageFromPath } from "../../../core/util";
 import {
@@ -740,8 +741,8 @@ function editRemoteSnippet(
     : `await ${pb}.collection("${model.tableName}").update(id, rest);`;
 
   return dedent`
-    import { form, getRequestEvent, error } from "$app/server";
-    import { redirect } from "@sveltejs/kit";
+    import { form, getRequestEvent } from "$app/server";
+    import { error, redirect } from "@sveltejs/kit";
     import { ${model.schemaName} } from "$lib/schemas/${model.name}";
 
     export const ${formVar} = form(${model.schemaName}, async (data) => {
@@ -866,7 +867,7 @@ export async function generate(options: Options) {
     modifies: [],
     deletes: [],
     components: [...new Set(components)],
-    packages: ["@tanstack/table-core"],
+    packages: [TANSTACK_TABLE_CORE],
     collections: shouldCreateCollection
       ? [collectionSpecFromModelFields(model, fields, auth)]
       : [],

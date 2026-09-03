@@ -1,5 +1,17 @@
 import packageJson from "../package.json";
+import type {
+  InstallComponentsOptions,
+  InstallComponentsResult,
+  WriteResultRuntime,
+} from "./core/types";
 export { InvalidArgumentError } from "./core/errors";
+export type {
+  Component,
+  InstallComponentsOptions,
+  InstallComponentsResult,
+  Package,
+  WriteResultRuntime,
+} from "./core/types";
 import generateForm from "./patterns/generate/form";
 import generateFormRemote from "./patterns/generate/form-remote";
 import generateMigration from "./patterns/generate/migration";
@@ -90,3 +102,17 @@ export const byCategory = patterns.reduce(
   },
   {} as Record<Category, PatternEntry[]>,
 );
+
+/**
+ * Installs shadcn-svelte items and the components this package ships
+ * (`data-table`, `multiselect`, `geopoint`, ...) into a project, pulling in
+ * the shadcn and npm dependencies they need. Node-only: the runtime is loaded
+ * on the first call so this entry stays importable in the browser preview.
+ */
+export async function installComponents(
+  options: InstallComponentsOptions,
+  runtime?: WriteResultRuntime,
+): Promise<InstallComponentsResult> {
+  const { installComponents: run } = await import("./runtime/write-result");
+  return run(options, runtime);
+}

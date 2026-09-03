@@ -53,6 +53,44 @@ export type Component = string;
  */
 export type Package = string;
 
+export type PackageManagerOperation = "execute" | "install";
+export type ExecuteCommand = (
+  cwd: string,
+  operation: PackageManagerOperation,
+  args: string[],
+) => Promise<void>;
+
+/** Replaces the package-manager spawn; the test seam for anything that installs. */
+export interface WriteResultRuntime {
+  executeCommand?: ExecuteCommand;
+}
+
+export interface InstallComponentsOptions {
+  /** Project root: holds `package.json` and `components.json`. */
+  root: string;
+  /**
+   * shadcn-svelte item names and/or the components this package ships
+   * (`data-table`, `multiselect`, `geopoint`, ...).
+   */
+  components: Component[];
+  /**
+   * Re-add the named components even when their directory exists. Applies to
+   * the named components only; the dependencies they pull in are still
+   * installed only when missing.
+   */
+  overwrite?: boolean;
+  logger?: Logger;
+}
+
+export interface InstallComponentsResult {
+  /** Written this run: requested components plus the dependencies they pulled in, sorted. */
+  installed: Component[];
+  /** Requested but left alone because the directory already existed; empty with `overwrite`. */
+  skipped: Component[];
+  /** npm specs installed for the custom components, in install order. */
+  packages: Package[];
+}
+
 export interface Example {
   command: string;
   description: string;

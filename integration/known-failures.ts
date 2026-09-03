@@ -96,30 +96,12 @@ export const KNOWN_FAILURES: KnownFailure[] = [
 
   // --- generators -------------------------------------------------------------
   {
-    id: "scaffold-data-table-not-in-registry",
-    reason:
-      "generate-scaffold asks shadcn-svelte for a `data-table` component; shadcn-svelte 1.6's " +
-      "registry has no such item (`CLI Error: Registry item 'data-table' does not exist`), so the " +
-      "component install aborts the pattern.",
-    kind: "apply",
-    step: "generate-scaffold",
-    match: /npx exited with code 1/,
-  },
-  {
-    id: "scaffold-remote-data-table-not-in-registry",
-    reason:
-      "Same as scaffold-data-table-not-in-registry, for the remote-functions variant.",
-    kind: "apply",
-    step: "generate-scaffold-remote",
-    match: /npx exited with code 1/,
-  },
-  {
     id: "form-test-unused-hooks",
     reason:
-      "Without auth, the server.test.ts that generate-form emits (src/core/tests.ts) imports " +
+      "Without auth, the server.test.ts that generate-form and generate-scaffold emit (src/core/tests.ts) imports " +
       "afterEach and beforeEach from vitest but has no hooks to put in them.",
     kind: "check",
-    case: /^generate-form(-remote)?$/,
+    case: /^generate-(form|scaffold)(-remote)?$/,
     match:
       /server\.test\.ts.*'(afterEach|beforeEach)' is declared but its value is never read/,
   },

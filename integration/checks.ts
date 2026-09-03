@@ -155,14 +155,6 @@ export function isIgnorable(
   return false;
 }
 
-/** Scans `vela test:server` output; the CLI itself exits 0 even when vitest fails. */
-export function serverTestsFailed(output: string): string | undefined {
-  if (/\b[1-9]\d* failed\b/.test(output)) return "vitest reported failed tests";
-  if (/^\s*FAIL\s/m.test(output)) return "vitest reported a failing file";
-  if (!/\b\d+ passed\b/.test(output)) return "vitest reported no passing tests";
-  return undefined;
-}
-
 /**
  * The per-step gate: sync, type-check with unused-locals, format-check the
  * files the pattern wrote, and optionally run the generated server tests.
@@ -251,13 +243,12 @@ export function runChecks(
     const tests = project.run(npmBin(), ["run", "test:server"], {
       allowFailure: true,
     });
-    const output = `${tests.stdout}\n${tests.stderr}`;
-    const failed =
-      tests.status !== 0 ? `exit ${tests.status}` : serverTestsFailed(output);
-    if (failed) {
+    // `vela test:server` exits with vitest's own code, so the status is the verdict.
+    if (tests.status !== 0) {
+      const output = `${tests.stdout}\n${tests.stderr}`;
       errors.push({
         kind: "server-tests",
-        message: `${failed}:\n${output.trim().slice(-4000)}`,
+        message: `exit ${tests.status}:\n${output.trim().slice(-4000)}`,
       });
     }
   }

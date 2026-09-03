@@ -10,27 +10,33 @@ import path from "node:path";
 import { detect } from "package-manager-detector";
 import { resolveCommand } from "package-manager-detector/commands";
 import spawn from "cross-spawn";
-import type { Options, Result } from "../core/types";
+import type {
+  InstallComponentsOptions,
+  InstallComponentsResult,
+  Options,
+  PackageManagerOperation,
+  Result,
+  WriteResultRuntime,
+} from "../core/types";
 import { getLogger, NOOP_LOGGER, type Logger } from "../core/logger";
-
-type PackageManagerOperation = "execute" | "install";
-type ExecuteCommand = (
-  cwd: string,
-  operation: PackageManagerOperation,
-  args: string[],
-) => Promise<void>;
-
-interface WriteResultRuntime {
-  executeCommand?: ExecuteCommand;
-}
+import { formatSource } from "../core/format-result";
+import { FORMSNAP, TANSTACK_TABLE_CORE } from "../core/constants";
 
 type CustomNpmPackages = Record<string, string[]>;
 
+/**
+ * The components under `src/ui/components` are copied into a project rather
+ * than fetched from the shadcn-svelte registry, so their dependencies have to
+ * be declared here: every `$lib/components/ui/<x>` import a component makes
+ * must appear in `customDependencies`, and every npm package that no shadcn
+ * item installs for it must appear in `customNpmPackages`.
+ */
 const customDependencies: Record<string, string[]> = {
-  "file-form": ["input", "form"],
-  multiselect: ["command", "popover", "button", "badge"],
+  "file-form": ["input"],
+  multiselect: ["command", "popover", "button"],
   geopoint: ["button", "leaflet"],
-  cells: [],
+  cells: ["badge"],
+  "data-table": [],
   "column-header": ["dropdown-menu", "button"],
   "faceted-filter": ["command", "popover", "button", "separator", "badge"],
   pagination: ["button", "select"],
@@ -40,13 +46,17 @@ const customDependencies: Record<string, string[]> = {
 };
 
 const customNpmPackages: CustomNpmPackages = {
-  "file-form": [],
-  multiselect: [],
+  "file-form": [FORMSNAP],
+  multiselect: [FORMSNAP],
   geopoint: [],
   cells: [],
-  "column-header": ["@tanstack/table-core"],
-  "faceted-filter": ["@tanstack/table-core"],
-  pagination: ["@tanstack/table-core"],
+  // shadcn-svelte >= 1.2.0 resolves items from the style-scoped registry
+  // (/registry/styles/<style>/), which has no `data-table` item, so the
+  // TanStack helpers ship from here instead.
+  "data-table": [TANSTACK_TABLE_CORE],
+  "column-header": [TANSTACK_TABLE_CORE],
+  "faceted-filter": [TANSTACK_TABLE_CORE],
+  pagination: [TANSTACK_TABLE_CORE],
   "row-actions": [],
   leaflet: ["leaflet", "@types/leaflet"],
 };
@@ -265,36 +275,112 @@ function copyCustomComponent(
   }
 }
 
-async function installComponents(
-  root: string,
-  components: string[],
-  runtime?: WriteResultRuntime,
-  logger: Logger = NOOP_LOGGER,
-): Promise<{ components: string[]; packages: string[] }> {
-  if (components.length === 0) {
-    return { components: [], packages: [] };
-  }
+const DEFAULT_UI_DIR = ["src", "lib", "components", "ui"];
+const FORMATTABLE_EXTENSIONS = new Set([".ts", ".js", ".svelte", ".json"]);
 
-  const componentsDir = path.join(root, "src", "lib", "components", "ui");
-  mkdirSync(componentsDir, { recursive: true });
+/**
+ * `shadcn-svelte add` writes files in the registry's style and the bundled
+ * components carry this repo's; the project's `npm run lint` expects its own.
+ * Runs the project's prettier over every file in the installed directories.
+ */
+async function formatComponentDirs(
+  root: string,
+  componentsDir: string,
+  components: string[],
+): Promise<void> {
+  const context = { env: "runtime" as const, root };
+  for (const component of components) {
+    const dir = path.join(componentsDir, component);
+    if (!existsSync(dir)) {
+      continue;
+    }
+    const entries = readdirSync(dir, { recursive: true, withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isFile()) {
+        continue;
+      }
+      const filePath = path.join(entry.parentPath, entry.name);
+      if (!FORMATTABLE_EXTENSIONS.has(path.extname(filePath))) {
+        continue;
+      }
+      const content = readFileSync(filePath, "utf8");
+      const formatted = await formatSource(content, filePath, context);
+      if (formatted !== content) {
+        writeFileSync(filePath, formatted, "utf8");
+      }
+    }
+  }
+}
+
+/**
+ * Where shadcn-svelte writes items: `components.json` `aliases.ui`, resolved
+ * the way SvelteKit resolves `$lib` (`src/lib`). Anything else (a custom
+ * `kit.alias`, a missing or unreadable config) falls back to the default so
+ * the existence check here and shadcn's own target agree for every project
+ * the CLI creates.
+ */
+export function resolveUiDir(root: string): string {
+  const fallback = path.join(root, ...DEFAULT_UI_DIR);
+  const configPath = path.join(root, "components.json");
+  if (!existsSync(configPath)) {
+    return fallback;
+  }
+  try {
+    const config = JSON.parse(readFileSync(configPath, "utf8")) as {
+      aliases?: { ui?: string };
+    };
+    const alias = config.aliases?.ui;
+    if (alias === "$lib") {
+      return path.join(root, "src", "lib");
+    }
+    if (alias?.startsWith("$lib/")) {
+      return path.join(root, "src", "lib", ...alias.slice(5).split("/"));
+    }
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export async function installComponents(
+  options: InstallComponentsOptions,
+  runtime?: WriteResultRuntime,
+): Promise<InstallComponentsResult> {
+  const { root, components, overwrite = false } = options;
+  const logger = getLogger(options);
 
   const requested = [...new Set(components)];
-  const missing = requested.filter(
-    (component) => !existsSync(path.join(componentsDir, component)),
-  );
-
-  if (missing.length === 0) {
-    return { components: [], packages: [] };
+  if (requested.length === 0) {
+    return { installed: [], skipped: [], packages: [] };
   }
 
-  const customToInstall = new Set(missing.filter(isCustomComponent));
+  const componentsDir = resolveUiDir(root);
+  mkdirSync(componentsDir, { recursive: true });
+  const isPresent = (component: string) =>
+    existsSync(path.join(componentsDir, component));
+
+  const skipped = overwrite ? [] : requested.filter(isPresent);
+  const toInstall = requested.filter(
+    (component) => !skipped.includes(component),
+  );
+  if (skipped.length > 0) {
+    logger.info(`Already present: ${skipped.join(", ")}`);
+  }
+  if (toInstall.length === 0) {
+    return { installed: [], skipped, packages: [] };
+  }
+
+  const customToInstall = new Set(toInstall.filter(isCustomComponent));
   const publicToInstall = new Set(
-    missing.filter((component) => !isCustomComponent(component)),
+    toInstall.filter((component) => !isCustomComponent(component)),
   );
 
+  // Dependencies are added only when missing, even under `overwrite`:
+  // re-adding `button` because `pagination` was re-added would clobber edits
+  // the user never asked to lose.
   for (const component of [...customToInstall]) {
     for (const dependency of customDependencies[component] ?? []) {
-      if (existsSync(path.join(componentsDir, dependency))) {
+      if (isPresent(dependency)) {
         continue;
       }
       if (isCustomComponent(dependency)) {
@@ -305,20 +391,20 @@ async function installComponents(
     }
   }
 
-  const installedComponents: string[] = [];
+  const installed: string[] = [];
   const customList = [...customToInstall].sort();
   if (customList.length > 0) {
     logger.info(`Installing custom components: ${customList.join(", ")}`);
   }
   for (const component of customList) {
     copyCustomComponent(component, componentsDir);
-    installedComponents.push(component);
+    installed.push(component);
     publicToInstall.delete(component);
   }
 
-  const customPackages = await installPackages(
+  const packages = await installPackages(
     root,
-    customNpmPackagesFor([...customToInstall]),
+    customNpmPackagesFor(customList),
     runtime,
     logger,
   );
@@ -334,13 +420,13 @@ async function installComponents(
       ["shadcn-svelte", "add", "--yes", "--overwrite", ...publicList],
       runtime,
     );
-    installedComponents.push(...publicList);
+    installed.push(...publicList);
   }
 
-  return {
-    components: [...new Set(installedComponents)],
-    packages: customPackages,
-  };
+  const installedList = [...new Set(installed)].sort();
+  await formatComponentDirs(root, componentsDir, installedList);
+
+  return { installed: installedList, skipped, packages };
 }
 
 export async function writeResult(
@@ -378,10 +464,8 @@ export async function writeResult(
   );
 
   const componentInstalls = await installComponents(
-    options.root,
-    result.components,
+    { root: options.root, components: result.components, logger },
     runtime,
-    logger,
   );
 
   for (const file of [...result.creates, ...dropMigrationCreates]) {
@@ -455,7 +539,7 @@ export async function writeResult(
     creates: writtenResult.creates,
     modifies: writtenResult.modifies,
     deletes: writtenResult.deletes,
-    components: componentInstalls.components,
+    components: componentInstalls.installed,
     packages: [...new Set([...packageInstalls, ...componentInstalls.packages])],
   };
 }

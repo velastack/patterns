@@ -92,6 +92,7 @@
     }
   },
   "devDependencies": {
+    "@tanstack/table-core": "^8.21.3",
     "@types/cross-spawn": "^6.0.6",
     "@types/node": "^22.0.0",
     "@types/pluralize": "^0.0.33",

@@ -66,6 +66,19 @@ the modifications work across a wide range of project setups.
 
 The `preview-modifies` directory is the mock modify output used only for previews. It's bundled in the same way as the `creates` directory.
 
+## UI components
+
+`src/ui/components/<name>` holds the components Vela ships itself (`data-table`, `multiselect`, `geopoint`,
+`auth-menu`, ...). They are bundled as raw strings the same way `creates` are and copied into a project's
+`src/lib/components/ui` by `installComponents()` in `src/runtime/write-result.ts`. Everything else a pattern
+lists in `components` is handed to `shadcn-svelte add`, which resolves it from the style-scoped registry
+(`/registry/styles/<style>/`) named by the project's `components.json`.
+
+- `customDependencies` must list every `$lib/components/ui/<x>` a shipped component imports, and
+  `customNpmPackages` every npm package no shadcn item installs for it.
+- `installComponents()` is also exported from the package; `vela ui add` calls it. It is node-only and is
+  loaded on the first call, the same rule as `generate.runtime.ts`.
+
 # Workflow for adding new patterns
 
 - Develop the pattern in the `src/patterns` directory.
