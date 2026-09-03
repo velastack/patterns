@@ -69,7 +69,13 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          # Node 24 for npm 11. npm 10 (bundled with Node 22) crashes with
+          # "Cannot read properties of null (reading 'edgesOut')" while
+          # installing a fresh `vela create` project: the optional-peer chain
+          # vite -> @vitejs/devtools-vitest -> vitest@* resolves to vitest 5,
+          # which conflicts with the template's vitest 4 and trips an
+          # arborist bug that is only fixed in npm 11.
+          node-version: 24
           cache: npm
 
       - run: npm ci
