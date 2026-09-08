@@ -35,7 +35,6 @@
 <MetaTags {...metaTags} />
 <ModeWatcher />
 <Toaster />
+<AdminBar />
 
 {@render children?.()}
-
-<AdminBar />

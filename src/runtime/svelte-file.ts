@@ -127,6 +127,40 @@ export class SvelteFile {
   }
 
   /**
+   * Insert markup so it renders before the layout's children — i.e. ahead of
+   * the top-level `{@render children()}` (or legacy `<slot />`). The markup
+   * lands on its own line directly after the preceding sibling, so
+   *
+   *     <Toaster />
+   *
+   *     {@render children?.()}
+   *
+   * becomes `<Toaster />\n<AdminBar />\n\n{@render children?.()}`. When the
+   * render tag is the first node the markup goes immediately before it.
+   * Returns false (and changes nothing) if no such tag exists.
+   */
+  insertBeforeChildren(content: string): boolean {
+    const nodes: SvelteNode[] = (this.ast as any).fragment?.nodes ?? [];
+    const index = nodes.findIndex(
+      (node) =>
+        node.type === "RenderTag" ||
+        node.type === "SlotElement" ||
+        (node.type === "RegularElement" && node.name === "slot"),
+    );
+    if (index === -1) return false;
+
+    const trimmed = content.trim();
+    for (let i = index - 1; i >= 0; i--) {
+      const prev = nodes[i]!;
+      if (prev.type === "Text" && prev.data.trim() === "") continue;
+      this.s.appendLeft(prev.end as number, `\n${trimmed}`);
+      return true;
+    }
+    this.s.appendLeft(nodes[index]!.start as number, `${trimmed}\n\n`);
+    return true;
+  }
+
+  /**
    * Append attribute text (e.g. " team={data.team}") just after the last
    * existing attribute on the element's start tag.
    */

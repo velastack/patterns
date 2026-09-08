@@ -20,7 +20,7 @@ const NOT_FOUND_HINT = [
   "",
   IMPORT_SNIPPET,
   "",
-  "Markup to add at the top level of the layout:",
+  "Markup to add at the top level of the layout, above {@render children()}:",
   MARKUP_SNIPPET.trim(),
 ].join("\n");
 
@@ -31,11 +31,15 @@ const FAILURE_HINT = [
   "",
   IMPORT_SNIPPET,
   "",
-  "Markup to add at the top level of the layout:",
+  "Markup to add at the top level of the layout, above {@render children()}:",
   MARKUP_SNIPPET.trim(),
 ].join("\n");
 
-/** Mounts `<AdminBar />` at the top level of the root layout. */
+/**
+ * Mounts `<AdminBar />` at the top level of the root layout, ahead of
+ * `{@render children()}` so the bar is in the DOM before the page content.
+ * Falls back to appending when the layout has no render tag or slot.
+ */
 export function modifyLayoutSvelte(layoutPath: string): ModifyOutcome {
   if (!fs.existsSync(layoutPath)) {
     return { status: "not-found", message: NOT_FOUND_HINT };
@@ -58,7 +62,9 @@ export function modifyLayoutSvelte(layoutPath: string): ModifyOutcome {
     return out;
   });
 
-  file.appendMarkup(MARKUP_SNIPPET);
+  if (!file.insertBeforeChildren(MARKUP_SNIPPET)) {
+    file.appendMarkup(MARKUP_SNIPPET);
+  }
   file.writeTo(layoutPath);
   return { status: "success", changed: file.hasChanged() };
 }

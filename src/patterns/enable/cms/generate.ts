@@ -142,9 +142,11 @@ export async function generate(options: Options) {
   // second statically, so <AdminBar /> cannot render without it.
   // 0.2.2 is the first release whose Vite plugin imports from the package
   // name rather than its own source tree; 0.2.1 breaks every consumer route.
+  // 0.2.3 is the first whose shipped admin-bar.css declares its tokens on the
+  // @scope root; before it the bar renders unstyled in every consumer.
   const packages = mode.local
-    ? ["@velastack/cms@^0.2.2", "better-sqlite3", "marked"]
-    : ["@velastack/cms@^0.2.2", "marked"];
+    ? ["@velastack/cms@^0.2.3", "better-sqlite3", "marked"]
+    : ["@velastack/cms@^0.2.3", "marked"];
 
   return {
     creates: sortedCreates,

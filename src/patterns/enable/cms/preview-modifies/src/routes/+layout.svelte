@@ -36,8 +36,7 @@
 <MetaTags {...metaTags} />
 <ModeWatcher />
 <Toaster />
-
-{@render children?.()}
-
 <!-- [!code highlight:1] -->
 <AdminBar />
+
+{@render children?.()}

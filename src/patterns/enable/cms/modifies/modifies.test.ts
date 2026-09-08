@@ -405,7 +405,12 @@ describe("enable cms modifiers on the static template", () => {
     expect(outcome).toEqual({ status: "success", changed: true });
     const modified = read(path.join(STATIC, LAYOUT_SVELTE));
     expect(modified).toContain("import { AdminBar } from '@velastack/cms';");
-    expect(modified.trimEnd().endsWith("<AdminBar />")).toBe(true);
+    // The bar must be in the DOM ahead of the page content.
+    const bar = modified.indexOf("<AdminBar />");
+    const render = modified.indexOf("{@render children?.()}");
+    expect(bar).toBeGreaterThan(-1);
+    expect(render).toBeGreaterThan(-1);
+    expect(bar).toBeLessThan(render);
   });
 });
 
