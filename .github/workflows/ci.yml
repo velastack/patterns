@@ -26,7 +26,7 @@ jobs:
         node-version: ["20.19", 22, 24]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v6
@@ -65,7 +65,7 @@ jobs:
         suite: [enable, generate, disable, stacks, lifecycle]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v6
         with:
