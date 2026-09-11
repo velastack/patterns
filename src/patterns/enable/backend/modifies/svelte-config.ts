@@ -7,26 +7,35 @@ import {
   type ConfigTarget,
 } from "../../../../runtime/config-target";
 
-const FAILURE_HINT = dedent`
-  Switch the SvelteKit adapter to @sveltejs/adapter-auto:
+const ADAPTER_NODE = "@sveltejs/adapter-node";
+const ADAPTER_STATIC = "@sveltejs/adapter-static";
+const ADAPTER_AUTO = "@sveltejs/adapter-auto";
 
-  import adapter from '@sveltejs/adapter-auto';
+const FAILURE_HINT = dedent`
+  Switch the SvelteKit adapter to ${ADAPTER_NODE}:
+
+  import adapter from '${ADAPTER_NODE}';
 
   // ...
   adapter: adapter()
 `;
 
 const NOT_FOUND_HINT = dedent`
-  Configure @sveltejs/adapter-auto via the sveltekit() plugin in vite.config.ts.
+  Configure ${ADAPTER_NODE} via the sveltekit() plugin in vite.config.ts.
 `;
 
+/**
+ * The adapters this pattern moves between. adapter-auto is included because
+ * that is what `sv create` ships, and a project that never chose is one the
+ * backend is free to decide for.
+ */
 function findAdapterImport(sourceFile: ConfigTarget["sourceFile"]) {
   return sourceFile
     .getImportDeclarations()
-    .find(
-      (decl) =>
-        decl.getModuleSpecifierValue() === "@sveltejs/adapter-static" ||
-        decl.getModuleSpecifierValue() === "@sveltejs/adapter-auto",
+    .find((decl) =>
+      [ADAPTER_STATIC, ADAPTER_AUTO, ADAPTER_NODE].includes(
+        decl.getModuleSpecifierValue(),
+      ),
     );
 }
 
@@ -37,10 +46,12 @@ function adapterCalls(sourceFile: ConfigTarget["sourceFile"]) {
 }
 
 /**
- * Switch the adapter to `@sveltejs/adapter-auto` and drop its arguments, in
+ * Switch the adapter to `@sveltejs/adapter-node` and drop its arguments, in
  * whichever file holds the adapter import + `adapter()` call (vite.config when
- * the project uses inline config, else svelte.config). Operates on the import
- * and call expression directly, so it never needs the config object.
+ * the project uses inline config, else svelte.config). A project with a
+ * backend is served from a Node process, which is what `vela deploy` runs.
+ * Operates on the import and call expression directly, so it never needs the
+ * config object.
  */
 export function modifySvelteConfig(root: string): ConfigModifyResult {
   const res = resolveConfigTarget(root, {
@@ -62,8 +73,8 @@ export function modifySvelteConfig(root: string): ConfigModifyResult {
     };
   }
 
-  if (adapterImport.getModuleSpecifierValue() === "@sveltejs/adapter-static") {
-    adapterImport.setModuleSpecifier("@sveltejs/adapter-auto");
+  if (adapterImport.getModuleSpecifierValue() !== ADAPTER_NODE) {
+    adapterImport.setModuleSpecifier(ADAPTER_NODE);
   }
 
   for (const call of adapterCalls(target.sourceFile)) {
@@ -102,8 +113,8 @@ export function unmodifySvelteConfig(root: string): ConfigModifyResult {
     };
   }
 
-  if (adapterImport.getModuleSpecifierValue() === "@sveltejs/adapter-auto") {
-    adapterImport.setModuleSpecifier("@sveltejs/adapter-static");
+  if (adapterImport.getModuleSpecifierValue() !== ADAPTER_STATIC) {
+    adapterImport.setModuleSpecifier(ADAPTER_STATIC);
   }
 
   for (const call of adapterCalls(target.sourceFile)) {

@@ -31,6 +31,9 @@ export async function generate(_options: Options) {
       "@velastack/pocketbase",
       "@velastack/kit",
       "pocketbase-sveltekit",
+      // The adapter the config is switched to has to be installed with it,
+      // or the config fails to load and takes every .svelte file with it.
+      "@sveltejs/adapter-node",
     ],
     collections: [],
     collectionPatches: [],

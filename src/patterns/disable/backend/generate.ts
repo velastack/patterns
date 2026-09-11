@@ -35,7 +35,8 @@ export async function generate(_options: Options) {
     modifies: [],
     deletes,
     components: [],
-    packages: [],
+    // The adapter the config is switched back to, so the project still builds.
+    packages: ["@sveltejs/adapter-static"],
     collections: [],
     collectionPatches: [],
     collectionDrops: [],

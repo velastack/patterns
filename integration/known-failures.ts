@@ -61,15 +61,6 @@ export const KNOWN_FAILURES: KnownFailure[] = [
     step: "enable-backend",
     match: /test\/setup\.ts/,
   },
-  {
-    id: "backend-adapter-auto-not-installed",
-    reason:
-      "enable-backend rewrites vite.config.ts to import @sveltejs/adapter-auto but its " +
-      "packages list does not install it, so the config (and every .svelte file) fails to load.",
-    kind: "check",
-    step: "enable-backend",
-    match: /adapter-auto/,
-  },
 
   // --- enable-blog ------------------------------------------------------------
   {
@@ -139,13 +130,13 @@ export const KNOWN_FAILURES: KnownFailure[] = [
   {
     id: "disable-backend-incomplete-revert",
     reason:
-      "disable-backend switches vite.config.ts to @sveltejs/adapter-static without installing it, " +
-      "leaves `locals.meta` usages in src/routes/+layout.server.ts although app.d.ts no longer " +
-      "declares it, and leaves server.test.ts files that rely on the removed test/setup.ts context.",
+      "disable-backend leaves `locals.meta` usages in src/routes/+layout.server.ts although " +
+      "app.d.ts no longer declares it, and leaves server.test.ts files that rely on the removed " +
+      "test/setup.ts context.",
     kind: "check",
     step: "disable-backend",
     match:
-      /adapter-static|Property 'meta' does not exist on type 'Locals'|Property '(request|agent|user)' does not exist on type 'TestContext/,
+      /Property 'meta' does not exist on type 'Locals'|Property '(request|agent|user)' does not exist on type 'TestContext/,
   },
   {
     id: "disable-content-negotiation-hooks-enoent",

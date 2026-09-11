@@ -96,6 +96,11 @@ export default defineConfig({
 });
 `;
 
+const VITE_INLINE_ADAPTER_NODE = VITE_INLINE_ADAPTER_AUTO.replace(
+  "@sveltejs/adapter-auto",
+  "@sveltejs/adapter-node",
+);
+
 describe("resolveConfigTarget precedence", () => {
   it("rule 1: inline sveltekit() arg wins even when svelte.config exists", () => {
     const root = makeRoot({
@@ -223,18 +228,34 @@ describe("modifiers target the resolved config", () => {
     expect(vite).toMatch(/from\s+'mdsvex'/);
   });
 
-  it("backend switches the adapter to adapter-auto in vite.config", () => {
+  it("backend switches the adapter to adapter-node in vite.config", () => {
     const root = makeRoot({ "vite.config.ts": VITE_INLINE_ADAPTER_STATIC });
     const { outcome } = modifyBackendAdapter(root);
     expect(outcome.status).toBe("success");
     const vite = read(root, "vite.config.ts");
-    expect(vite).toContain("@sveltejs/adapter-auto");
+    expect(vite).toContain("@sveltejs/adapter-node");
     expect(vite).not.toContain("@sveltejs/adapter-static");
     expect(vite).not.toContain("fallback");
   });
 
-  it("disable backend reverts the adapter to adapter-static in vite.config", () => {
+  it("backend also moves a project off adapter-auto, which never chose", () => {
     const root = makeRoot({ "vite.config.ts": VITE_INLINE_ADAPTER_AUTO });
+    const { outcome } = modifyBackendAdapter(root);
+    expect(outcome.status).toBe("success");
+    expect(read(root, "vite.config.ts")).toContain("@sveltejs/adapter-node");
+  });
+
+  it("backend leaves a project already on adapter-node unchanged", () => {
+    const root = makeRoot({ "vite.config.ts": VITE_INLINE_ADAPTER_NODE });
+    const { outcome } = modifyBackendAdapter(root);
+    expect(outcome.status).toBe("success");
+    const vite = read(root, "vite.config.ts");
+    expect(vite).toContain("@sveltejs/adapter-node");
+    expect(vite).not.toMatch(/adapter-(auto|static)/);
+  });
+
+  it("disable backend reverts the adapter to adapter-static in vite.config", () => {
+    const root = makeRoot({ "vite.config.ts": VITE_INLINE_ADAPTER_NODE });
     const { outcome } = unmodifySvelteConfig(root);
     expect(outcome.status).toBe("success");
     const vite = read(root, "vite.config.ts");

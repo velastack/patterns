@@ -34,7 +34,7 @@ export default {
   plan: "open",
   title: "Enable Backend",
   summary:
-    "Adds the PocketBase backend: installs @velastack/pocketbase and pocketbase-sveltekit, wires up hooks.server.ts, scaffolds the data/ directory, and switches the SvelteKit adapter from static to auto.",
+    "Adds the PocketBase backend: installs @velastack/pocketbase and pocketbase-sveltekit, wires up hooks.server.ts, scaffolds the data/ directory, and switches the SvelteKit adapter to adapter-node.",
   requires: {
     auth: false,
     api: false,
