@@ -12,6 +12,7 @@ package-lock.json
 **/creates-backend/**
 **/preview-modifies/**
 **/variants/**
+**/providers/**
 
 # Test fixtures must match input/expected output byte-for-byte.
 **/fixtures/**

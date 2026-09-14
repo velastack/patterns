@@ -154,6 +154,21 @@ export function inverseCase(slug: Slug): CaseSpec {
 }
 
 export const enableCases: CaseSpec[] = [
+  singleCase(
+    "enable-analytics",
+    { input: { provider: "plausible" } },
+    "enable-analytics-plausible",
+  ),
+  singleCase(
+    "enable-analytics",
+    { input: { provider: "google" } },
+    "enable-analytics-google",
+  ),
+  singleCase(
+    "enable-analytics",
+    { input: { provider: "posthog" } },
+    "enable-analytics-posthog",
+  ),
   singleCase("enable-auth"),
   singleCase(
     "enable-auth",
@@ -270,6 +285,11 @@ export const stackCases: CaseSpec[] = [
       input: { endpoint: "https://velastack.dev/v1/projects/demo/cms" },
       check: true,
     }),
+  ]),
+  // A static site reads PUBLIC_* env at build time; the component must
+  // prerender with the keys blank.
+  makeCase("static-analytics", "static", [
+    step("enable-analytics", { input: { provider: "plausible" }, check: true }),
   ]),
   makeCase("auth-then-i18n", "auth", [step("enable-i18n", { check: true })]),
   makeCase("i18n-then-auth", "minimal", [

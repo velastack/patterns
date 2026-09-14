@@ -26,6 +26,7 @@
     "**/creates-app-mode/**",
     "**/creates-with-negotiation/**",
     "**/creates-with-blog/**",
-    "**/creates-backend/**"
+    "**/creates-backend/**",
+    "**/providers/**"
   ]
 }

@@ -34,6 +34,22 @@ export function filesFromGlob(
 }
 
 /**
+ * The subset of a glob map under `prefix`, keyed by app-relative path. Lets a
+ * single `import.meta.glob("./variants/**")` (or `./providers/**`) serve every
+ * named subdirectory.
+ */
+export function filesUnderPrefix(
+  raw: Record<string, string>,
+  prefix: string,
+): Record<string, File> {
+  const filtered: Record<string, string> = {};
+  for (const [key, content] of Object.entries(raw)) {
+    if (key.startsWith(prefix)) filtered[key] = content;
+  }
+  return filesFromGlob(filtered, prefix);
+}
+
+/**
  * Compose `creates/` files with an optional variant overlay from `variants/<variant>/`.
  * Files in the variant directory override files in creates at the same relative path.
  * Unknown or empty `variant` → no overlay applied.
@@ -46,12 +62,10 @@ export function composeCreates(
 ): File[] {
   const files = filesFromGlob(createsRaw, createsPrefix);
   if (variantsRaw && typeof variant === "string" && variant.length > 0) {
-    const variantPrefix = `./variants/${variant}/`;
-    const filtered: Record<string, string> = {};
-    for (const [key, content] of Object.entries(variantsRaw)) {
-      if (key.startsWith(variantPrefix)) filtered[key] = content;
-    }
-    Object.assign(files, filesFromGlob(filtered, variantPrefix));
+    Object.assign(
+      files,
+      filesUnderPrefix(variantsRaw, `./variants/${variant}/`),
+    );
   }
   return Object.values(files).sort((a, b) => a.path.localeCompare(b.path));
 }

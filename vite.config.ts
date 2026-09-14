@@ -65,6 +65,7 @@ export default defineConfig({
         "**/creates-app-mode/**",
         "**/creates-backend/**",
         "**/variants/**",
+        "**/providers/**",
       ],
     }),
   ],

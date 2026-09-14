@@ -21,12 +21,21 @@ export type {
   InstallComponentsResult,
   ListComponentsOptions,
   ListComponentsResult,
+  Options,
   Package,
+  Pattern,
+  Provider,
+  ProviderEnvVar,
   RegistryItem,
   SwitchStyleOptions,
   SwitchStyleResult,
   WriteResultRuntime,
 } from "./core/types";
+export {
+  providerFromArgv,
+  resolveProvider,
+  unknownProviderMessage,
+} from "./core/providers";
 import generateForm from "./patterns/generate/form";
 import generateFormRemote from "./patterns/generate/form-remote";
 import generateMigration from "./patterns/generate/migration";
@@ -34,6 +43,7 @@ import generateResource from "./patterns/generate/resource";
 import generateScaffold from "./patterns/generate/scaffold";
 import generateScaffoldRemote from "./patterns/generate/scaffold-remote";
 import generateSchema from "./patterns/generate/schema";
+import enableAnalytics from "./patterns/enable/analytics";
 import enableAuth from "./patterns/enable/auth";
 import enableAuthRemote from "./patterns/enable/auth-remote";
 import enableApi from "./patterns/enable/api";
@@ -71,6 +81,7 @@ export const patterns = [
   generateResource,
   generateScaffold,
   generateScaffoldRemote,
+  enableAnalytics,
   enableAuth,
   enableAuthRemote,
   enableApi,

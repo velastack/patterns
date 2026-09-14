@@ -66,6 +66,18 @@ the modifications work across a wide range of project setups.
 
 The `preview-modifies` directory is the mock modify output used only for previews. It's bundled in the same way as the `creates` directory.
 
+### Providers
+
+A capability with several implementations (`vela enable analytics --provider plausible|google|posthog`) declares
+them on the pattern as `providers: [{ id, label, env }]`, in prompt order. The CLI reads that list to prompt for
+a provider and validate `--provider`, and asks for each declared `env` key (blank allowed). Files for each
+provider live in `providers/<id>/**` and are bundled like `creates`; `generate.ts` picks the chosen set with
+`resolveProvider(META, options)` + `providerCreates(raw, id)` from `src/core/providers.ts`. `resolveProvider`
+reads `input.provider`, then `--provider` in argv; an unknown id is an `InvalidArgumentError` listing the known
+ones, a missing one is an error at runtime and the first provider in preview (the website loads patterns with
+argv only). Shared behaviour (the layout modifier, writing the env keys to `.env`) stays in the pattern's
+`generate.runtime.ts`. Providers are a separate dimension from `variants`.
+
 ## UI components
 
 `src/ui/components/<name>` holds the components Vela ships itself (`data-table`, `multiselect`, `geopoint`,
@@ -94,7 +106,7 @@ lists in `components` is handed to `shadcn-svelte add`, which resolves it from t
 - Use the demo script to generate a temporary project with the pattern to see applied changes.
 - In the temporary project, run `npm run test:server` to run the tests.
 - Run `npm run lint` and `npm run check` to make sure the code is correct.
-- Add the pattern to a case table in `integration/cases.ts` (`integration/coverage.test.ts` fails until every registered pattern is covered) and run its case.
+- Add the pattern to a case table in `integration/cases.ts` (`integration/coverage.test.ts` fails until every registered pattern, variant and provider is covered) and run its case.
 
 # Integration tests
 

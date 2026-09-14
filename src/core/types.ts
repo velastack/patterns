@@ -39,6 +39,10 @@ export interface Options {
    * - `destructive` (boolean): consent flag for destroy patterns to perform
    *   filesystem and collection deletions.
    * - `variant` (string): selects an alternate template under `variants/`.
+   * - `provider` (string): for patterns that declare `providers`, the id of
+   *   the one to generate. Falls back to `--provider <id>` in `argv`.
+   * - `providerEnv` (Record<string, string>): values the CLI collected for
+   *   the chosen provider's `env` keys, written to `.env` by the pattern.
    */
   input: Record<string, any>;
   logger?: Logger;
@@ -253,6 +257,29 @@ export interface Result {
   collectionDrops: CollectionDropSpec[];
 }
 
+/** One `.env` key a provider needs; the CLI prompts for it and the pattern writes it. */
+export interface ProviderEnvVar {
+  /** The `.env` key, e.g. `PUBLIC_PLAUSIBLE_DOMAIN`. */
+  key: string;
+  /** Prompt label shown by the CLI. */
+  label: string;
+  /** Prompt hint only; never written to `.env`. */
+  placeholder?: string;
+  /** Written to `.env` when the user supplies nothing. */
+  default?: string;
+}
+
+/**
+ * One implementation of a capability the user picks with `--provider <id>`:
+ * `vela enable analytics --provider plausible`. `id` is the stable CLI value,
+ * `label` the friendly name shown in prompts.
+ */
+export interface Provider {
+  id: string;
+  label: string;
+  env?: ProviderEnvVar[];
+}
+
 export interface Pattern {
   version: string;
   slug: string;
@@ -284,6 +311,10 @@ export interface Pattern {
 
   // Optional named alternates that override files in creates/. Selected via options.input.variant.
   variants?: string[];
+
+  // Optional provider implementations the user picks one of, in prompt order.
+  // Selected via options.input.provider; see core/providers.ts.
+  providers?: Provider[];
 
   // The main generator function for the pattern.
   generate: (options: Options) => Promise<Result>;

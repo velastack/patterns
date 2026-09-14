@@ -37,6 +37,21 @@ describe("integration case coverage", () => {
     expect(missing).toEqual([]);
   });
 
+  it("exercises every pattern provider", () => {
+    const missing: string[] = [];
+    for (const pattern of registry) {
+      for (const provider of pattern.providers ?? []) {
+        const covered = cases.some(({ spec }) =>
+          spec.steps.some(
+            (s) => s.slug === pattern.slug && s.input?.provider === provider.id,
+          ),
+        );
+        if (!covered) missing.push(`${pattern.slug}#${provider.id}`);
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+
   it("uses unique case names within a suite", () => {
     const seen = new Set<string>();
     const duplicates: string[] = [];

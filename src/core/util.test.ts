@@ -4,6 +4,7 @@ import {
   appRelativePath,
   composeCreates,
   filesFromGlob,
+  filesUnderPrefix,
   languageFromPath,
   mergeResults,
 } from "./util";
@@ -194,5 +195,34 @@ describe("composeCreates", () => {
       "missing",
     );
     expect(result.map((f) => f.content)).toEqual(["base-a", "base-b"]);
+  });
+});
+
+describe("filesUnderPrefix", () => {
+  const raw = {
+    "./providers/plausible/src/a.ts": "plausible-a",
+    "./providers/google/src/a.ts": "google-a",
+    "./providers/google/src/b.ts": "google-b",
+  };
+
+  it("keeps only the keys under the prefix, keyed by app-relative path", () => {
+    expect(filesUnderPrefix(raw, "./providers/google/")).toEqual({
+      "src/a.ts": {
+        path: "src/a.ts",
+        language: "ts",
+        content: "google-a",
+        status: "success",
+      },
+      "src/b.ts": {
+        path: "src/b.ts",
+        language: "ts",
+        content: "google-b",
+        status: "success",
+      },
+    });
+  });
+
+  it("returns an empty map when nothing matches", () => {
+    expect(filesUnderPrefix(raw, "./providers/missing/")).toEqual({});
   });
 });
