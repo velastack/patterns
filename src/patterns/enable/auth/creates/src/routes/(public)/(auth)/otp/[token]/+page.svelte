@@ -47,7 +47,15 @@
 									<Form.Control>
 										{#snippet children({ props })}
 											<Form.Label>OTP code</Form.Label>
-											<Input {...props} type="text" bind:value={$formData.otp} required />
+											<Input
+												{...props}
+												type="text"
+												inputmode="numeric"
+												autocomplete="one-time-code"
+												bind:value={$formData.otp}
+												required
+												autofocus
+											/>
 										{/snippet}
 									</Form.Control>
 									<Form.FieldErrors class="contents text-destructive" />

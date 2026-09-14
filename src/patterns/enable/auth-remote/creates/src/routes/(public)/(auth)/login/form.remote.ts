@@ -1,5 +1,5 @@
 import { form, getRequestEvent } from "$app/server";
-import { error, redirect } from "@sveltejs/kit";
+import { redirect } from "@sveltejs/kit";
 import { dev } from "$app/environment";
 import { loginSchema } from "$lib/schemas/login";
 
@@ -17,9 +17,11 @@ export const loginForm = form(loginSchema, async (data) => {
     try {
       await locals.pb
         .collection("users")
-        .authWithPassword(data.email, data.password);
+        .authWithPassword(data.email, data.password ?? "");
     } catch (err: any) {
-      error(400, err.response?.message ?? "Failed to authenticate.");
+      return {
+        message: (err.response?.message as string) ?? "Failed to authenticate.",
+      };
     }
   }
 

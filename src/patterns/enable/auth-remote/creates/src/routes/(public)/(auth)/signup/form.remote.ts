@@ -1,5 +1,5 @@
 import { form, getRequestEvent } from "$app/server";
-import { error, redirect } from "@sveltejs/kit";
+import { redirect } from "@sveltejs/kit";
 import { setFlash } from "sveltekit-flash-message/server";
 import { dev } from "$app/environment";
 import { signupSchema } from "$lib/schemas/signup";
@@ -7,7 +7,7 @@ import { signupSchema } from "$lib/schemas/signup";
 export const signupForm = form(signupSchema, async (data) => {
   const { locals, cookies, url } = getRequestEvent();
 
-  let user;
+  let user: { email: string };
 
   try {
     user = await locals.admin.collection("users").create({
@@ -20,11 +20,11 @@ export const signupForm = form(signupSchema, async (data) => {
     const fieldError = response?.data
       ? Object.values(response.data)[0]
       : undefined;
-    const message =
+    const message: string =
       (fieldError as any)?.message ??
       response?.message ??
       "Failed to create account.";
-    error(400, message);
+    return { message };
   }
 
   await locals.pb.collection("users").requestVerification(user.email);

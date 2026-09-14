@@ -43,6 +43,18 @@
 					<form method="POST">
 						<div class="grid gap-6">
 							<div class="grid gap-2">
+								{#if data.email}
+									<input
+										type="email"
+										value={data.email}
+										autocomplete="username"
+										readonly
+										tabindex="-1"
+										aria-hidden="true"
+										class="sr-only"
+									/>
+								{/if}
+
 								<Form.Field {form} name="password" class="col-span-1">
 									<Form.Control>
 										{#snippet children({ props })}
@@ -53,6 +65,8 @@
 												bind:value={$formData.password}
 												required
 												autocomplete="new-password"
+												minlength={8}
+												autofocus
 											/>
 										{/snippet}
 									</Form.Control>
@@ -69,6 +83,7 @@
 												bind:value={$formData.passwordConfirm}
 												required
 												autocomplete="new-password"
+												minlength={8}
 											/>
 										{/snippet}
 									</Form.Control>

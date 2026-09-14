@@ -53,6 +53,7 @@
 												bind:value={$formData.password}
 												required
 												autocomplete="current-password"
+												autofocus
 											/>
 										{/snippet}
 									</Form.Control>

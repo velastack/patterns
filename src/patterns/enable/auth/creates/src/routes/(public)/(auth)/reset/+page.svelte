@@ -47,7 +47,14 @@
 									<Form.Control>
 										{#snippet children({ props })}
 											<Form.Label>Email</Form.Label>
-											<Input {...props} type="email" bind:value={$formData.email} required />
+											<Input
+												{...props}
+												type="email"
+												bind:value={$formData.email}
+												required
+												autocomplete="username"
+												autofocus
+											/>
 										{/snippet}
 									</Form.Control>
 									<Form.FieldErrors class="contents text-destructive" />

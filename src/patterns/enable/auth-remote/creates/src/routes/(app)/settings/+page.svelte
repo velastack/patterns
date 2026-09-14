@@ -14,6 +14,14 @@
   } from "./form.remote";
 
   let { data } = $props();
+
+  // bits-ui's Checkbox renders a <button>, so drop the native type="checkbox"
+  // from the field props before spreading them.
+  const emailVisibilityProps = $derived.by(() => {
+    const { type, ...props } =
+      updateProfileForm.fields.emailVisibility.as("checkbox");
+    return props;
+  });
 </script>
 
 <div class="divide-y divide-gray-900/10 dark:divide-white/10">
@@ -48,12 +56,16 @@
                 </p>
               </div>
             </div>
-            <label class={buttonVariants({ variant: "outline" })}>
+            <label
+              class="{buttonVariants({
+                variant: 'outline',
+              })} has-focus-visible:border-ring has-focus-visible:ring-3 has-focus-visible:ring-ring/50"
+            >
               Upload new picture
               <input
                 {...updateProfileForm.fields.avatar.as("file")}
                 type="file"
-                class="hidden"
+                class="sr-only"
               />
             </label>
           </div>
@@ -68,6 +80,7 @@
                 id="name"
                 {...updateProfileForm.fields.name.as("text")}
                 type="text"
+                autocomplete="name"
               />
               {#each updateProfileForm.fields.name.issues() as issue}
                 <p class="text-destructive text-sm">{issue.message}</p>
@@ -77,9 +90,7 @@
           <div class="grid gap-6">
             <div class="grid gap-3">
               <div class="flex items-start gap-2">
-                <Checkbox
-                  {...updateProfileForm.fields.emailVisibility.as("checkbox")}
-                />
+                <Checkbox id="emailVisibility" {...emailVisibilityProps} />
                 <div class="grid gap-2">
                   <label
                     for="emailVisibility"
@@ -145,7 +156,7 @@
                     verification email.
                   </Dialog.Description>
                 </Dialog.Header>
-                <form {...changeEmailForm}>
+                <form {...changeEmailForm} class="grid gap-4">
                   <div class="grid gap-6">
                     <div class="grid gap-3">
                       <label for="email" class="text-sm font-medium"
@@ -156,6 +167,7 @@
                         {...changeEmailForm.fields.email.as("text")}
                         type="email"
                         required
+                        autocomplete="email"
                       />
                       {#each changeEmailForm.fields.email.issues() as issue}
                         <p class="text-destructive text-sm">{issue.message}</p>
@@ -187,6 +199,15 @@
     <form {...changePasswordForm} class="md:col-span-2">
       <Card.Root>
         <Card.Content class="flex flex-col gap-6">
+          <input
+            type="email"
+            value={data.user.email}
+            autocomplete="username"
+            readonly
+            tabindex="-1"
+            aria-hidden="true"
+            class="sr-only"
+          />
           <div class="grid gap-6">
             <div class="grid gap-3">
               <label for="password" class="text-sm font-medium"
@@ -198,6 +219,7 @@
                 type="password"
                 autocomplete="new-password"
                 required
+                minlength={8}
               />
               {#each changePasswordForm.fields.password.issues() as issue}
                 <p class="text-destructive text-sm">{issue.message}</p>
@@ -213,6 +235,7 @@
                 type="password"
                 autocomplete="new-password"
                 required
+                minlength={8}
               />
               {#each changePasswordForm.fields.passwordConfirm.issues() as issue}
                 <p class="text-destructive text-sm">{issue.message}</p>

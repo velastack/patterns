@@ -38,7 +38,10 @@
                     id="otp"
                     {...otpForm.fields.otp.as("text")}
                     type="text"
+                    inputmode="numeric"
+                    autocomplete="one-time-code"
                     required
+                    autofocus
                   />
                   {#each otpForm.fields.otp.issues() as issue}
                     <p class="text-destructive text-sm">{issue.message}</p>

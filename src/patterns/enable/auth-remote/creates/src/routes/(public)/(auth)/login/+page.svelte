@@ -114,6 +114,8 @@
                       {...loginForm.fields.email.as("text")}
                       type="email"
                       required
+                      autocomplete="username"
+                      autofocus
                     />
                     {#each loginForm.fields.email.issues() as issue}
                       <p class="text-destructive text-sm">{issue.message}</p>
@@ -122,23 +124,24 @@
 
                   {#if mode === "password" && authMethods.password.enabled}
                     <div class="space-y-2 col-span-1">
-                      <div class="flex justify-between">
+                      <div class="grid grid-cols-[1fr_auto] gap-2">
                         <label for="password" class="text-sm font-medium"
                           >Password</label
                         >
+                        <Input
+                          id="password"
+                          {...loginForm.fields.password.as("text")}
+                          type="password"
+                          required
+                          autocomplete="current-password"
+                          class="col-span-2"
+                        />
                         <a
                           href="/reset"
-                          class="ml-auto text-sm underline-offset-4 hover:underline"
+                          class="col-start-2 row-start-1 text-sm underline-offset-4 hover:underline"
                           >Forgot your password?</a
                         >
                       </div>
-                      <Input
-                        id="password"
-                        {...loginForm.fields.password.as("text")}
-                        type="password"
-                        required
-                        autocomplete="current-password"
-                      />
                       {#each loginForm.fields.password.issues() as issue}
                         <p class="text-destructive text-sm">{issue.message}</p>
                       {/each}

@@ -39,6 +39,8 @@
                     {...resetForm.fields.email.as("text")}
                     type="email"
                     required
+                    autocomplete="username"
+                    autofocus
                   />
                   {#each resetForm.fields.email.issues() as issue}
                     <p class="text-destructive text-sm">{issue.message}</p>

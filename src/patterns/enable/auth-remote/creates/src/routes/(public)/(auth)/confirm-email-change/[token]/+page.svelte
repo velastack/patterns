@@ -42,6 +42,7 @@
                     type="password"
                     required
                     autocomplete="current-password"
+                    autofocus
                   />
                   {#each confirmEmailChangeForm.fields.password.issues() as issue}
                     <p class="text-destructive text-sm">{issue.message}</p>

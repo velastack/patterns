@@ -30,6 +30,18 @@
           <form {...confirmResetForm}>
             <div class="grid gap-6">
               <div class="grid gap-2">
+                {#if data.email}
+                  <input
+                    type="email"
+                    value={data.email}
+                    autocomplete="username"
+                    readonly
+                    tabindex="-1"
+                    aria-hidden="true"
+                    class="sr-only"
+                  />
+                {/if}
+
                 <div class="space-y-2 col-span-1">
                   <label for="password" class="text-sm font-medium"
                     >Password</label
@@ -40,6 +52,8 @@
                     type="password"
                     required
                     autocomplete="new-password"
+                    minlength={8}
+                    autofocus
                   />
                   {#each confirmResetForm.fields.password.issues() as issue}
                     <p class="text-destructive text-sm">{issue.message}</p>
@@ -56,6 +70,7 @@
                     type="password"
                     required
                     autocomplete="new-password"
+                    minlength={8}
                   />
                   {#each confirmResetForm.fields.passwordConfirm.issues() as issue}
                     <p class="text-destructive text-sm">{issue.message}</p>

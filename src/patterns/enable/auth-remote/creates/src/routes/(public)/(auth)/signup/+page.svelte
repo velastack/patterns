@@ -75,7 +75,7 @@
                         class="size-5 bg-white p-0.5 rounded-sm"
                         alt=""
                       />
-                      Login with {provider.displayName}
+                      Sign up with {provider.displayName}
                     </Button>
                   {/each}
                 </div>
@@ -102,6 +102,8 @@
                       {...signupForm.fields.email.as("text")}
                       type="email"
                       required
+                      autocomplete="username"
+                      autofocus
                     />
                     {#each signupForm.fields.email.issues() as issue}
                       <p class="text-destructive text-sm">{issue.message}</p>
@@ -118,6 +120,7 @@
                       type="password"
                       required
                       autocomplete="new-password"
+                      minlength={8}
                     />
                     {#each signupForm.fields.password.issues() as issue}
                       <p class="text-destructive text-sm">{issue.message}</p>
@@ -134,6 +137,7 @@
                       type="password"
                       required
                       autocomplete="new-password"
+                      minlength={8}
                     />
                     {#each signupForm.fields.passwordConfirm.issues() as issue}
                       <p class="text-destructive text-sm">{issue.message}</p>

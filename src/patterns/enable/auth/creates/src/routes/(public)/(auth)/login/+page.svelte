@@ -117,6 +117,8 @@
                           type="email"
                           bind:value={$formData.email}
                           required
+                          autocomplete="username"
+                          autofocus
                         />
                       {/snippet}
                     </Form.Control>
@@ -127,21 +129,22 @@
                     <Form.Field {form} name="password" class="col-span-1">
                       <Form.Control>
                         {#snippet children({ props })}
-                          <div class="flex justify-between">
+                          <div class="grid grid-cols-[1fr_auto] gap-2">
                             <Form.Label>Password</Form.Label>
+                            <Input
+                              {...props}
+                              type="password"
+                              bind:value={$formData.password}
+                              required
+                              autocomplete="current-password"
+                              class="col-span-2"
+                            />
                             <a
                               href="/reset"
-                              class="ml-auto text-sm underline-offset-4 hover:underline"
+                              class="col-start-2 row-start-1 text-sm underline-offset-4 hover:underline"
                               >Forgot your password?</a
                             >
                           </div>
-                          <Input
-                            {...props}
-                            type="password"
-                            bind:value={$formData.password}
-                            required
-                            autocomplete="current-password"
-                          />
                         {/snippet}
                       </Form.Control>
                       <Form.FieldErrors class="contents text-destructive" />

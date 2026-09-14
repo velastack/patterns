@@ -93,7 +93,7 @@
                       class="size-5 bg-white p-0.5 rounded-sm"
                       alt=""
                     />
-                    Login with {provider.displayName}
+                    Sign up with {provider.displayName}
                   </Button>
                 {/each}
               </div>
@@ -122,6 +122,8 @@
                         type="email"
                         bind:value={$formData.email}
                         required
+                        autocomplete="username"
+                        autofocus
                       />
                     {/snippet}
                   </Form.Control>
@@ -138,6 +140,7 @@
                         bind:value={$formData.password}
                         required
                         autocomplete="new-password"
+                        minlength={8}
                       />
                     {/snippet}
                   </Form.Control>
@@ -154,6 +157,7 @@
                         bind:value={$formData.passwordConfirm}
                         required
                         autocomplete="new-password"
+                        minlength={8}
                       />
                     {/snippet}
                   </Form.Control>

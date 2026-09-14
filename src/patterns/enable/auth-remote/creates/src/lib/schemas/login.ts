@@ -1,23 +1,14 @@
 import { z } from "zod";
 
-const otpSchema = z.object({
-  type: z.literal("otp"),
-  email: z.email(),
-});
-
-const passwordSchema = z.object({
-  type: z.literal("password"),
-  email: z.email(),
-  password: z.string(),
-});
-
-const oAuth2Schema = z.object({
-  type: z.literal("oauth2"),
-  email: z.email(),
-});
-
-export const loginSchema = z.discriminatedUnion("type", [
-  otpSchema,
-  passwordSchema,
-  oAuth2Schema,
-]);
+// A flat shape (rather than a discriminated union) keeps
+// `loginForm.fields.password` addressable in the page regardless of mode.
+export const loginSchema = z
+  .object({
+    type: z.enum(["password", "otp", "oauth2"]),
+    email: z.email(),
+    password: z.string().optional(),
+  })
+  .refine((data) => data.type !== "password" || !!data.password, {
+    message: "Password is required",
+    path: ["password"],
+  });

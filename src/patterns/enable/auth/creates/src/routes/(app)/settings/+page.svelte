@@ -104,10 +104,14 @@
 											</div>
 										{/snippet}
 										{#snippet input()}
-											<Form.Label class={buttonVariants({ variant: 'outline' })}>
+											<FileForm.Input class="peer sr-only" {...props} />
+											<Form.Label
+												class="{buttonVariants({
+													variant: 'outline'
+												})} peer-focus-visible:border-ring peer-focus-visible:ring-3 peer-focus-visible:ring-ring/50"
+											>
 												Upload new picture
 											</Form.Label>
-											<FileForm.Input class="hidden" {...props} />
 										{/snippet}
 									</FileForm.Single>
 								</div>
@@ -122,7 +126,12 @@
 								<Form.Control>
 									{#snippet children({ props })}
 										<Form.Label>Name</Form.Label>
-										<Input {...props} type="text" bind:value={$profileFormData.name} />
+										<Input
+											{...props}
+											type="text"
+											autocomplete="name"
+											bind:value={$profileFormData.name}
+										/>
 									{/snippet}
 								</Form.Control>
 								<Form.FieldErrors class="contents text-destructive" />
@@ -190,7 +199,7 @@
 										Enter your new email address. You will receive a verification email.
 									</Dialog.Description>
 								</Dialog.Header>
-								<form method="POST" action="?/changeEmail">
+								<form method="POST" action="?/changeEmail" class="grid gap-4">
 									<div class="grid gap-6">
 										<div class="grid gap-3">
 											<Form.Field form={emailForm} name="email">
@@ -202,6 +211,7 @@
 															type="email"
 															bind:value={$emailFormData.email}
 															required
+															autocomplete="email"
 														/>
 													{/snippet}
 												</Form.Control>
@@ -209,10 +219,10 @@
 											</Form.Field>
 										</div>
 									</div>
+									<Dialog.Footer>
+										<Button type="submit" class="w-fit">Change email</Button>
+									</Dialog.Footer>
 								</form>
-								<Dialog.Footer>
-									<Button type="submit" class="w-fit">Change email</Button>
-								</Dialog.Footer>
 							</Dialog.Content>
 						</Dialog.Root>
 					</div>
@@ -232,6 +242,15 @@
 		<form method="POST" action="?/changePassword" class="md:col-span-2">
 			<Card.Root>
 				<Card.Content class="flex flex-col gap-6">
+					<input
+						type="email"
+						value={data.user.email}
+						autocomplete="username"
+						readonly
+						tabindex="-1"
+						aria-hidden="true"
+						class="sr-only"
+					/>
 					<div class="grid gap-6">
 						<div class="grid gap-3">
 							<Form.Field form={passwordForm} name="password">
@@ -244,6 +263,7 @@
 											bind:value={$passwordFormData.password}
 											autocomplete="new-password"
 											required
+											minlength={8}
 										/>
 									{/snippet}
 								</Form.Control>
@@ -261,6 +281,7 @@
 											bind:value={$passwordFormData.passwordConfirm}
 											autocomplete="new-password"
 											required
+											minlength={8}
 										/>
 									{/snippet}
 								</Form.Control>

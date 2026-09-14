@@ -1,5 +1,5 @@
 import { form, getRequestEvent } from "$app/server";
-import { error, redirect } from "@sveltejs/kit";
+import { redirect } from "@sveltejs/kit";
 import { dev } from "$app/environment";
 import { otpSchema } from "$lib/schemas/otp";
 
@@ -11,7 +11,9 @@ export const otpForm = form(otpSchema, async (data) => {
       .collection("users")
       .authWithOTP(params.token as string, data.otp);
   } catch (err: any) {
-    error(400, err.response?.message ?? "Failed to verify code.");
+    return {
+      message: (err.response?.message as string) ?? "Failed to verify code.",
+    };
   }
 
   const redirectUrl = url.searchParams.get("redirect") ?? "/dashboard";
