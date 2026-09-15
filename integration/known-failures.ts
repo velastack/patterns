@@ -39,17 +39,6 @@ export const KNOWN_FAILURES: KnownFailure[] = [
     step: "enable-auth-remote",
     match: /collection "oauth_accounts"/,
   },
-  {
-    id: "auth-remote-form-field-types",
-    reason:
-      "enable-auth-remote's login/otp/signup pages read `.message` / `.password` off a union of " +
-      "remote form fields that TypeScript narrows to never, and the settings page passes " +
-      '`type: "checkbox"` to a Checkbox root that does not accept it.',
-    kind: "check",
-    step: "enable-auth-remote",
-    match:
-      /(\(auth\)\/(login|otp\/\[token\]|signup)\/\+page\.svelte.*ts\(2339\) Property '(message|password)' does not exist)|(settings\/\+page\.svelte.*ts\(2322\) Type '\{ name: string; type: "checkbox")/,
-  },
 
   // --- enable-backend (static template) -------------------------------------
   {
