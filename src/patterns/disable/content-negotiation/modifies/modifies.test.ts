@@ -60,13 +60,14 @@ describe("disable content-negotiation modifiers", () => {
     expect(second).toBe(first);
   });
 
-  it("deletes hooks.ts when it only contained the negotiate reroute", () => {
+  it("empties hooks.ts when it only contained the negotiate reroute", () => {
     const filePath = path.join(tempDir, "hooks.negotiate-only.ts");
     expect(fs.existsSync(filePath)).toBe(true);
 
-    unmodifyHooksNegotiate(filePath);
+    const outcome = unmodifyHooksNegotiate(filePath);
 
-    expect(fs.existsSync(filePath)).toBe(false);
+    expect(outcome).toEqual({ status: "success", changed: true });
+    expect(fs.readFileSync(filePath, "utf8")).toBe("");
   });
 
   it("unwraps the i18n-compose reroute back to the i18n-only form", async () => {

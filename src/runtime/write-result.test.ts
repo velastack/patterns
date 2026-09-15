@@ -9,7 +9,12 @@ import {
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { ExecuteCommand, Options, Result } from "../core/types";
+import type {
+  ExecuteCommand,
+  Options,
+  PackageManagerOperation,
+  Result,
+} from "../core/types";
 import { InvalidArgumentError } from "../core/errors";
 import {
   formatPaths,
@@ -207,7 +212,7 @@ describe("writeResult", () => {
     const executeCommand = vi.fn<
       (
         cwd: string,
-        operation: "execute" | "install",
+        operation: PackageManagerOperation,
         args: string[],
       ) => Promise<void>
     >(async () => {});
@@ -257,6 +262,43 @@ describe("writeResult", () => {
     ]);
   });
 
+  it("uninstalls only the listed packages that package.json records", async () => {
+    const root = makeTempRoot();
+    writeFileSync(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        name: "tmp",
+        dependencies: { "sveltekit-negotiate": "^1.0.0" },
+        devDependencies: { wuchale: "^0.26.3" },
+      }),
+      "utf8",
+    );
+
+    const executeCommand = vi.fn<
+      (
+        cwd: string,
+        operation: PackageManagerOperation,
+        args: string[],
+      ) => Promise<void>
+    >(async () => {});
+
+    const result = await writeResult(
+      {
+        ...emptyResult(),
+        uninstalls: ["sveltekit-negotiate", "wuchale@^0.26.3", "never-there"],
+      },
+      makeOptions(root),
+      { executeCommand, fetch: registryFetch() },
+    );
+
+    expect(executeCommand).toHaveBeenCalledTimes(1);
+    expect(executeCommand).toHaveBeenCalledWith(root, "uninstall", [
+      "sveltekit-negotiate",
+      "wuchale",
+    ]);
+    expect(result.uninstalls).toEqual(["sveltekit-negotiate", "wuchale"]);
+  });
+
   it("ships data-table locally instead of asking shadcn-svelte for it", async () => {
     const root = makeTempRoot();
     writeFileSync(
@@ -268,7 +310,7 @@ describe("writeResult", () => {
     const executeCommand = vi.fn<
       (
         cwd: string,
-        operation: "execute" | "install",
+        operation: PackageManagerOperation,
         args: string[],
       ) => Promise<void>
     >(async () => {});
@@ -313,7 +355,7 @@ describe("writeResult", () => {
     const executeCommand = vi.fn<
       (
         cwd: string,
-        operation: "execute" | "install",
+        operation: PackageManagerOperation,
         args: string[],
       ) => Promise<void>
     >(async () => {});

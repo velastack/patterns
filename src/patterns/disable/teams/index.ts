@@ -38,7 +38,7 @@ export default {
   plan: "pro",
   title: "Disable teams",
   summary:
-    "Removes teams collections (teams, team_memberships, team_invites, team_invite_links), reverts the Teams nav item, and deletes team routes. app-sidebar and +layout.server.ts must be reverted manually.",
+    "Removes the teams collections and routes, and reverts the Teams nav item, the team switcher in app-sidebar, the team props in the (app) layout, and the team loader in its +layout.server.ts.",
   requires: {
     auth: true,
     api: false,

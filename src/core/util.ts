@@ -81,6 +81,9 @@ export function mergeResults(results: Result[]) {
       acc.collections.push(...result.collections);
       acc.collectionPatches.push(...result.collectionPatches);
       acc.collectionDrops.push(...result.collectionDrops);
+      if (result.uninstalls?.length) {
+        (acc.uninstalls ??= []).push(...result.uninstalls);
+      }
       return acc;
     },
     {

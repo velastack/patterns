@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import dedent from "dedent";
+import path from "node:path";
 import type { ModifyOutcome } from "../../../../core/types";
 
 // Source of truth: velastack-cli/templates/minimal/test/setup.ts
@@ -51,7 +51,8 @@ afterEach(async (context: TestContext) => {
 });
 `;
 
-// Source of truth: velastack-cli/templates/static/test/setup.ts
+// The static template ships no test setup at all; this is the backend-free
+// subset of the minimal one, kept so existing tests keep their agents.
 const WITHOUT_BACKEND = `import { beforeEach } from 'vitest';
 import supertest from 'supertest';
 
@@ -61,21 +62,13 @@ beforeEach(async (context: any) => {
 });
 `;
 
-const NOT_FOUND_HINT = dedent`
-  Create test/setup.ts. The default minimal-template setup wires supertest:
-
-  import { beforeEach } from 'vitest';
-  import supertest from 'supertest';
-
-  beforeEach(async (context: any) => {
-    context.request = supertest(process.env.VITE_TEST_URL!);
-    context.agent = supertest.agent(process.env.VITE_TEST_URL!);
-  });
-`;
-
 export function modifyTestSetup(testSetupPath: string): ModifyOutcome {
   if (!fs.existsSync(testSetupPath)) {
-    return { status: "not-found", message: NOT_FOUND_HINT };
+    // The static template has no test/ directory; a backend brings server
+    // tests with it, so the setup is created rather than reported missing.
+    fs.mkdirSync(path.dirname(testSetupPath), { recursive: true });
+    fs.writeFileSync(testSetupPath, WITH_BACKEND, "utf8");
+    return { status: "success", changed: true };
   }
 
   const original = fs.readFileSync(testSetupPath, "utf8");

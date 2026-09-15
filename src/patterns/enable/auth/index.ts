@@ -17,6 +17,12 @@ export async function generate(options: Options) {
     return formatResult(mergeResults([baseRes, previewRes]), options);
   }
 
+  const { createCollections } = await import("../../../runtime/collections");
+  const migrationCreates = await createCollections(
+    baseRes.collections,
+    options,
+  );
+
   const { writeResult } = await import("../../../runtime/write-result");
 
   // Install components and write creates first so runtime modifies that
@@ -24,7 +30,10 @@ export async function generate(options: Options) {
   // state. Without this, modifies targeting installed components run against
   // a non-existent file, return `not-found`, and are silently dropped.
   const writtenBase = await writeResult(
-    await formatResult(baseRes, options),
+    await formatResult(
+      { ...baseRes, creates: [...baseRes.creates, ...migrationCreates] },
+      options,
+    ),
     options,
   );
 

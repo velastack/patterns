@@ -247,6 +247,34 @@ async function installPackages(
   return toInstall;
 }
 
+/**
+ * `npm uninstall` for the listed packages that `package.json` records. The
+ * inverse of `installPackages`: names not present are skipped, so a disable
+ * pattern can name everything its enable counterpart installed.
+ */
+async function uninstallPackages(
+  root: string,
+  packages: string[],
+  runtime?: WriteResultRuntime,
+  logger: Logger = NOOP_LOGGER,
+): Promise<string[]> {
+  if (packages.length === 0) {
+    return [];
+  }
+
+  const installed = installedPackagesFromProject(root);
+  const toRemove = [...new Set(packages.map(packageName))].filter((pkg) =>
+    installed.has(pkg),
+  );
+  if (toRemove.length === 0) {
+    return [];
+  }
+
+  logger.info(`Removing packages: ${toRemove.join(", ")}`);
+  await executeCommand(root, "uninstall", toRemove, runtime);
+  return toRemove;
+}
+
 export function isCustomComponent(component: string): boolean {
   return getAllCustomComponents().includes(component);
 }
@@ -534,6 +562,13 @@ export async function writeResult(
     runtime,
   );
 
+  const packageUninstalls = await uninstallPackages(
+    options.root,
+    result.uninstalls ?? [],
+    runtime,
+    logger,
+  );
+
   for (const file of [...result.creates, ...dropMigrationCreates]) {
     if (file.status !== "success") {
       // A modifier that could not recognise the file it was asked to edit
@@ -607,5 +642,6 @@ export async function writeResult(
     deletes: writtenResult.deletes,
     components: componentInstalls.installed,
     packages: [...new Set([...packageInstalls, ...componentInstalls.packages])],
+    ...(packageUninstalls.length > 0 ? { uninstalls: packageUninstalls } : {}),
   };
 }

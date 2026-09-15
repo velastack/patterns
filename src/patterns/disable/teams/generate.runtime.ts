@@ -4,12 +4,10 @@ import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
 import { unmodifyNavUser } from "./modifies/modify-nav-user";
+import { unmodifyLayoutServer } from "./modifies/+layout.server";
+import { unmodifyAppLayoutSvelte } from "./modifies/modify-app-layout";
+import { unmodifyAppSidebar } from "./modifies/modify-app-sidebar";
 import { planDropsForCollections } from "../../destroy/shared";
-
-const MANUAL_REMEDIATION = [
-  "app-sidebar, +layout.server.ts (teams loader), and app-layout.svelte (AppSidebar team props) must be reverted manually.",
-  "These edits are substantial and are not safely reversed by tooling.",
-].join(" ");
 
 export async function generate(options: Options) {
   const logger = getLogger(options);
@@ -26,10 +24,55 @@ export async function generate(options: Options) {
     navUserCandidates.find((p) => fs.existsSync(p)) ?? navUserCandidates[0];
   pushResult(modifyOutcomeToFile(navUserPath, unmodifyNavUser(navUserPath)));
 
-  logger.info(MANUAL_REMEDIATION);
+  logger.info("Reverting (app) +layout.server.ts");
+  const layoutServerPath = path.join(
+    options.root,
+    "src",
+    "routes",
+    "(app)",
+    "+layout.server.ts",
+  );
+  pushResult(
+    modifyOutcomeToFile(
+      layoutServerPath,
+      unmodifyLayoutServer(layoutServerPath),
+    ),
+  );
+
+  logger.info("Reverting (app) +layout.svelte");
+  const appLayoutPath = path.join(
+    options.root,
+    "src",
+    "routes",
+    "(app)",
+    "+layout.svelte",
+  );
+  pushResult(
+    modifyOutcomeToFile(appLayoutPath, unmodifyAppLayoutSvelte(appLayoutPath)),
+  );
+
+  logger.info("Reverting app-sidebar.svelte");
+  const appSidebarPath = path.join(
+    options.root,
+    "src",
+    "lib",
+    "components",
+    "app-sidebar.svelte",
+  );
+  pushResult(
+    modifyOutcomeToFile(appSidebarPath, unmodifyAppSidebar(appSidebarPath)),
+  );
 
   const collectionDrops = await planDropsForCollections(
-    ["team_invite_links", "team_invites", "team_memberships", "teams"],
+    // team_users is a view over teams, so it has to go first or PocketBase
+    // refuses to drop teams ("existing reference in team_users").
+    [
+      "team_users",
+      "team_invite_links",
+      "team_invites",
+      "team_memberships",
+      "teams",
+    ],
     options,
   );
 

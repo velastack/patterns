@@ -67,6 +67,7 @@ import disableAuth from "./patterns/disable/auth";
 import disableBackend from "./patterns/disable/backend";
 import disableContentNegotiation from "./patterns/disable/content-negotiation";
 import disableI18n from "./patterns/disable/i18n";
+import disableNotifications from "./patterns/disable/notifications";
 import disableTeams from "./patterns/disable/teams";
 import disablePayments from "./patterns/disable/payments";
 import disableSubscriptions from "./patterns/disable/subscriptions";
@@ -105,6 +106,7 @@ export const patterns = [
   disableBackend,
   disableContentNegotiation,
   disableI18n,
+  disableNotifications,
   disableTeams,
   disablePayments,
   disableSubscriptions,

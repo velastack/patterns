@@ -36,8 +36,13 @@ export function modifyAppHtml(appHtmlPath: string): ModifyOutcome {
   }
 
   const updated = original.replace(/<html(\s[^>]*?)?>/i, (match) => {
-    if (/lang\s*=/.test(match)) {
-      return match;
+    // A static lang (the templates ship lang="en") is replaced by the
+    // placeholder so the server hook can fill in the negotiated locale.
+    if (/\slang\s*=/i.test(match)) {
+      return match.replace(
+        /\slang\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/i,
+        ' lang="%sveltekit.lang%"',
+      );
     }
     return match.replace(/<html/i, '<html lang="%sveltekit.lang%"');
   });

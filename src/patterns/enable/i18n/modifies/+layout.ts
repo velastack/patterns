@@ -3,7 +3,7 @@ import path from "node:path";
 import dedent from "dedent";
 import type { ModifyOutcome } from "../../../../core/types";
 
-const LOAD_SNIPPET = dedent`
+export const LOAD_SNIPPET = dedent`
   import { browser } from '$app/environment';
   import { loadLocale } from 'wuchale/load-utils';
 

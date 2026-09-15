@@ -108,7 +108,9 @@ export async function generate(options: Options) {
     modifies: [],
     deletes: [],
     components,
-    packages: [],
+    // The minimal template ships these; a static project turned backend
+    // does not. Pinned to the template's ranges.
+    packages: ["sveltekit-flash-message@^2.4.6", "zod@^4.1.11"],
     collections,
     collectionPatches: [],
     collectionDrops: [],

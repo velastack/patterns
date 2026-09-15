@@ -71,7 +71,9 @@ export function unmodifyHooksNegotiate(hooksPath: string): ModifyOutcome {
   removeNegotiateImport(sourceFile);
 
   if (isMeaningfullyEmpty(sourceFile)) {
-    fs.rmSync(hooksPath, { force: true });
+    // Emptied rather than removed: the runtime turns an empty hooks.ts into a
+    // delete entry, so the removal is written and reported like any other.
+    fs.writeFileSync(hooksPath, "", "utf8");
     return { status: "success", changed: true };
   }
 

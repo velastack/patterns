@@ -1,5 +1,7 @@
+import fs from "node:fs";
 import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
+import { toDeleteEntry } from "../../destroy/shared";
 import { getLogger } from "../../../core/logger";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
 import { unmodifyHooksServerNegotiate } from "./modifies/hooks.server";
@@ -9,6 +11,7 @@ import { unmodifyRootLayoutNegotiate } from "./modifies/root-layout.svelte";
 export async function generate(options: Options) {
   const logger = getLogger(options);
   const modifies: File[] = [];
+  const deletes: File[] = [];
   const pushResult = (file: File | null) => {
     if (file) modifies.push(file);
   };
@@ -24,7 +27,16 @@ export async function generate(options: Options) {
 
   logger.info("Reverting hooks.ts");
   const hooksPath = path.join(options.root, "src", "hooks.ts");
-  pushResult(modifyOutcomeToFile(hooksPath, unmodifyHooksNegotiate(hooksPath)));
+  const hooksOutcome = unmodifyHooksNegotiate(hooksPath);
+  if (
+    fs.existsSync(hooksPath) &&
+    fs.readFileSync(hooksPath, "utf8").trim() === ""
+  ) {
+    // The reroute was all it contained; the file goes with it.
+    deletes.push(toDeleteEntry(hooksPath));
+  } else {
+    pushResult(modifyOutcomeToFile(hooksPath, hooksOutcome));
+  }
 
   logger.info("Reverting src/routes/+layout.svelte");
   const rootLayoutPath = path.join(
@@ -43,7 +55,7 @@ export async function generate(options: Options) {
   return {
     creates: [],
     modifies,
-    deletes: [],
+    deletes,
     components: [],
     packages: [],
     collections: [],

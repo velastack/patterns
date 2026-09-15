@@ -57,7 +57,7 @@ export type Component = string;
  */
 export type Package = string;
 
-export type PackageManagerOperation = "execute" | "install";
+export type PackageManagerOperation = "execute" | "install" | "uninstall";
 export type ExecuteCommand = (
   cwd: string,
   operation: PackageManagerOperation,
@@ -255,6 +255,12 @@ export interface Result {
   collections: CollectionSpec[];
   collectionPatches: CollectionFieldsPatch[];
   collectionDrops: CollectionDropSpec[];
+  /**
+   * Packages to remove from the project. Only names `package.json` records
+   * are uninstalled, so a disable pattern can list what its enable pattern
+   * added without checking first.
+   */
+  uninstalls?: Package[];
 }
 
 /** One `.env` key a provider needs; the CLI prompts for it and the pattern writes it. */

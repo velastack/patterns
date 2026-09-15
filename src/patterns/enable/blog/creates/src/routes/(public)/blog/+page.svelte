@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
   import PostCard from "$lib/components/blog/PostCard.svelte";
   import Rss from "@lucide/svelte/icons/rss";

@@ -4,16 +4,10 @@
   import AuthorChip from "$lib/components/blog/AuthorChip.svelte";
   import PostCard from "$lib/components/blog/PostCard.svelte";
   import { formatDate } from "$lib/utils/date";
-  import * as Breadcrumb from "$lib/components/ui/breadcrumb";
   import ArrowLeft from "@lucide/svelte/icons/arrow-left";
   import ArrowRight from "@lucide/svelte/icons/arrow-right";
-  import { page } from "$app/state";
 
   let { data } = $props();
-  let breadcrumbs = $derived(page.data.breadcrumbs || []) as {
-    title: string;
-    url: string;
-  }[];
 </script>
 
 <div class="flex flex-col gap-6">

@@ -49,8 +49,8 @@ export const actions = {
       cookies,
     );
   },
-  resendInvite: async ({ locals }) => {
-    const user = locals.pb.authStore.record!;
+  resendInvite: async () => {
+    // TODO: re-send the invite email once mail delivery is wired up.
   },
   cancelInvite: async ({ locals, params, request, cookies }) => {
     const formData = await request.formData();

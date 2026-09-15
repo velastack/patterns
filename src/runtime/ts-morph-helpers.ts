@@ -64,6 +64,58 @@ export function removeImportByModuleSpecifier(
   return { wasRemoved: true };
 }
 
+/**
+ * Drop `name` from the import of `moduleSpecifier` once nothing else in the
+ * file references it; the whole declaration goes when `name` was its only
+ * import. For unwrapping `sequence(...)` and the like after a revert.
+ */
+export function removeNamedImportIfUnused(
+  sf: SourceFile,
+  moduleSpecifier: string,
+  name: string,
+): { wasRemoved: boolean } {
+  const decl = sf
+    .getImportDeclarations()
+    .find((d) => d.getModuleSpecifierValue() === moduleSpecifier);
+  if (!decl) return { wasRemoved: false };
+
+  const stillReferenced = sf
+    .getDescendantsOfKind(SyntaxKind.Identifier)
+    .some((id) => {
+      if (id.getText() !== name) return false;
+      const kind = id.getParent()?.getKind();
+      return (
+        kind !== SyntaxKind.ImportSpecifier && kind !== SyntaxKind.ImportClause
+      );
+    });
+  if (stillReferenced) return { wasRemoved: false };
+
+  const named = decl.getNamedImports().find((ni) => ni.getName() === name);
+  if (!named) return { wasRemoved: false };
+
+  if (decl.getNamedImports().length === 1 && !decl.getDefaultImport()) {
+    decl.remove();
+  } else {
+    named.remove();
+  }
+  return { wasRemoved: true };
+}
+
+/**
+ * Keep one blank line between the import block and what follows. Removing
+ * statements right after the imports takes the separating blank line with
+ * them, and prettier preserves whichever spacing it finds.
+ */
+export function ensureBlankLineAfterImports(sf: SourceFile): void {
+  const imports = sf.getImportDeclarations();
+  const last = imports[imports.length - 1];
+  const next = last?.getNextSibling();
+  if (!last || !next) return;
+  const between = sf.getFullText().slice(last.getEnd(), next.getStart());
+  if ((between.match(/\n/g) ?? []).length >= 2) return;
+  sf.insertText(last.getEnd(), "\n");
+}
+
 /** Remove a top-level function or variable declaration by name, if present. */
 export function removeTopLevelStatementByIdentifier(
   sf: SourceFile,
@@ -217,24 +269,10 @@ export function removeNavItemFromScript(
     arr.removeElement(index);
 
     if (iconImportPath) {
-      const remainingRefs = arr.getElements().some((el) => {
-        if (el.getKind() !== SyntaxKind.ObjectLiteralExpression) return false;
-        const o = el.asKindOrThrow(SyntaxKind.ObjectLiteralExpression);
-        const iconProp = o.getProperty("icon");
-        if (!iconProp || iconProp.getKind() !== SyntaxKind.PropertyAssignment) {
-          return false;
-        }
-        return (
-          iconProp
-            .asKindOrThrow(SyntaxKind.PropertyAssignment)
-            .getInitializer()
-            ?.getText() !== undefined
-        );
-      });
       const importDecl = sf
         .getImportDeclarations()
         .find((d) => d.getModuleSpecifierValue() === iconImportPath);
-      if (importDecl && !remainingRefs) {
+      if (importDecl) {
         const importName = importDecl.getDefaultImport()?.getText();
         const stillUsed =
           importName &&

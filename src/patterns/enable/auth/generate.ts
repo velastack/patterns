@@ -116,7 +116,14 @@ export async function generate(options: Options) {
     modifies: [],
     deletes: [],
     components,
-    packages: [],
+    // The minimal template ships these; a static project turned backend
+    // does not. Pinned to the template's ranges.
+    packages: [
+      "formsnap@^2.0.1",
+      "sveltekit-flash-message@^2.4.6",
+      "sveltekit-superforms@^2.30.2",
+      "zod@^4.1.11",
+    ],
     collections,
     collectionPatches: [],
     collectionDrops: [],

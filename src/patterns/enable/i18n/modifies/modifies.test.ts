@@ -162,6 +162,17 @@ describe("enable i18n modifiers", () => {
     expect(modified).toBe(original);
   });
 
+  it("replaces a static lang attribute in app.html with the placeholder", () => {
+    const filePath = path.join(tempDir, "app-lang.html");
+
+    const outcome = modifyAppHtml(filePath);
+    const modified = fs.readFileSync(filePath, "utf8");
+
+    expect(outcome).toEqual({ status: "success", changed: true });
+    expect(modified).toContain('<html lang="%sveltekit.lang%">');
+    expect(modified).not.toContain('lang="en"');
+  });
+
   it("does not modify app.html that already has lang placeholder", () => {
     const filePath = path.join(tempDir, "app-already.html");
     const original = fs.readFileSync(filePath, "utf8");

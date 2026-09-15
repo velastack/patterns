@@ -28,6 +28,9 @@ export async function generate(_options: Options) {
     deletes,
     components: [],
     packages: [],
+    // What enable-i18n installed; the CLI detects the feature by the wuchale
+    // dependency, so disabling has to remove it.
+    uninstalls: ["wuchale", "@wuchale/svelte"],
     collections: [],
     collectionPatches: [],
     collectionDrops: [],
