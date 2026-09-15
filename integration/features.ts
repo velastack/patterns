@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { Features } from "../src/core/types";
 
@@ -19,7 +19,7 @@ export function detectFeatures(root: string): Features {
 
   return {
     auth: has("src/routes/(app)"),
-    api: has("src/routes/api"),
+    api: hasApiRoutes(root),
     apiKeys: has("src/routes/api/api-keys") || has("src/routes/(app)/api-keys"),
     backend: has("data"),
     i18n: has("wuchale.config.js") || hasDep("wuchale"),
@@ -29,6 +29,16 @@ export function detectFeatures(root: string): Features {
     contentNegotiation: hasDep("sveltekit-negotiate"),
     cms: hasDep("@velastack/cms"),
   };
+}
+
+/**
+ * Mirror of the CLI's `hasApiRoutes`: the minimal template ships
+ * `src/routes/api/README.md`, so only entries besides that README count.
+ */
+function hasApiRoutes(root: string): boolean {
+  const dir = path.join(root, "src", "routes", "api");
+  if (!existsSync(dir)) return false;
+  return readdirSync(dir).some((entry) => entry !== "README.md");
 }
 
 function readPackageJson(file: string): {

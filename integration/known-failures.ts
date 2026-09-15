@@ -20,17 +20,4 @@ export interface KnownFailure {
   match: RegExp;
 }
 
-export const KNOWN_FAILURES: KnownFailure[] = [
-  // --- disable-* --------------------------------------------------------------
-  {
-    id: "disable-api-template-readme",
-    reason:
-      "The minimal template ships src/routes/api/README.md, which the CLI's detectFeatures reads " +
-      "as `api: true`; disable-api only deletes what enable-api created, so api stays detected. " +
-      "Fixed in the CLI (hasApiRoutes ignores the README) after 0.10.9; once VELA_VERSION in " +
-      "ci.yml moves past that release, mirror it in integration/features.ts and drop this rule.",
-    kind: "features",
-    step: "disable-api",
-    match: /expected api=false/,
-  },
-];
+export const KNOWN_FAILURES: KnownFailure[] = [];

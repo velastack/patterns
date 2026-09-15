@@ -54,7 +54,7 @@ jobs:
     timeout-minutes: 60
     env:
       # The CLI (and therefore the project templates) under test. Bump on purpose.
-      VELA_VERSION: 0.10.9
+      VELA_VERSION: 0.12.2
       # Payments cases skip themselves when these are unset (e.g. fork PRs).
       STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
       STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
