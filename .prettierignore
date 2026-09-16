@@ -16,3 +16,4 @@ package-lock.json
 
 # Test fixtures must match input/expected output byte-for-byte.
 **/fixtures/**
+.claude/
