@@ -145,8 +145,9 @@ describe("POST /webhooks/stripe", () => {
       .send(payload)
       .set("Content-Type", "application/json");
 
+    // The same event id lands on the same workflow run.
     expect(response2.status).toBe(200);
     expect(response2.body.received).toBe(true);
-    expect(response2.body.message).toBe("Event already processed");
+    expect(response2.body.runId).toBe(response1.body.runId);
   });
 });

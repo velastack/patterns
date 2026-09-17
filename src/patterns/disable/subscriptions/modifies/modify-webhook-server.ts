@@ -22,9 +22,9 @@ export function unmodifyWebhookServer(filePath: string): ModifyOutcome {
   }
 
   const { source } = withInMemoryScript(original, (sf) => {
-    removeImportByModuleSpecifier(sf, "./handlers/subscription/created");
-    removeImportByModuleSpecifier(sf, "./handlers/subscription/updated");
-    removeImportByModuleSpecifier(sf, "./handlers/subscription/deleted");
+    removeImportByModuleSpecifier(sf, "./subscription/created");
+    removeImportByModuleSpecifier(sf, "./subscription/updated");
+    removeImportByModuleSpecifier(sf, "./subscription/deleted");
 
     const switchStmt = sf
       .getDescendantsOfKind(SyntaxKind.SwitchStatement)
@@ -54,9 +54,12 @@ export function unmodifyWebhookServer(filePath: string): ModifyOutcome {
     sf.formatText();
   });
 
-  if (source === original) {
+  // Removing the clauses takes the blank line before `default:` with them.
+  const spaced = source.replace(/(break;)\n(\s*default:)/, "$1\n\n$2");
+
+  if (spaced === original) {
     return { status: "success", changed: false };
   }
-  fs.writeFileSync(filePath, source, "utf8");
+  fs.writeFileSync(filePath, spaced, "utf8");
   return { status: "success", changed: true };
 }

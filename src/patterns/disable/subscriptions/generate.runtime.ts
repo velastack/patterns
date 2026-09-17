@@ -3,7 +3,6 @@ import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
 import { planDropsForCollections } from "../../destroy/shared";
-import { unmodifyStripeHooks } from "./modifies/modify-stripe-hooks";
 import { unmodifyWebhookServer } from "./modifies/modify-webhook-server";
 import { unmodifyAppLayoutSvelte } from "./modifies/modify-app-layout-svelte";
 import { unmodifyAppSidebar } from "./modifies/modify-app-sidebar";
@@ -27,25 +26,15 @@ export async function generate(options: Options) {
     if (file) modifies.push(file);
   };
 
-  logger.info("Reverting data/hooks/stripe.pb.js");
-  const stripeHooksPath = path.join(
-    options.root,
-    "data",
-    "hooks",
-    "stripe.pb.js",
-  );
-  pushResult(
-    modifyOutcomeToFile(stripeHooksPath, unmodifyStripeHooks(stripeHooksPath)),
-  );
-
-  logger.info("Reverting webhooks/stripe/+server.ts");
+  logger.info("Reverting webhooks/stripe/handlers/dispatch.ts");
   const webhookServerPath = path.join(
     options.root,
     "src",
     "routes",
     "webhooks",
     "stripe",
-    "+server.ts",
+    "handlers",
+    "dispatch.ts",
   );
   pushResult(
     modifyOutcomeToFile(

@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { randomBytes } from "node:crypto";
 import dedent from "dedent";
 import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
@@ -74,7 +73,6 @@ export async function generate(options: Options) {
   };
 
   logger.info("Writing Stripe credentials to .env");
-  const internalJobSecret = randomBytes(16).toString("hex");
   const envEdits: EnvEdit[] = [
     { type: "comment", key: "Stripe credentials" },
     { type: "var", key: "STRIPE_SECRET_KEY", value: stripeSecretKey },
@@ -84,7 +82,6 @@ export async function generate(options: Options) {
       value: stripePublishableKey,
     },
     { type: "var", key: "STRIPE_WEBHOOK_SECRET", value: stripeWebhookSecret },
-    { type: "var", key: "INTERNAL_JOB_SECRET", value: internalJobSecret },
   ];
 
   const envPath = path.join(options.root, ".env");

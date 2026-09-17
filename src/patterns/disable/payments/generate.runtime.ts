@@ -21,7 +21,6 @@ export async function generate(options: Options) {
     { type: "var", key: "STRIPE_SECRET_KEY" },
     { type: "var", key: "PUBLIC_STRIPE_PUBLISHABLE_KEY" },
     { type: "var", key: "STRIPE_WEBHOOK_SECRET" },
-    { type: "var", key: "INTERNAL_JOB_SECRET" },
   ];
   const envPath = path.join(options.root, ".env");
   pushResult(modifyOutcomeToFile(envPath, modifyEnvRemove(envPath, envEdits)));

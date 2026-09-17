@@ -264,7 +264,15 @@
 		<div class="md:col-span-2">
 			<Card.Root>
 				<Card.Content>
-					{#if paymentMethods.length === 0}
+					{#if !data.billingReady}
+						<div
+							class="text-muted-foreground flex flex-col items-center justify-center py-12 text-center"
+						>
+							<CreditCard class="mb-4 size-12 opacity-50" />
+							<p class="mb-2 text-lg font-medium">Setting up billing</p>
+							<p class="text-sm">This takes a moment after signing up. Refresh to check again.</p>
+						</div>
+					{:else if paymentMethods.length === 0}
 						<div
 							class="text-muted-foreground flex flex-col items-center justify-center py-12 text-center"
 						>
@@ -325,13 +333,15 @@
 						</div>
 					{/if}
 				</Card.Content>
-				<Card.Footer class="border-t justify-end">
-					<SetupButton
-						label="Add Payment Method"
-						processingLabel="Adding..."
-						onsuccess={() => invalidate('app:billing')}
-					/>
-				</Card.Footer>
+				{#if data.billingReady}
+					<Card.Footer class="border-t justify-end">
+						<SetupButton
+							label="Add Payment Method"
+							processingLabel="Adding..."
+							onsuccess={() => invalidate('app:billing')}
+						/>
+					</Card.Footer>
+				{/if}
 			</Card.Root>
 		</div>
 	</div>

@@ -20,7 +20,6 @@ const STRIPE_ENV_EDITS: EnvEdit[] = [
     value: "pk_test_fixture",
   },
   { type: "var", key: "STRIPE_WEBHOOK_SECRET", value: "whsec_test_fixture" },
-  { type: "var", key: "INTERNAL_JOB_SECRET", value: "job_secret_fixture" },
 ];
 
 const modifyCases = [

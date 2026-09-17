@@ -8,12 +8,12 @@ import {
 } from "../../../../runtime/ts-morph-helpers";
 
 const FAILURE_HINT = dedent`
-  Wire the subscription event handlers into src/routes/webhooks/stripe/+server.ts:
+  Wire the subscription event handlers into src/routes/webhooks/stripe/handlers/dispatch.ts:
 
   Add imports:
-    import { handleSubscriptionCreated } from "./handlers/subscription/created";
-    import { handleSubscriptionUpdated } from "./handlers/subscription/updated";
-    import { handleSubscriptionDeleted } from "./handlers/subscription/deleted";
+    import { handleSubscriptionCreated } from "./subscription/created";
+    import { handleSubscriptionUpdated } from "./subscription/updated";
+    import { handleSubscriptionDeleted } from "./subscription/deleted";
 
   Add switch cases inside the event.type switch:
     case "customer.subscription.created":
@@ -28,7 +28,7 @@ const FAILURE_HINT = dedent`
 `;
 
 const NOT_FOUND_HINT =
-  "Enable payments first — src/routes/webhooks/stripe/+server.ts is created by enable-payments.";
+  "Enable payments first — src/routes/webhooks/stripe/handlers/dispatch.ts is created by enable-payments.";
 
 const SUBSCRIPTION_CASES_SNIPPET = dedent`
   case "customer.subscription.created":
@@ -59,15 +59,15 @@ export function modifyWebhookServer(filePath: string): ModifyOutcome {
     ensureImports(sf, [
       {
         namedImports: ["handleSubscriptionCreated"],
-        moduleSpecifier: "./handlers/subscription/created",
+        moduleSpecifier: "./subscription/created",
       },
       {
         namedImports: ["handleSubscriptionUpdated"],
-        moduleSpecifier: "./handlers/subscription/updated",
+        moduleSpecifier: "./subscription/updated",
       },
       {
         namedImports: ["handleSubscriptionDeleted"],
-        moduleSpecifier: "./handlers/subscription/deleted",
+        moduleSpecifier: "./subscription/deleted",
       },
     ]);
 

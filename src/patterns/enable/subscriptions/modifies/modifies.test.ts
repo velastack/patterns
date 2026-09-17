@@ -3,7 +3,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import "../../../../core/test-utils";
-import { modifyStripeHooks } from "./modify-stripe-hooks";
 import { modifyWebhookServer } from "./modify-webhook-server";
 import { modifyAppSidebar } from "./modify-app-sidebar";
 import { modifyAppLayoutSvelte } from "./modify-app-layout-svelte";
@@ -37,11 +36,7 @@ const billingPageSvelteTemplate = fs.readFileSync(
 
 const astCases = [
   {
-    file: "stripe.pb.js",
-    modify: (target: string) => modifyStripeHooks(target),
-  },
-  {
-    file: "webhook-server.ts",
+    file: "dispatch.ts",
     modify: (target: string) => modifyWebhookServer(target),
   },
   {
@@ -122,7 +117,6 @@ describe("subscriptions modifies (AST)", () => {
 
   it("reports not-found when targets are missing", () => {
     const missing = path.join(tempDir, "does-not-exist");
-    expect(modifyStripeHooks(missing).status).toBe("not-found");
     expect(modifyWebhookServer(missing).status).toBe("not-found");
     expect(modifyAppSidebar(missing).status).toBe("not-found");
     expect(modifyAppLayoutSvelte(missing).status).toBe("not-found");

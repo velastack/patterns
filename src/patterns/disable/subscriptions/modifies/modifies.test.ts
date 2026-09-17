@@ -3,7 +3,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import "../../../../core/test-utils";
-import { unmodifyStripeHooks } from "./modify-stripe-hooks";
 import { unmodifyWebhookServer } from "./modify-webhook-server";
 import { unmodifyAppSidebar } from "./modify-app-sidebar";
 import { unmodifyAppLayoutSvelte } from "./modify-app-layout-svelte";
@@ -89,11 +88,7 @@ const subsBillingPageSvelte = fs.readFileSync(
 
 const astCases = [
   {
-    file: "stripe.pb.js",
-    modify: (target: string) => unmodifyStripeHooks(target),
-  },
-  {
-    file: "webhook-server.ts",
+    file: "dispatch.ts",
     modify: (target: string) => unmodifyWebhookServer(target),
   },
   {
@@ -175,10 +170,6 @@ describe("disable subscriptions modifies (AST)", () => {
 
   it("is a no-op when target is missing", () => {
     const missing = path.join(tempDir, "does-not-exist");
-    expect(unmodifyStripeHooks(missing)).toEqual({
-      status: "success",
-      changed: false,
-    });
     expect(unmodifyWebhookServer(missing)).toEqual({
       status: "success",
       changed: false,
@@ -194,7 +185,7 @@ describe("disable subscriptions modifies (AST)", () => {
   });
 
   it("removes single-quoted subscription case clauses", () => {
-    const target = path.join(tempDir, "webhook-server.ts");
+    const target = path.join(tempDir, "dispatch.ts");
     const original = fs.readFileSync(target, "utf8");
     const singleQuoted = original.replace(
       /"customer\.subscription\.(created|updated|deleted)"/g,

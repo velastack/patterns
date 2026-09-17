@@ -1,73 +1,54 @@
-import Stripe from "stripe";
-import { json } from "@sveltejs/kit";
-import { env } from "$env/dynamic/private";
-import stripe from "$lib/stripe";
-import { handlePaymentIntentSucceeded } from "./handlers/payment-intent/succeeded";
+import Stripe from 'stripe';
+import { json } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
+import stripe from '$lib/stripe';
+import { handleStripeEvent } from '$lib/workflows/stripe-event';
 
-const processedEvents = new Set<string>();
+async function verifyWebhookSignature(request: Request, webhookSecret: string): Promise<Stripe.Event> {
+	const body = await request.text();
+	const signature = request.headers.get('stripe-signature');
 
-async function verifyWebhookSignature(
-  request: Request,
-  webhookSecret: string,
-): Promise<Stripe.Event> {
-  const body = await request.text();
-  const signature = request.headers.get("stripe-signature");
+	if (!signature) {
+		throw new Error('Missing stripe-signature header');
+	}
 
-  if (!signature) {
-    throw new Error("Missing stripe-signature header");
-  }
+	if (!webhookSecret) {
+		throw new Error('Missing webhook secret');
+	}
 
-  if (!webhookSecret) {
-    throw new Error("Missing webhook secret");
-  }
-
-  try {
-    return stripe.webhooks.constructEvent(body, signature, webhookSecret);
-  } catch (err) {
-    console.error("Webhook signature verification failed:", err);
-    throw new Error("Invalid signature");
-  }
+	try {
+		return stripe.webhooks.constructEvent(body, signature, webhookSecret);
+	} catch (err) {
+		console.error('Webhook signature verification failed:', err);
+		throw new Error('Invalid signature');
+	}
 }
 
-export const POST = async ({ request, locals }) => {
-  try {
-    const event = await verifyWebhookSignature(
-      request,
-      env.STRIPE_WEBHOOK_SECRET,
-    );
+export const POST = async ({ request }) => {
+	try {
+		const event = await verifyWebhookSignature(request, env.STRIPE_WEBHOOK_SECRET);
 
-    if (processedEvents.has(event.id)) {
-      console.log(`Event ${event.id} already processed, skipping`);
-      return json({ received: true, message: "Event already processed" });
-    }
+		// Queued, not handled here: the workflow runs the handler with retries,
+		// and its idempotency key means a redelivery of the same event returns
+		// the existing run instead of handling it twice.
+		const handle = await handleStripeEvent.run(event, { idempotencyKey: event.id });
+		console.log(`Queued webhook event ${event.type} (${event.id}) as run ${handle.workflowRun.id}`);
 
-    processedEvents.add(event.id);
+		return json({
+			received: true,
+			eventId: event.id,
+			eventType: event.type,
+			runId: handle.workflowRun.id
+		});
+	} catch (error) {
+		console.error('Webhook processing error:', error);
 
-    console.log(`Processing webhook event: ${event.type} (${event.id})`);
-
-    switch (event.type) {
-      case "payment_intent.succeeded":
-        await handlePaymentIntentSucceeded(event.data.object, locals);
-        break;
-
-      default:
-        console.log(`Unhandled event type: ${event.type}`);
-    }
-
-    return json({
-      received: true,
-      eventId: event.id,
-      eventType: event.type,
-    });
-  } catch (error) {
-    console.error("Webhook processing error:", error);
-
-    return json(
-      {
-        error: "Webhook processing failed",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 400 },
-    );
-  }
+		return json(
+			{
+				error: 'Webhook processing failed',
+				message: error instanceof Error ? error.message : 'Unknown error'
+			},
+			{ status: 400 }
+		);
+	}
 };

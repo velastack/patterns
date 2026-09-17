@@ -43,6 +43,44 @@ function isCollectionAlreadyExistsError(
 
 type CollectionCreateInput = Parameters<PocketBase["collections"]["create"]>[0];
 
+interface RelationFieldLike {
+  type?: string;
+  collectionId?: string;
+}
+
+/**
+ * A spec may name the collection a relation points at (`stripe_customers`)
+ * where PocketBase wants its id; specs read better by name, and the id is
+ * only known once the target exists. Names are swapped for ids here, and a
+ * value that already is an id (`_pb_users_auth_`) is left alone.
+ */
+async function resolveRelationTargets(
+  pb: PocketBase,
+  spec: CollectionCreateInput,
+): Promise<CollectionCreateInput> {
+  const fields = (spec as { fields?: RelationFieldLike[] }).fields;
+  const relations = (fields ?? []).filter(
+    (field) => field.type === "relation" && field.collectionId,
+  );
+  if (relations.length === 0) return spec;
+
+  const existing = await pb.collections.getFullList();
+  const ids = new Set(existing.map((c) => c.id));
+  const byName = new Map(existing.map((c) => [c.name, c.id]));
+  if (relations.every((field) => ids.has(field.collectionId!))) return spec;
+
+  return {
+    ...spec,
+    fields: fields!.map((field) => {
+      if (field.type !== "relation" || !field.collectionId) return field;
+      const id = byName.get(field.collectionId);
+      return id && !ids.has(field.collectionId)
+        ? { ...field, collectionId: id }
+        : field;
+    }),
+  } as CollectionCreateInput;
+}
+
 export interface CreateCollectionResult {
   collection: CollectionModel;
   created: boolean;
@@ -61,7 +99,9 @@ export async function createCollectionIdempotent(
 ): Promise<CreateCollectionResult> {
   const name = (spec as { name: string }).name;
   try {
-    const collection = await pb.collections.create(spec);
+    const collection = await pb.collections.create(
+      await resolveRelationTargets(pb, spec),
+    );
     return { collection, created: true };
   } catch (error) {
     if (

@@ -3,12 +3,18 @@ import stripe from "$lib/stripe";
 
 export const load = async ({ locals, depends, parent }) => {
   const { user } = await parent();
-  const customer = await locals.admin
-    .collection("stripe_customers")
-    .getFirstListItem(locals.admin.filter("user = {:user}", { user: user.id }));
+  depends("app:billing");
 
-  if (!customer || !customer.id) {
-    return error(400, "Customer not found");
+  let customer;
+  try {
+    customer = await locals.admin
+      .collection("stripe_customers")
+      .getFirstListItem(
+        locals.admin.filter("user = {:user}", { user: user.id }),
+      );
+  } catch {
+    // The link-stripe-customer workflow started at signup has not finished.
+    return { paymentMethods: [], user, billingReady: false };
   }
 
   const stripeCustomer = await stripe.customers.retrieve(customer.id);
@@ -24,9 +30,8 @@ export const load = async ({ locals, depends, parent }) => {
     },
   );
 
-  depends("app:billing");
-
   return {
+    billingReady: true,
     paymentMethods: paymentMethods.data.map((pm) => ({
       id: pm.id,
       brand: pm.card!.brand,

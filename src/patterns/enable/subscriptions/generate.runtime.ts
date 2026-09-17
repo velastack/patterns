@@ -2,7 +2,6 @@ import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
-import { modifyStripeHooks } from "./modifies/modify-stripe-hooks";
 import { modifyWebhookServer } from "./modifies/modify-webhook-server";
 import { modifyAppLayoutServer } from "./modifies/modify-app-layout-server";
 import { modifyAppLayoutSvelte } from "./modifies/modify-app-layout-svelte";
@@ -37,25 +36,15 @@ export async function generate(options: Options) {
     if (file) modifies.push(file);
   };
 
-  logger.info("Modifying data/hooks/stripe.pb.js");
-  const stripeHooksPath = path.join(
-    options.root,
-    "data",
-    "hooks",
-    "stripe.pb.js",
-  );
-  pushResult(
-    modifyOutcomeToFile(stripeHooksPath, modifyStripeHooks(stripeHooksPath)),
-  );
-
-  logger.info("Modifying webhooks/stripe/+server.ts");
+  logger.info("Modifying webhooks/stripe/handlers/dispatch.ts");
   const webhookServerPath = path.join(
     options.root,
     "src",
     "routes",
     "webhooks",
     "stripe",
-    "+server.ts",
+    "handlers",
+    "dispatch.ts",
   );
   pushResult(
     modifyOutcomeToFile(
