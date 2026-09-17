@@ -112,6 +112,60 @@ describe("createCollections", () => {
     ]);
   });
 
+  it("swaps relation targets named by collection for their ids", async () => {
+    const root = mkdtempSync(path.join(os.tmpdir(), "collections-runtime-"));
+    tempDirs.push(root);
+
+    const createMock = vi.fn().mockResolvedValue(undefined);
+    const getFullListMock = vi.fn().mockResolvedValue([
+      { id: "_pb_users_auth_", name: "users" },
+      { id: "pbc_customers", name: "stripe_customers" },
+    ]);
+    withPocketbaseMock.mockImplementation(async (_cwd, fn) => {
+      await fn({
+        collections: { create: createMock, getFullList: getFullListMock },
+      });
+    });
+    getMigrationFileMock.mockReturnValue(undefined);
+
+    const collections: CollectionSpec[] = [
+      {
+        name: "subscriptions",
+        type: "base",
+        fields: [
+          {
+            name: "user",
+            type: "relation",
+            required: true,
+            collectionId: "_pb_users_auth_",
+          },
+          {
+            name: "customer",
+            type: "relation",
+            required: true,
+            collectionId: "stripe_customers",
+          },
+          { name: "status", type: "text", required: false },
+        ],
+      },
+    ];
+
+    await createCollections(collections, makeOptions(root));
+
+    expect(createMock).toHaveBeenCalledTimes(1);
+    expect(createMock.mock.calls[0][0].fields).toEqual([
+      expect.objectContaining({
+        name: "user",
+        collectionId: "_pb_users_auth_",
+      }),
+      expect.objectContaining({
+        name: "customer",
+        collectionId: "pbc_customers",
+      }),
+      expect.objectContaining({ name: "status", type: "text" }),
+    ]);
+  });
+
   it("skips a collection that already exists and emits no migration", async () => {
     const root = mkdtempSync(path.join(os.tmpdir(), "collections-runtime-"));
     tempDirs.push(root);
