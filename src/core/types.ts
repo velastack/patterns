@@ -12,6 +12,12 @@ export interface Features {
   blog: boolean;
   contentNegotiation: boolean;
   cms: boolean;
+  /**
+   * The workflow runtime (`src/lib/server/workflows.ts`). Part of the base
+   * template since vela 0.13, so only projects created before then lack it;
+   * optional so the `requires` of older patterns need not mention it.
+   */
+  workflows?: boolean;
 }
 
 export interface Options {

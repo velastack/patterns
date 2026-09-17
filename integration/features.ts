@@ -28,6 +28,7 @@ export function detectFeatures(root: string): Features {
     blog: hasDep("mdsvex"),
     contentNegotiation: hasDep("sveltekit-negotiate"),
     cms: hasDep("@velastack/cms"),
+    workflows: has("src/lib/server/workflows.ts"),
   };
 }
 
@@ -62,6 +63,7 @@ export const SLUG_TO_FEATURE: Partial<Record<string, keyof Features>> = {
   "enable-blog": "blog",
   "enable-content-negotiation": "contentNegotiation",
   "enable-cms": "cms",
+  "enable-workflows": "workflows",
 };
 
 /**
@@ -96,4 +98,5 @@ export const ALL_FEATURES_OFF: Features = {
   blog: false,
   contentNegotiation: false,
   cms: false,
+  workflows: false,
 };

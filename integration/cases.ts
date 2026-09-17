@@ -40,10 +40,12 @@ const FEATURE_ENABLER: Partial<Record<keyof Features, Slug>> = {
   blog: "enable-blog",
   contentNegotiation: "enable-content-negotiation",
   cms: "enable-cms",
+  workflows: "enable-workflows",
 };
 
 /** The order prerequisites are applied in; each entry's own `requires` precede it. */
 export const PREREQ_ORDER: Slug[] = [
+  "enable-workflows",
   "enable-auth",
   "enable-api",
   "enable-api-keys",
@@ -185,6 +187,7 @@ export const enableCases: CaseSpec[] = [
   singleCase("enable-i18n"),
   singleCase("enable-notifications"),
   singleCase("enable-teams"),
+  singleCase("enable-workflows"),
   singleCase("enable-payments"),
   singleCase("enable-subscriptions"),
 ];
@@ -197,6 +200,7 @@ export const generateCases: CaseSpec[] = [
   singleCase("generate-scaffold"),
   singleCase("generate-scaffold-remote"),
   singleCase("generate-schema"),
+  singleCase("generate-workflow"),
 ];
 
 export const disableCases: CaseSpec[] = [

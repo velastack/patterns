@@ -106,7 +106,7 @@ for (const [index, { slug, argv, pattern }] of commands.entries()) {
   const features = Object.fromEntries(
     Object.entries(detected).map(([key, value]) => [
       key,
-      value || pattern.requires[key as keyof Features],
+      value || (pattern.requires as Features)[key as keyof Features],
     ]),
   ) as Features;
 

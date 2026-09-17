@@ -43,6 +43,7 @@ import generateResource from "./patterns/generate/resource";
 import generateScaffold from "./patterns/generate/scaffold";
 import generateScaffoldRemote from "./patterns/generate/scaffold-remote";
 import generateSchema from "./patterns/generate/schema";
+import generateWorkflow from "./patterns/generate/workflow";
 import enableAnalytics from "./patterns/enable/analytics";
 import enableAuth from "./patterns/enable/auth";
 import enableAuthRemote from "./patterns/enable/auth-remote";
@@ -57,6 +58,7 @@ import enableNotifications from "./patterns/enable/notifications";
 import enablePayments from "./patterns/enable/payments";
 import enableSubscriptions from "./patterns/enable/subscriptions";
 import enableTeams from "./patterns/enable/teams";
+import enableWorkflows from "./patterns/enable/workflows";
 import destroySchema from "./patterns/destroy/schema";
 import destroyForm from "./patterns/destroy/form";
 import destroyResource from "./patterns/destroy/resource";
@@ -79,6 +81,7 @@ export const patterns = [
   generateFormRemote,
   generateMigration,
   generateSchema,
+  generateWorkflow,
   generateResource,
   generateScaffold,
   generateScaffoldRemote,
@@ -96,6 +99,7 @@ export const patterns = [
   enablePayments,
   enableSubscriptions,
   enableTeams,
+  enableWorkflows,
   destroySchema,
   destroyForm,
   destroyResource,
