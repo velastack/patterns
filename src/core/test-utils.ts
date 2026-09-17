@@ -36,11 +36,13 @@ expect.extend({
 });
 
 interface CustomMatchers<R = unknown> {
-  toMatchFormatted(expected: string, filepath: string): Promise<R>;
+  toMatchFormatted(expected: string, filepath: string): R;
 }
 
+// vitest 5 types matchers as `Matchers<R, T>`: R is what the assertion returns
+// (`void`, or `Promise<void>` behind `.resolves`), T the received value.
 declare module "vitest" {
-  interface Matchers<T = any> extends CustomMatchers<T> {}
-  interface Assertion<T = any> extends CustomMatchers<T> {}
+  interface Matchers<R, T> extends CustomMatchers<R> {}
+  interface Assertion<R, T> extends CustomMatchers<R> {}
   interface AsymmetricMatchersContaining extends CustomMatchers {}
 }

@@ -37,7 +37,7 @@ export async function generate(_options: Options) {
       // test/setup.ts and the server tests other patterns add need these; the
       // minimal template ships them, the static one does not. Pinned to the
       // template's ranges so both kinds of project end up alike.
-      "vitest@^4.1.11",
+      "vitest@^5.0.1",
       "supertest@^7.2.2",
       "@types/supertest@^6.0.3",
     ],
