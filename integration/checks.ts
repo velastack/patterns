@@ -46,12 +46,15 @@ export interface CheckOptions {
   serverTests?: boolean;
 }
 
-/** Only the backend template ships the server-test harness. */
+/**
+ * `vela test:server` refuses a project without a backend, and the template's
+ * `test:server` script outlives `disable-backend`.
+ */
 function hasServerTests(root: string): boolean {
   const pkg = JSON.parse(
     readFileSync(path.join(root, "package.json"), "utf8"),
   ) as { scripts?: Record<string, string> };
-  return Boolean(pkg.scripts?.["test:server"]);
+  return Boolean(pkg.scripts?.["test:server"]) && detectFeatures(root).backend;
 }
 
 export const CHECK_TSCONFIG = "tsconfig.check.json";

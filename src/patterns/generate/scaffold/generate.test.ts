@@ -20,6 +20,21 @@ vi.mock("../../../parse/env.preview", () => {
         type: "base",
         fields: [{ name: "name", type: "text" }],
       },
+      {
+        id: "workspaces_preview",
+        name: "workspaces",
+        type: "base",
+        fields: [
+          { name: "name", type: "text" },
+          {
+            name: "owner",
+            type: "relation",
+            collectionId: "users_preview",
+            maxSelect: 1,
+            required: true,
+          },
+        ],
+      },
     ],
   };
 });
@@ -202,6 +217,37 @@ describe("generate scaffold pattern", () => {
     expect(result.collections[0].createRule).toBe(
       result.collections[0].listRule,
     );
+  });
+
+  it("gives a fixture's relation to users the authenticated test user", async () => {
+    const result = await generateBase(
+      makeOptions({
+        env: "preview",
+        features: {
+          auth: true,
+          api: false,
+          apiKeys: false,
+          backend: true,
+          i18n: false,
+          teams: false,
+          payments: false,
+          blog: false,
+          contentNegotiation: false,
+          cms: false,
+        },
+        argv: ["task", "name:text", "workspace:workspace"],
+      }),
+    );
+
+    const test = result.creates.find((file) =>
+      file.path.endsWith("server.test.ts"),
+    );
+    // `users` is not created as a fixture in auth mode, so the workspace
+    // fixture's required owner has to be the user the test logs in as.
+    expect(test?.content).toMatch(
+      /collection\("workspaces"\)\s*\.create\(\{[^}]*"?owner"?: context\.user\.id/,
+    );
+    expect(test?.content).not.toContain("missing-relation-id");
   });
 
   it("emits files at a custom --route with dynamic params", async () => {

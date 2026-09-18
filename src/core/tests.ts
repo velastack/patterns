@@ -372,6 +372,12 @@ function relationDependencyContext(
   ).filter((entry) => !(options.features.auth && entry.name === "users"));
 
   const relationIdsByCollectionId: Record<string, string> = {};
+  // The authenticated user stands in for `users`, also where a dependency
+  // points at it (`teams.owner`).
+  const users = collections.find((entry) => entry.name === "users");
+  if (options.features.auth && users) {
+    relationIdsByCollectionId[users.id] = "context.user.id";
+  }
   const dependencyVars: Array<{ varName: string; collection: Collection }> = [];
   const usedVarNames = new Set<string>();
 

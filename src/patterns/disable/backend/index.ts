@@ -4,7 +4,7 @@ import { mergeResults } from "../../../core/util";
 import { generate as generateBase } from "./generate";
 
 const SLUG = "disable-backend" as const;
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
 const SOURCE = "src/patterns/disable/backend";
 const DOCS = "/disable/backend";
 
@@ -38,7 +38,7 @@ export default {
   plan: "open",
   title: "Disable Backend",
   summary:
-    "Removes the PocketBase backend wiring: deletes hooks.server.ts and the data/ scaffold, switches the SvelteKit adapter back to static with SPA fallback, and reverts test/setup.ts. Leaves @velastack/pocketbase and pocketbase-sveltekit installed; uninstall manually.",
+    "Removes the PocketBase backend wiring: deletes hooks.server.ts, the data/ scaffold and the background workflows (which run on PocketBase), switches the SvelteKit adapter back to static with SPA fallback, and reverts test/setup.ts. Leaves @velastack/pocketbase and pocketbase-sveltekit installed; uninstall manually.",
   requires: {
     auth: false,
     api: false,

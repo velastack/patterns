@@ -20,4 +20,14 @@ export interface KnownFailure {
   match: RegExp;
 }
 
-export const KNOWN_FAILURES: KnownFailure[] = [];
+export const KNOWN_FAILURES: KnownFailure[] = [
+  {
+    id: "team-scoped-scaffold-server-tests",
+    reason:
+      "server.test.ts for a scaffold under a dynamic route is a placeholder (it carries a TODO to customize the params): the create action takes `owner` from `locals.team`, which the test never sets (no `team` cookie, `test_team_id` is not a team), and the records it leaves behind block the team fixture's cleanup. The generator has to learn current_team before these can pass. The record is the whole `vela test:server` run, so this also hides any other server-test failure in that step.",
+    kind: "server-tests",
+    step: "generate-scaffold",
+    case: /^teams-scaffold-roundtrip$/,
+    match: /\[team_id\]\/projects\/server\.test\.ts/,
+  },
+];

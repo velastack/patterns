@@ -6,6 +6,7 @@ import fs from "node:fs";
 import { modifyLayoutServer } from "./+layout.server";
 import { modifyRootLayoutSvelte } from "./root-layout.svelte";
 import { modifyHooksServer } from "./hooks.server";
+import { modifyTestSetup } from "./test-setup";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -121,4 +122,44 @@ describe("modifyHooksServer", () => {
       await expect(modifiedFile).toMatchFormatted(expectedFile, testCase);
     },
   );
+});
+
+describe("modifyTestSetup", () => {
+  beforeEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+    fs.cpSync(path.join(fixturesPath, "original"), tempDir, {
+      recursive: true,
+    });
+  });
+
+  afterEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it("logs the test agent in with the pb_auth cookie instead of the form action", async () => {
+    const file = path.join(tempDir, "test-setup.ts");
+    expect(modifyTestSetup(file)).toEqual({ status: "success", changed: true });
+
+    const expectedFile = fs.readFileSync(
+      path.join(fixturesPath, "expect", "test-setup.ts"),
+      "utf8",
+    );
+    await expect(fs.readFileSync(file, "utf8")).toMatchFormatted(
+      expectedFile,
+      "test-setup.ts",
+    );
+
+    // Already converted: nothing left to do.
+    expect(modifyTestSetup(file)).toEqual({
+      status: "success",
+      changed: false,
+    });
+  });
+
+  it("leaves a project without the server-test helper alone", () => {
+    expect(modifyTestSetup(path.join(tempDir, "missing.ts"))).toEqual({
+      status: "success",
+      changed: false,
+    });
+  });
 });

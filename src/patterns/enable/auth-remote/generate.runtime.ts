@@ -13,6 +13,7 @@ import { modifySvelteConfigRemote } from "../../../runtime/modify-svelte-config-
 import { modifyLayoutServer } from "./modifies/+layout.server";
 import { modifyRootLayoutSvelte } from "./modifies/root-layout.svelte";
 import { modifyHooksServer } from "./modifies/hooks.server";
+import { modifyTestSetup } from "./modifies/test-setup";
 
 export async function generate(options: Options) {
   const { input } = options;
@@ -122,6 +123,12 @@ export async function generate(options: Options) {
   const hooksServerFile = path.join(options.root, "src", "hooks.server.ts");
   pushResult(
     modifyOutcomeToFile(hooksServerFile, modifyHooksServer(hooksServerFile)),
+  );
+
+  logger.info("Modifying test/setup.ts");
+  const testSetupFile = path.join(options.root, "test", "setup.ts");
+  pushResult(
+    modifyOutcomeToFile(testSetupFile, modifyTestSetup(testSetupFile)),
   );
 
   logger.info("Modifying config for remote functions");
