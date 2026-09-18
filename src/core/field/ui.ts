@@ -10,9 +10,12 @@ export type Ui = "shadcn" | "plain";
 
 const UIS: Ui[] = ["shadcn", "plain"];
 
-/** Absent means `shadcn`, so callers that predate the option are unchanged. */
-export function resolveUi(input: Options["input"]): Ui {
-  const ui = input.ui ?? "shadcn";
+/**
+ * An explicit `input.ui` wins over the detected `features.ui`. Absent from
+ * both means `shadcn`, so callers that predate the option are unchanged.
+ */
+export function resolveUi(options: Pick<Options, "input" | "features">): Ui {
+  const ui = options.input.ui ?? options.features.ui ?? "shadcn";
   if (!UIS.includes(ui)) {
     throw new InvalidArgumentError(
       `Unknown ui "${ui}". Expected one of: ${UIS.join(", ")}.`,

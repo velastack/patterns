@@ -20,6 +20,8 @@ import {
   collectionSpecFromModelFields,
   generateSchemaSnippet,
   relationExpandParam,
+  relationLoadLines,
+  relationLoadReturnVars,
   resolveInputFields,
   uniqueRelationCollections,
 } from "../../../core/shared";
@@ -62,21 +64,6 @@ function selectLabelMaps(fields: Field[]): string {
     )
     .map((field) => selectFieldLabelMap(field))
     .join("\n\n");
-}
-
-function relationLoadLines(fields: Field[], pbInstance: string): string {
-  return uniqueRelationCollections(fields)
-    .map(
-      (relatedModel) =>
-        `const ${relatedModel.pluralName} = await ${pbInstance}.collection("${relatedModel.tableName}").getFullList();`,
-    )
-    .join("\n\t\t\t");
-}
-
-function relationLoadReturnVars(fields: Field[]): string {
-  return uniqueRelationCollections(fields)
-    .map((relatedModel) => relatedModel.pluralName)
-    .join(", ");
 }
 
 function pbInstance(

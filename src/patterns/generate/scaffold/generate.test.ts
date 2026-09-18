@@ -132,6 +132,12 @@ describe("generate scaffold pattern", () => {
     expect(editServer?.content).toContain(
       "await superValidate(contact, zod4(contactSchema))",
     );
+    // redirect() throws, so inside the try the catch would turn a successful
+    // update into fail(400).
+    const editContent = editServer?.content ?? "";
+    expect(editContent.indexOf("redirect(303")).toBeGreaterThan(
+      editContent.indexOf("} catch (error)"),
+    );
 
     const newServer = result.creates.find((file) =>
       file.path.endsWith("/contacts/new/+page.server.ts"),

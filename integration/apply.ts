@@ -6,7 +6,7 @@ import type { Collection } from "../src/parse/types";
 import { withPocketbase } from "../src/runtime/pocketbase";
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./baseline";
 import { appendLog } from "./exec";
-import { detectFeatures } from "./features";
+import { detectFeatures, detectRouteGroups } from "./features";
 import type { Project } from "./project";
 
 export type ErrorKind =
@@ -164,6 +164,7 @@ export async function applyPattern(
     env: "runtime",
     root,
     features: featuresBefore,
+    routeGroups: detectRouteGroups(root),
     input,
     getCollections,
     logger: {

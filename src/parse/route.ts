@@ -14,8 +14,19 @@ const ROUTES_ROOT = "src/routes";
 const DYNAMIC_PARAM_RE = /\[([^\]]+)\]/g;
 const VALID_SEGMENT_RE = /^[a-zA-Z0-9_\-[\]()]+$/;
 
-function defaultGroup(features: Options["features"]): string {
-  return features.auth ? APP_DIR : PUBLIC_DIR;
+type RouteOptions = Pick<Options, "features" | "routeGroups">;
+
+/**
+ * The group a route lands in when none is given, or null for a project that
+ * has no such group. Without `routeGroups` this is the vela layout.
+ */
+function defaultGroup({ features, routeGroups }: RouteOptions): string | null {
+  const groups = routeGroups ?? { public: PUBLIC_DIR, app: APP_DIR };
+  return features.auth ? (groups.app ?? groups.public) : groups.public;
+}
+
+function routeFileBase(group: string | null, route: string): string {
+  return [ROUTES_ROOT, group, route].filter(Boolean).join("/");
 }
 
 function defaultRouteSegment(model: Model, kind: RouteKind): string {
@@ -87,12 +98,12 @@ function hasRouteGroup(input: string): boolean {
 export function parseRoute(
   routeInput: string | undefined,
   model: Model,
-  options: Pick<Options, "features">,
+  options: RouteOptions,
   kind: RouteKind,
 ): RouteInfo {
   if (routeInput === undefined || routeInput === "") {
     const segment = defaultRouteSegment(model, kind);
-    const fileBase = `${ROUTES_ROOT}/${defaultGroup(options.features)}/${segment}`;
+    const fileBase = routeFileBase(defaultGroup(options), segment);
     return {
       fileBase,
       urlBase: stripRouteGroups(fileBase),
@@ -102,10 +113,10 @@ export function parseRoute(
 
   validateRouteInput(routeInput);
 
-  const normalized = hasRouteGroup(routeInput)
-    ? routeInput
-    : `${defaultGroup(options.features)}/${routeInput}`;
-  const fileBase = `${ROUTES_ROOT}/${normalized}`;
+  const fileBase = routeFileBase(
+    hasRouteGroup(routeInput) ? null : defaultGroup(options),
+    routeInput,
+  );
 
   return {
     fileBase,

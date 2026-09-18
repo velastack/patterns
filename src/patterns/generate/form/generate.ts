@@ -21,6 +21,8 @@ import { parseRoute, type Field, type Model } from "../../../parse";
 import { generateFormServerTestSnippet } from "../../../core/tests";
 import {
   generateSchemaSnippet,
+  relationLoadLines,
+  relationLoadReturnVars,
   resolveInputFields,
 } from "../../../core/shared";
 
@@ -79,6 +81,19 @@ function pbInstance(
   options: Pick<Options, "features">,
 ): "locals.pb" | "locals.admin" {
   return options.features.auth ? "locals.pb" : "locals.admin";
+}
+
+/**
+ * The relation field renderers read the related records from
+ * `data.<pluralName>`, so `load` has to fetch them.
+ */
+function relationLoad(fields: Field[], pb: string) {
+  const vars = relationLoadReturnVars(fields);
+  return {
+    args: vars ? "{ locals }" : "",
+    lines: relationLoadLines(fields, pb),
+    returns: vars ? `, ${vars}` : "",
+  };
 }
 
 function pageImports(model: Model, fields: Field[]): string[] {
@@ -213,9 +228,11 @@ function plainPageSnippet(
 function genericServerSnippet(
   model: Model,
   fields: Field[],
+  pb: string,
   flash: boolean,
 ): string {
   const withFiles = hasFiles(fields) && flash;
+  const relations = relationLoad(fields, pb);
   const imports = dedent`
     import { fail, ${flash ? "" : "message, "}superValidate${withFiles ? ", withFiles" : ""} } from "sveltekit-superforms";
     import { zod4 } from "sveltekit-superforms/adapters";
@@ -234,9 +251,10 @@ function genericServerSnippet(
   return dedent`
     ${imports}
 
-    export const load = async () => {
+    export const load = async (${relations.args}) => {
+      ${relations.lines}
       const form = await superValidate(zod4(${model.schemaName}));
-      return { form };
+      return { form${relations.returns} };
     };
 
     export const actions = {
@@ -262,6 +280,7 @@ function createServerSnippet(
   flash: boolean,
 ): string {
   const withFiles = hasFiles(fields);
+  const relations = relationLoad(fields, pb);
   const success = flash
     ? dedent`
       setFlash({ type: "toast", message: "${model.displayName} created" }, cookies);
@@ -295,8 +314,9 @@ function createServerSnippet(
     ${flash ? 'import { setFlash } from "sveltekit-flash-message/server";' : ""}
     import { ${model.schemaName} } from "$lib/schemas/${model.name}";
 
-    export const load = async () => {
-      return { form: await superValidate(zod4(${model.schemaName})) };
+    export const load = async (${relations.args}) => {
+      ${relations.lines}
+      return { form: await superValidate(zod4(${model.schemaName}))${relations.returns} };
     };
 
     export const actions = {
@@ -336,7 +356,7 @@ export async function generate(options: Options) {
   const { model, fields, shouldCreateCollection, collections } =
     await resolveInputFields(options, modelPath, fieldDefs);
   const route = parseRoute(options.input.route, model, options, "form");
-  const ui = resolveUi(options.input);
+  const ui = resolveUi(options);
   const flash = options.input.flash ?? true;
   const serverTests = options.input.serverTests ?? true;
 
@@ -365,7 +385,7 @@ export async function generate(options: Options) {
         options.features.auth,
         flash,
       )
-    : genericServerSnippet(model, uiFields, flash);
+    : genericServerSnippet(model, uiFields, pbInstance(options), flash);
 
   const creates = [
     toFile(

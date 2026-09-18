@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import type { Features } from "../src/core/types";
+import type { Features, RouteGroups } from "../src/core/types";
 
 /**
  * Mirror of the CLI's feature detection.
@@ -29,7 +29,18 @@ export function detectFeatures(root: string): Features {
     contentNegotiation: hasDep("sveltekit-negotiate"),
     cms: hasDep("@velastack/cms"),
     workflows: has("src/lib/server/workflows.ts"),
+    ui:
+      has("components.json") && (hasDep("shadcn-svelte") || hasDep("bits-ui"))
+        ? "shadcn"
+        : "plain",
   };
+}
+
+/** Mirror of the `routeGroups` the CLI's `getWorkspace` detects. */
+export function detectRouteGroups(root: string): RouteGroups {
+  const group = (name: string) =>
+    existsSync(path.join(root, "src", "routes", name)) ? name : null;
+  return { public: group("(public)"), app: group("(app)") };
 }
 
 /**

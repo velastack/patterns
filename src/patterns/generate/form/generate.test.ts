@@ -72,6 +72,7 @@ function makeOptions(
       contentNegotiation: false,
       cms: false,
     },
+    routeGroups: overrides.routeGroups,
     input: overrides.input ?? {},
   };
 }
@@ -177,6 +178,79 @@ describe("generate form pattern", () => {
     expect(page?.content).toContain(
       '<input type="hidden" name="owner" value="current_user" />',
     );
+  });
+
+  it.each([
+    { name: "derived from a collection", argv: ["post"], ui: undefined },
+    { name: "derived, ui: plain", argv: ["post"], ui: "plain" },
+    {
+      name: "explicit fields",
+      argv: ["note", "title:text", "owner:user", "reviewers:users"],
+      ui: undefined,
+    },
+    {
+      name: "explicit fields, ui: plain",
+      argv: ["note", "title:text", "owner:user", "reviewers:users"],
+      ui: "plain",
+    },
+  ])(
+    "loads the related records the relation fields read ($name)",
+    async ({ argv, ui }) => {
+      const result = await generateBase(
+        makeOptions({ env: "preview", argv, input: ui ? { ui } : {} }),
+      );
+
+      const page = result.creates.find((file) =>
+        file.path.endsWith("+page.svelte"),
+      );
+      const server = result.creates.find((file) =>
+        file.path.endsWith("+page.server.ts"),
+      );
+
+      // Everything the page reads off `data` has to come out of `load`.
+      const read = new Set(
+        [...(page?.content ?? "").matchAll(/\bdata\.(\w+)/g)].map(
+          (match) => match[1],
+        ),
+      );
+      expect([...read].sort()).toEqual(["form", "users"]);
+
+      expect(server?.content).toContain("load = async ({ locals }) =>");
+      // One fetch per collection, however many fields point at it.
+      expect(
+        server?.content.match(
+          /const users = await locals\.admin\.collection\("users"\)\.getFullList\(\);/g,
+        ),
+      ).toHaveLength(1);
+      expect(server?.content).toMatch(/return \{ form[^}]*, users \}/);
+    },
+  );
+
+  it("does not load the collection behind an injected current_user relation", async () => {
+    const result = await generateBase(
+      makeOptions({
+        env: "preview",
+        features: {
+          auth: true,
+          api: false,
+          apiKeys: false,
+          backend: true,
+          i18n: false,
+          teams: false,
+          payments: false,
+          blog: false,
+          contentNegotiation: false,
+          cms: false,
+        },
+        argv: ["post"],
+      }),
+    );
+
+    const server = result.creates.find((file) =>
+      file.path.endsWith("+page.server.ts"),
+    );
+    expect(server?.content).toContain("load = async () =>");
+    expect(server?.content).not.toContain("getFullList");
   });
 
   it("generates page, server and schema files from parsed fields", async () => {
@@ -375,6 +449,61 @@ describe("generate form pattern", () => {
     );
     expect(page).not.toContain("$message");
     expect(result.creates[1].content).toContain("setFlash(");
+  });
+
+  it("follows the detected ui and route groups of a bare project", async () => {
+    const result = await generateBase(
+      makeOptions({
+        env: "preview",
+        argv: ["note", "title:text"],
+        features: {
+          auth: false,
+          api: false,
+          apiKeys: false,
+          backend: false,
+          i18n: false,
+          teams: false,
+          payments: false,
+          blog: false,
+          contentNegotiation: false,
+          cms: false,
+          ui: "plain",
+        },
+        routeGroups: { public: null, app: null },
+        input: { flash: false, serverTests: false },
+      }),
+    );
+
+    expect(result.creates.map((f) => f.path)).toContain(
+      "src/routes/note/+page.svelte",
+    );
+    expect(result.components).toEqual([]);
+    const page = result.creates.find((f) => f.path.endsWith("+page.svelte"));
+    expect(page?.content).not.toContain("$lib/components/ui");
+  });
+
+  it("lets input.ui override the detected ui", async () => {
+    const result = await generateBase(
+      makeOptions({
+        env: "preview",
+        argv: ["note", "title:text"],
+        features: {
+          auth: false,
+          api: false,
+          apiKeys: false,
+          backend: false,
+          i18n: false,
+          teams: false,
+          payments: false,
+          blog: false,
+          contentNegotiation: false,
+          cms: false,
+          ui: "shadcn",
+        },
+        input: { ui: "plain" },
+      }),
+    );
+    expect(result.components).toEqual([]);
   });
 
   it("rejects an unknown ui", async () => {

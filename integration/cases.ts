@@ -196,13 +196,14 @@ export const enableCases: CaseSpec[] = [
 export const generateCases: CaseSpec[] = [
   singleCase("generate-form"),
   singleCase("generate-form-remote"),
-  // Outside a vela project the CLI detects no shadcn-svelte, flash messages or
-  // test harness, and passes exactly this input.
+  // Outside a vela project the CLI detects no flash messages or test harness
+  // and passes exactly this input; `ui: "plain"` and the missing `(public)`
+  // group come from the detected features and route groups.
   ...(["generate-form", "generate-form-remote"] as const).map((slug) =>
     makeCase(`${slug}-plain`, "bare", [
       step(slug, {
         check: true,
-        input: { ui: "plain", flash: false, serverTests: false },
+        input: { flash: false, serverTests: false },
       }),
     ]),
   ),
@@ -252,6 +253,29 @@ export const stackCases: CaseSpec[] = [
     }),
     step("generate-schema", {
       argv: ["author", "bio:text", "website:url"],
+      check: true,
+    }),
+  ]),
+  // Relation fields render from `data.<plural>`, which only type-checks when
+  // the form's `load` fetches the related collections.
+  makeCase("form-relations", "minimal", [
+    step("generate-scaffold", { argv: ["writer", "name:text"] }),
+    step("generate-scaffold", { argv: ["label", "title:text"] }),
+    step("generate-scaffold", {
+      argv: ["article", "title:text", "writer:writer", "labels:labels"],
+    }),
+    step("generate-form", {
+      argv: ["article"],
+      input: { route: "(public)/write" },
+      check: true,
+    }),
+    step("generate-form", {
+      argv: ["article"],
+      input: { route: "(public)/write-plain", ui: "plain" },
+      check: true,
+    }),
+    step("generate-form", {
+      argv: ["review", "body:text", "writer:writer", "labels:labels"],
       check: true,
     }),
   ]),

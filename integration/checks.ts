@@ -1,4 +1,10 @@
-import { existsSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 import { REPO_ROOT, velaBin } from "./baseline";
 import { npmBin, npxBin } from "./exec";
@@ -33,8 +39,19 @@ export interface CheckReport {
 export interface CheckOptions {
   /** Diagnostic keys already present before the case started; not the pattern's fault. */
   baselineDiagnostics?: Set<string>;
-  /** Also run `vela test:server` (slow; opt-in). */
+  /**
+   * Run `vela test:server` too. On unless `INTEGRATION_SERVER_TESTS=0`:
+   * svelte-check cannot see a runtime bug in a generated action.
+   */
   serverTests?: boolean;
+}
+
+/** Only the backend template ships the server-test harness. */
+function hasServerTests(root: string): boolean {
+  const pkg = JSON.parse(
+    readFileSync(path.join(root, "package.json"), "utf8"),
+  ) as { scripts?: Record<string, string> };
+  return Boolean(pkg.scripts?.["test:server"]);
 }
 
 export const CHECK_TSCONFIG = "tsconfig.check.json";
@@ -239,7 +256,9 @@ export function runChecks(
     }
   }
 
-  if (opts.serverTests ?? process.env.INTEGRATION_SERVER_TESTS === "1") {
+  const serverTests =
+    opts.serverTests ?? process.env.INTEGRATION_SERVER_TESTS !== "0";
+  if (serverTests && hasServerTests(root)) {
     const tests = project.run(npmBin(), ["run", "test:server"], {
       allowFailure: true,
     });

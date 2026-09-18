@@ -249,7 +249,7 @@ export async function generate(options: Options) {
     await resolveInputFields(options, modelPath, fieldDefs);
   const route = parseRoute(options.input.route, model, options, "form");
   const formVar = submitFormIdentifier(model);
-  const ui = resolveUi(options.input);
+  const ui = resolveUi(options);
   const flash = options.input.flash ?? true;
   const serverTests = options.input.serverTests ?? true;
 

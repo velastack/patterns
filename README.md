@@ -80,12 +80,17 @@ argv only). Shared behaviour (the layout modifier, writing the env keys to `.env
 
 ### Plain forms
 
-`generate-form` and `generate-form-remote` take `input.ui: "shadcn" | "plain"` (default `shadcn`). `plain` is for
+`generate-form` and `generate-form-remote` take `input.ui: "shadcn" | "plain"` (default: the detected `features.ui`, then `shadcn`). `plain` is for
 projects Vela did not create: native elements with no components and no classes, `data-field` / `data-invalid` /
 `data-error` hooks for styling, `components: []`, and hand-written `aria-invalid` / `aria-describedby` in place
 of what formsnap wires up. Two more keys say what else the project lacks: `flash: false` reports through
 superforms' `message()` instead of `sveltekit-flash-message`, and `serverTests: false` skips `server.test.ts`.
-The CLI detects all three and passes them; `--ui` overrides the first.
+The CLI detects `features.ui` and the two keys; `--ui` sets `input.ui`, which wins over the feature.
+
+Default routes follow `options.routeGroups` (`{ public, app }`, each a group directory name or `null`). The CLI
+detects it, so a project without `(public)` gets `src/routes/<model>`; absent means the Vela layout. Only routes
+resolved by `parseRoute` (form and scaffold generators and destroyers) follow it: `enable-*` patterns still write
+into `(public)` / `(app)`.
 
 Field markup that does not go through formsnap lives in `src/core/field/plain.ts`, split into a **binding**
 (superforms stores, or a remote form's `.as()` / `.issues()`) and a **style** (shadcn `Input` plus tailwind
@@ -138,7 +143,7 @@ npm run test:integration -- integration/stacks.test.ts -t "teams" # one case
 
 - `VELA_BIN=/path/to/vela` picks the CLI (default: `vela` on PATH).
 - `INTEGRATION_KEEP=1` keeps generated projects; failed cases are always kept.
-- `INTEGRATION_SERVER_TESTS=1` also runs `vela test:server` after each checked step.
+- `vela test:server` runs after each checked step in projects that have it; `INTEGRATION_SERVER_TESTS=0` skips it for a faster local loop.
 - `STRIPE_SECRET_KEY` + `STRIPE_PUBLISHABLE_KEY` enable the payments cases; they skip otherwise.
 - Failures point at `.integration-tests/<suite>/<case>/.integration/` (`commands.log`, `steps.json`,
   the raw svelte-check output). Expected failures live in `integration/known-failures.ts`, scoped per

@@ -21,8 +21,9 @@ import {
   collectionSpecFromModelFields,
   generateSchemaSnippet,
   relationExpandParam,
+  relationLoadLines,
+  relationLoadReturnVars,
   resolveInputFields,
-  uniqueRelationCollections,
 } from "../../../core/shared";
 import { generateScaffoldServerTestSnippet } from "../../../core/tests";
 import {
@@ -67,21 +68,6 @@ function selectLabelMaps(fields: Field[]): string {
     )
     .map((field) => selectFieldLabelMap(field))
     .join("\n\n");
-}
-
-function relationLoadLines(fields: Field[], pbInstance: string): string {
-  return uniqueRelationCollections(fields)
-    .map(
-      (relatedModel) =>
-        `const ${relatedModel.pluralName} = await ${pbInstance}.collection("${relatedModel.tableName}").getFullList();`,
-    )
-    .join("\n\t\t\t");
-}
-
-function relationLoadReturnVars(fields: Field[]): string {
-  return uniqueRelationCollections(fields)
-    .map((relatedModel) => relatedModel.pluralName)
-    .join(", ");
 }
 
 function pbInstance(
@@ -787,12 +773,14 @@ function editServerSnippet(
 
         try {
           await ${pb}.collection("${model.tableName}").update(params.id, ${updatePayload});
-          return redirect(303, ${urlJsExprWithSuffix(urls.list, dynamicParams, "/${params.id}")});
         } catch (error) {
           setPocketbaseErrors(form, error);
           setDefaultData(form, ${model.name});
           return fail(400, ${withFiles ? "withFiles({ form })" : "{ form }"});
         }
+
+        // Outside the try: redirect() throws, and the catch would swallow it.
+        return redirect(303, ${urlJsExprWithSuffix(urls.list, dynamicParams, "/${params.id}")});
       },
     };
   `;

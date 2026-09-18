@@ -456,6 +456,25 @@ export function uniqueRelationCollections(
   return models;
 }
 
+/**
+ * `load` statements fetching every collection the relation fields point at.
+ * The relation field renderers read them as `data.<pluralName>`.
+ */
+export function relationLoadLines(fields: Field[], pbInstance: string): string {
+  return uniqueRelationCollections(fields)
+    .map(
+      (relatedModel) =>
+        `const ${relatedModel.pluralName} = await ${pbInstance}.collection("${relatedModel.tableName}").getFullList();`,
+    )
+    .join("\n\t\t\t");
+}
+
+export function relationLoadReturnVars(fields: Field[]): string {
+  return uniqueRelationCollections(fields)
+    .map((relatedModel) => relatedModel.pluralName)
+    .join(", ");
+}
+
 export function routeWithId(baseUrl: string, idExpression: string): string {
   return `/${baseUrl}/\${${idExpression}}`;
 }

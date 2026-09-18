@@ -142,6 +142,59 @@ describe("parseRoute", () => {
     expect(route.urlBase).toBe("/admin/users");
   });
 
+  describe("with detected routeGroups", () => {
+    const bare = { ...noAuth, routeGroups: { public: null, app: null } };
+
+    it("places the default route directly under src/routes", () => {
+      expect(parseRoute(undefined, birdModel, bare, "scaffold")).toEqual({
+        fileBase: "src/routes/birds",
+        urlBase: "/birds",
+        dynamicParams: [],
+      });
+    });
+
+    it("prepends nothing to an explicit route without a group", () => {
+      const route = parseRoute("admin/users", birdModel, bare, "scaffold");
+      expect(route.fileBase).toBe("src/routes/admin/users");
+      expect(route.urlBase).toBe("/admin/users");
+    });
+
+    it("keeps an explicit route group", () => {
+      const route = parseRoute("(marketing)/birds", birdModel, bare, "form");
+      expect(route.fileBase).toBe("src/routes/(marketing)/birds");
+    });
+
+    it("uses the detected group names", () => {
+      const groups = { public: "(site)", app: "(dashboard)" };
+      expect(
+        parseRoute(
+          undefined,
+          birdModel,
+          { ...noAuth, routeGroups: groups },
+          "form",
+        ).fileBase,
+      ).toBe("src/routes/(site)/bird");
+      expect(
+        parseRoute(
+          undefined,
+          birdModel,
+          { ...withAuth, routeGroups: groups },
+          "form",
+        ).fileBase,
+      ).toBe("src/routes/(dashboard)/bird");
+    });
+
+    it("falls back to the public group when auth has no app group", () => {
+      const route = parseRoute(
+        undefined,
+        birdModel,
+        { ...withAuth, routeGroups: { public: "(public)", app: null } },
+        "form",
+      );
+      expect(route.fileBase).toBe("src/routes/(public)/bird");
+    });
+  });
+
   it("strips multiple route groups from the URL base", () => {
     const route = parseRoute(
       "(app)/(dashboard)/projects",

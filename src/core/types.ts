@@ -18,6 +18,24 @@ export interface Features {
    * optional so the `requires` of older patterns need not mention it.
    */
   workflows?: boolean;
+  /**
+   * The component kit the project has: `shadcn` is shadcn-svelte (a
+   * `components.json` plus the package), `plain` is neither. Detected by the
+   * caller; optional so the `requires` of patterns need not mention it, and
+   * absent means `shadcn`, which is every project `vela create` makes.
+   */
+  ui?: "shadcn" | "plain";
+}
+
+/**
+ * The route groups a project has, as directory names under `src/routes`.
+ * `null` means the project has no such group, so routes that would default
+ * into it go directly under `src/routes` (a SvelteKit project vela did not
+ * create).
+ */
+export interface RouteGroups {
+  public: string | null;
+  app: string | null;
 }
 
 export interface Options {
@@ -25,6 +43,11 @@ export interface Options {
   env: "runtime" | "preview";
   root: string;
   features: Features;
+  /**
+   * Where default routes go. Detected by the caller; absent means the vela
+   * layout, `(public)` and `(app)`.
+   */
+  routeGroups?: RouteGroups;
   /**
    * Reads the live collection schema. Required when `env` is `"runtime"`.
    *
@@ -39,15 +62,15 @@ export interface Options {
    * Conventional keys consumed by built-in patterns:
    * - `route` (string): override the default SvelteKit route for generators that
    *   produce pages. Format: `(group)/segment[/segment]*` (route group required;
-   *   if omitted, the auth-aware default group is prepended). Dynamic segments
-   *   like `[team_id]` are recognized and threaded into generated href/redirect
+   *   if omitted, the auth-aware default group from `routeGroups` is
+   *   prepended). Dynamic segments like `[team_id]` are recognized and threaded into generated href/redirect
    *   expressions and test placeholders.
    * - `destructive` (boolean): consent flag for destroy patterns to perform
    *   filesystem and collection deletions.
    * - `variant` (string): selects an alternate template under `variants/`.
    * - `ui` (`"shadcn" | "plain"`): markup the form generators emit. `plain` is
    *   native elements with no components or classes, for projects without
-   *   shadcn-svelte. Defaults to `shadcn`.
+   *   shadcn-svelte. Defaults to `features.ui`, then `shadcn`.
    * - `flash` (boolean): whether the project has `sveltekit-flash-message`
    *   wired up. When false, form actions report through superforms'
    *   `message()` instead. Defaults to true.
