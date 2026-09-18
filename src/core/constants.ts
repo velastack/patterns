@@ -16,3 +16,10 @@ export const TANSTACK_TABLE_CORE = "@tanstack/table-core@^8.21.3";
 
 /** `file-form` and `multiselect` build on formsnap's field context. */
 export const FORMSNAP = "formsnap@^2.0.1";
+
+/**
+ * What a generated superforms page needs. Vela's templates already carry
+ * both; a project vela did not create may have neither.
+ */
+export const SUPERFORMS = "sveltekit-superforms@^2.30.2";
+export const ZOD = "zod@^4.1.11";

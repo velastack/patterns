@@ -181,3 +181,28 @@ export function createVelaProject(
   run(velaBin(), args, { cwd: dir, env: projectEnv(), logFile });
   installWithCache(dir, logFile);
 }
+
+/**
+ * A SvelteKit project vela did not create: no shadcn-svelte, tailwind,
+ * PocketBase or flash messages. What `ui: "plain"` generators have to work in.
+ */
+export function createBareProject(dir: string, logFile?: string): void {
+  mkdirSync(dir, { recursive: true });
+  run(
+    npxBin(),
+    [
+      "--yes",
+      "sv@latest",
+      "create",
+      dir,
+      "--template",
+      "minimal",
+      "--types",
+      "ts",
+      "--no-add-ons",
+      "--no-install",
+    ],
+    { cwd: dir, env: projectEnv(), logFile },
+  );
+  installWithCache(dir, logFile);
+}

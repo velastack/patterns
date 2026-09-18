@@ -289,6 +289,106 @@ describe("generate form pattern", () => {
     expect(schema?.content).toContain("title: z.string().nonempty()");
   });
 
+  it("generates native markup with no components for ui: plain", async () => {
+    const features = {
+      auth: false,
+      api: false,
+      apiKeys: false,
+      backend: false,
+      i18n: false,
+      teams: false,
+      payments: false,
+      blog: false,
+      contentNegotiation: false,
+      cms: false,
+    };
+    const result = await generateBase(
+      makeOptions({
+        env: "preview",
+        features,
+        argv: ["note", "title:text!", "done:bool", "cover:file"],
+        input: { ui: "plain", flash: false, serverTests: false },
+      }),
+    );
+
+    expect(result.creates.map((file) => file.path)).toEqual([
+      "src/routes/(public)/note/+page.svelte",
+      "src/routes/(public)/note/+page.server.ts",
+      "src/lib/schemas/note.ts",
+    ]);
+    expect(result.components).toEqual([]);
+    expect(result.packages).toEqual([
+      "sveltekit-superforms@^2.30.2",
+      "zod@^4.1.11",
+    ]);
+
+    const page = result.creates[0].content;
+    expect(page).not.toContain("$lib/components/ui");
+    expect(page).not.toContain("class=");
+    expect(page).toContain(
+      "const { form: formData, errors, constraints, message, enhance } = superForm(",
+    );
+    expect(page).toContain(
+      '<form method="POST" enctype="multipart/form-data" use:enhance>',
+    );
+    expect(page).toContain('<p role="status">{$message}</p>');
+    expect(page).toContain('<button type="submit">Submit</button>');
+
+    const server = result.creates[1].content;
+    expect(server).toContain(
+      'import { fail, message, superValidate } from "sveltekit-superforms";',
+    );
+    expect(server).toContain(
+      'return message(form, "Form posted successfully");',
+    );
+    expect(server).not.toContain("sveltekit-flash-message");
+    expect(server).not.toContain("cookies");
+  });
+
+  it("keeps flash messages and server tests for ui: plain in a vela project", async () => {
+    const result = await generateBase(
+      makeOptions({
+        env: "preview",
+        features: {
+          auth: false,
+          api: false,
+          apiKeys: false,
+          backend: false,
+          i18n: false,
+          teams: false,
+          payments: false,
+          blog: false,
+          contentNegotiation: false,
+          cms: false,
+        },
+        argv: ["note", "done:bool"],
+        input: { ui: "plain" },
+      }),
+    );
+
+    expect(result.creates.map((file) => file.path)).toContain(
+      "src/routes/(public)/note/server.test.ts",
+    );
+    const page = result.creates[0].content;
+    expect(page).toContain(
+      "const { form: formData, errors, enhance } = superForm(",
+    );
+    expect(page).not.toContain("$message");
+    expect(result.creates[1].content).toContain("setFlash(");
+  });
+
+  it("rejects an unknown ui", async () => {
+    await expect(
+      generateBase(
+        makeOptions({
+          env: "preview",
+          argv: ["note", "title:text"],
+          input: { ui: "bootstrap" },
+        }),
+      ),
+    ).rejects.toThrow('Unknown ui "bootstrap"');
+  });
+
   it("throws when a relation field is requested without a backend", async () => {
     await expect(
       generateBase(

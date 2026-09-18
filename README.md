@@ -78,6 +78,21 @@ ones, a missing one is an error at runtime and the first provider in preview (th
 argv only). Shared behaviour (the layout modifier, writing the env keys to `.env`) stays in the pattern's
 `generate.runtime.ts`. Providers are a separate dimension from `variants`.
 
+### Plain forms
+
+`generate-form` and `generate-form-remote` take `input.ui: "shadcn" | "plain"` (default `shadcn`). `plain` is for
+projects Vela did not create: native elements with no components and no classes, `data-field` / `data-invalid` /
+`data-error` hooks for styling, `components: []`, and hand-written `aria-invalid` / `aria-describedby` in place
+of what formsnap wires up. Two more keys say what else the project lacks: `flash: false` reports through
+superforms' `message()` instead of `sveltekit-flash-message`, and `serverTests: false` skips `server.test.ts`.
+The CLI detects all three and passes them; `--ui` overrides the first.
+
+Field markup that does not go through formsnap lives in `src/core/field/plain.ts`, split into a **binding**
+(superforms stores, or a remote form's `.as()` / `.issues()`) and a **style** (shadcn `Input` plus tailwind
+classes, or native). `remote.ts` is the remote binding in the shadcn style, so a new field type is added once
+there and once in the formsnap renderer (`index.ts`). The integration suite checks the plain path against the
+`bare` baseline (`sv create`), not a Vela template.
+
 ## UI components
 
 `src/ui/components/<name>` holds the components Vela ships itself (`data-table`, `multiselect`, `geopoint`,

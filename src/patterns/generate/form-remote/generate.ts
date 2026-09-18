@@ -7,6 +7,8 @@ import {
   getRemoteFieldImports,
   renderRemoteField,
 } from "../../../core/field/remote";
+import { resolveUi } from "../../../core/field/ui";
+import { ZOD } from "../../../core/constants";
 import { parseRoute, type Field, type Model } from "../../../parse";
 import { generateFormRemoteServerTestSnippet } from "../../../core/tests";
 import {
@@ -123,7 +125,60 @@ function pageSnippet(
   `;
 }
 
-function genericRemoteSnippet(model: Model, formVar: string): string {
+/** The same page with native elements only; see `NATIVE_STYLE`. */
+function plainPageSnippet(
+  model: Model,
+  fields: Field[],
+  formVar: string,
+  injectables: Injectables,
+  flash: boolean,
+): string {
+  const fieldSnippet = fields
+    .map((field) => renderRemoteField(field, { formVar, native: true }))
+    .join("\n");
+  const hiddenInputs = injectableHiddenInputs(injectables);
+  const enctype = hasFiles(fields) ? ' enctype="multipart/form-data"' : "";
+  const status = flash
+    ? ""
+    : dedent`
+      {#if ${formVar}.result?.success}
+        <p role="status">Form posted successfully</p>
+      {/if}
+    `;
+
+  return dedent`
+    <script lang="ts">
+      import { ${formVar} } from "./form.remote";
+    </script>
+
+    <h1>${model.displayName}</h1>
+
+    ${status}
+
+    <form {...${formVar}}${enctype}>
+      ${fieldSnippet}
+      ${hiddenInputs}
+      <button type="submit">Submit</button>
+    </form>
+  `;
+}
+
+function genericRemoteSnippet(
+  model: Model,
+  formVar: string,
+  flash: boolean,
+): string {
+  if (!flash) {
+    return dedent`
+      import { form } from "$app/server";
+      import { ${model.schemaName} } from "$lib/schemas/${model.name}";
+
+      export const ${formVar} = form(${model.schemaName}, async () => {
+        return { success: true };
+      });
+    `;
+  }
+
   return dedent`
     import { form, getRequestEvent } from "$app/server";
     import { setFlash } from "sveltekit-flash-message/server";
@@ -143,6 +198,7 @@ function createRemoteSnippet(
   injectables: Injectables,
   pb: string,
   authMode: boolean,
+  flash: boolean,
 ): string {
   const { currentUserField, currentTeamField } = injectables;
   const injections: string[] = [];
@@ -164,15 +220,15 @@ function createRemoteSnippet(
 
   return dedent`
     import { form, getRequestEvent } from "$app/server";
-    import { setFlash } from "sveltekit-flash-message/server";
+    ${flash ? 'import { setFlash } from "sveltekit-flash-message/server";' : ""}
     import { ${model.schemaName} } from "$lib/schemas/${model.name}";
 
     export const ${formVar} = form(${model.schemaName}, async (data) => {
-      const { locals, cookies } = getRequestEvent();
+      const { locals${flash ? ", cookies" : ""} } = getRequestEvent();
       await ${pb}.collection("${model.tableName}").create(
         ${createPayload}
       );
-      setFlash({ type: "toast", message: "${model.displayName} created" }, cookies);
+      ${flash ? `setFlash({ type: "toast", message: "${model.displayName} created" }, cookies);` : ""}
       return { success: true };
     });
   `;
@@ -193,6 +249,9 @@ export async function generate(options: Options) {
     await resolveInputFields(options, modelPath, fieldDefs);
   const route = parseRoute(options.input.route, model, options, "form");
   const formVar = submitFormIdentifier(model);
+  const ui = resolveUi(options.input);
+  const flash = options.input.flash ?? true;
+  const serverTests = options.input.serverTests ?? true;
 
   // When fields were derived from an existing collection (no fieldDefs given),
   // generate a remote form that creates a record. When fields were explicitly
@@ -216,26 +275,33 @@ export async function generate(options: Options) {
         injectables,
         pbInstance(options),
         options.features.auth,
+        flash,
       )
-    : genericRemoteSnippet(model, formVar);
+    : genericRemoteSnippet(model, formVar, flash);
 
   const creates = [
     toFile(
       `${route.fileBase}/+page.svelte`,
-      pageSnippet(model, uiFields, formVar, injectables),
+      ui === "plain"
+        ? plainPageSnippet(model, uiFields, formVar, injectables, flash)
+        : pageSnippet(model, uiFields, formVar, injectables),
     ),
     toFile(`${route.fileBase}/form.remote.ts`, remoteContent),
-    toFile(
-      `${route.fileBase}/server.test.ts`,
-      generateFormRemoteServerTestSnippet(
-        model,
-        route.urlBase,
-        fields,
-        options,
-        collections,
-        route.dynamicParams,
-      ),
-    ),
+    ...(serverTests
+      ? [
+          toFile(
+            `${route.fileBase}/server.test.ts`,
+            generateFormRemoteServerTestSnippet(
+              model,
+              route.urlBase,
+              fields,
+              options,
+              collections,
+              route.dynamicParams,
+            ),
+          ),
+        ]
+      : []),
     toFile(
       `src/lib/schemas/${model.name}.ts`,
       generateSchemaSnippet(model, fields, {
@@ -245,8 +311,10 @@ export async function generate(options: Options) {
     ),
   ];
 
-  const components = getRemoteFieldComponents(uiFields) as Component[];
-  if (!components.includes("button")) {
+  // Plain markup needs nothing from the shadcn-svelte registry.
+  const components =
+    ui === "plain" ? [] : (getRemoteFieldComponents(uiFields) as Component[]);
+  if (ui !== "plain" && !components.includes("button")) {
     components.push("button");
   }
 
@@ -255,7 +323,7 @@ export async function generate(options: Options) {
     modifies: [],
     deletes: [],
     components,
-    packages: [],
+    packages: [ZOD],
     collections: [],
     collectionPatches: [],
     collectionDrops: [],

@@ -5,9 +5,10 @@ import type { Features } from "../src/core/types";
  * Starting points for a case:
  * - `minimal`: `vela create --template minimal` (PocketBase backend, no auth);
  * - `static`: `vela create --template static` (no backend at all);
+ * - `bare`: `sv create`, a project vela did not create (no shadcn-svelte);
  * - `auth`: `minimal` with `enable-auth` applied.
  */
-export type BaselineName = "minimal" | "static" | "auth";
+export type BaselineName = "minimal" | "static" | "auth" | "bare";
 
 export interface StepSpec {
   slug: Slug;
@@ -195,6 +196,16 @@ export const enableCases: CaseSpec[] = [
 export const generateCases: CaseSpec[] = [
   singleCase("generate-form"),
   singleCase("generate-form-remote"),
+  // Outside a vela project the CLI detects no shadcn-svelte, flash messages or
+  // test harness, and passes exactly this input.
+  ...(["generate-form", "generate-form-remote"] as const).map((slug) =>
+    makeCase(`${slug}-plain`, "bare", [
+      step(slug, {
+        check: true,
+        input: { ui: "plain", flash: false, serverTests: false },
+      }),
+    ]),
+  ),
   singleCase("generate-migration"),
   singleCase("generate-resource"),
   singleCase("generate-scaffold"),

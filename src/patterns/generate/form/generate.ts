@@ -8,6 +8,15 @@ import {
   renderField,
   selectFieldLabelMap,
 } from "../../../core/field";
+import {
+  NATIVE_STYLE,
+  geoPointState,
+  plainRenderer,
+  superformsBinding,
+  usesConstraints,
+} from "../../../core/field/plain";
+import { resolveUi } from "../../../core/field/ui";
+import { SUPERFORMS, ZOD } from "../../../core/constants";
 import { parseRoute, type Field, type Model } from "../../../parse";
 import { generateFormServerTestSnippet } from "../../../core/tests";
 import {
@@ -143,14 +152,84 @@ function pageSnippet(
   `;
 }
 
-function genericServerSnippet(model: Model, fields: Field[]): string {
-  const withFiles = hasFiles(fields);
+/**
+ * The same page without shadcn-svelte, formsnap or tailwind: native elements
+ * bound to the superforms stores. Without flash messages the action's
+ * `message()` is shown inline.
+ */
+function plainPageSnippet(
+  model: Model,
+  fields: Field[],
+  injectables: Injectables,
+  flash: boolean,
+): string {
+  const renderer = plainRenderer(superformsBinding(), NATIVE_STYLE);
+  const fieldSnippet = fields.map((field) => renderer.render(field)).join("\n");
+  const hiddenInputs = injectableHiddenInputs(injectables);
+  const enctype = hasFiles(fields) ? ' enctype="multipart/form-data"' : "";
+  const stores = [
+    "form: formData",
+    "errors",
+    ...(usesConstraints(fields) ? ["constraints"] : []),
+    ...(flash ? [] : ["message"]),
+    "enhance",
+  ].join(", ");
+  const status = flash
+    ? ""
+    : dedent`
+      {#if $message}
+        <p role="status">{$message}</p>
+      {/if}
+    `;
+
+  return dedent`
+    <script lang="ts">
+      import { untrack } from "svelte";
+      import { superForm } from "sveltekit-superforms";
+      import { zod4Client } from "sveltekit-superforms/adapters";
+      import { ${model.schemaName} } from "$lib/schemas/${model.name}";
+
+      let { data } = $props();
+
+      const { ${stores} } = superForm(untrack(() => data.form), {
+        validators: zod4Client(${model.schemaName}),
+      });
+
+      ${geoPointState(fields)}
+    </script>
+
+    <h1>${model.displayName}</h1>
+
+    ${status}
+
+    <form method="POST"${enctype} use:enhance>
+      ${fieldSnippet}
+      ${hiddenInputs}
+      <button type="submit">Submit</button>
+    </form>
+  `;
+}
+
+function genericServerSnippet(
+  model: Model,
+  fields: Field[],
+  flash: boolean,
+): string {
+  const withFiles = hasFiles(fields) && flash;
   const imports = dedent`
-    import { fail, superValidate${withFiles ? ", withFiles" : ""} } from "sveltekit-superforms";
+    import { fail, ${flash ? "" : "message, "}superValidate${withFiles ? ", withFiles" : ""} } from "sveltekit-superforms";
     import { zod4 } from "sveltekit-superforms/adapters";
     import { ${model.schemaName} } from "$lib/schemas/${model.name}";
-    import { setFlash } from "sveltekit-flash-message/server";
+    ${flash ? 'import { setFlash } from "sveltekit-flash-message/server";' : ""}
   `;
+  // `message()` strips files from the returned form itself.
+  const success = flash
+    ? dedent`
+      setFlash({ type: "toast", message: "Form posted successfully" }, cookies);
+
+      return ${withFiles ? "withFiles({ form })" : "{ form }"};
+    `
+    : 'return message(form, "Form posted successfully");';
 
   return dedent`
     ${imports}
@@ -161,16 +240,14 @@ function genericServerSnippet(model: Model, fields: Field[]): string {
     };
 
     export const actions = {
-      default: async ({ request, cookies }) => {
+      default: async ({ request${flash ? ", cookies" : ""} }) => {
         const form = await superValidate(request, zod4(${model.schemaName}));
 
         if (!form.valid) {
           return fail(400, { form });
         }
 
-        setFlash({ type: "toast", message: "Form posted successfully" }, cookies);
-
-        return ${withFiles ? "withFiles({ form })" : "{ form }"};
+        ${success}
       }
     };
   `;
@@ -182,8 +259,16 @@ function createServerSnippet(
   injectables: Injectables,
   pb: string,
   authMode: boolean,
+  flash: boolean,
 ): string {
   const withFiles = hasFiles(fields);
+  const success = flash
+    ? dedent`
+      setFlash({ type: "toast", message: "${model.displayName} created" }, cookies);
+
+      return ${withFiles ? "withFiles({ form })" : "{ form }"};
+    `
+    : `return message(form, "${model.displayName} created");`;
   const { currentUserField, currentTeamField } = injectables;
   const injections: string[] = [];
   if (authMode && currentUserField) {
@@ -204,10 +289,10 @@ function createServerSnippet(
 
   return dedent`
     import { fail } from "@sveltejs/kit";
-    import { superValidate${withFiles ? ", withFiles" : ""} } from "sveltekit-superforms";
+    import { ${flash ? "" : "message, "}superValidate${withFiles ? ", withFiles" : ""} } from "sveltekit-superforms";
     import { zod4 } from "sveltekit-superforms/adapters";
     import { setPocketbaseErrors } from "@velastack/pocketbase/form";
-    import { setFlash } from "sveltekit-flash-message/server";
+    ${flash ? 'import { setFlash } from "sveltekit-flash-message/server";' : ""}
     import { ${model.schemaName} } from "$lib/schemas/${model.name}";
 
     export const load = async () => {
@@ -215,7 +300,7 @@ function createServerSnippet(
     };
 
     export const actions = {
-      default: async ({ locals, request, cookies }) => {
+      default: async ({ locals, request${flash ? ", cookies" : ""} }) => {
         const form = await superValidate(request, zod4(${model.schemaName}));
 
         if (!form.valid) {
@@ -231,9 +316,7 @@ function createServerSnippet(
           return fail(400, ${withFiles ? "withFiles({ form })" : "{ form }"});
         }
 
-        setFlash({ type: "toast", message: "${model.displayName} created" }, cookies);
-
-        return ${withFiles ? "withFiles({ form })" : "{ form }"};
+        ${success}
       }
     };
   `;
@@ -253,6 +336,9 @@ export async function generate(options: Options) {
   const { model, fields, shouldCreateCollection, collections } =
     await resolveInputFields(options, modelPath, fieldDefs);
   const route = parseRoute(options.input.route, model, options, "form");
+  const ui = resolveUi(options.input);
+  const flash = options.input.flash ?? true;
+  const serverTests = options.input.serverTests ?? true;
 
   // When fields were derived from an existing collection (no fieldDefs given),
   // generate a server action that creates a record in that collection. When
@@ -277,26 +363,33 @@ export async function generate(options: Options) {
         injectables,
         pbInstance(options),
         options.features.auth,
+        flash,
       )
-    : genericServerSnippet(model, uiFields);
+    : genericServerSnippet(model, uiFields, flash);
 
   const creates = [
     toFile(
       `${route.fileBase}/+page.svelte`,
-      pageSnippet(model, uiFields, injectables),
+      ui === "plain"
+        ? plainPageSnippet(model, uiFields, injectables, flash)
+        : pageSnippet(model, uiFields, injectables),
     ),
     toFile(`${route.fileBase}/+page.server.ts`, serverContent),
-    toFile(
-      `${route.fileBase}/server.test.ts`,
-      generateFormServerTestSnippet(
-        model,
-        route.urlBase,
-        fields,
-        options,
-        collections,
-        route.dynamicParams,
-      ),
-    ),
+    ...(serverTests
+      ? [
+          toFile(
+            `${route.fileBase}/server.test.ts`,
+            generateFormServerTestSnippet(
+              model,
+              route.urlBase,
+              fields,
+              options,
+              collections,
+              route.dynamicParams,
+            ),
+          ),
+        ]
+      : []),
     toFile(
       `src/lib/schemas/${model.name}.ts`,
       generateSchemaSnippet(model, fields, {
@@ -306,14 +399,16 @@ export async function generate(options: Options) {
     ),
   ];
 
-  const components = getFieldComponents(uiFields) as Component[];
+  // Plain markup needs nothing from the shadcn-svelte registry.
+  const components =
+    ui === "plain" ? [] : (getFieldComponents(uiFields) as Component[]);
 
   return {
     creates,
     modifies: [],
     deletes: [],
     components,
-    packages: [],
+    packages: [SUPERFORMS, ZOD],
     collections: [],
     collectionPatches: [],
     collectionDrops: [],

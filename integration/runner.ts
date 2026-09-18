@@ -1,7 +1,11 @@
 import { mkdirSync, rmSync } from "node:fs";
 import path from "node:path";
 import { afterAll, describe, it, type TestContext } from "vitest";
-import { INTEGRATION_ROOT, createVelaProject } from "./baseline";
+import {
+  INTEGRATION_ROOT,
+  createBareProject,
+  createVelaProject,
+} from "./baseline";
 import { applyPattern, stripeConfigured, type ErrorRecord } from "./apply";
 import { diagnosticKey, runChecks } from "./checks";
 import { detectFeatures, expectedFeaturesAfter } from "./features";
@@ -73,7 +77,11 @@ export async function getBaseline(
       `.baseline-${name}.create.log`,
     );
     rmSync(createLog, { force: true });
-    createVelaProject(root, name, createLog);
+    if (name === "bare") {
+      createBareProject(root, createLog);
+    } else {
+      createVelaProject(root, name, createLog);
+    }
     mkdirSync(project.logDir, { recursive: true });
     const report = runChecks(project, "baseline", []);
     errors.push(...report.errors);
@@ -277,7 +285,7 @@ async function runCase(
   settle(ctx, suite, spec.name, spec.steps, errors, project);
 }
 
-const BASELINE_ORDER: BaselineName[] = ["minimal", "static", "auth"];
+const BASELINE_ORDER: BaselineName[] = ["minimal", "static", "auth", "bare"];
 
 /** Registers one vitest `describe` per suite: baseline sanity tests first, then every case. */
 export function defineSuite(suite: string, cases: CaseSpec[]): void {

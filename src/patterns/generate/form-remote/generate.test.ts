@@ -102,6 +102,37 @@ describe("generate form-remote pattern", () => {
     );
   });
 
+  it("generates native markup with no components for ui: plain", async () => {
+    const result = await generateBase(
+      makeOptions({
+        env: "preview",
+        argv: ["note", "title:text!", "done:bool"],
+        input: { ui: "plain", flash: false, serverTests: false },
+      }),
+    );
+
+    expect(result.creates.map((file) => file.path)).toEqual([
+      "src/routes/(public)/note/+page.svelte",
+      "src/routes/(public)/note/form.remote.ts",
+      "src/lib/schemas/note.ts",
+    ]);
+    expect(result.components).toEqual([]);
+    expect(result.packages).toEqual(["zod@^4.1.11"]);
+
+    const page = result.creates[0].content;
+    expect(page).not.toContain("$lib/components/ui");
+    expect(page).not.toContain("class=");
+    expect(page).toContain(
+      '<input id="title" {...submitNoteForm.fields.title.as("text")} required />',
+    );
+    expect(page).toContain("{#if submitNoteForm.result?.success}");
+    expect(page).toContain('<button type="submit">Submit</button>');
+
+    const remote = result.creates[1].content;
+    expect(remote).not.toContain("sveltekit-flash-message");
+    expect(remote).toContain("return { success: true };");
+  });
+
   it("derives fields from an existing collection and creates a record on submit", async () => {
     const result = await generateBase(
       makeOptions({

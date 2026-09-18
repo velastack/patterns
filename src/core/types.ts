@@ -45,6 +45,14 @@ export interface Options {
    * - `destructive` (boolean): consent flag for destroy patterns to perform
    *   filesystem and collection deletions.
    * - `variant` (string): selects an alternate template under `variants/`.
+   * - `ui` (`"shadcn" | "plain"`): markup the form generators emit. `plain` is
+   *   native elements with no components or classes, for projects without
+   *   shadcn-svelte. Defaults to `shadcn`.
+   * - `flash` (boolean): whether the project has `sveltekit-flash-message`
+   *   wired up. When false, form actions report through superforms'
+   *   `message()` instead. Defaults to true.
+   * - `serverTests` (boolean): whether the project has the `vela test:server`
+   *   harness. When false, no `server.test.ts` is generated. Defaults to true.
    * - `provider` (string): for patterns that declare `providers`, the id of
    *   the one to generate. Falls back to `--provider <id>` in `argv`.
    * - `providerEnv` (Record<string, string>): values the CLI collected for
