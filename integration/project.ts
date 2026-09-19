@@ -62,6 +62,7 @@ export function projectHandle(
         logFile,
         allowFailure: opts.allowFailure,
         input: opts.input,
+        timeoutMs: opts.timeoutMs,
       });
     },
   };

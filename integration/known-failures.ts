@@ -30,13 +30,4 @@ export const KNOWN_FAILURES: KnownFailure[] = [
     case: /^teams-scaffold-roundtrip$/,
     match: /\[team_id\]\/projects\/server\.test\.ts/,
   },
-  {
-    id: "bare-app-html-tabs",
-    reason:
-      "`sv create` indents app.html with tabs and the bare baseline has no prettier config, so prettier's defaults reject it once enable-i18n sets its `lang` placeholder. Patterns format ts/js/svelte output but leave .html as written. Every bare case that applies enable-i18n hits it, so the rule is scoped to them.",
-    kind: "prettier",
-    step: "enable-i18n",
-    case: /^((enable|disable)-i18n-plain|i18n-then-backend|i18n-backend-roundtrip)$/,
-    match: /src\/app\.html/,
-  },
 ];

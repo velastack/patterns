@@ -7,7 +7,7 @@ import {
 } from "node:fs";
 import path from "node:path";
 import { REPO_ROOT, velaBin } from "./baseline";
-import { npmBin, npxBin } from "./exec";
+import { exitLabel, npmBin, npxBin } from "./exec";
 import { detectFeatures } from "./features";
 import type { ErrorRecord } from "./apply";
 import type { Project } from "./project";
@@ -55,6 +55,23 @@ function hasServerTests(root: string): boolean {
     readFileSync(path.join(root, "package.json"), "utf8"),
   ) as { scripts?: Record<string, string> };
   return Boolean(pkg.scripts?.["test:server"]) && detectFeatures(root).backend;
+}
+
+/**
+ * In a project without prettier (the bare baseline), patterns format the files
+ * they create but leave the files they edit in the project's own style, so
+ * there is no one style to check the changes against. Mirrors the dependency
+ * half of `usesPrettier` in `src/core/format-result.ts`; no baseline has a
+ * prettier config without the dependency.
+ */
+function usesPrettier(root: string): boolean {
+  const pkg = JSON.parse(
+    readFileSync(path.join(root, "package.json"), "utf8"),
+  ) as {
+    dependencies?: Record<string, string>;
+    devDependencies?: Record<string, string>;
+  };
+  return Boolean(pkg.dependencies?.prettier || pkg.devDependencies?.prettier);
 }
 
 export const CHECK_TSCONFIG = "tsconfig.check.json";
@@ -238,7 +255,7 @@ export function runChecks(
   const existingChanged = [...new Set(changedFiles)].filter((file) =>
     existsSync(path.join(root, file)),
   );
-  if (existingChanged.length > 0) {
+  if (existingChanged.length > 0 && usesPrettier(root)) {
     const prettier = project.run(
       npxBin(),
       ["prettier", "--check", "--ignore-unknown", ...existingChanged],
@@ -270,7 +287,7 @@ export function runChecks(
       const output = `${tests.stdout}\n${tests.stderr}`;
       errors.push({
         kind: "server-tests",
-        message: `exit ${tests.status}:\n${output.trim().slice(-4000)}`,
+        message: `exit ${exitLabel(tests)}:\n${output.trim().slice(-4000)}`,
       });
     }
   }

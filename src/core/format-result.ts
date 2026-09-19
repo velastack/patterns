@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import prettier from "prettier";
 import type { File, Options, Result } from "./types";
@@ -15,10 +16,36 @@ function canFormatFile(file: File): boolean {
   );
 }
 
+function dependsOnPrettier(root: string): boolean {
+  try {
+    const pkg = JSON.parse(
+      readFileSync(path.join(root, "package.json"), "utf8"),
+    ) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+    return Boolean(pkg.dependencies?.prettier || pkg.devDependencies?.prettier);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Whether the project formats with prettier: it depends on it, or prettier
+ * finds a config file for the target (a monorepo may keep one at its root).
+ * A project with neither, like a bare `sv create`, has a style of its own
+ * that prettier's defaults would rewrite in every file a pattern edits.
+ */
+async function usesPrettier(root: string, target: string): Promise<boolean> {
+  if (dependsOnPrettier(root)) return true;
+  return (await prettier.resolveConfigFile(target)) !== null;
+}
+
 /**
  * The target project's own prettier settings (`.prettierrc`, `.editorconfig`,
  * `package.json#prettier`), so pattern output matches what `npm run lint`
- * expects there. Preview runs have no project and use prettier's defaults.
+ * expects there; `null` when the project does not use prettier. Preview runs
+ * have no project and use prettier's defaults.
  *
  * The svelte plugin is always supplied as a module: a project's config names
  * it by string, which would resolve relative to this package instead.
@@ -26,11 +53,12 @@ function canFormatFile(file: File): boolean {
 async function projectOptions(
   file: Pick<File, "path">,
   context?: FormatContext,
-): Promise<prettier.Options> {
+): Promise<prettier.Options | null> {
   if (context?.env !== "runtime" || !context.root) return {};
   const target = path.isAbsolute(file.path)
     ? file.path
     : path.join(context.root, file.path);
+  if (!(await usesPrettier(context.root, target))) return null;
   const resolved = await prettier.resolveConfig(target, { editorconfig: true });
   if (!resolved) return {};
   const plugins = (resolved.plugins ?? []).filter(
@@ -41,17 +69,25 @@ async function projectOptions(
 
 /**
  * Formats one source text the way pattern output is formatted; the content
- * comes back unchanged when prettier cannot parse it. Also used for component
- * files that arrive on disk from `shadcn-svelte add` or the bundled
- * components, so `npm run lint` in the project stays clean after an install.
+ * comes back unchanged when prettier cannot parse it, or when the project
+ * does not use prettier and the file is not `created`. A file a generator
+ * created is formatted either way, with prettier's defaults if need be: it
+ * relies on formatting for its indentation and has no style of its own to
+ * keep. Also used for component files that arrive on disk from
+ * `shadcn-svelte add` or the bundled components, so `npm run lint` in the
+ * project stays clean after an install.
  */
 export async function formatSource(
   content: string,
   filePath: string,
   context?: FormatContext,
+  { created = false }: { created?: boolean } = {},
 ): Promise<string> {
   try {
-    const options = await projectOptions({ path: filePath }, context);
+    const options =
+      (await projectOptions({ path: filePath }, context)) ??
+      (created ? {} : null);
+    if (!options) return content;
     return await prettier.format(content, {
       ...options,
       filepath: filePath,
@@ -62,21 +98,26 @@ export async function formatSource(
   }
 }
 
-async function formatFile(file: File, context?: FormatContext): Promise<File> {
+async function formatFile(
+  file: File,
+  context: FormatContext | undefined,
+  created: boolean,
+): Promise<File> {
   if (file.status !== "success" || !canFormatFile(file)) {
     return file;
   }
   return {
     ...file,
-    content: await formatSource(file.content, file.path, context),
+    content: await formatSource(file.content, file.path, context, { created }),
   };
 }
 
 async function formatFiles(
   files: File[],
-  context?: FormatContext,
+  context: FormatContext | undefined,
+  created: boolean,
 ): Promise<File[]> {
-  return Promise.all(files.map((file) => formatFile(file, context)));
+  return Promise.all(files.map((file) => formatFile(file, context, created)));
 }
 
 export async function formatResult(
@@ -84,8 +125,8 @@ export async function formatResult(
   context?: FormatContext,
 ): Promise<Result> {
   const [creates, modifies] = await Promise.all([
-    formatFiles(result.creates, context),
-    formatFiles(result.modifies, context),
+    formatFiles(result.creates, context, true),
+    formatFiles(result.modifies, context, false),
   ]);
 
   return {

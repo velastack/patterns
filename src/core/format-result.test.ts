@@ -7,7 +7,7 @@ import type { Result } from "./types";
 
 const SOURCE = `import { z } from "zod";\nexport const schema = z.object({ name: z.string(), });\n`;
 
-function resultWith(content: string): Result {
+function resultWith(content: string, modified = content): Result {
   return {
     creates: [
       {
@@ -17,7 +17,14 @@ function resultWith(content: string): Result {
         status: "success",
       },
     ],
-    modifies: [],
+    modifies: [
+      {
+        path: "src/lib/schemas/other.ts",
+        language: "ts",
+        content: modified,
+        status: "success",
+      },
+    ],
     deletes: [],
     components: [],
     packages: [],
@@ -59,7 +66,12 @@ describe("formatResult", () => {
     );
   });
 
-  it("falls back to prettier defaults without a project config", async () => {
+  it("falls back to prettier defaults when the project depends on prettier without a config", async () => {
+    writeFileSync(
+      path.join(root, "package.json"),
+      JSON.stringify({ devDependencies: { prettier: "^3.0.0" } }),
+    );
+
     const { creates } = await formatResult(resultWith(SOURCE), {
       env: "runtime",
       root,
@@ -67,6 +79,41 @@ describe("formatResult", () => {
 
     expect(creates[0].content).toBe(
       `import { z } from "zod";\nexport const schema = z.object({ name: z.string() });\n`,
+    );
+  });
+
+  it("formats only created files when the project does not use prettier", async () => {
+    writeFileSync(
+      path.join(root, "package.json"),
+      JSON.stringify({ devDependencies: { svelte: "^5.0.0" } }),
+    );
+    const existing = `import { z } from 'zod';\n\texport const other = z.object({ name: z.string(), });\n`;
+
+    const { creates, modifies } = await formatResult(
+      resultWith(SOURCE, existing),
+      { env: "runtime", root },
+    );
+
+    expect(creates[0].content).toBe(
+      `import { z } from "zod";\nexport const schema = z.object({ name: z.string() });\n`,
+    );
+    expect(modifies[0].content).toBe(existing);
+  });
+
+  it("formats with a config file even when prettier is not a dependency", async () => {
+    writeFileSync(path.join(root, "package.json"), JSON.stringify({}));
+    writeFileSync(
+      path.join(root, ".prettierrc"),
+      JSON.stringify({ singleQuote: true }),
+    );
+
+    const { creates } = await formatResult(resultWith(SOURCE), {
+      env: "runtime",
+      root,
+    });
+
+    expect(creates[0].content).toBe(
+      `import { z } from 'zod';\nexport const schema = z.object({ name: z.string() });\n`,
     );
   });
 

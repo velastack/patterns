@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import type { Options } from "../../../core/types";
 import { generate as generateBase } from "./generate";
@@ -59,7 +62,7 @@ function makeOptions(
     argv: overrides.argv,
     env: overrides.env,
     getCollections: overrides.getCollections ?? (runtimeCollections as never),
-    root: "/tmp/project",
+    root: overrides.root ?? "/tmp/project",
     features: overrides.features ?? {
       auth: false,
       api: false,
@@ -581,6 +584,12 @@ describe("generate form pattern", () => {
 
   it("returns the same create output in preview and runtime", async () => {
     const argv = ["note", "title:text", "body:editor"];
+    // A project that uses prettier without configuring it, like the preview.
+    const root = mkdtempSync(path.join(os.tmpdir(), "generate-form-"));
+    writeFileSync(
+      path.join(root, "package.json"),
+      JSON.stringify({ devDependencies: { prettier: "^3.0.0" } }),
+    );
 
     const previewResult = await formPattern.generate(
       makeOptions({
@@ -592,9 +601,11 @@ describe("generate form pattern", () => {
     const runtimeResult = await formPattern.generate(
       makeOptions({
         env: "runtime",
+        root,
         argv,
       }),
     );
+    rmSync(root, { recursive: true, force: true });
 
     expect(runtimeResult.creates).toEqual(previewResult.creates);
     expect(runtimeResult.components).toEqual(previewResult.components);

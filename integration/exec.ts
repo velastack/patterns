@@ -11,6 +11,8 @@ export interface RunOptions {
   logFile?: string;
   /** Extra stdin content. */
   input?: string;
+  /** Kill the command after this long. Defaults to `COMMAND_TIMEOUT_MS`. */
+  timeoutMs?: number;
 }
 
 export interface RunResult {
@@ -18,7 +20,16 @@ export interface RunResult {
   status: number | null;
   stdout: string;
   stderr: string;
+  /** The command was killed for running past its timeout. */
+  timedOut: boolean;
 }
+
+/**
+ * `spawnSync` blocks the event loop, so vitest's `testTimeout` cannot fire
+ * while a command runs: without this, a child that never exits (a server left
+ * polling) hangs the whole suite until CI kills the job.
+ */
+export const COMMAND_TIMEOUT_MS = 10 * 60 * 1000;
 
 const MAX_BUFFER = 256 * 1024 * 1024;
 const ERROR_TAIL = 6000;
@@ -49,6 +60,11 @@ function tail(text: string): string {
     : trimmed;
 }
 
+export function exitLabel(result: RunResult): string {
+  if (result.timedOut) return "timed out";
+  return String(result.status ?? "spawn-error");
+}
+
 export function appendLog(logFile: string, text: string): void {
   mkdirSync(path.dirname(logFile), { recursive: true });
   appendFileSync(logFile, text);
@@ -72,12 +88,24 @@ export function run(
     encoding: "utf8",
     maxBuffer: MAX_BUFFER,
     input: opts.input,
+    timeout: opts.timeoutMs ?? COMMAND_TIMEOUT_MS,
+    // SIGKILL: `npm run` traps SIGTERM to forward it and would keep waiting on
+    // the stuck grandchild. The grandchild is orphaned, but the pipes close.
+    killSignal: "SIGKILL",
   });
 
   const stdout = proc.stdout ?? "";
   const stderr = proc.stderr ?? "";
   const status = proc.error ? null : proc.status;
-  const result: RunResult = { command: printable, status, stdout, stderr };
+  const timedOut =
+    (proc.error as NodeJS.ErrnoException | undefined)?.code === "ETIMEDOUT";
+  const result: RunResult = {
+    command: printable,
+    status,
+    stdout,
+    stderr,
+    timedOut,
+  };
 
   if (opts.logFile) {
     appendLog(
@@ -85,7 +113,7 @@ export function run(
       [
         "",
         `$ ${printable}`,
-        `  (cwd: ${opts.cwd}, ${Date.now() - startedAt}ms, exit ${status ?? "spawn-error"})`,
+        `  (cwd: ${opts.cwd}, ${Date.now() - startedAt}ms, exit ${exitLabel(result)})`,
         proc.error ? `  spawn error: ${proc.error.message}` : "",
         stdout ? `--- stdout\n${stdout.trimEnd()}` : "",
         stderr ? `--- stderr\n${stderr.trimEnd()}` : "",
@@ -98,7 +126,7 @@ export function run(
 
   if (status !== 0 && !opts.allowFailure) {
     const details = [
-      `Command failed (exit ${status ?? "spawn-error"}): ${printable}`,
+      `Command failed (exit ${exitLabel(result)}): ${printable}`,
       `cwd: ${opts.cwd}`,
       proc.error ? `spawn error: ${proc.error.message}` : "",
       stdout.trim() ? `stdout:\n${tail(stdout)}` : "",
