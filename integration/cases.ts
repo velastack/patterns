@@ -206,6 +206,11 @@ export const enableCases: CaseSpec[] = [
   singleCase("enable-api-keys"),
   singleCase("enable-backend"),
   singleCase("enable-blog"),
+  // The feed reads its name and URL from `$lib/site`, so the blog needs no
+  // backend.
+  makeCase("enable-blog-static", "static", [
+    step("enable-blog", { check: true }),
+  ]),
   singleCase("enable-cms"),
   singleCase("enable-content-negotiation"),
   singleCase("enable-i18n"),

@@ -171,7 +171,7 @@ describe("enable cms modifiers", () => {
         `import type { LayoutServerLoadEvent } from './$types';`,
         ``,
         `export const load = async ({ locals }: LayoutServerLoadEvent) => {`,
-        `  return { meta: locals.meta };`,
+        `  return { user: locals.user };`,
         `};`,
         ``,
       ].join("\n"),
@@ -205,7 +205,7 @@ describe("enable cms modifiers", () => {
       "no exported load",
       [
         `const load = async ({ locals }) => {`,
-        `  return { meta: locals.meta };`,
+        `  return { user: locals.user };`,
         `};`,
       ],
     ],
@@ -213,20 +213,20 @@ describe("enable cms modifiers", () => {
       "a load under another name",
       [
         `export const loadRoot = async ({ locals }) => {`,
-        `  return { meta: locals.meta };`,
+        `  return { user: locals.user };`,
         `};`,
       ],
     ],
     [
       "an expression-bodied load",
-      [`export const load = async ({ locals }) => ({ meta: locals.meta });`],
+      [`export const load = async ({ locals }) => ({ user: locals.user });`],
     ],
     [
       "an early return",
       [
         `export const load = async ({ locals, url }) => {`,
         `  if (url.pathname === '/health') return { ok: true };`,
-        `  return { meta: locals.meta };`,
+        `  return { user: locals.user };`,
         `};`,
       ],
     ],
@@ -234,7 +234,7 @@ describe("enable cms modifiers", () => {
       "a non-literal return",
       [
         `export const load = async ({ locals }) => {`,
-        `  const data = { meta: locals.meta };`,
+        `  const data = { user: locals.user };`,
         `  return data;`,
         `};`,
       ],

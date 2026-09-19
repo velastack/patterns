@@ -21,7 +21,7 @@ const ORIGINAL_HEADER = `<Sidebar.Header>
 								<img src={favicon} alt="logo" class="size-6" />
 							</div>
 							<div class="grid flex-1 text-left text-sm leading-tight">
-								<span class="truncate font-medium">{meta.appName}</span>
+								<span class="truncate font-medium">{site.name}</span>
 							</div>
 						</a>
 					{/snippet}
@@ -29,6 +29,12 @@ const ORIGINAL_HEADER = `<Sidebar.Header>
 			</Sidebar.MenuItem>
 		</Sidebar.Menu>
 	</Sidebar.Header>`;
+
+/**
+ * A sidebar from before `$lib/site` names the app with a `meta` prop; the
+ * header goes back to whichever the team switcher's fallback used.
+ */
+const LEGACY_NAME = "{meta.appName}";
 
 /** Imports enable-teams added, dropped once the markup no longer uses them. */
 const TEAM_IMPORTS: [name: string, moduleSpecifier: string][] = [
@@ -107,7 +113,12 @@ export function unmodifyAppSidebar(appSidebarPath: string): ModifyOutcome {
     return { status: "success", changed: false };
   }
 
-  file.replaceElement("Sidebar.Header", ORIGINAL_HEADER);
+  file.replaceElement(
+    "Sidebar.Header",
+    file.toString().includes(LEGACY_NAME)
+      ? ORIGINAL_HEADER.replace("{site.name}", LEGACY_NAME)
+      : ORIGINAL_HEADER,
+  );
   const markup = markupOf(file.toString());
   file.modifyScript((source) => revertAppSidebarScript(source, markup));
   file.writeTo(appSidebarPath);

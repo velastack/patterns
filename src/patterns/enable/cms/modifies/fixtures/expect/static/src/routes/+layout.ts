@@ -30,7 +30,6 @@ export const load: LayoutLoad = ({ data, url }) => {
 
 	return {
 		...data,
-		meta: { appName: site.name, appURL: site.url },
 		...baseTags
 	};
 };

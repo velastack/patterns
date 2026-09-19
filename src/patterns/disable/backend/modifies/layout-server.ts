@@ -14,9 +14,11 @@ const FAILURE_HINT = dedent`
 `;
 
 /**
- * Point the root layout's meta at `$lib/site` instead of `locals.meta`. The
- * minimal template reads app name and URL off the PocketBase hook; without
- * the backend nothing sets them, and `App.Locals` no longer declares them.
+ * Point an older root layout's meta at `$lib/site` instead of `locals.meta`.
+ * Templates from before `src/lib/site.ts` read the app name and URL off the
+ * PocketBase hook; without the backend nothing sets them, and `App.Locals` no
+ * longer declares them. Current templates read `$lib/site` already, so this
+ * leaves them alone.
  */
 export function unmodifyLayoutServerMeta(
   layoutServerPath: string,

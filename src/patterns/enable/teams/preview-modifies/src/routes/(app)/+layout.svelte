@@ -12,7 +12,7 @@
 <div class="min-h-dvh dashboard">
 	<Sidebar.Provider>
 		<!-- [!code highlight:1] -->
-		<AppSidebar user={data.user} meta={data.meta} team={data.team} teams={data.teams ?? []} />
+		<AppSidebar user={data.user} team={data.team} teams={data.teams ?? []} />
 		<Sidebar.Inset>
 			<header class="flex h-16 shrink-0 items-center gap-2">
 				<div class="flex items-center gap-2 px-4">

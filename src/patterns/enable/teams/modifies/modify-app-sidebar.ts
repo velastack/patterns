@@ -30,7 +30,7 @@ const NEW_HEADER = `<Sidebar.Header>
 							<img src={favicon} alt="logo" class="size-6" />
 						</div>
 						<div class="grid flex-1 text-left text-sm leading-tight">
-							<span class="truncate font-medium">{meta.appName}</span>
+							<span class="truncate font-medium">{site.name}</span>
 						</div>
 					{/if}
 					<ChevronsUpDownIcon class="ml-auto" />
@@ -44,7 +44,14 @@ const IMPORT_SNIPPET = [
   "import TeamSwitcher from '$lib/components/team-switcher.svelte';",
   "import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';",
   "import * as Avatar from '$lib/components/ui/avatar';",
+  "import { site } from '$lib/site';",
 ].join("\n");
+
+/**
+ * A sidebar from before `$lib/site` names the app with a `meta` prop. Keep
+ * whichever the header already uses, so an older project stays consistent.
+ */
+const LEGACY_NAME = "{meta.appName}";
 
 const FAILURE_HINT = [
   "Replace the <Sidebar.Header> in your app sidebar with the team switcher.",
@@ -70,8 +77,13 @@ const NOT_FOUND_HINT = [
   NEW_HEADER,
 ].join("\n");
 
-function updateAppSidebarScript(source: string): string {
+function updateAppSidebarScript(source: string, legacyName: boolean): string {
   const { source: out } = withInMemoryScript(source, (sf) => {
+    if (!legacyName) {
+      ensureImports(sf, [
+        { namedImports: ["site"], moduleSpecifier: "$lib/site" },
+      ]);
+    }
     ensureImports(sf, [
       {
         defaultImport: "favicon",
@@ -152,8 +164,12 @@ export function modifyAppSidebar(appSidebarPath: string): ModifyOutcome {
     return { status: "failed", message: FAILURE_HINT };
   }
 
-  file.modifyScript(updateAppSidebarScript);
-  file.replaceElement("Sidebar.Header", NEW_HEADER);
+  const legacyName = file.toString().includes(LEGACY_NAME);
+  file.modifyScript((source) => updateAppSidebarScript(source, legacyName));
+  file.replaceElement(
+    "Sidebar.Header",
+    legacyName ? NEW_HEADER.replace("{site.name}", LEGACY_NAME) : NEW_HEADER,
+  );
   file.writeTo(appSidebarPath);
   return { status: "success", changed: file.hasChanged() };
 }

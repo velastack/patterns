@@ -2,7 +2,7 @@ import { loadFlash } from "sveltekit-flash-message/server";
 
 export const load = loadFlash(async ({ locals }) => {
   return {
-    meta: locals.meta,
+    team: locals.team,
     user: locals.pb.authStore.record,
   };
 });

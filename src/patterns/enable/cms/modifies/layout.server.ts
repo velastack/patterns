@@ -157,7 +157,8 @@ export function modifyLayoutServer(
     }
   }
 
-  const returnIndex = body.getStatements().indexOf(returned);
+  // insertStatements counts comment lines, which getStatements() skips.
+  const returnIndex = body.getStatementsWithComments().indexOf(returned);
   body.insertStatements(
     returnIndex,
     `\n${cmsSnippet(eventName, locale.expression(eventName))}\n`,

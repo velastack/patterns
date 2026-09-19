@@ -2,44 +2,17 @@ import fs from "node:fs";
 import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
-import { languageFromPath } from "../../../core/util";
 import {
   modifyOutcomeToFile,
   revertOutcomeToFile,
 } from "../../../runtime/modify-file";
 import { toDeleteEntry } from "../../destroy/shared";
+import { ensureSiteFile } from "../../../runtime/site";
 import { unmodifyHooksServerBackend } from "./modifies/hooks.server";
 import { unmodifyLayoutServerMeta } from "./modifies/layout-server";
 import { unmodifySvelteConfig } from "../../enable/backend/modifies/svelte-config";
 import { unmodifyGitignore } from "../../enable/backend/modifies/gitignore";
 import { unmodifyTestSetup } from "../../enable/backend/modifies/test-setup";
-
-/** `src/lib/site.ts` as the static template ships it, named after the package. */
-function siteModule(root: string): string {
-  let name = "My App";
-  try {
-    const pkg = JSON.parse(
-      fs.readFileSync(path.join(root, "package.json"), "utf8"),
-    ) as { name?: string };
-    if (pkg.name) name = pkg.name;
-  } catch {
-    // No package.json to name the site after; the placeholder stands.
-  }
-  return [
-    "/**",
-    " * Site-wide metadata.",
-    " *",
-    " * Without a backend there is nothing to read this from at runtime, so this",
-    " * file is the source of truth. Set `url` to where the site is deployed:",
-    " * canonical links and Open Graph image URLs are built from it.",
-    " */",
-    "export const site = {",
-    `\tname: ${JSON.stringify(name)},`,
-    "\turl: 'http://localhost:5173'",
-    "};",
-    "",
-  ].join("\n");
-}
 
 /** Every server test under a directory; they need the PocketBase test context. */
 function serverTestFiles(dir: string): string[] {
@@ -96,15 +69,11 @@ export async function generate(options: Options) {
   );
   if (layoutServerFile) modifies.push(layoutServerFile);
 
-  const sitePath = path.join(options.root, "src", "lib", "site.ts");
-  if (layoutServerFile?.status === "success" && !fs.existsSync(sitePath)) {
-    logger.info("Creating src/lib/site.ts");
-    creates.push({
-      path: sitePath,
-      language: languageFromPath(sitePath),
-      content: siteModule(options.root),
-      status: "success",
-    });
+  // The converted layout reads `src/lib/site.ts`. Every template ships it; a
+  // project from before that gets one here, named as PocketBase knew it.
+  if (layoutServerFile?.status === "success") {
+    const siteFile = await ensureSiteFile(options);
+    if (siteFile) creates.push(siteFile);
   }
 
   // Server tests run against the PocketBase-backed test context that the

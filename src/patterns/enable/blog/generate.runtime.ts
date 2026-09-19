@@ -3,6 +3,7 @@ import fs from "node:fs";
 import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
+import { ensureSiteFile } from "../../../runtime/site";
 import { modifySvelteConfigMdsvex } from "./modifies/svelte.config";
 import { modifyRootLayoutSvelte } from "./modifies/root-layout-svelte";
 import { modifyPublicRootLayout } from "./modifies/public-root-layout-svelte";
@@ -46,8 +47,11 @@ export async function generate(options: Options) {
     ),
   );
 
+  // The RSS feed is titled and linked from `src/lib/site.ts`.
+  const siteFile = await ensureSiteFile(options);
+
   return {
-    creates: [],
+    creates: siteFile ? [siteFile] : [],
     modifies,
     deletes: [],
     components: [],

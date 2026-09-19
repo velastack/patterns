@@ -13,6 +13,7 @@ import {
   withPocketbase,
 } from "../../../runtime/pocketbase";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
+import { ensureSiteFile } from "../../../runtime/site";
 import { modifyAppLayoutSvelte } from "./modifies/modify-app-layout";
 import { modifyAppSidebar } from "./modifies/modify-app-sidebar";
 import { modifyLayoutServer } from "./modifies/+layout.server";
@@ -376,6 +377,10 @@ export async function generate(options: Options) {
     "nav-user.svelte",
   );
   pushResult(modifyOutcomeToFile(navUserPath, modifyNavUser(navUserPath)));
+
+  // The invite and join pages and the sidebar header show `site.name`.
+  const siteFile = await ensureSiteFile(options);
+  if (siteFile) creates.push(siteFile);
 
   return {
     creates,

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
+	import { site } from '$lib/site';
 
 	import { Button } from '$lib/components/ui/button';
 	import * as Card from '$lib/components/ui/card';
@@ -15,7 +16,7 @@
 			>
 				<img src={favicon} alt="logo" class="size-4" />
 			</div>
-			{data.meta.appName}
+			{site.name}
 		</a>
 
 		<div class="flex flex-col gap-6">

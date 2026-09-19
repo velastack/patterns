@@ -17,7 +17,7 @@
     <!-- [!code highlight:5] -->
     <AppSidebar
       user={data.user}
-      meta={data.meta}
+     
       subscription={data.subscription}
     />
     <Sidebar.Inset>

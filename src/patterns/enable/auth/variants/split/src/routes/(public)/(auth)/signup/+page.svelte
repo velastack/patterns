@@ -1,5 +1,6 @@
 <script lang="ts">
   import favicon from "$lib/assets/favicon.svg";
+  import { site } from "$lib/site";
 
   import { untrack } from "svelte";
   import { Button } from "$lib/components/ui/button";
@@ -57,7 +58,7 @@
         >
           <img src={favicon} alt="logo" class="size-4" />
         </div>
-        {data.meta.appName}
+        {site.name}
       </a>
     </div>
     <div class="flex flex-1 items-center justify-center">

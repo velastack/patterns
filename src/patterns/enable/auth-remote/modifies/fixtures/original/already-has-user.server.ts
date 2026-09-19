@@ -1,4 +1,4 @@
 export const load = (event) => ({
   user: "existing",
-  meta: 1,
+  title: 1,
 });

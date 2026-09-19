@@ -5,7 +5,7 @@ import type { ModifyOutcome } from "../../../../core/types";
 const FAILURE_HINT = [
   "Pass the subscription prop to <AppSidebar> in src/routes/(app)/+layout.svelte:",
   "",
-  "<AppSidebar user={data.user} meta={data.meta} subscription={data.subscription} />",
+  "<AppSidebar user={data.user} subscription={data.subscription} />",
 ].join("\n");
 
 const NOT_FOUND_HINT = [

@@ -1,12 +1,11 @@
 <script lang="ts">
   import favicon from "$lib/assets/favicon.svg";
+  import { site } from "$lib/site";
 
   import { Button } from "$lib/components/ui/button";
   import * as Card from "$lib/components/ui/card";
   import { Input } from "$lib/components/ui/input";
   import { otpForm } from "./form.remote";
-
-  let { data } = $props();
 </script>
 
 <div class="flex flex-col flex-1 items-center justify-center gap-6 p-6 md:p-10">
@@ -17,7 +16,7 @@
       >
         <img src={favicon} alt="logo" class="size-4" />
       </div>
-      {data.meta.appName}
+      {site.name}
     </a>
 
     <div class="flex flex-col gap-6">

@@ -21,6 +21,7 @@
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { teamSchema } from '$lib/schemas/team';
+	import { page } from '$app/state';
 
 	let { data, children } = $props();
 
@@ -48,7 +49,8 @@
 	}
 
 	function handleCopyLink(inviteStr: string) {
-		const link = `${data.meta.appURL}/${inviteStr}`;
+		// The address this admin is on, so a link copied from staging joins staging.
+		const link = `${page.url.origin}/${inviteStr}`;
 		navigator.clipboard.writeText(link);
 		toast.success('Link copied to clipboard');
 	}
@@ -291,7 +293,7 @@
 					<div class="text-sm text-muted-foreground">
 						{#if data.inviteLink}
 							<div class="text-sm text-muted-foreground">
-								{data.meta.appURL}/join/{data.inviteLink.id}
+								{page.url.origin}/join/{data.inviteLink.id}
 							</div>
 						{/if}
 					</div>

@@ -9,7 +9,6 @@
 	<Sidebar.Provider>
 		<AppSidebar
 			user={data.user}
-			meta={data.meta}
 		/>
 		<Sidebar.Inset>
 			{@render children?.()}

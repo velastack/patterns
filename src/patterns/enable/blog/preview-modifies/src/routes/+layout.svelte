@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { site } from '$lib/site';
 	import '../app.css';
 	// [!code highlight:1]
 	import '../css/prism-vsc-dark-plus.css';
@@ -27,7 +28,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.meta.appName}</title>
+	<title>{site.name}</title>
 </svelte:head>
 
 <MetaTags {...metaTags} />

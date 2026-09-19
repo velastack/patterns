@@ -302,6 +302,119 @@ export function ensureBlankLineAfterImports(sf: SourceFile): void {
   sf.insertText(last.getEnd(), "\n");
 }
 
+/** A component's `let { ... } = $props()` declaration, if it destructures. */
+function propsDeclaration(sf: SourceFile) {
+  return sf
+    .getVariableDeclarations()
+    .find(
+      (decl) =>
+        decl.getInitializer()?.getText() === "$props()" &&
+        Node.isObjectBindingPattern(decl.getNameNode()),
+    );
+}
+
+/** The `{ ... }` of a component's `let { ... } = $props()`, if it has one. */
+function propsBinding(sf: SourceFile) {
+  return propsDeclaration(sf)
+    ?.getNameNode()
+    .asKind(SyntaxKind.ObjectBindingPattern);
+}
+
+/**
+ * Make sure a Svelte component's `$props()` destructures `name`, for markup a
+ * modifier inserts that reads it. Adds a `$props()` declaration when the
+ * component has none.
+ */
+export function ensurePropsBinding(sf: SourceFile, name: string): void {
+  const binding = propsBinding(sf);
+  if (!binding) {
+    sf.addStatements(`let { ${name} } = $props();`);
+    return;
+  }
+  const elements = binding.getElements();
+  if (elements.some((e) => e.getName() === name)) return;
+  const texts = elements.map((e) => e.getText());
+  const rest = elements.findIndex((e) => e.getDotDotDotToken());
+  texts.splice(rest === -1 ? texts.length : rest, 0, name);
+  binding.replaceWithText(`{ ${texts.join(", ")} }`);
+}
+
+/**
+ * Drop `name` from a Svelte component's `$props()` once neither the script
+ * nor `markup` reads it, undoing `ensurePropsBinding`. The declaration stays
+ * even when it empties, as `let {} = $props()` is harmless.
+ */
+export function removePropsBindingIfUnused(
+  sf: SourceFile,
+  name: string,
+  markup: string,
+): void {
+  // Only expressions read it: `{data.user}`, `{data}`, `x={data.y}`. A bare
+  // word match would also catch `data-role` attributes and body text.
+  const reads = new RegExp(`(?<![\\w$.])${name}(?![\\w$])`);
+  const expressions =
+    markup.replace(/<style[\s\S]*?<\/style>/g, "").match(/\{[^{}]*\}/g) ?? [];
+  if (expressions.some((expression) => reads.test(expression))) return;
+  const decl = propsDeclaration(sf);
+  const binding = propsBinding(sf);
+  const element = binding
+    ?.getElements()
+    .find((e) => e.getName() === name && !e.getPropertyNameNode());
+  if (!decl || !binding || !element) return;
+  // Outside the declaration itself, whose type may name the prop too.
+  const usedInScript = sf
+    .getDescendantsOfKind(SyntaxKind.Identifier)
+    .some(
+      (id) =>
+        id.getText() === name && !decl.containsRange(id.getPos(), id.getEnd()),
+    );
+  if (usedInScript) return;
+  const kept = binding
+    .getElements()
+    .filter((e) => e !== element)
+    .map((e) => e.getText());
+  binding.replaceWithText(`{ ${kept.join(", ")} }`);
+}
+
+/**
+ * Drop a destructured `name` (as in `({ locals, url })`) that nothing in the
+ * file reads any more, for reverting an edit that was its last use. A
+ * parameter left as a bare `{}` goes, as does a `const {} = ...` statement.
+ * Conservative: any other identifier spelled `name` keeps it.
+ */
+export function removeUnusedBindingElement(sf: SourceFile, name: string): void {
+  const element = sf
+    .getDescendantsOfKind(SyntaxKind.BindingElement)
+    .find(
+      (e) =>
+        e.getName() === name &&
+        !e.getPropertyNameNode() &&
+        !e.getDotDotDotToken(),
+    );
+  if (!element) return;
+  const nameNode = element.getNameNode();
+  const referenced = sf
+    .getDescendantsOfKind(SyntaxKind.Identifier)
+    .some((id) => id.getText() === name && id !== nameNode);
+  if (referenced) return;
+
+  const pattern = element.getParentIfKindOrThrow(
+    SyntaxKind.ObjectBindingPattern,
+  );
+  const kept = pattern
+    .getElements()
+    .filter((e) => e !== element)
+    .map((e) => e.getText());
+  const owner = pattern.getParent();
+  if (kept.length === 0 && Node.isParameterDeclaration(owner)) {
+    owner.remove();
+  } else if (kept.length === 0 && Node.isVariableDeclaration(owner)) {
+    owner.getVariableStatement()?.remove();
+  } else {
+    pattern.replaceWithText(`{ ${kept.join(", ")} }`);
+  }
+}
+
 /**
  * Remove a top-level function or variable declaration by name, if present.
  * In a statement that declares several variables only `name`'s declarator

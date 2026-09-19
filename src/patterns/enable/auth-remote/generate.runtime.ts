@@ -8,6 +8,7 @@ import {
   withPocketbase,
 } from "../../../runtime/pocketbase";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
+import { ensureSiteFile } from "../../../runtime/site";
 import { modifySvelteConfigRemote } from "../../../runtime/modify-svelte-config-remote";
 
 import { modifyLayoutServer } from "./modifies/+layout.server";
@@ -135,8 +136,11 @@ export async function generate(options: Options) {
   const remote = modifySvelteConfigRemote(options.root);
   pushResult(modifyOutcomeToFile(remote.filePath, remote.outcome));
 
+  // The auth pages and the app sidebar show `site.name`.
+  const siteFile = await ensureSiteFile(options);
+
   return {
-    creates: [],
+    creates: siteFile ? [siteFile] : [],
     modifies,
     deletes: [],
     components: [],

@@ -1,6 +1,6 @@
 export function load({ locals }) {
   return {
-    meta: locals.meta,
+    team: locals.team,
     user: locals.pb.authStore.record,
   };
 }

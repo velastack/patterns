@@ -1,4 +1,5 @@
 import { getBlogPosts } from "$lib/content";
+import { site } from "$lib/site";
 
 export const prerender = true;
 
@@ -11,15 +12,13 @@ function escapeXml(value: string) {
     .replace(/'/g, "&apos;");
 }
 
-export const GET = async ({ locals, url }) => {
-  const { appName } = locals.meta;
+export const GET = async () => {
   const posts = getBlogPosts();
-  // `url.origin`, not `locals.meta.appURL`: this feed is prerendered, and the
-  // origin comes from the build's own configuration rather than from whichever
-  // database the build could reach. Every `<link>` and `<guid>` below is
-  // permanent once published, so pointing them at a developer's localhost is
-  // not something a later deploy can take back.
-  const siteURL = url.origin.replace(/\/$/, "");
+  // `site.url`, not `url.origin`: this feed is prerendered, where the origin
+  // is SvelteKit's placeholder unless the build was told otherwise. Every
+  // `<link>` and `<guid>` below is permanent once published, so set `url` in
+  // `src/lib/site.ts` before the first deploy.
+  const siteURL = site.url.replace(/\/$/, "");
   const feedURL = `${siteURL}/blog/rss.xml`;
   const lastBuild = (
     posts[0]?.updatedDate ??
@@ -57,10 +56,10 @@ export const GET = async ({ locals, url }) => {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
 <channel>
-  <title>${escapeXml(appName)}</title>
+  <title>${escapeXml(site.name)}</title>
   <link>${escapeXml(`${siteURL}/blog`)}</link>
   <atom:link href="${escapeXml(feedURL)}" rel="self" type="application/rss+xml" />
-  <description>${escapeXml(`Latest posts from ${appName}.`)}</description>
+  <description>${escapeXml(`Latest posts from ${site.name}.`)}</description>
   <language>en</language>
   <lastBuildDate>${lastBuild}</lastBuildDate>
 ${items}

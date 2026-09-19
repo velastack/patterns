@@ -8,6 +8,7 @@ import {
   withPocketbase,
 } from "../../../runtime/pocketbase";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
+import { ensureSiteFile } from "../../../runtime/site";
 
 import { modifyLayoutServer } from "./modifies/+layout.server";
 import { modifyRootLayoutSvelte } from "./modifies/root-layout.svelte";
@@ -141,8 +142,11 @@ export async function generate(options: Options) {
     ),
   );
 
+  // The auth pages and the app sidebar show `site.name`.
+  const siteFile = await ensureSiteFile(options);
+
   return {
-    creates: [],
+    creates: siteFile ? [siteFile] : [],
     modifies,
     deletes: [],
     components: [],

@@ -1,5 +1,6 @@
 <script lang="ts">
   import favicon from "$lib/assets/favicon.svg";
+  import { site } from "$lib/site";
 
   import type { ComponentProps } from "svelte";
   import HomeIcon from "@lucide/svelte/icons/home";
@@ -19,10 +20,9 @@
 
   let {
     user,
-    meta,
     ref = $bindable(null),
     ...restProps
-  }: ComponentProps<typeof Sidebar.Root> & { user: any; meta: any } = $props();
+  }: ComponentProps<typeof Sidebar.Root> & { user: any } = $props();
 </script>
 
 <Sidebar.Root bind:ref variant="inset" {...restProps}>
@@ -38,7 +38,7 @@
                 <img src={favicon} alt="logo" class="size-6" />
               </div>
               <div class="grid flex-1 text-left text-sm leading-tight">
-                <span class="truncate font-medium">{meta.appName}</span>
+                <span class="truncate font-medium">{site.name}</span>
               </div>
             </a>
           {/snippet}

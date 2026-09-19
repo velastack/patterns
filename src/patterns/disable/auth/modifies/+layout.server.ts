@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { Project, SyntaxKind } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
+import { removeUnusedBindingElement } from "../../../../runtime/ts-morph-helpers";
 
 export function unmodifyLayoutServer(layoutPath: string): ModifyOutcome {
   if (!fs.existsSync(layoutPath)) {
@@ -30,6 +31,9 @@ export function unmodifyLayoutServer(layoutPath: string): ModifyOutcome {
       userProp.remove();
     }
   }
+  // `user` was often the layout's only use of `locals`, which enable-auth
+  // destructured for it.
+  removeUnusedBindingElement(sourceFile, "locals");
 
   sourceFile.formatText();
   sourceFile.saveSync();

@@ -9,7 +9,7 @@
 	<Sidebar.Provider>
 		<AppSidebar
 			user={data.user}
-			meta={data.meta} team={data.team} teams={data.teams ?? []}
+			team={data.team} teams={data.teams ?? []}
 		/>
 		<Sidebar.Inset>
 			{@render children?.()}

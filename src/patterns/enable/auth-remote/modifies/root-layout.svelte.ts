@@ -3,6 +3,7 @@ import dedent from "dedent";
 import { SvelteFile } from "../../../../runtime/svelte-file";
 import {
   ensureImports,
+  ensurePropsBinding,
   withInMemoryScript,
 } from "../../../../runtime/ts-morph-helpers";
 import type { ModifyOutcome } from "../../../../core/types";
@@ -108,6 +109,8 @@ export function modifyRootLayoutSvelte(layoutPath: string): ModifyOutcome {
           moduleSpecifier: "$lib/components/ui/avatar",
         },
       ]);
+      // The menu reads `data.user`; the template's layout takes no props.
+      ensurePropsBinding(sf, "data");
     });
     return out;
   });

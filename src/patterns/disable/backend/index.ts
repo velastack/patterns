@@ -48,7 +48,7 @@ export default {
   plan: "open",
   title: "Disable Backend",
   summary:
-    "Removes the PocketBase backend: deletes data/ (the local database, fixtures, hooks and seeds), the background workflows (which run on PocketBase, uninstalling their packages) and every server.test.ts, takes the backend out of hooks.server.ts, switches the SvelteKit adapter back to static with SPA fallback, and reverts test/setup.ts and .gitignore. Leaves @velastack/pocketbase and pocketbase-sveltekit installed; uninstall manually.",
+    "Removes the PocketBase backend: deletes data/ (the local database, fixtures, hooks and seeds), the background workflows (which run on PocketBase, uninstalling their packages) and every server.test.ts, takes the backend out of hooks.server.ts, switches the SvelteKit adapter back to static with SPA fallback, and reverts test/setup.ts and .gitignore. An older root layout that read the app name from PocketBase is pointed at src/lib/site.ts. Leaves @velastack/pocketbase and pocketbase-sveltekit installed; uninstall manually.",
   requires: {
     auth: false,
     api: false,

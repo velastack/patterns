@@ -3,10 +3,13 @@ import { describe, expect, it } from "vitest";
 import {
   ensureBlankLineAfterImports,
   ensureNamedImport,
+  ensurePropsBinding,
   isEffectivelyEmpty,
   pruneUnusedImports,
   removeAttachedComments,
   removeNamedImportIfUnused,
+  removePropsBindingIfUnused,
+  removeUnusedBindingElement,
   removeStatementWithComments,
   removeTopLevelStatementByIdentifier,
   withInMemoryScript,
@@ -287,5 +290,113 @@ describe("isEffectivelyEmpty", () => {
   it("is false once there is a statement", () => {
     expect(empty("import 'a';\n")).toBe(false);
     expect(empty("export {};\n")).toBe(false);
+  });
+});
+
+describe("ensurePropsBinding", () => {
+  it("adds the name to a typed destructuring, keeping the type", () => {
+    const { source } = withInMemoryScript(
+      "let { children }: { children?: Snippet; data?: any } = $props();\n",
+      (sf) => ensurePropsBinding(sf, "data"),
+    );
+    expect(source).toContain(
+      "let { children, data }: { children?: Snippet; data?: any } = $props();",
+    );
+  });
+
+  it("inserts ahead of a rest element and leaves an existing name alone", () => {
+    const { source } = withInMemoryScript(
+      "let { children, ...rest } = $props();\n",
+      (sf) => {
+        ensurePropsBinding(sf, "data");
+        ensurePropsBinding(sf, "data");
+      },
+    );
+    expect(source).toContain("let { children, data, ...rest } = $props();");
+  });
+
+  it("declares $props() when the component has none", () => {
+    const { source } = withInMemoryScript("import x from 'x';\n", (sf) =>
+      ensurePropsBinding(sf, "data"),
+    );
+    expect(source).toContain("let { data } = $props();");
+  });
+});
+
+describe("removePropsBindingIfUnused", () => {
+  const typed =
+    "let { children, data }: { children?: Snippet; data?: any } = $props();\n";
+
+  it("removes a binding nothing reads", () => {
+    const { source } = withInMemoryScript(typed, (sf) =>
+      removePropsBindingIfUnused(sf, "data", "{@render children?.()}"),
+    );
+    expect(source).toContain(
+      "let { children }: { children?: Snippet; data?: any } = $props();",
+    );
+  });
+
+  it("keeps a binding the markup reads", () => {
+    const { source } = withInMemoryScript(typed, (sf) =>
+      removePropsBindingIfUnused(sf, "data", "<p>{data.meta.appName}</p>"),
+    );
+    expect(source).toBe(typed);
+  });
+
+  it("is not fooled by data-* attributes or text", () => {
+    const { source } = withInMemoryScript(typed, (sf) =>
+      removePropsBindingIfUnused(
+        sf,
+        "data",
+        `<section data-role="content">Your data</section>\n<style>[data-role] {}</style>`,
+      ),
+    );
+    expect(source).toContain("let { children }:");
+  });
+
+  it("keeps a binding the script reads", () => {
+    const script = typed + "const user = $derived(data.user);\n";
+    const { source } = withInMemoryScript(script, (sf) =>
+      removePropsBindingIfUnused(sf, "data", ""),
+    );
+    expect(source).toBe(script);
+  });
+});
+
+describe("removeUnusedBindingElement", () => {
+  it("drops an unused name from a parameter's destructuring", () => {
+    const { source } = withInMemoryScript(
+      dedent`
+        export const load = loadFlash(async ({ locals, url }) => {
+          return { canonical: url.href };
+        });
+      `,
+      (sf) => removeUnusedBindingElement(sf, "locals"),
+    );
+    expect(source).toContain("async ({ url }) =>");
+  });
+
+  it("drops a parameter left empty", () => {
+    const { source } = withInMemoryScript(
+      dedent`
+        export function load({ locals }) {
+          return {};
+        }
+      `,
+      (sf) => removeUnusedBindingElement(sf, "locals"),
+    );
+    expect(source).toContain("export function load() {");
+  });
+
+  it("keeps a name still in use", () => {
+    const input = dedent`
+      export const load = async ({ locals }) => {
+        return { team: locals.team };
+      };
+    `;
+    const { source } = withInMemoryScript(input, (sf) =>
+      removeUnusedBindingElement(sf, "locals"),
+    );
+    expect(source).toBe(input);
   });
 });

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
+	import { site } from '$lib/site';
 
 	import type { ComponentProps } from 'svelte';
 	import HomeIcon from '@lucide/svelte/icons/home';
@@ -23,14 +24,12 @@
 
 	let {
 		user,
-		meta,
 		team,
 		teams = [],
 		ref = $bindable(null),
 		...restProps
 	}: ComponentProps<typeof Sidebar.Root> & {
 		user: any;
-		meta: any;
 		team?: string | undefined;
 		teams?: { id: string; name: string }[];
 	} = $props();
@@ -60,7 +59,7 @@
 							<img src={favicon} alt="logo" class="size-6" />
 						</div>
 						<div class="grid flex-1 text-left text-sm leading-tight">
-							<span class="truncate font-medium">{meta.appName}</span>
+							<span class="truncate font-medium">{site.name}</span>
 						</div>
 					{/if}
 					<ChevronsUpDownIcon class="ml-auto" />
