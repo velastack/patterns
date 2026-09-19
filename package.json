@@ -49,7 +49,7 @@
   },
   "peerDependencies": {
     "@velastack/kit": ">=0.1.0 <1.0.0",
-    "@velastack/pocketbase": "^0.2.0",
+    "@velastack/pocketbase": "^0.3.0",
     "@velastack/pocketbase-codegen": "^0.1.0",
     "cross-spawn": "^7.0.6",
     "magic-string": "^1.2.3",
@@ -97,7 +97,7 @@
     "@types/node": "^26.5.1",
     "@types/pluralize": "^0.0.33",
     "@velastack/kit": "^0.3.0",
-    "@velastack/pocketbase": "^0.2.0",
+    "@velastack/pocketbase": "^0.3.0",
     "@velastack/pocketbase-codegen": "^0.1.0",
     "change-case": "^5.4.4",
     "cross-spawn": "^7.0.6",
