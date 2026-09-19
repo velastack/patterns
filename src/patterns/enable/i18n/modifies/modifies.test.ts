@@ -116,6 +116,73 @@ describe("enable i18n modifiers", () => {
     expect(second).toBe(first);
   });
 
+  it("adds <LanguageSelect /> above the children of a plain layout", async () => {
+    const filePath = path.join(tempDir, "bare-layout.svelte");
+    const outcome = modifyRootLayoutLanguageSelect(filePath, "plain");
+
+    expect(outcome).toEqual({ status: "success", changed: true });
+    const expected = fs.readFileSync(
+      path.join(fixturesPath, "expect", "bare-layout.svelte"),
+      "utf8",
+    );
+    await expect(fs.readFileSync(filePath, "utf8")).toMatchFormatted(
+      expected,
+      "bare-layout.svelte",
+    );
+  });
+
+  it("is idempotent for a plain layout", () => {
+    const filePath = path.join(tempDir, "bare-layout.svelte");
+
+    modifyRootLayoutLanguageSelect(filePath, "plain");
+    const first = fs.readFileSync(filePath, "utf8");
+
+    const outcome = modifyRootLayoutLanguageSelect(filePath, "plain");
+    expect(outcome).toEqual({ status: "success", changed: false });
+    expect(fs.readFileSync(filePath, "utf8")).toBe(first);
+  });
+
+  it("reports failure for a plain layout that never renders its children", () => {
+    const filePath = path.join(tempDir, "bare-layout.svelte");
+    const original = fs
+      .readFileSync(filePath, "utf8")
+      .replace("{@render children()}", "<main></main>");
+    fs.writeFileSync(filePath, original);
+
+    const outcome = modifyRootLayoutLanguageSelect(filePath, "plain");
+
+    expect(outcome.status).toBe("failed");
+    if (outcome.status === "failed") {
+      expect(outcome.message).toContain("<LanguageSelect />");
+      expect(outcome.message).not.toContain("Navbar");
+    }
+    expect(fs.readFileSync(filePath, "utf8")).toBe(original);
+  });
+
+  it("reports failure for a plain layout without a <script>", () => {
+    const filePath = path.join(tempDir, "bare-layout.svelte");
+    const original = "{@render children()}\n";
+    fs.writeFileSync(filePath, original);
+
+    const outcome = modifyRootLayoutLanguageSelect(filePath, "plain");
+
+    expect(outcome.status).toBe("failed");
+    expect(fs.readFileSync(filePath, "utf8")).toBe(original);
+  });
+
+  it("points a plain project without a layout at the plain markup", () => {
+    const outcome = modifyRootLayoutLanguageSelect(
+      path.join(tempDir, "missing.svelte"),
+      "plain",
+    );
+
+    expect(outcome.status).toBe("not-found");
+    if (outcome.status === "not-found") {
+      expect(outcome.message).toContain("<LanguageSelect />");
+      expect(outcome.message).not.toContain("Navbar");
+    }
+  });
+
   it("creates src/routes/+layout.ts when missing", async () => {
     const layoutPath = path.join(tempDir, "src", "routes", "+layout.ts");
     expect(fs.existsSync(layoutPath)).toBe(false);

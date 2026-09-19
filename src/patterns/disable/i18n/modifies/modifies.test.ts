@@ -135,4 +135,15 @@ describe("disable i18n modifiers", () => {
       "root-layout.svelte",
     );
   });
+
+  it("takes the language select out of a plain layout", () => {
+    const filePath = path.join(tempDir, "bare-layout.svelte");
+    const outcome = unmodifyRootLayoutLanguageSelect(filePath);
+
+    expect(outcome).toEqual({ status: "success", changed: true });
+    // Back to exactly what `sv create` wrote.
+    expect(fs.readFileSync(filePath, "utf8")).toBe(
+      expected("bare-layout.svelte"),
+    );
+  });
 });

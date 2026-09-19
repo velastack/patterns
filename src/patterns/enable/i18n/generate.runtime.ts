@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
+import { resolveUi } from "../../../core/field/ui";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
 import {
   probeFirstExisting,
@@ -59,13 +60,16 @@ export async function generate(options: Options) {
     path.join(options.root, "src", "routes", "(public)", "+layout.svelte"),
     path.join(options.root, "src", "routes", "+layout.svelte"),
   ];
+  const ui = resolveUi(options);
+  // With no layout at all, a plain project's not-found hint names the
+  // +layout.svelte it would have rather than vela's root-layout.svelte.
   const rootLayoutPath =
     rootLayoutCandidates.find((p) => fs.existsSync(p)) ??
-    rootLayoutCandidates[0];
+    (ui === "plain" ? rootLayoutCandidates[3] : rootLayoutCandidates[0]);
   pushResult(
     modifyOutcomeToFile(
       rootLayoutPath,
-      modifyRootLayoutLanguageSelect(rootLayoutPath),
+      modifyRootLayoutLanguageSelect(rootLayoutPath, ui),
     ),
   );
 

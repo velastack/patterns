@@ -186,6 +186,9 @@ export const enableCases: CaseSpec[] = [
   singleCase("enable-cms"),
   singleCase("enable-content-negotiation"),
   singleCase("enable-i18n"),
+  // `sv create` has no shadcn-svelte and no navbar: the language select is a
+  // native <select> above the root layout's children.
+  makeCase("enable-i18n-plain", "bare", [step("enable-i18n", { check: true })]),
   singleCase("enable-notifications"),
   singleCase("enable-teams"),
   singleCase("enable-workflows"),
@@ -226,6 +229,10 @@ export const disableCases: CaseSpec[] = [
   inverseCase("disable-backend"),
   inverseCase("disable-content-negotiation"),
   inverseCase("disable-i18n"),
+  makeCase("disable-i18n-plain", "bare", [
+    step("enable-i18n", { check: false }),
+    step("disable-i18n", { check: true }),
+  ]),
   inverseCase("disable-notifications"),
   inverseCase("disable-teams"),
   inverseCase("disable-payments"),

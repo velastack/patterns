@@ -1,5 +1,6 @@
 import type { Options, Result } from "../../../core/types";
-import { appRelativePath, languageFromPath } from "../../../core/util";
+import { composeCreates } from "../../../core/util";
+import { resolveUi } from "../../../core/field/ui";
 
 const createsRaw = import.meta.glob<string>("./creates/**", {
   query: "?raw",
@@ -7,26 +8,30 @@ const createsRaw = import.meta.glob<string>("./creates/**", {
   eager: true,
 });
 
+// A plain project gets a native <select> in place of the shadcn one, at the
+// same path, so the root layout import and disable-i18n cover both.
+const variantsRaw = import.meta.glob<string>("./variants/**", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
+
 const CREATES_PREFIX = "./creates/";
 
-export async function generate(_options: Options) {
-  const creates = Object.entries(createsRaw)
-    .map(([key, content]) => {
-      const path = appRelativePath(key, CREATES_PREFIX);
-      return {
-        path,
-        language: languageFromPath(path),
-        content,
-        status: "success" as const,
-      };
-    })
-    .sort((a, b) => a.path.localeCompare(b.path));
+export async function generate(options: Options) {
+  const ui = resolveUi(options);
+  const creates = composeCreates(
+    createsRaw,
+    CREATES_PREFIX,
+    variantsRaw,
+    ui === "plain" ? "plain" : undefined,
+  );
 
   return {
     creates,
     modifies: [],
     deletes: [],
-    components: ["select"],
+    components: ui === "plain" ? [] : ["select"],
     packages: ["wuchale@^0.26.3", "@wuchale/svelte@^0.21.1"],
     collections: [],
     collectionPatches: [],

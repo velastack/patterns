@@ -68,9 +68,10 @@ export interface Options {
    * - `destructive` (boolean): consent flag for destroy patterns to perform
    *   filesystem and collection deletions.
    * - `variant` (string): selects an alternate template under `variants/`.
-   * - `ui` (`"shadcn" | "plain"`): markup the form generators emit. `plain` is
-   *   native elements with no components or classes, for projects without
-   *   shadcn-svelte. Defaults to `features.ui`, then `shadcn`.
+   * - `ui` (`"shadcn" | "plain"`): markup the form generators and
+   *   enable-i18n's language select emit. `plain` is native elements with no
+   *   components or classes, for projects without shadcn-svelte. Defaults to
+   *   `features.ui`, then `shadcn`.
    * - `flash` (boolean): whether the project has `sveltekit-flash-message`
    *   wired up. When false, form actions report through superforms'
    *   `message()` instead. Defaults to true.
