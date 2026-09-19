@@ -1,8 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import dedent from "dedent";
-import { Project, QuoteKind, SyntaxKind } from "ts-morph";
+import { Project, QuoteKind } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
+import { addHandle } from "../../../../runtime/compose-handle";
+import { ensureNamedImport } from "../../../../runtime/ts-morph-helpers";
+
+const I18N_HANDLE = "handleWuchale";
 
 const FAILURE_HINT = dedent`
   Wrap your exported handle with the wuchale i18n handler:
@@ -58,22 +62,6 @@ export const HOOKS_SERVER_SNIPPET = dedent`
   export const handle = handleWuchale;
 `;
 
-function ensureNamedImport(
-  sourceFile: import("ts-morph").SourceFile,
-  moduleSpecifier: string,
-  name: string,
-) {
-  const existing = sourceFile
-    .getImportDeclarations()
-    .find((d) => d.getModuleSpecifierValue() === moduleSpecifier);
-  if (existing) {
-    const has = existing.getNamedImports().some((ni) => ni.getName() === name);
-    if (!has) existing.addNamedImport(name);
-    return;
-  }
-  sourceFile.addImportDeclaration({ namedImports: [name], moduleSpecifier });
-}
-
 function ensureNamespaceImport(
   sourceFile: import("ts-morph").SourceFile,
   moduleSpecifier: string,
@@ -109,19 +97,13 @@ export function modifyHooksServerI18n(hooksServerPath: string): ModifyOutcome {
   });
   const sourceFile = project.addSourceFileAtPath(hooksServerPath);
 
-  const handleDecl = sourceFile.getVariableDeclaration("handle");
-  if (!handleDecl) {
+  // Composed first: an unsupported handle leaves the file untouched.
+  const composed = addHandle(sourceFile, { expression: I18N_HANDLE });
+  if (composed.status === "unsupported" || !composed.statement) {
     return { status: "failed", message: FAILURE_HINT };
   }
+  const handleStmt = composed.statement;
 
-  const handleStmt = handleDecl.getFirstAncestorByKind(
-    SyntaxKind.VariableStatement,
-  );
-  if (!handleStmt?.hasExportKeyword()) {
-    return { status: "failed", message: FAILURE_HINT };
-  }
-
-  ensureNamedImport(sourceFile, "@sveltejs/kit/hooks", "sequence");
   ensureNamedImport(sourceFile, "wuchale/load-utils/server", "runWithLocale");
   ensureNamedImport(sourceFile, "wuchale/load-utils/server", "loadLocales");
   ensureNamedImport(sourceFile, "$locales/main.url", "getLocale");
@@ -133,17 +115,13 @@ export function modifyHooksServerI18n(hooksServerPath: string): ModifyOutcome {
   );
   ensureNamespaceImport(sourceFile, "$locales/js.loader.server.js", "js");
 
-  const statements = sourceFile.getStatements();
-  const handleStmtIndex = statements.findIndex((s) => s === handleStmt);
-  const i18nHandleName = "handleWuchale";
-
   const startupSnippet = dedent`
     loadLocales(main.key, main.loadCount, main.loadCatalog, locales);
     loadLocales(js.key, js.loadCount, js.loadCatalog, locales);
   `;
 
   const i18nHandleSnippet = dedent`
-    const ${i18nHandleName} = async ({ event, resolve }: any) => {
+    const ${I18N_HANDLE} = async ({ event, resolve }: any) => {
       const locale = getLocale(event.url);
       return await runWithLocale(locale, () =>
         resolve(event, {
@@ -154,26 +132,13 @@ export function modifyHooksServerI18n(hooksServerPath: string): ModifyOutcome {
     };
   `;
 
-  if (handleStmtIndex >= 0) {
-    sourceFile.insertStatements(
-      handleStmtIndex,
-      `\n${startupSnippet}\n\n${i18nHandleSnippet}\n`,
-    );
-  } else {
-    sourceFile.addStatements(`\n${startupSnippet}\n\n${i18nHandleSnippet}\n`);
-  }
+  // Above the handle and its JSDoc, so `handleWuchale` is declared before
+  // the handle reads it.
+  sourceFile.insertText(
+    handleStmt.getStart(true),
+    `${startupSnippet}\n\n${i18nHandleSnippet}\n\n`,
+  );
 
-  const init = handleDecl.getInitializer();
-  if (!init) {
-    return { status: "failed", message: FAILURE_HINT };
-  }
-
-  const initText = init.getText();
-  if (initText.includes(i18nHandleName) || initText.includes("runWithLocale")) {
-    return { status: "success", changed: false };
-  }
-
-  handleDecl.setInitializer(`sequence(${i18nHandleName}, ${initText})`);
   sourceFile.formatText();
   sourceFile.saveSync();
   return { status: "success", changed: true };

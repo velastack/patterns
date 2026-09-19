@@ -3,8 +3,12 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "node:fs";
 import prettier from "prettier";
+import dedent from "dedent";
 
-import { HOOKS_SERVER_SNIPPET } from "../../../enable/i18n/modifies/hooks.server";
+import {
+  HOOKS_SERVER_SNIPPET,
+  modifyHooksServerI18n,
+} from "../../../enable/i18n/modifies/hooks.server";
 import { unmodifyViteConfig } from "./vite-config";
 import { unmodifySvelteConfig } from "./svelte-config";
 import { unmodifyHooksServerI18n } from "./hooks.server";
@@ -73,6 +77,61 @@ describe("disable i18n modifiers", () => {
 
     expect(outcome).toEqual({ status: "success", changed: false });
     expect(fs.readFileSync(filePath, "utf8")).toBe(first);
+  });
+
+  // enable-i18n then disable-i18n, on the shapes enable composes with.
+  it.each([
+    [
+      "a handle written as a function",
+      dedent`
+        /** Tags every response with the app version. */
+        export async function handle({ event, resolve }) {
+          return resolve(event);
+        }
+      `,
+    ],
+    [
+      "a file with an init and no handle",
+      dedent`
+        import type { ServerInit } from '@sveltejs/kit';
+
+        export const init: ServerInit = () => {};
+      `,
+    ],
+    [
+      "the static template",
+      dedent`
+        import { handleStatic } from '@velastack/kit';
+
+        /**
+         * The footer links to pages that do not exist yet.
+         */
+        export const handle = handleStatic();
+      `,
+    ],
+  ])("round-trips %s", async (_label, source) => {
+    const filePath = path.join(tempDir, "hooks.roundtrip.ts");
+    fs.writeFileSync(filePath, source + "\n");
+
+    expect(modifyHooksServerI18n(filePath).status).toBe("success");
+    expect(unmodifyHooksServerI18n(filePath)).toEqual({
+      status: "success",
+      changed: true,
+    });
+
+    await expect(fs.readFileSync(filePath, "utf8")).toMatchFormatted(
+      source,
+      "hooks.server.ts",
+    );
+  });
+
+  it("reports failure and leaves a handle it cannot unwrap", () => {
+    const filePath = path.join(tempDir, "hooks.wrapped.ts");
+    const original = `const handleWuchale = () => {};\n\nexport const handle = dev ? handleWuchale : handleProd;\n`;
+    fs.writeFileSync(filePath, original);
+
+    expect(unmodifyHooksServerI18n(filePath).status).toBe("failed");
+    expect(fs.readFileSync(filePath, "utf8")).toBe(original);
   });
 
   // However the project's prettier config reshaped it.

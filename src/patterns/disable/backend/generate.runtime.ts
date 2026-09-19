@@ -3,8 +3,12 @@ import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
 import { languageFromPath } from "../../../core/util";
-import { modifyOutcomeToFile } from "../../../runtime/modify-file";
+import {
+  modifyOutcomeToFile,
+  revertOutcomeToFile,
+} from "../../../runtime/modify-file";
 import { toDeleteEntry } from "../../destroy/shared";
+import { unmodifyHooksServerBackend } from "./modifies/hooks.server";
 import { unmodifyLayoutServerMeta } from "./modifies/layout-server";
 import { unmodifySvelteConfig } from "../../enable/backend/modifies/svelte-config";
 import { unmodifyGitignore } from "../../enable/backend/modifies/gitignore";
@@ -59,6 +63,17 @@ export async function generate(options: Options) {
   const revert = unmodifySvelteConfig(options.root);
   const svelteConfigFile = modifyOutcomeToFile(revert.filePath, revert.outcome);
   if (svelteConfigFile) modifies.push(svelteConfigFile);
+
+  // Only the backend's handle and worker come out; handles other patterns
+  // composed in stay. The file goes when nothing else was in it.
+  logger.info("Reverting hooks.server.ts");
+  const hooksServerPath = path.join(options.root, "src", "hooks.server.ts");
+  const hooksServerRevert = revertOutcomeToFile(
+    hooksServerPath,
+    unmodifyHooksServerBackend(hooksServerPath),
+  );
+  if (hooksServerRevert.modify) modifies.push(hooksServerRevert.modify);
+  if (hooksServerRevert.delete) deletes.push(hooksServerRevert.delete);
 
   logger.info("Reverting .gitignore");
   const gitignorePath = path.join(options.root, ".gitignore");

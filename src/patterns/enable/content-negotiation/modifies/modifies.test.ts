@@ -48,6 +48,29 @@ describe("enable content-negotiation modifiers", () => {
     await expect(modified).toMatchFormatted(expected, "hooks.server.ts");
   });
 
+  it("moves a handle written as a function aside to compose it", async () => {
+    const filePath = path.join(tempDir, "hooks.server.function.ts");
+    modifyHooksServerNegotiate(filePath);
+
+    const modified = fs.readFileSync(filePath, "utf8");
+    const expected = fs.readFileSync(
+      path.join(fixturesPath, "expect", "hooks.server.function.ts"),
+      "utf8",
+    );
+    await expect(modified).toMatchFormatted(expected, "hooks.server.ts");
+  });
+
+  it("refuses a re-exported handle and leaves the file as it was", () => {
+    const filePath = path.join(tempDir, "hooks.server.reexport.ts");
+    const original = `export { handle } from './other';\n`;
+    fs.writeFileSync(filePath, original);
+
+    const outcome = modifyHooksServerNegotiate(filePath);
+
+    expect(outcome.status).toBe("failed");
+    expect(fs.readFileSync(filePath, "utf8")).toBe(original);
+  });
+
   it("is idempotent for hooks.server.ts", () => {
     const filePath = path.join(tempDir, "hooks.server.ts");
     modifyHooksServerNegotiate(filePath);

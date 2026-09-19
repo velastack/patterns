@@ -1,6 +1,19 @@
 import fs from "node:fs";
-import { Project, QuoteKind, SyntaxKind, type SourceFile } from "ts-morph";
+import dedent from "dedent";
+import { Project, QuoteKind, type SourceFile } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
+import { removeHandle } from "../../../../runtime/compose-handle";
+import {
+  ensureBlankLineAfterImports,
+  removeNamedImportIfUnused,
+} from "../../../../runtime/ts-morph-helpers";
+
+const FAILURE_HINT = dedent`
+  Take handleNegotiate out of the exported handle in src/hooks.server.ts, then
+  remove its import:
+
+  import { handle as handleNegotiate } from '$lib/negotiate';
+`;
 
 function removeNegotiateImport(sourceFile: SourceFile): boolean {
   const decl = sourceFile
@@ -25,37 +38,11 @@ function removeNegotiateImport(sourceFile: SourceFile): boolean {
   return true;
 }
 
-function removeSequenceImportIfUnused(sourceFile: SourceFile): void {
-  const decl = sourceFile
-    .getImportDeclarations()
-    .find((d) => d.getModuleSpecifierValue() === "@sveltejs/kit/hooks");
-  if (!decl) return;
-
-  const stillReferenced = sourceFile
-    .getDescendantsOfKind(SyntaxKind.Identifier)
-    .some((id) => {
-      if (id.getText() !== "sequence") return false;
-      const parent = id.getParent();
-      const kind = parent?.getKind();
-      return (
-        kind !== SyntaxKind.ImportSpecifier && kind !== SyntaxKind.ImportClause
-      );
-    });
-
-  if (stillReferenced) return;
-
-  const named = decl
-    .getNamedImports()
-    .find((ni) => ni.getName() === "sequence");
-  if (!named) return;
-
-  if (decl.getNamedImports().length === 1 && !decl.getDefaultImport()) {
-    decl.remove();
-  } else {
-    named.remove();
-  }
-}
-
+/**
+ * Undo `modifyHooksServerNegotiate`: take `handleNegotiate` out of the
+ * exported handle and drop its import. A file that held nothing else comes
+ * out empty, for the caller to delete.
+ */
 export function unmodifyHooksServerNegotiate(
   hooksServerPath: string,
 ): ModifyOutcome {
@@ -74,38 +61,14 @@ export function unmodifyHooksServerNegotiate(
   });
   const sourceFile = project.addSourceFileAtPath(hooksServerPath);
 
-  const handleDecl = sourceFile.getVariableDeclaration("handle");
-  if (!handleDecl) {
-    removeNegotiateImport(sourceFile);
-    removeSequenceImportIfUnused(sourceFile);
-    sourceFile.formatText();
-    sourceFile.saveSync();
-    return {
-      status: "success",
-      changed: sourceFile.getFullText() !== original,
-    };
+  const removed = removeHandle(sourceFile, "handleNegotiate");
+  if (removed.status === "unsupported") {
+    return { status: "failed", message: FAILURE_HINT };
   }
-
-  const init = handleDecl.getInitializer();
-  if (init?.getKind() === SyntaxKind.CallExpression) {
-    const call = init.asKindOrThrow(SyntaxKind.CallExpression);
-    if (call.getExpression().getText() === "sequence") {
-      const args = call.getArguments();
-      const idx = args.findIndex((arg) => arg.getText() === "handleNegotiate");
-      if (idx >= 0) {
-        if (args.length === 2) {
-          const keepText = args[idx === 0 ? 1 : 0].getText();
-          handleDecl.setInitializer(keepText);
-        } else {
-          call.removeArgument(idx);
-        }
-      }
-    }
-  }
-
   removeNegotiateImport(sourceFile);
-  removeSequenceImportIfUnused(sourceFile);
+  removeNamedImportIfUnused(sourceFile, "@sveltejs/kit/hooks", "sequence");
   sourceFile.formatText();
+  ensureBlankLineAfterImports(sourceFile);
   sourceFile.saveSync();
 
   return {

@@ -17,19 +17,6 @@ import {
 import { modifyLayoutUniversal } from "./modifies/layout";
 import { modifyLayoutSvelte } from "./modifies/layout.svelte";
 
-/**
- * Drop any create that already exists on disk.
- *
- * `writeResult` overwrites an existing create whose content differs and
- * reports it as a modify, which for these files would mean a re-run silently
- * resetting a developer's edits to `$lib/cms.ts` or the backend config. The
- * wiring is theirs once it has been written; a re-run only fills in what is
- * missing.
- */
-export function keepMissing(creates: File[], root: string): File[] {
-  return creates.filter((file) => !fs.existsSync(path.join(root, file.path)));
-}
-
 /** The locale list from `wuchale.config.js`, or null when it cannot be read. */
 export function readWuchaleLocales(root: string): string[] | null {
   const configPath = path.join(root, "wuchale.config.js");

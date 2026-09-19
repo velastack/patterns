@@ -48,6 +48,43 @@ describe("disable content-negotiation modifiers", () => {
     await expect(modified).toMatchFormatted(expected, "hooks.server.ts");
   });
 
+  it("puts a handle that was moved aside back the way it was written", async () => {
+    const filePath = path.join(tempDir, "hooks.server.function.ts");
+    unmodifyHooksServerNegotiate(filePath);
+
+    await expect(fs.readFileSync(filePath, "utf8")).toMatchFormatted(
+      fs.readFileSync(
+        path.join(fixturesPath, "expect", "hooks.server.function.ts"),
+        "utf8",
+      ),
+      "hooks.server.ts",
+    );
+  });
+
+  it("empties hooks.server.ts when the negotiation handle was all it had", () => {
+    const filePath = path.join(tempDir, "hooks.server.negotiate-only.ts");
+    fs.writeFileSync(
+      filePath,
+      `import { handle as handleNegotiate } from '$lib/negotiate';\n\nexport const handle = handleNegotiate;\n`,
+    );
+
+    const outcome = unmodifyHooksServerNegotiate(filePath);
+
+    expect(outcome).toEqual({ status: "success", changed: true });
+    expect(fs.readFileSync(filePath, "utf8").trim()).toBe("");
+  });
+
+  it("reports failure and leaves the file when the handle is not recognised", () => {
+    const filePath = path.join(tempDir, "hooks.server.wrapped.ts");
+    const original = `import { handle as handleNegotiate } from '$lib/negotiate';\n\nexport const handle = dev ? handleNegotiate : handleProd;\n`;
+    fs.writeFileSync(filePath, original);
+
+    const outcome = unmodifyHooksServerNegotiate(filePath);
+
+    expect(outcome.status).toBe("failed");
+    expect(fs.readFileSync(filePath, "utf8")).toBe(original);
+  });
+
   it("is idempotent for hooks.server.ts", () => {
     const filePath = path.join(tempDir, "hooks.server.ts");
 

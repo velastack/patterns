@@ -356,6 +356,22 @@ export const stackCases: CaseSpec[] = [
     step("enable-backend", { check: true }),
     step("enable-auth", { check: true }),
   ]),
+  // The backend composes its handle into the hooks.server.ts i18n already
+  // wrote instead of overwriting the file, and disabling it takes only that
+  // handle back out. On `bare` because enable-i18n cannot merge into the
+  // static template's +layout.ts load.
+  makeCase("i18n-then-backend", "bare", [
+    step("enable-i18n"),
+    step("enable-backend", { check: true }),
+  ]),
+  makeCase("i18n-backend-roundtrip", "bare", [
+    step("enable-i18n"),
+    step("enable-backend"),
+    step("disable-backend", {
+      check: true,
+      expectFeatures: { backend: false, i18n: true },
+    }),
+  ]),
   makeCase("payments-lifecycle", "auth", [
     step("enable-payments"),
     step("enable-subscriptions", { check: true }),

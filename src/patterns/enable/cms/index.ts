@@ -19,8 +19,8 @@ export async function generate(options: Options) {
 
   // Runtime-only modules stay behind dynamic imports so the website's preview
   // bundle never pulls node:fs or ts-morph into SSR.
-  const { generate: generateRuntime, keepMissing } =
-    await import("./generate.runtime");
+  const { generate: generateRuntime } = await import("./generate.runtime");
+  const { keepMissing } = await import("../../../runtime/modify-file");
   const runtimeRes = await generateRuntime(options);
   const { writeResult } = await import("../../../runtime/write-result");
   return writeResult(

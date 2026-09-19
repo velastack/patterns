@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import dedent from "dedent";
-import { Project, QuoteKind, SyntaxKind, type SourceFile } from "ts-morph";
+import { Project, QuoteKind, type SourceFile } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
+import { addHandle } from "../../../../runtime/compose-handle";
 
 const FAILURE_HINT = dedent`
   Wrap your exported handle with the negotiation handler:
@@ -15,25 +16,10 @@ const FAILURE_HINT = dedent`
 const NOT_FOUND_HINT = dedent`
   Create src/hooks.server.ts with a negotiation handle:
 
-  export { handle } from '$lib/negotiate';
-`;
+  import { handle as handleNegotiate } from '$lib/negotiate';
 
-function ensureSequenceImport(sourceFile: SourceFile) {
-  const existing = sourceFile
-    .getImportDeclarations()
-    .find((d) => d.getModuleSpecifierValue() === "@sveltejs/kit/hooks");
-  if (existing) {
-    const has = existing
-      .getNamedImports()
-      .some((ni) => ni.getName() === "sequence");
-    if (!has) existing.addNamedImport("sequence");
-    return;
-  }
-  sourceFile.addImportDeclaration({
-    namedImports: ["sequence"],
-    moduleSpecifier: "@sveltejs/kit/hooks",
-  });
-}
+  export const handle = handleNegotiate;
+`;
 
 function ensureNegotiateHandleImport(sourceFile: SourceFile) {
   const existing = sourceFile
@@ -74,38 +60,16 @@ export function modifyHooksServerNegotiate(
   });
   const sourceFile = project.addSourceFileAtPath(hooksServerPath);
 
-  const handleDecl = sourceFile.getVariableDeclaration("handle");
-  if (!handleDecl) {
-    return { status: "failed", message: FAILURE_HINT };
-  }
-
-  const handleStmt = handleDecl.getFirstAncestorByKind(
-    SyntaxKind.VariableStatement,
-  );
-  if (!handleStmt?.hasExportKeyword()) {
-    return { status: "failed", message: FAILURE_HINT };
-  }
-
-  const init = handleDecl.getInitializer();
-  if (!init) {
+  const composed = addHandle(sourceFile, { expression: "handleNegotiate" });
+  if (composed.status === "unsupported") {
     return { status: "failed", message: FAILURE_HINT };
   }
 
   ensureNegotiateHandleImport(sourceFile);
-
-  if (init.getKind() === SyntaxKind.CallExpression) {
-    const call = init.asKindOrThrow(SyntaxKind.CallExpression);
-    if (call.getExpression().getText() === "sequence") {
-      call.insertArgument(0, "handleNegotiate");
-      sourceFile.formatText();
-      sourceFile.saveSync();
-      return { status: "success", changed: true };
-    }
-  }
-
-  ensureSequenceImport(sourceFile);
-  handleDecl.setInitializer(`sequence(handleNegotiate, ${init.getText()})`);
   sourceFile.formatText();
   sourceFile.saveSync();
-  return { status: "success", changed: true };
+  return {
+    status: "success",
+    changed: sourceFile.getFullText() !== original,
+  };
 }

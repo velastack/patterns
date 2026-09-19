@@ -1,6 +1,8 @@
 import fs from "node:fs";
+import dedent from "dedent";
 import { Project, QuoteKind, SyntaxKind } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
+import { removeHandle } from "../../../../runtime/compose-handle";
 import {
   ensureBlankLineAfterImports,
   removeImportByModuleSpecifier,
@@ -9,6 +11,12 @@ import {
 } from "../../../../runtime/ts-morph-helpers";
 
 const I18N_HANDLE = "handleWuchale";
+const FAILURE_HINT = dedent`
+  Take handleWuchale out of the exported handle in src/hooks.server.ts, then
+  remove its declaration, the loadLocales(...) calls and the wuchale and
+  $locales imports.
+`;
+
 const I18N_MODULES = [
   "wuchale/load-utils/server",
   "$locales/main.url",
@@ -53,24 +61,11 @@ export function unmodifyHooksServerI18n(
     stmt.remove();
   }
 
-  const handleDecl = sourceFile.getVariableDeclaration("handle");
-  const init = handleDecl?.getInitializer();
-  if (init?.getText() === I18N_HANDLE) {
-    // `export const handle = handleWuchale`: the i18n handle was the only one.
-    removeTopLevelStatementByIdentifier(sourceFile, "handle");
-  } else if (handleDecl && init?.getKind() === SyntaxKind.CallExpression) {
-    const call = init.asKindOrThrow(SyntaxKind.CallExpression);
-    if (call.getExpression().getText() === "sequence") {
-      const args = call.getArguments();
-      const index = args.findIndex((arg) => arg.getText() === I18N_HANDLE);
-      if (index >= 0) {
-        if (args.length === 2) {
-          handleDecl.setInitializer(args[index === 0 ? 1 : 0].getText());
-        } else {
-          call.removeArgument(index);
-        }
-      }
-    }
+  // `export const handle = handleWuchale` goes altogether; a sequence loses
+  // the argument, or unwraps to the handle it composed with.
+  const removed = removeHandle(sourceFile, I18N_HANDLE);
+  if (removed.status === "unsupported") {
+    return { status: "failed", message: FAILURE_HINT };
   }
 
   removeTopLevelStatementByIdentifier(sourceFile, I18N_HANDLE);

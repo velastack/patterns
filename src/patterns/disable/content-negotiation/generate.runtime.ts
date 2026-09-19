@@ -3,7 +3,10 @@ import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
 import { toDeleteEntry } from "../../destroy/shared";
 import { getLogger } from "../../../core/logger";
-import { modifyOutcomeToFile } from "../../../runtime/modify-file";
+import {
+  modifyOutcomeToFile,
+  revertOutcomeToFile,
+} from "../../../runtime/modify-file";
 import { unmodifyHooksServerNegotiate } from "./modifies/hooks.server";
 import { unmodifyHooksNegotiate } from "./modifies/hooks";
 import { unmodifyRootLayoutNegotiate } from "./modifies/root-layout.svelte";
@@ -18,12 +21,13 @@ export async function generate(options: Options) {
 
   logger.info("Reverting hooks.server.ts");
   const hooksServerPath = path.join(options.root, "src", "hooks.server.ts");
-  pushResult(
-    modifyOutcomeToFile(
-      hooksServerPath,
-      unmodifyHooksServerNegotiate(hooksServerPath),
-    ),
+  // Emptied once the negotiation handle was all it held, it goes.
+  const hooksServerRevert = revertOutcomeToFile(
+    hooksServerPath,
+    unmodifyHooksServerNegotiate(hooksServerPath),
   );
+  pushResult(hooksServerRevert.modify);
+  if (hooksServerRevert.delete) deletes.push(hooksServerRevert.delete);
 
   logger.info("Reverting hooks.ts");
   const hooksPath = path.join(options.root, "src", "hooks.ts");

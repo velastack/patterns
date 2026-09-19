@@ -243,18 +243,47 @@ describe("enable i18n modifiers", () => {
     expect(secondVite).toBe(firstVite);
   });
 
-  it("reports failure for hooks.server.ts when there is no exported handle", () => {
+  it("adds a handle to hooks.server.ts that has none", async () => {
     const filePath = path.join(tempDir, "hooks.server.no-handle.ts");
-    const original = fs.readFileSync(filePath, "utf8");
 
     const outcome = modifyHooksServerI18n(filePath);
-    const modified = fs.readFileSync(filePath, "utf8");
+
+    expect(outcome).toEqual({ status: "success", changed: true });
+    await expect(fs.readFileSync(filePath, "utf8")).toMatchFormatted(
+      fs.readFileSync(
+        path.join(fixturesPath, "expect", "hooks.server.no-handle.ts"),
+        "utf8",
+      ),
+      "hooks.server.ts",
+    );
+  });
+
+  it("moves a handle written as a function aside to compose it", async () => {
+    const filePath = path.join(tempDir, "hooks.server.function.ts");
+
+    modifyHooksServerI18n(filePath);
+
+    await expect(fs.readFileSync(filePath, "utf8")).toMatchFormatted(
+      fs.readFileSync(
+        path.join(fixturesPath, "expect", "hooks.server.function.ts"),
+        "utf8",
+      ),
+      "hooks.server.ts",
+    );
+  });
+
+  it("reports failure for a re-exported handle and leaves the file untouched", () => {
+    const filePath = path.join(tempDir, "hooks.server.reexport.ts");
+    const original = `export { handle } from './other';\n`;
+    fs.writeFileSync(filePath, original);
+
+    const outcome = modifyHooksServerI18n(filePath);
 
     expect(outcome.status).toBe("failed");
     if (outcome.status === "failed") {
-      expect(outcome.message).toContain("handle");
+      expect(outcome.message).toContain("handleWuchale");
     }
-    expect(modified).toBe(original);
+    expect(fs.readFileSync(filePath, "utf8")).toBe(original);
   });
 
   it("replaces a static lang attribute in app.html with the placeholder", () => {

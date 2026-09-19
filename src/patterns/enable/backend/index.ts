@@ -19,9 +19,17 @@ export async function generate(options: Options) {
 
   const { generate: generateRuntime } = await import("./generate.runtime");
   const runtimeRes = await generateRuntime(options);
+  // An existing hooks.server.ts is composed into by the runtime instead.
+  const { keepMissing } = await import("../../../runtime/modify-file");
   const { writeResult } = await import("../../../runtime/write-result");
   return writeResult(
-    await formatResult(mergeResults([baseRes, runtimeRes]), options),
+    await formatResult(
+      mergeResults([
+        { ...baseRes, creates: keepMissing(baseRes.creates, options.root) },
+        runtimeRes,
+      ]),
+      options,
+    ),
     options,
   );
 }

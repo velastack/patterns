@@ -1,10 +1,12 @@
 import {
+  Node,
   Project,
   QuoteKind,
   SyntaxKind,
   type ImportDeclarationStructure,
   type OptionalKind,
   type SourceFile,
+  type Statement,
   type StringLiteral,
 } from "ts-morph";
 
@@ -65,9 +67,26 @@ export function removeImportByModuleSpecifier(
 }
 
 /**
+ * Whether `local` is used anywhere other than the import that binds it.
+ * Conservative: a same-named property counts, which only ever keeps an import.
+ */
+export function isReferenced(sf: SourceFile, local: string): boolean {
+  return sf.getDescendantsOfKind(SyntaxKind.Identifier).some((id) => {
+    if (id.getText() !== local) return false;
+    const kind = id.getParent()?.getKind();
+    return (
+      kind !== SyntaxKind.ImportSpecifier &&
+      kind !== SyntaxKind.ImportClause &&
+      kind !== SyntaxKind.NamespaceImport
+    );
+  });
+}
+
+/**
  * Drop `name` from the import of `moduleSpecifier` once nothing else in the
  * file references it; the whole declaration goes when `name` was its only
- * import. For unwrapping `sequence(...)` and the like after a revert.
+ * import. For unwrapping `sequence(...)` and the like after a revert. An
+ * aliased import (`sequence as seq`) is checked by its local name.
  */
 export function removeNamedImportIfUnused(
   sf: SourceFile,
@@ -79,19 +98,11 @@ export function removeNamedImportIfUnused(
     .find((d) => d.getModuleSpecifierValue() === moduleSpecifier);
   if (!decl) return { wasRemoved: false };
 
-  const stillReferenced = sf
-    .getDescendantsOfKind(SyntaxKind.Identifier)
-    .some((id) => {
-      if (id.getText() !== name) return false;
-      const kind = id.getParent()?.getKind();
-      return (
-        kind !== SyntaxKind.ImportSpecifier && kind !== SyntaxKind.ImportClause
-      );
-    });
-  if (stillReferenced) return { wasRemoved: false };
-
   const named = decl.getNamedImports().find((ni) => ni.getName() === name);
   if (!named) return { wasRemoved: false };
+
+  const local = named.getAliasNode()?.getText() ?? name;
+  if (isReferenced(sf, local)) return { wasRemoved: false };
 
   if (decl.getNamedImports().length === 1 && !decl.getDefaultImport()) {
     decl.remove();
@@ -99,6 +110,180 @@ export function removeNamedImportIfUnused(
     named.remove();
   }
   return { wasRemoved: true };
+}
+
+/**
+ * Drop every binding imported from `moduleSpecifiers` that nothing references
+ * any more, and the declaration once it binds nothing. Side-effect imports
+ * (`import 'x'`) bind nothing to begin with and are left alone.
+ */
+export function pruneUnusedImports(
+  sf: SourceFile,
+  moduleSpecifiers: string[],
+): { removed: string[] } {
+  const removed: string[] = [];
+  for (const decl of sf.getImportDeclarations()) {
+    if (!moduleSpecifiers.includes(decl.getModuleSpecifierValue())) continue;
+    if (!decl.getImportClause()) continue;
+
+    for (const named of decl.getNamedImports()) {
+      const local = named.getAliasNode()?.getText() ?? named.getName();
+      if (isReferenced(sf, local)) continue;
+      named.remove();
+      removed.push(local);
+    }
+    const defaultImport = decl.getDefaultImport();
+    if (defaultImport && !isReferenced(sf, defaultImport.getText())) {
+      removed.push(defaultImport.getText());
+      decl.removeDefaultImport();
+    }
+    const namespaceImport = decl.getNamespaceImport();
+    if (namespaceImport && !isReferenced(sf, namespaceImport.getText())) {
+      removed.push(namespaceImport.getText());
+      decl.removeNamespaceImport();
+    }
+
+    if (
+      decl.getNamedImports().length === 0 &&
+      !decl.getDefaultImport() &&
+      !decl.getNamespaceImport()
+    ) {
+      decl.remove();
+    }
+  }
+  return { removed };
+}
+
+/**
+ * Import `name` from `moduleSpecifier`, joining an existing import of that
+ * module. A type-only name joins a value import as an inline `type`
+ * specifier; an `import type` declaration already covers it.
+ */
+export function ensureNamedImport(
+  sf: SourceFile,
+  moduleSpecifier: string,
+  name: string,
+  typeOnly = false,
+): void {
+  const existing = sf
+    .getImportDeclarations()
+    .find(
+      (d) =>
+        d.getModuleSpecifierValue() === moduleSpecifier &&
+        !d.getNamespaceImport() &&
+        (typeOnly || !d.isTypeOnly()),
+    );
+  if (!existing) {
+    sf.addImportDeclaration({
+      isTypeOnly: typeOnly,
+      namedImports: [name],
+      moduleSpecifier,
+    });
+    return;
+  }
+  if (existing.getNamedImports().some((ni) => ni.getName() === name)) return;
+  existing.addNamedImport(
+    typeOnly && !existing.isTypeOnly() ? { name, isTypeOnly: true } : name,
+  );
+}
+
+function isCommentNode(node: Node): boolean {
+  const kind = node.getKind();
+  return (
+    kind === SyntaxKind.SingleLineCommentTrivia ||
+    kind === SyntaxKind.MultiLineCommentTrivia
+  );
+}
+
+function newlines(text: string): number {
+  return (text.match(/\n/g) ?? []).length;
+}
+
+/**
+ * The comment lines directly above a top-level statement, up to the first
+ * blank line. ts-morph parses them as statements of their own; the JSDoc is
+ * not among them, it belongs to the statement.
+ */
+function commentsAbove(sf: SourceFile, statement: Statement): Statement[] {
+  const siblings = sf.getStatementsWithComments();
+  const text = sf.getFullText();
+  const comments: Statement[] = [];
+  let cursor = statement.getStart(true);
+  for (let i = siblings.indexOf(statement) - 1; i >= 0; i--) {
+    const node = siblings[i];
+    if (!isCommentNode(node)) break;
+    if (newlines(text.slice(node.getEnd(), cursor)) > 1) break;
+    comments.unshift(node);
+    cursor = node.getStart();
+  }
+  return comments;
+}
+
+/**
+ * Remove the JSDoc and comment lines directly above a top-level statement,
+ * leaving the statement. For a statement whose comment describes something
+ * that has just been swapped out.
+ */
+export function removeAttachedComments(
+  sf: SourceFile,
+  statement: Statement,
+): void {
+  const comments = commentsAbove(sf, statement);
+  const spacing = spacingAround(sf, comments[0] ?? statement);
+  if (Node.isJSDocable(statement)) {
+    for (const doc of statement.getJsDocs()) doc.remove();
+  }
+  for (const comment of comments.reverse()) comment.remove();
+  spacing.restore(statement);
+}
+
+/**
+ * Remove a top-level statement together with its JSDoc, the comment lines
+ * directly above it and a comment trailing its last line. ts-morph's own
+ * `remove()` leaves the comment lines behind as orphans.
+ */
+export function removeStatementWithComments(
+  sf: SourceFile,
+  statement: Statement,
+): void {
+  const comments = commentsAbove(sf, statement);
+  const siblings = sf.getStatementsWithComments();
+  const next = siblings[siblings.indexOf(statement) + 1];
+  const spacing = spacingAround(sf, comments[0] ?? statement);
+  statement.remove();
+  for (const comment of comments.reverse()) comment.remove();
+  if (next) spacing.restore(next);
+}
+
+/**
+ * ts-morph takes the blank line before a removed statement or comment with
+ * it. Note whether `first` (the start of what is about to go) was set off by
+ * one, so `restore` can put it back before whatever follows.
+ */
+function spacingAround(sf: SourceFile, first: Statement) {
+  const siblings = sf.getStatementsWithComments();
+  const prev = siblings[siblings.indexOf(first) - 1];
+  const setOff =
+    prev !== undefined &&
+    newlines(sf.getFullText().slice(prev.getEnd(), first.getStart(true))) > 1;
+  return {
+    restore(next: Statement) {
+      if (!setOff || !prev) return;
+      const gap = sf.getFullText().slice(prev.getEnd(), next.getStart(true));
+      if (newlines(gap) < 2) sf.insertText(prev.getEnd(), "\n");
+    },
+  };
+}
+
+/**
+ * True when the file has no statements left: only comments and whitespace,
+ * or nothing at all. A revert that empties a file it once created reports
+ * the file as a delete instead.
+ */
+export function isEffectivelyEmpty(sf: SourceFile): boolean {
+  return sf.compilerNode.statements.every(
+    (s) => s.kind === SyntaxKind.EmptyStatement,
+  );
 }
 
 /**
@@ -111,12 +296,17 @@ export function ensureBlankLineAfterImports(sf: SourceFile): void {
   const last = imports[imports.length - 1];
   const next = last?.getNextSibling();
   if (!last || !next) return;
-  const between = sf.getFullText().slice(last.getEnd(), next.getStart());
+  // Up to the next statement's JSDoc, whose own newlines are no blank line.
+  const between = sf.getFullText().slice(last.getEnd(), next.getStart(true));
   if ((between.match(/\n/g) ?? []).length >= 2) return;
   sf.insertText(last.getEnd(), "\n");
 }
 
-/** Remove a top-level function or variable declaration by name, if present. */
+/**
+ * Remove a top-level function or variable declaration by name, if present.
+ * In a statement that declares several variables only `name`'s declarator
+ * goes; the statement goes with its last one.
+ */
 export function removeTopLevelStatementByIdentifier(
   sf: SourceFile,
   name: string,
@@ -126,11 +316,12 @@ export function removeTopLevelStatementByIdentifier(
     fn.remove();
     return { wasRemoved: true };
   }
-  const vs = sf
+  const decl = sf
     .getVariableStatements()
-    .find((s) => s.getDeclarations().some((d) => d.getName() === name));
-  if (vs) {
-    vs.remove();
+    .flatMap((s) => s.getDeclarations())
+    .find((d) => d.getName() === name);
+  if (decl) {
+    decl.remove();
     return { wasRemoved: true };
   }
   return { wasRemoved: false };

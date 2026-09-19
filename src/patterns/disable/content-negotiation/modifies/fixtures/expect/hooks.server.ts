@@ -1,5 +1,6 @@
 import { env } from "$env/dynamic/private";
 import { handlePocketbase } from "@velastack/pocketbase";
+
 export const handle = handlePocketbase({
   pocketbaseUrl: env.POCKETBASE_URL,
   superuserEmail: env.POCKETBASE_SUPERUSER_EMAIL,

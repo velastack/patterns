@@ -33,10 +33,10 @@ export const KNOWN_FAILURES: KnownFailure[] = [
   {
     id: "bare-app-html-tabs",
     reason:
-      "`sv create` indents app.html with tabs and the bare baseline has no prettier config, so prettier's defaults reject it once enable-i18n sets its `lang` placeholder. Patterns format ts/js/svelte output but leave .html as written. The case applies enable-i18n in both suites, so the rule is scoped to it.",
+      "`sv create` indents app.html with tabs and the bare baseline has no prettier config, so prettier's defaults reject it once enable-i18n sets its `lang` placeholder. Patterns format ts/js/svelte output but leave .html as written. Every bare case that applies enable-i18n hits it, so the rule is scoped to them.",
     kind: "prettier",
     step: "enable-i18n",
-    case: /^(enable|disable)-i18n-plain$/,
+    case: /^((enable|disable)-i18n-plain|i18n-then-backend|i18n-backend-roundtrip)$/,
     match: /src\/app\.html/,
   },
 ];

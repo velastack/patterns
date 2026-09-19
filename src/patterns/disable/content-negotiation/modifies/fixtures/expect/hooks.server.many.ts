@@ -1,6 +1,7 @@
 import { sequence } from "@sveltejs/kit/hooks";
 import { env } from "$env/dynamic/private";
 import { handlePocketbase } from "@velastack/pocketbase";
+
 const handleFirst = async ({ event, resolve }) => resolve(event);
 
 export const handle = sequence(

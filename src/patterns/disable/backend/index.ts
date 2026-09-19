@@ -17,8 +17,18 @@ export async function generate(options: Options) {
 
   const { generate: generateRuntime } = await import("./generate.runtime");
   const runtimeRes = await generateRuntime(options);
+  // The runtime reverts hooks.server.ts instead of deleting it, so handles
+  // other patterns composed in survive; it reports a delete when nothing did.
   const merged = await formatResult(
-    mergeResults([baseRes, runtimeRes]),
+    mergeResults([
+      {
+        ...baseRes,
+        deletes: baseRes.deletes.filter(
+          (file) => file.path !== "src/hooks.server.ts",
+        ),
+      },
+      runtimeRes,
+    ]),
     options,
   );
 

@@ -3,7 +3,10 @@ import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
 import { languageFromPath } from "../../../core/util";
-import { modifyOutcomeToFile } from "../../../runtime/modify-file";
+import {
+  modifyOutcomeToFile,
+  revertOutcomeToFile,
+} from "../../../runtime/modify-file";
 import {
   probeFirstExisting,
   VITE_CONFIG_CANDIDATES,
@@ -39,17 +42,13 @@ export async function generate(options: Options) {
 
   logger.info("Reverting hooks.server.ts");
   const hooksServerPath = path.join(options.root, "src", "hooks.server.ts");
-  const hooksRevert = unmodifyHooksServerI18n(hooksServerPath);
-  if (
-    hooksRevert.status === "success" &&
-    hooksRevert.changed &&
-    fs.readFileSync(hooksServerPath, "utf8").trim() === ""
-  ) {
-    // enable-i18n created it; nothing else ever went in.
-    deletes.push(toDeleteEntry(hooksServerPath));
-  } else {
-    pushResult(modifyOutcomeToFile(hooksServerPath, hooksRevert));
-  }
+  // enable-i18n may have created it; emptied, it goes.
+  const hooksRevert = revertOutcomeToFile(
+    hooksServerPath,
+    unmodifyHooksServerI18n(hooksServerPath),
+  );
+  pushResult(hooksRevert.modify);
+  if (hooksRevert.delete) deletes.push(hooksRevert.delete);
 
   logger.info("Reverting app.html");
   const appHtmlPath = path.join(options.root, "src", "app.html");
