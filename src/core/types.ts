@@ -76,7 +76,8 @@ export interface Options {
    *   wired up. When false, form actions report through superforms'
    *   `message()` instead. Defaults to true.
    * - `serverTests` (boolean): whether the project has the `vela test:server`
-   *   harness. When false, no `server.test.ts` is generated. Defaults to true.
+   *   harness. When false, the form generators and enable-ai generate no
+   *   `server.test.ts`. Defaults to true.
    * - `provider` (string): for patterns that declare `providers`, the id of
    *   the one to generate. Falls back to `--provider <id>` in `argv`.
    * - `providerEnv` (Record<string, string>): values the CLI collected for
@@ -311,6 +312,11 @@ export interface ProviderEnvVar {
   placeholder?: string;
   /** Written to `.env` when the user supplies nothing. */
   default?: string;
+  /**
+   * An API key or other credential: the CLI prompts for it without echoing
+   * it back. Written to `.env` like any other value.
+   */
+  secret?: boolean;
 }
 
 /**

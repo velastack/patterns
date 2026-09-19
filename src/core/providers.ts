@@ -1,3 +1,4 @@
+import type { EnvEdit } from "../runtime/env";
 import { InvalidArgumentError } from "./errors";
 import type { File, Options, Pattern, Provider } from "./types";
 import { filesUnderPrefix } from "./util";
@@ -74,6 +75,40 @@ export function resolveProvider(
     );
   }
   return provider;
+}
+
+/**
+ * The `.env` lines for a provider: `# heading`, then one `KEY=value` per
+ * declared env var. `supplied` holds what the CLI collected; a blank value
+ * falls back to the provider's default, else an empty assignment the
+ * developer fills in later. Prompt placeholders are never written.
+ */
+export function providerEnvEdits(
+  provider: Provider,
+  heading: string,
+  supplied: Record<string, string> = {},
+): EnvEdit[] {
+  return [
+    { type: "comment", key: heading },
+    ...(provider.env ?? []).map((variable): EnvEdit => ({
+      type: "var",
+      key: variable.key,
+      value: supplied[variable.key]?.trim() || variable.default || "",
+    })),
+  ];
+}
+
+/** The string values of `input.providerEnv`, as the CLI collected them. */
+export function suppliedProviderEnv(
+  options: Pick<Options, "input">,
+): Record<string, string> {
+  const raw = options.input.providerEnv;
+  if (!raw || typeof raw !== "object") return {};
+  const values: Record<string, string> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (typeof value === "string") values[key] = value;
+  }
+  return values;
 }
 
 /**

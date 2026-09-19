@@ -1,6 +1,10 @@
 import type { Options, Package, Provider, Result } from "../../../core/types";
 import type { EnvEdit } from "../../../runtime/env";
-import { providerCreates, resolveProvider } from "../../../core/providers";
+import {
+  providerCreates,
+  providerEnvEdits,
+  resolveProvider,
+} from "../../../core/providers";
 
 /** Every provider ships the same component, so the root layout mounts one path. */
 export const COMPONENT_PATH = "src/lib/components/analytics/analytics.svelte";
@@ -59,24 +63,12 @@ const PACKAGES: Record<string, Package[]> = {
 /** What `resolveProvider` needs; `index.ts` spreads the rest of the metadata. */
 export const META = { slug: "enable-analytics", providers: PROVIDERS };
 
-/**
- * The `.env` lines for a provider: a comment naming it, then one `KEY=value`
- * per declared env var. `supplied` holds what the CLI collected; a blank
- * value falls back to the provider's default, else an empty assignment the
- * developer fills in later. Prompt placeholders are never written.
- */
+/** The `.env` lines for a provider, under a `# <Label> analytics` heading. */
 export function envEditsFor(
   provider: Provider,
   supplied: Record<string, string> = {},
 ): EnvEdit[] {
-  return [
-    { type: "comment", key: `${provider.label} analytics` },
-    ...(provider.env ?? []).map((variable): EnvEdit => ({
-      type: "var",
-      key: variable.key,
-      value: supplied[variable.key]?.trim() || variable.default || "",
-    })),
-  ];
+  return providerEnvEdits(provider, `${provider.label} analytics`, supplied);
 }
 
 const providersRaw = import.meta.glob<string>("./providers/**", {

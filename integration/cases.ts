@@ -158,6 +158,29 @@ export function inverseCase(slug: Slug): CaseSpec {
 
 export const enableCases: CaseSpec[] = [
   singleCase(
+    "enable-ai",
+    { input: { provider: "gateway" } },
+    "enable-ai-gateway",
+  ),
+  singleCase(
+    "enable-ai",
+    { input: { provider: "openai" } },
+    "enable-ai-openai",
+  ),
+  singleCase(
+    "enable-ai",
+    { input: { provider: "anthropic" } },
+    "enable-ai-anthropic",
+  ),
+  // `sv create`: no shadcn-svelte, no route groups and no test harness, so a
+  // native chat page lands at src/routes/ai and no server.test.ts is written.
+  makeCase("enable-ai-plain", "bare", [
+    step("enable-ai", {
+      input: { provider: "gateway", serverTests: false },
+      check: true,
+    }),
+  ]),
+  singleCase(
     "enable-analytics",
     { input: { provider: "plausible" } },
     "enable-analytics-plausible",
@@ -339,6 +362,11 @@ export const stackCases: CaseSpec[] = [
     step("enable-analytics", { input: { provider: "plausible" }, check: true }),
   ]),
   makeCase("auth-then-i18n", "auth", [step("enable-i18n", { check: true })]),
+  // With auth the demo page moves into (app) and /api/chat answers 401 to
+  // anonymous requests; the server tests cover both.
+  makeCase("auth-then-ai", "auth", [
+    step("enable-ai", { input: { provider: "anthropic" }, check: true }),
+  ]),
   makeCase("i18n-then-auth", "minimal", [
     step("enable-i18n"),
     step("enable-auth", { check: true }),

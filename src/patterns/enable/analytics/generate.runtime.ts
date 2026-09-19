@@ -1,21 +1,11 @@
 import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
-import { resolveProvider } from "../../../core/providers";
+import { resolveProvider, suppliedProviderEnv } from "../../../core/providers";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
 import { modifyEnv } from "../../../runtime/env";
 import { envEditsFor, META } from "./generate";
 import { modifyLayoutSvelte } from "./modifies/layout.svelte";
-
-function suppliedEnv(options: Options): Record<string, string> {
-  const raw = options.input.providerEnv;
-  if (!raw || typeof raw !== "object") return {};
-  const values: Record<string, string> = {};
-  for (const [key, value] of Object.entries(raw)) {
-    if (typeof value === "string") values[key] = value;
-  }
-  return values;
-}
 
 export async function generate(options: Options) {
   const logger = getLogger(options);
@@ -35,7 +25,7 @@ export async function generate(options: Options) {
   pushResult(
     modifyOutcomeToFile(
       envPath,
-      modifyEnv(envPath, envEditsFor(provider, suppliedEnv(options))),
+      modifyEnv(envPath, envEditsFor(provider, suppliedProviderEnv(options))),
     ),
   );
 

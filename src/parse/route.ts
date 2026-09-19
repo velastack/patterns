@@ -20,7 +20,10 @@ type RouteOptions = Pick<Options, "features" | "routeGroups">;
  * The group a route lands in when none is given, or null for a project that
  * has no such group. Without `routeGroups` this is the vela layout.
  */
-function defaultGroup({ features, routeGroups }: RouteOptions): string | null {
+export function defaultGroup({
+  features,
+  routeGroups,
+}: RouteOptions): string | null {
   const groups = routeGroups ?? { public: PUBLIC_DIR, app: APP_DIR };
   return features.auth ? (groups.app ?? groups.public) : groups.public;
 }

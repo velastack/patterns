@@ -44,6 +44,7 @@ import generateScaffold from "./patterns/generate/scaffold";
 import generateScaffoldRemote from "./patterns/generate/scaffold-remote";
 import generateSchema from "./patterns/generate/schema";
 import generateWorkflow from "./patterns/generate/workflow";
+import enableAi from "./patterns/enable/ai";
 import enableAnalytics from "./patterns/enable/analytics";
 import enableAuth from "./patterns/enable/auth";
 import enableAuthRemote from "./patterns/enable/auth-remote";
@@ -85,6 +86,7 @@ export const patterns = [
   generateResource,
   generateScaffold,
   generateScaffoldRemote,
+  enableAi,
   enableAnalytics,
   enableAuth,
   enableAuthRemote,

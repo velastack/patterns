@@ -70,13 +70,14 @@ The `preview-modifies` directory is the mock modify output used only for preview
 
 A capability with several implementations (`vela enable analytics --provider plausible|google|posthog`) declares
 them on the pattern as `providers: [{ id, label, env }]`, in prompt order. The CLI reads that list to prompt for
-a provider and validate `--provider`, and asks for each declared `env` key (blank allowed). Files for each
+a provider and validate `--provider`, and asks for each declared `env` key (blank allowed; a `secret: true` key,
+such as `vela enable ai`'s API keys, is asked for without echo). Files for each
 provider live in `providers/<id>/**` and are bundled like `creates`; `generate.ts` picks the chosen set with
 `resolveProvider(META, options)` + `providerCreates(raw, id)` from `src/core/providers.ts`. `resolveProvider`
 reads `input.provider`, then `--provider` in argv; an unknown id is an `InvalidArgumentError` listing the known
 ones, a missing one is an error at runtime and the first provider in preview (the website loads patterns with
-argv only). Shared behaviour (the layout modifier, writing the env keys to `.env`) stays in the pattern's
-`generate.runtime.ts`. Providers are a separate dimension from `variants`.
+argv only). Shared behaviour (the layout modifier, writing the env keys to `.env` with `providerEnvEdits` +
+`suppliedProviderEnv`) stays in the pattern's `generate.runtime.ts`. Providers are a separate dimension from `variants`.
 
 ### Plain forms
 
