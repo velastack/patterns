@@ -15,6 +15,7 @@ import { modifyAppHtml } from "./modifies/app-html";
 import { modifyGitignore } from "./modifies/gitignore";
 import { ensureRootLayoutI18n } from "./modifies/+layout";
 import { modifyRootLayoutLanguageSelect } from "./modifies/root-layout.svelte";
+import { welcomePageCatalog } from "./welcome-catalog";
 
 export async function generate(options: Options) {
   const logger = getLogger(options);
@@ -79,8 +80,11 @@ export async function generate(options: Options) {
     modifyOutcomeToFile(gitignorePath, modifyGitignore(gitignorePath)),
   );
 
+  const catalog = welcomePageCatalog(options.root, ui);
+  if (catalog) logger.info("Translating the welcome page into Spanish");
+
   return {
-    creates: [],
+    creates: catalog ? [catalog] : [],
     modifies,
     deletes: [],
     components: [],
