@@ -39,12 +39,17 @@ export async function generate(options: Options) {
 
   logger.info("Reverting hooks.server.ts");
   const hooksServerPath = path.join(options.root, "src", "hooks.server.ts");
-  pushResult(
-    modifyOutcomeToFile(
-      hooksServerPath,
-      unmodifyHooksServerI18n(hooksServerPath),
-    ),
-  );
+  const hooksRevert = unmodifyHooksServerI18n(hooksServerPath);
+  if (
+    hooksRevert.status === "success" &&
+    hooksRevert.changed &&
+    fs.readFileSync(hooksServerPath, "utf8").trim() === ""
+  ) {
+    // enable-i18n created it; nothing else ever went in.
+    deletes.push(toDeleteEntry(hooksServerPath));
+  } else {
+    pushResult(modifyOutcomeToFile(hooksServerPath, hooksRevert));
+  }
 
   logger.info("Reverting app.html");
   const appHtmlPath = path.join(options.root, "src", "app.html");

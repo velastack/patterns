@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import path from "node:path";
 import dedent from "dedent";
 import { Project, QuoteKind, SyntaxKind } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
@@ -29,10 +30,13 @@ const FAILURE_HINT = dedent`
   export const handle = sequence(handleWuchale, /* your existing handle */);
 `;
 
-const NOT_FOUND_HINT = dedent`
-  Create src/hooks.server.ts with an i18n handle:
-
-  import { sequence } from '@sveltejs/kit/hooks';
+/**
+ * The whole file, for a project that had no server hooks: a fresh `sv create`
+ * app or a static site. `disable-i18n` deletes it again once the i18n handle
+ * is all that is left.
+ */
+export const HOOKS_SERVER_SNIPPET = dedent`
+  import type { Handle } from '@sveltejs/kit';
   import { runWithLocale, loadLocales } from 'wuchale/load-utils/server';
   import { getLocale } from '$locales/main.url';
   import { locales } from '$locales/data';
@@ -42,13 +46,12 @@ const NOT_FOUND_HINT = dedent`
   loadLocales(main.key, main.loadCount, main.loadCatalog, locales);
   loadLocales(js.key, js.loadCount, js.loadCatalog, locales);
 
-  const handleWuchale = async ({ event, resolve }: any) => {
+  const handleWuchale: Handle = async ({ event, resolve }) => {
     const locale = getLocale(event.url);
     return await runWithLocale(locale, () =>
       resolve(event, {
-        transformPageChunk: ({ html }: { html: string }) =>
-          html.replace('%sveltekit.lang%', locale),
-      }),
+        transformPageChunk: ({ html }) => html.replace('%sveltekit.lang%', locale)
+      })
     );
   };
 
@@ -85,7 +88,14 @@ function ensureNamespaceImport(
 
 export function modifyHooksServerI18n(hooksServerPath: string): ModifyOutcome {
   if (!fs.existsSync(hooksServerPath)) {
-    return { status: "not-found", message: NOT_FOUND_HINT };
+    // SvelteKit loads the first `hooks.server.*` it finds, and `.js` sorts
+    // first, so a new `.ts` beside it would never run.
+    if (fs.existsSync(hooksServerPath.replace(/\.ts$/, ".js"))) {
+      return { status: "failed", message: FAILURE_HINT };
+    }
+    fs.mkdirSync(path.dirname(hooksServerPath), { recursive: true });
+    fs.writeFileSync(hooksServerPath, HOOKS_SERVER_SNIPPET + "\n");
+    return { status: "success", changed: true };
   }
 
   const original = fs.readFileSync(hooksServerPath, "utf8");

@@ -2,7 +2,9 @@ import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "node:fs";
+import prettier from "prettier";
 
+import { HOOKS_SERVER_SNIPPET } from "../../../enable/i18n/modifies/hooks.server";
 import { unmodifyViteConfig } from "./vite-config";
 import { unmodifySvelteConfig } from "./svelte-config";
 import { unmodifyHooksServerI18n } from "./hooks.server";
@@ -72,6 +74,29 @@ describe("disable i18n modifiers", () => {
     expect(outcome).toEqual({ status: "success", changed: false });
     expect(fs.readFileSync(filePath, "utf8")).toBe(first);
   });
+
+  // However the project's prettier config reshaped it.
+  it.each([
+    ["as written", { semi: true, trailingComma: "none" }],
+    ["reformatted", { semi: false, trailingComma: "all" }],
+  ] as const)(
+    "empties the hooks.server.ts enable-i18n created (%s)",
+    async (_label, options) => {
+      const filePath = path.join(tempDir, "hooks.created.ts");
+      fs.writeFileSync(
+        filePath,
+        await prettier.format(HOOKS_SERVER_SNIPPET, {
+          parser: "typescript",
+          ...options,
+        }),
+      );
+
+      const outcome = unmodifyHooksServerI18n(filePath);
+
+      expect(outcome).toEqual({ status: "success", changed: true });
+      expect(fs.readFileSync(filePath, "utf8").trim()).toBe("");
+    },
+  );
 
   it("puts a real lang back in app.html", () => {
     const filePath = path.join(tempDir, "app.html");

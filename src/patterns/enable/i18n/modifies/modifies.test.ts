@@ -130,6 +130,34 @@ describe("enable i18n modifiers", () => {
     await expect(modified).toMatchFormatted(expected, "+layout.ts");
   });
 
+  it("creates src/hooks.server.ts when missing", async () => {
+    const hooksPath = path.join(tempDir, "src", "hooks.server.ts");
+    expect(fs.existsSync(hooksPath)).toBe(false);
+
+    const outcome = modifyHooksServerI18n(hooksPath);
+
+    expect(outcome).toEqual({ status: "success", changed: true });
+    const expected = fs.readFileSync(
+      path.join(fixturesPath, "expect", "src", "hooks.server.ts"),
+      "utf8",
+    );
+    await expect(fs.readFileSync(hooksPath, "utf8")).toMatchFormatted(
+      expected,
+      "hooks.server.ts",
+    );
+  });
+
+  it("does not create hooks.server.ts beside a hooks.server.js", () => {
+    const hooksPath = path.join(tempDir, "src", "hooks.server.ts");
+    fs.mkdirSync(path.dirname(hooksPath), { recursive: true });
+    fs.writeFileSync(hooksPath.replace(/\.ts$/, ".js"), "export {};\n");
+
+    const outcome = modifyHooksServerI18n(hooksPath);
+
+    expect(outcome.status).toBe("failed");
+    expect(fs.existsSync(hooksPath)).toBe(false);
+  });
+
   it("is idempotent for repeated modifications", () => {
     const hooksPath = path.join(tempDir, "hooks.server.ts");
     const vitePath = path.join(tempDir, "vite.config.ts");

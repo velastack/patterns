@@ -19,7 +19,8 @@ const I18N_MODULES = [
 
 /**
  * Undo `modifyHooksServerI18n`: drop the locale bootstrap, the wuchale handle
- * and its imports, and unwrap `sequence(handleWuchale, ...)`.
+ * and its imports, and unwrap `sequence(handleWuchale, ...)`. A file that
+ * enable-i18n created comes out empty, for the caller to delete.
  */
 export function unmodifyHooksServerI18n(
   hooksServerPath: string,
@@ -54,7 +55,10 @@ export function unmodifyHooksServerI18n(
 
   const handleDecl = sourceFile.getVariableDeclaration("handle");
   const init = handleDecl?.getInitializer();
-  if (handleDecl && init?.getKind() === SyntaxKind.CallExpression) {
+  if (init?.getText() === I18N_HANDLE) {
+    // `export const handle = handleWuchale`: the i18n handle was the only one.
+    removeTopLevelStatementByIdentifier(sourceFile, "handle");
+  } else if (handleDecl && init?.getKind() === SyntaxKind.CallExpression) {
     const call = init.asKindOrThrow(SyntaxKind.CallExpression);
     if (call.getExpression().getText() === "sequence") {
       const args = call.getArguments();
@@ -74,6 +78,7 @@ export function unmodifyHooksServerI18n(
     removeImportByModuleSpecifier(sourceFile, moduleSpecifier);
   }
   removeNamedImportIfUnused(sourceFile, "@sveltejs/kit/hooks", "sequence");
+  removeNamedImportIfUnused(sourceFile, "@sveltejs/kit", "Handle");
 
   sourceFile.formatText();
   ensureBlankLineAfterImports(sourceFile);
