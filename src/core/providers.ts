@@ -112,6 +112,23 @@ export function suppliedProviderEnv(
 }
 
 /**
+ * Every app-relative path any provider creates, sorted, for a disable pattern
+ * that removes the files whichever provider was chosen. Works on a glob taken
+ * from anywhere (`../../enable/<x>/providers/**`): only the part after
+ * `providers/<id>/` counts.
+ */
+export function allProviderPaths(
+  providersRaw: Record<string, string>,
+): string[] {
+  const paths = new Set<string>();
+  for (const key of Object.keys(providersRaw)) {
+    const match = key.match(/\/providers\/[^/]+\/(.+)$/);
+    if (match) paths.add(match[1]);
+  }
+  return [...paths].sort();
+}
+
+/**
  * The files under `providers/<id>/**` of a pattern, as creates. The glob map
  * is one `import.meta.glob("./providers/**")` covering every provider.
  */

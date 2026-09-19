@@ -62,11 +62,11 @@ export const PROVIDERS: Provider[] = [
 
 /**
  * `ai` carries the gateway provider itself; the others are a package each.
- * zod is a peer of `ai`: vela's templates already have it, a project vela
- * did not create may not.
+ * zod, a peer of `ai`, is installed alongside but is not listed here: it is
+ * not the pattern's to uninstall.
  */
-const PACKAGES: Package[] = ["ai@^7.0.107", "@ai-sdk/svelte@^5.0.107", ZOD];
-const PROVIDER_PACKAGES: Record<string, Package[]> = {
+export const PACKAGES: Package[] = ["ai@^7.0.107", "@ai-sdk/svelte@^5.0.107"];
+export const PROVIDER_PACKAGES: Record<string, Package[]> = {
   openai: ["@ai-sdk/openai@^4.0.71"],
   anthropic: ["@ai-sdk/anthropic@^4.0.58"],
 };
@@ -75,7 +75,7 @@ const PROVIDER_PACKAGES: Record<string, Package[]> = {
 export const META = { slug: "enable-ai", providers: PROVIDERS };
 
 /** Where the demo page is stored; `generate` moves it to the project's default group. */
-const DEMO_DIR = "src/routes/(public)/ai/";
+export const DEMO_DIR = "src/routes/(public)/ai/";
 
 /**
  * The demo page's directory: `(public)/ai`, `(app)/ai` behind sign-in when
@@ -159,7 +159,8 @@ export async function generate(options: Options) {
     modifies: [],
     deletes: [],
     components: ui === "plain" ? [] : ["button", "textarea"],
-    packages: [...PACKAGES, ...(PROVIDER_PACKAGES[provider.id] ?? [])],
+    // vela's templates already have zod; a project vela did not create may not.
+    packages: [...PACKAGES, ZOD, ...(PROVIDER_PACKAGES[provider.id] ?? [])],
     collections: [],
     collectionPatches: [],
     collectionDrops: [],

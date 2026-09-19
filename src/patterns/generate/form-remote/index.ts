@@ -8,7 +8,7 @@ import { generate as generatePreview } from "./generate.preview";
 const SLUG = "generate-form-remote" as const;
 const VERSION = "1.0.0";
 const SOURCE = "src/patterns/generate/form-remote";
-const DOCS = "/generate/form-remote";
+const DOCS = "/generate/form";
 
 export async function generate(options: Options) {
   const baseRes = await generateBase(options);

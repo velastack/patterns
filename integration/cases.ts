@@ -242,6 +242,29 @@ export const generateCases: CaseSpec[] = [
 ];
 
 export const disableCases: CaseSpec[] = [
+  // disable-ai and disable-analytics `require` nothing, so inverseCase would
+  // not enable them first.
+  makeCase("disable-ai", "minimal", [
+    step("enable-ai", { input: { provider: "openai" } }),
+    step("disable-ai", { check: true }),
+  ]),
+  // The demo page and the signed-in endpoint live under (app).
+  makeCase("disable-ai-auth", "auth", [
+    step("enable-ai", { input: { provider: "anthropic" } }),
+    step("disable-ai", { check: true }),
+  ]),
+  makeCase("disable-ai-plain", "bare", [
+    step("enable-ai", { input: { provider: "gateway", serverTests: false } }),
+    step("disable-ai", { check: true }),
+  ]),
+  makeCase("disable-analytics", "minimal", [
+    step("enable-analytics", { input: { provider: "posthog" } }),
+    step("disable-analytics", { check: true }),
+  ]),
+  makeCase("disable-analytics-static", "static", [
+    step("enable-analytics", { input: { provider: "google" } }),
+    step("disable-analytics", { check: true }),
+  ]),
   inverseCase("destroy-form"),
   inverseCase("destroy-schema"),
   inverseCase("destroy-resource"),

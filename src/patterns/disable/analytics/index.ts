@@ -3,10 +3,10 @@ import { formatResult } from "../../../core/format-result";
 import { mergeResults } from "../../../core/util";
 import { generate as generateBase } from "./generate";
 
-const SLUG = "disable-backend" as const;
-const VERSION = "1.0.1";
-const SOURCE = "src/patterns/disable/backend";
-const DOCS = "/disable/backend";
+const SLUG = "disable-analytics" as const;
+const VERSION = "1.0.0";
+const SOURCE = "src/patterns/disable/analytics";
+const DOCS = "/disable/analytics";
 
 export async function generate(options: Options) {
   const baseRes = await generateBase(options);
@@ -17,18 +17,8 @@ export async function generate(options: Options) {
 
   const { generate: generateRuntime } = await import("./generate.runtime");
   const runtimeRes = await generateRuntime(options);
-  // The runtime reverts hooks.server.ts instead of deleting it, so handles
-  // other patterns composed in survive; it reports a delete when nothing did.
   const merged = await formatResult(
-    mergeResults([
-      {
-        ...baseRes,
-        deletes: baseRes.deletes.filter(
-          (file) => file.path !== "src/hooks.server.ts",
-        ),
-      },
-      runtimeRes,
-    ]),
+    mergeResults([baseRes, runtimeRes]),
     options,
   );
 
@@ -46,14 +36,14 @@ export default {
   source: SOURCE,
   docs: DOCS,
   plan: "open",
-  title: "Disable Backend",
+  title: "Disable analytics",
   summary:
-    "Removes the PocketBase backend: deletes data/ (the local database, fixtures, hooks and seeds), the background workflows (which run on PocketBase, uninstalling their packages) and every server.test.ts, takes the backend out of hooks.server.ts, switches the SvelteKit adapter back to static with SPA fallback, and reverts test/setup.ts and .gitignore. Leaves @velastack/pocketbase and pocketbase-sveltekit installed; uninstall manually.",
+    "Removes the analytics component and <Analytics /> from the root layout, strips the provider's variables from .env and uninstalls posthog-js.",
   requires: {
     auth: false,
     api: false,
     apiKeys: false,
-    backend: true,
+    backend: false,
     i18n: false,
     teams: false,
     payments: false,
@@ -61,12 +51,19 @@ export default {
     contentNegotiation: false,
     cms: false,
   },
-  category: "backend" as const,
-  tags: ["sveltekit", "pocketbase", "backend", "velastack"],
+  category: "analytics" as const,
+  tags: [
+    "sveltekit",
+    "analytics",
+    "plausible",
+    "google-analytics",
+    "posthog",
+    "velastack",
+  ],
 
   command: {
-    raw: "vela disable backend",
-    base: "vela disable backend",
+    raw: "vela disable analytics",
+    base: "vela disable analytics",
     argv: [],
   },
 

@@ -64,6 +64,8 @@ import destroySchema from "./patterns/destroy/schema";
 import destroyForm from "./patterns/destroy/form";
 import destroyResource from "./patterns/destroy/resource";
 import destroyScaffold from "./patterns/destroy/scaffold";
+import disableAi from "./patterns/disable/ai";
+import disableAnalytics from "./patterns/disable/analytics";
 import disableApi from "./patterns/disable/api";
 import disableApiKeys from "./patterns/disable/api-keys";
 import disableAuth from "./patterns/disable/auth";
@@ -106,6 +108,8 @@ export const patterns = [
   destroyForm,
   destroyResource,
   destroyScaffold,
+  disableAi,
+  disableAnalytics,
   disableApi,
   disableApiKeys,
   disableAuth,

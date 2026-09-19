@@ -38,7 +38,7 @@ export default {
   plan: "open",
   title: "Disable i18n",
   summary:
-    "Removes i18n scaffolding files and the Wuchale .gitignore block. vite.config, svelte.config, hooks.server, app.html, and +layout.ts must be reverted manually.",
+    "Removes i18n: deletes the generated files, uninstalls wuchale, and reverts vite.config, svelte.config, hooks.server, app.html, the root +layout.ts and layout, and the .gitignore block. The translation catalogs in src/locales stay.",
   requires: {
     auth: false,
     api: false,

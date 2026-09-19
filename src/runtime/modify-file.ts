@@ -58,6 +58,26 @@ export function revertOutcomeToFile(
 }
 
 /**
+ * `modifyOutcomeToFile` for a `.env` revert: a file the revert left empty is
+ * reported as a delete. The enable pattern most likely created it, and an
+ * empty `.env` holds nothing worth keeping.
+ */
+export function envRevertOutcomeToFile(
+  envPath: string,
+  outcome: ModifyOutcome,
+): { modify: File | null; delete: File | null } {
+  if (
+    outcome.status === "success" &&
+    outcome.changed &&
+    fs.existsSync(envPath) &&
+    fs.readFileSync(envPath, "utf8").trim() === ""
+  ) {
+    return { modify: null, delete: toDeleteEntry(envPath) };
+  }
+  return { modify: modifyOutcomeToFile(envPath, outcome), delete: null };
+}
+
+/**
  * Drop any create that already exists on disk.
  *
  * `writeResult` overwrites an existing create whose content differs and

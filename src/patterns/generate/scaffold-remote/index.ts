@@ -8,7 +8,7 @@ import { generate as generatePreview } from "./generate.preview";
 const SLUG = "generate-scaffold-remote" as const;
 const VERSION = "1.0.0";
 const SOURCE = "src/patterns/generate/scaffold-remote";
-const DOCS = "/generate/scaffold-remote";
+const DOCS = "/generate/scaffold";
 
 export async function generate(options: Options) {
   const baseRes = await generateBase(options);
