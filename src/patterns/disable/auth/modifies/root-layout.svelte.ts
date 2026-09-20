@@ -18,7 +18,9 @@ export function unmodifyRootLayoutSvelte(layoutPath: string): ModifyOutcome {
     return { status: "success", changed: false };
   }
 
-  file.removeElement("AuthMenu.Root");
+  // enable-auth wrapped the menu in a <Navbar.Item> of its own; that goes too,
+  // or the navbar keeps an empty item where the menu used to be.
+  file.removeElementWithWrapper("AuthMenu.Root", "Navbar.Item");
   const markup = file.toString().replace(/<script[\s\S]*?<\/script>/g, "");
 
   file.modifyScript((content) => {

@@ -52,4 +52,46 @@ describe("disable-auth reverts enable-auth", () => {
     );
     expect(reverted).not.toContain("data.user");
   });
+
+  it.each(["basic-layout.svelte", "wrapped-layout.svelte"])(
+    "takes the nav item the menu lived in with it (%s)",
+    (fixture) => {
+      const file = path.join(tempDir, fixture);
+      modifyRootLayoutSvelte(file);
+
+      expect(unmodifyRootLayoutSvelte(file)).toMatchObject({
+        status: "success",
+      });
+      const reverted = fs.readFileSync(file, "utf8");
+      expect(reverted).not.toContain("AuthMenu");
+      // The wrapper enable-auth added would otherwise be left behind empty,
+      // rendering as a stray gap in the navbar.
+      expect(reverted).not.toMatch(/<Navbar\.Item[^>]*>\s*<\/Navbar\.Item>/);
+      // The navbar's own items stay put.
+      expect(reverted).toContain("Home");
+    },
+  );
+
+  it("keeps a nav item that holds something else", () => {
+    const file = path.join(tempDir, "basic-layout.svelte");
+    modifyRootLayoutSvelte(file);
+    // A developer dropped their own button alongside the menu.
+    fs.writeFileSync(
+      file,
+      fs
+        .readFileSync(file, "utf8")
+        .replace(
+          "<AuthMenu.Root>",
+          '<Button href="/help">Help</Button>\n\t\t\t<AuthMenu.Root>',
+        ),
+      "utf8",
+    );
+
+    expect(unmodifyRootLayoutSvelte(file)).toMatchObject({
+      status: "success",
+    });
+    const reverted = fs.readFileSync(file, "utf8");
+    expect(reverted).not.toContain("AuthMenu");
+    expect(reverted).toContain('<Button href="/help">Help</Button>');
+  });
 });

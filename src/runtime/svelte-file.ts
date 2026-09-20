@@ -121,6 +121,71 @@ export class SvelteFile {
     return this.replaceElement(name, "");
   }
 
+  /**
+   * Remove the element along with the nearest enclosing <wrapper> — the nav
+   * item, list entry or column an enable pattern added purely to host it.
+   * The wrapper only goes when it holds nothing else, so a hand-edited
+   * wrapper that picked up a sibling keeps its place and just the element is
+   * taken out. Whitespace ahead of the wrapper goes with it, leaving no blank
+   * line where it stood.
+   */
+  removeElementWithWrapper(name: string, wrapperName: string): boolean {
+    const path = this.findElementPath(name);
+    if (!path) return false;
+
+    const node = path[path.length - 1]!;
+    let wrapper: SvelteNode | null = null;
+    // Nearest first: an inner wrapper of the same name wins over an outer one.
+    for (let i = path.length - 2; i >= 0; i--) {
+      const candidate = path[i]!;
+      if (
+        (candidate.type === "Component" ||
+          candidate.type === "RegularElement") &&
+        candidate.name === wrapperName
+      ) {
+        wrapper = candidate;
+        break;
+      }
+    }
+
+    if (!wrapper || this.holdsMoreThan(wrapper, path)) {
+      this.s.remove(node.start as number, node.end as number);
+      return true;
+    }
+
+    let start = wrapper.start as number;
+    while (start > 0 && /\s/.test(this.source[start - 1]!)) start--;
+    this.s.remove(start, wrapper.end as number);
+    return true;
+  }
+
+  /**
+   * Whether the wrapper has children beyond whitespace and the one subtree on
+   * `path` that leads down to the element being removed.
+   */
+  private holdsMoreThan(wrapper: SvelteNode, path: SvelteNode[]): boolean {
+    const onPath = new Set(path);
+    const children: SvelteNode[] = wrapper.fragment?.nodes ?? [];
+    return children.some(
+      (child) =>
+        !onPath.has(child) &&
+        !(child.type === "Text" && String(child.data).trim() === ""),
+    );
+  }
+
+  /**
+   * The chain of AST nodes from the fragment root down to the first Component
+   * or RegularElement with the given name, that node last. Null when absent.
+   */
+  private findElementPath(name: string): SvelteNode[] | null {
+    return findPath(
+      (this.ast as any).fragment,
+      (node) =>
+        (node.type === "Component" || node.type === "RegularElement") &&
+        node.name === name,
+    );
+  }
+
   /** Append raw markup to the end of the source file. */
   appendMarkup(content: string): void {
     this.s.append(content);
@@ -213,19 +278,33 @@ function findNode(
   root: unknown,
   predicate: (node: any) => boolean,
 ): any | null {
+  const path = findPath(root, predicate);
+  return path ? path[path.length - 1] : null;
+}
+
+/**
+ * Depth-first search returning every node on the way down to the match, the
+ * match itself last — so callers can reach an ancestor without the AST
+ * carrying parent links.
+ */
+function findPath(
+  root: unknown,
+  predicate: (node: any) => boolean,
+): any[] | null {
   const seen = new WeakSet<object>();
-  function visit(node: unknown): any | null {
+  function visit(node: unknown, ancestors: any[]): any[] | null {
     if (!node || typeof node !== "object" || seen.has(node as object)) {
       return null;
     }
     seen.add(node as object);
-    if (predicate(node as any)) return node;
+    const path = "type" in (node as object) ? [...ancestors, node] : ancestors;
+    if (predicate(node as any)) return path;
     for (const key of Object.keys(node as Record<string, unknown>)) {
       if (key === "parent") continue;
       const child = (node as Record<string, unknown>)[key];
       if (Array.isArray(child)) {
         for (const item of child) {
-          const found = visit(item);
+          const found = visit(item, path);
           if (found) return found;
         }
       } else if (
@@ -233,11 +312,11 @@ function findNode(
         typeof child === "object" &&
         "type" in (child as object)
       ) {
-        const found = visit(child);
+        const found = visit(child, path);
         if (found) return found;
       }
     }
     return null;
   }
-  return visit(root);
+  return visit(root, []);
 }
