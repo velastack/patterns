@@ -35,9 +35,22 @@ export function siteModule(
   ].join("\n");
 }
 
-/** Single-quoted, as the templates write their strings. */
+/**
+ * Single-quoted, as the templates write their strings — but double-quoted for
+ * a value holding more apostrophes than double quotes, which is what prettier
+ * leaves behind. An app name like `Tom's Cafe` would otherwise be written as
+ * `'Tom\'s Cafe'` and rewritten by the next `npm run lint`.
+ */
 function quote(value: string): string {
-  return `'${value.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
+  const count = (mark: string) => value.split(mark).length - 1;
+  const mark = count("'") > count('"') ? '"' : "'";
+  const escaped = value
+    .replace(/\\/g, "\\\\")
+    .split(mark)
+    .join(`\\${mark}`)
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r");
+  return `${mark}${escaped}${mark}`;
 }
 
 /**

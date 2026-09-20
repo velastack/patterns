@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Options } from "../core/types";
+import prettier from "prettier";
 import { ensureSiteFile, siteModule, sitePath } from "./site";
 
 let root: string;
@@ -38,10 +39,35 @@ afterEach(() => {
 
 describe("siteModule", () => {
   it("fills name and url as single-quoted strings", () => {
-    const source = siteModule("Tom's Cafe", "https://example.com");
-    expect(source).toContain("name: 'Tom\\'s Cafe',");
+    const source = siteModule("Tom Cafe", "https://example.com");
+    expect(source).toContain("name: 'Tom Cafe',");
     expect(source).toContain("url: 'https://example.com'");
     expect(source).toContain("export const site = {");
+  });
+
+  // `'Tom\'s Cafe'` parses, but prettier rewrites it, so the project would
+  // fail its own `npm run lint` on a file a pattern had just written.
+  it.each([
+    "Tom's Cafe",
+    `It's Tom's Cafe's "X"`,
+    'The "Best" Cafe',
+    "Backslash C:\\ Cafe",
+  ])("writes %s the way prettier would leave it", async (name) => {
+    const source = siteModule(name, "https://example.com");
+    // The options the CLI templates ship in `.prettierrc`.
+    expect(
+      await prettier.format(source, {
+        parser: "typescript",
+        useTabs: true,
+        singleQuote: true,
+        trailingComma: "none",
+        printWidth: 100,
+      }),
+    ).toBe(source);
+  });
+
+  it("keeps single quotes when double quotes would escape more", () => {
+    expect(siteModule('The "Best" Cafe')).toContain(`name: 'The "Best" Cafe',`);
   });
 });
 
