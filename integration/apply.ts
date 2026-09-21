@@ -10,7 +10,13 @@ import { detectFeatures, detectRouteGroups } from "./features";
 import type { Project } from "./project";
 
 export type ErrorKind =
-  "apply" | "collections" | "features" | "check" | "prettier" | "server-tests";
+  | "apply"
+  | "collections"
+  | "features"
+  | "contents"
+  | "check"
+  | "prettier"
+  | "server-tests";
 
 export interface ErrorRecord {
   kind: ErrorKind;

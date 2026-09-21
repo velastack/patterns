@@ -1,7 +1,10 @@
 import fs from "node:fs";
 import { Project, SyntaxKind } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
-import { removeUnusedBindingElement } from "../../../../runtime/ts-morph-helpers";
+import {
+  removeUnusedBindingElement,
+  formatLikeSource,
+} from "../../../../runtime/ts-morph-helpers";
 
 export function unmodifyLayoutServer(layoutPath: string): ModifyOutcome {
   if (!fs.existsSync(layoutPath)) {
@@ -35,7 +38,7 @@ export function unmodifyLayoutServer(layoutPath: string): ModifyOutcome {
   // destructured for it.
   removeUnusedBindingElement(sourceFile, "locals");
 
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   sourceFile.saveSync();
 
   return {

@@ -19,6 +19,12 @@ export interface StepSpec {
   check?: boolean;
   /** Feature flags that must be detected after the step. Defaults to `expectedFeaturesAfter(slug)`. */
   expectFeatures?: Partial<Features>;
+  /**
+   * Substrings a project file must contain after the step, by path relative
+   * to the project root. For what a pattern must leave in place that neither
+   * svelte-check nor prettier would miss if it went (a composed hook, say).
+   */
+  expectContains?: Record<string, string[]>;
   /** Harness action mirroring what a user does right after the command. */
   after?: "bootstrapSuperuser" | "i18nExtract";
 }
@@ -57,6 +63,10 @@ export const PREREQ_ORDER: Slug[] = [
   "enable-content-negotiation",
   "enable-cms",
 ];
+
+/** The reroute enable-i18n and enable-content-negotiation compose, whichever runs first. */
+const HOOKS = "src/hooks.ts";
+const COMPOSED_REROUTE = "rerouteDeLocalize(negotiateReroute(url.pathname))";
 
 const STRIPE_SLUGS = new Set<Slug>([
   "enable-payments",
@@ -213,6 +223,19 @@ export const enableCases: CaseSpec[] = [
   ]),
   singleCase("enable-cms"),
   singleCase("enable-content-negotiation"),
+  // `sv create`: no route groups, no hooks.server.ts to compose into, and no
+  // svelte-meta-tags, so the CLI passes `metaTags: false`.
+  makeCase("enable-content-negotiation-plain", "bare", [
+    step("enable-content-negotiation", {
+      input: { metaTags: false },
+      check: true,
+    }),
+  ]),
+  // The on-ramp for a project vela did not create: adapter-node, hooks, and a
+  // server test harness (test/setup.ts plus the vitest config that loads it).
+  makeCase("enable-backend-plain", "bare", [
+    step("enable-backend", { check: true }),
+  ]),
   singleCase("enable-i18n"),
   // `sv create` has no shadcn-svelte and no navbar: the language select is a
   // native <select> above the root layout's children.
@@ -243,6 +266,10 @@ export const generateCases: CaseSpec[] = [
   singleCase("generate-scaffold"),
   singleCase("generate-scaffold-remote"),
   singleCase("generate-schema"),
+  // zod is not part of `sv create`; the schema has to bring it.
+  makeCase("generate-schema-plain", "bare", [
+    step("generate-schema", { check: true }),
+  ]),
   singleCase("generate-workflow"),
 ];
 
@@ -279,6 +306,10 @@ export const disableCases: CaseSpec[] = [
   inverseCase("disable-api-keys"),
   inverseCase("disable-backend"),
   inverseCase("disable-content-negotiation"),
+  makeCase("disable-content-negotiation-plain", "bare", [
+    step("enable-content-negotiation", { input: { metaTags: false } }),
+    step("disable-content-negotiation", { check: true }),
+  ]),
   inverseCase("disable-i18n"),
   makeCase("disable-i18n-plain", "bare", [
     step("enable-i18n", { check: false }),
@@ -364,13 +395,22 @@ export const stackCases: CaseSpec[] = [
     step("enable-content-negotiation"),
     step("enable-blog", { check: true }),
   ]),
+  // Either order leaves one reroute that does both: neither pattern writes
+  // src/hooks.ts over what the other put there. svelte-check is blind to the
+  // loss, hence the contents assertion.
   makeCase("i18n-then-negotiation", "minimal", [
     step("enable-i18n"),
-    step("enable-content-negotiation", { check: true }),
+    step("enable-content-negotiation", {
+      check: true,
+      expectContains: { [HOOKS]: [COMPOSED_REROUTE] },
+    }),
   ]),
   makeCase("negotiation-then-i18n", "minimal", [
     step("enable-content-negotiation"),
-    step("enable-i18n", { check: true }),
+    step("enable-i18n", {
+      check: true,
+      expectContains: { [HOOKS]: [COMPOSED_REROUTE] },
+    }),
   ]),
   // With i18n on, the CMS takes its locales from wuchale instead of a literal.
   makeCase("i18n-then-cms", "minimal", [

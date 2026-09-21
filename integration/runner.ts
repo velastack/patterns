@@ -1,4 +1,4 @@
-import { mkdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import { afterAll, describe, it, type TestContext } from "vitest";
 import {
@@ -269,6 +269,19 @@ async function runCase(
           kind: "features",
           step: step.slug,
           message: `expected ${feature}=${value} to be detected after ${step.slug}, got ${detected}`,
+        });
+      }
+    }
+
+    for (const [file, needles] of Object.entries(step.expectContains ?? {})) {
+      const full = path.join(project.root, file);
+      const content = existsSync(full) ? readFileSync(full, "utf8") : "";
+      for (const needle of needles) {
+        if (content.includes(needle)) continue;
+        errors.push({
+          kind: "contents",
+          step: step.slug,
+          message: `${file} does not contain ${JSON.stringify(needle)} after ${step.slug}`,
         });
       }
     }

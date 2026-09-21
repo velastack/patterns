@@ -13,6 +13,7 @@ import {
   ensureBlankLineAfterImports,
   pruneUnusedImports,
   removeStatementWithComments,
+  formatLikeSource,
 } from "../../../../runtime/ts-morph-helpers";
 
 const HANDLE_HINT = dedent`
@@ -125,7 +126,7 @@ export function unmodifyHooksServerBackend(
   if (init && init !== "custom") removeStatementWithComments(sourceFile, init);
 
   pruneUnusedImports(sourceFile, BACKEND_MODULES);
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   ensureBlankLineAfterImports(sourceFile);
   sourceFile.saveSync();
   return {

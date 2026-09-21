@@ -9,6 +9,7 @@ import {
   type SourceFile,
 } from "ts-morph";
 import type { ModifyOutcome } from "../core/types";
+import { formatLikeSource } from "./ts-morph-helpers";
 
 export const VITE_CONFIG_CANDIDATES = [
   "vite.config.ts",
@@ -311,7 +312,7 @@ export function resolveConfigTarget(
 
 /** Format, compare against the captured original, and save only if changed. */
 export function saveTarget(target: ConfigTarget): ModifyOutcome {
-  target.sourceFile.formatText();
+  formatLikeSource(target.sourceFile);
   const newText = target.sourceFile.getFullText();
   if (newText === target.originalText) {
     return { status: "success", changed: false };

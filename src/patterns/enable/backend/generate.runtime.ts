@@ -1,15 +1,30 @@
+import fs from "node:fs";
 import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
 import { modifySvelteConfig } from "./modifies/svelte-config";
 import { modifyGitignore } from "./modifies/gitignore";
-import { modifyTestSetup } from "./modifies/test-setup";
+import { languageFromPath } from "../../../core/util";
+import {
+  hasVitestConfig,
+  modifyTestSetup,
+  VITEST_CONFIG,
+  WITH_BACKEND,
+} from "./modifies/test-setup";
 import { modifyHooksServerBackend } from "./modifies/hooks.server";
 
 export async function generate(options: Options) {
   const logger = getLogger(options);
   const modifies: File[] = [];
+  const creates: File[] = [];
+  const create = (filePath: string, content: string) =>
+    creates.push({
+      path: filePath,
+      language: languageFromPath(filePath),
+      content,
+      status: "success",
+    });
 
   logger.info("Modifying adapter config");
   const adapter = modifySvelteConfig(options.root);
@@ -39,16 +54,29 @@ export async function generate(options: Options) {
   );
   if (gitignoreFile) modifies.push(gitignoreFile);
 
-  logger.info("Modifying test/setup.ts");
+  // A backend brings server tests with it. The static template and a project
+  // vela did not create have no harness at all, so what is missing is created:
+  // the setup file, and the vitest config that loads it.
   const testSetupPath = path.join(options.root, "test", "setup.ts");
-  const testSetupFile = modifyOutcomeToFile(
-    testSetupPath,
-    modifyTestSetup(testSetupPath),
-  );
-  if (testSetupFile) modifies.push(testSetupFile);
+  if (fs.existsSync(testSetupPath)) {
+    logger.info("Modifying test/setup.ts");
+    const testSetupFile = modifyOutcomeToFile(
+      testSetupPath,
+      modifyTestSetup(testSetupPath),
+    );
+    if (testSetupFile) modifies.push(testSetupFile);
+  } else {
+    logger.info("Creating test/setup.ts");
+    create("test/setup.ts", WITH_BACKEND);
+  }
+
+  if (!hasVitestConfig(options.root)) {
+    logger.info("Creating vitest.config.ts");
+    create("vitest.config.ts", VITEST_CONFIG);
+  }
 
   return {
-    creates: [],
+    creates,
     modifies,
     deletes: [],
     components: [],

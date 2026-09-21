@@ -13,7 +13,10 @@ import { unmodifyViteConfig } from "./vite-config";
 import { unmodifySvelteConfig } from "./svelte-config";
 import { unmodifyHooksServerI18n } from "./hooks.server";
 import { unmodifyAppHtml } from "./app-html";
-import { planRootLayoutRevert } from "./+layout";
+import { modifyHooksI18n } from "../../../enable/i18n/modifies/hooks";
+import { unmodifyHooksI18n } from "./hooks";
+import { ensureRootLayoutI18n } from "../../../enable/i18n/modifies/+layout";
+import { unmodifyRootLayoutI18n } from "./+layout";
 import { unmodifyRootLayoutLanguageSelect } from "./root-layout.svelte";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -165,23 +168,107 @@ describe("disable i18n modifiers", () => {
     expect(fs.readFileSync(filePath, "utf8")).toContain('<html lang="en">');
   });
 
-  it("plans to delete the +layout.ts enable-i18n wrote", () => {
-    expect(
-      planRootLayoutRevert(path.join(tempDir, "src", "routes", "+layout.ts")),
-    ).toEqual({ action: "delete" });
+  it("empties the +layout.ts enable-i18n wrote", () => {
+    const filePath = path.join(tempDir, "src", "routes", "+layout.ts");
+
+    // Emptied, not removed: the runtime reports it as a delete.
+    expect(unmodifyRootLayoutI18n(filePath)).toEqual({
+      status: "success",
+      changed: true,
+    });
+    expect(fs.readFileSync(filePath, "utf8")).toBe("");
+  });
+
+  it("keeps the route options a +layout.ts held before i18n", async () => {
+    const filePath = path.join(tempDir, "src", "routes", "+layout.plain.ts");
+    const source = "export const prerender = true;\n";
+    fs.writeFileSync(filePath, source);
+
+    expect(ensureRootLayoutI18n(filePath).status).toBe("success");
+    expect(unmodifyRootLayoutI18n(filePath)).toEqual({
+      status: "success",
+      changed: true,
+    });
+
+    await expect(fs.readFileSync(filePath, "utf8")).toMatchFormatted(
+      source,
+      "+layout.ts",
+    );
   });
 
   it("asks for a hand with a +layout.ts that grew other code", () => {
-    const plan = planRootLayoutRevert(
-      path.join(tempDir, "src", "routes", "+layout.custom.ts"),
-    );
-    expect(plan.action).toBe("failed");
+    const filePath = path.join(tempDir, "src", "routes", "+layout.custom.ts");
+    const original = fs.readFileSync(filePath, "utf8");
+
+    expect(unmodifyRootLayoutI18n(filePath).status).toBe("failed");
+    expect(fs.readFileSync(filePath, "utf8")).toBe(original);
   });
 
   it("leaves a +layout.ts without i18n alone", () => {
     const filePath = path.join(tempDir, "src", "routes", "+layout.plain.ts");
     fs.writeFileSync(filePath, "export const prerender = true;\n");
-    expect(planRootLayoutRevert(filePath)).toEqual({ action: "none" });
+    expect(unmodifyRootLayoutI18n(filePath)).toEqual({
+      status: "success",
+      changed: false,
+    });
+  });
+
+  it("empties hooks.ts when the de-localizing reroute was all it held", () => {
+    const filePath = path.join(tempDir, "src", "hooks.ts");
+    modifyHooksI18n(filePath);
+
+    expect(unmodifyHooksI18n(filePath)).toEqual({
+      status: "success",
+      changed: true,
+    });
+    expect(fs.readFileSync(filePath, "utf8")).toBe("");
+  });
+
+  it("leaves the reroute content negotiation wrote in hooks.ts", async () => {
+    const filePath = path.join(tempDir, "src", "hooks.negotiate.ts");
+    const source = dedent`
+      import { reroute as negotiateReroute } from '$lib/negotiate';
+
+      export const reroute = ({ url }) => negotiateReroute(url.pathname);
+    `;
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, source + "\n");
+
+    expect(modifyHooksI18n(filePath).status).toBe("success");
+    expect(unmodifyHooksI18n(filePath)).toEqual({
+      status: "success",
+      changed: true,
+    });
+
+    await expect(fs.readFileSync(filePath, "utf8")).toMatchFormatted(
+      source,
+      "hooks.ts",
+    );
+  });
+
+  it("reports failure and leaves a reroute it cannot unwrap", () => {
+    const filePath = path.join(tempDir, "hooks.reroute.ts");
+    const original = dedent`
+      const rerouteDeLocalize = (url: string) => url;
+
+      export const reroute = ({ url }) => custom(rerouteDeLocalize(url.pathname));
+    `;
+    fs.writeFileSync(filePath, original + "\n");
+
+    expect(unmodifyHooksI18n(filePath).status).toBe("failed");
+    expect(fs.readFileSync(filePath, "utf8")).toBe(original + "\n");
+  });
+
+  it("leaves a hooks.ts without i18n alone", () => {
+    const filePath = path.join(tempDir, "hooks.transport.ts");
+    const original = "export const transport = {};\n";
+    fs.writeFileSync(filePath, original);
+
+    expect(unmodifyHooksI18n(filePath)).toEqual({
+      status: "success",
+      changed: false,
+    });
+    expect(fs.readFileSync(filePath, "utf8")).toBe(original);
   });
 
   it("takes the language select out of the root layout", async () => {

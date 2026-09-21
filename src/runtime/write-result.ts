@@ -20,7 +20,11 @@ import type {
   Result,
   WriteResultRuntime,
 } from "../core/types";
-import { InvalidArgumentError, RegistryUnavailableError } from "../core/errors";
+import {
+  InvalidArgumentError,
+  MissingShadcnError,
+  RegistryUnavailableError,
+} from "../core/errors";
 import { getLogger, NOOP_LOGGER, type Logger } from "../core/logger";
 import { formatSource } from "../core/format-result";
 import { FORMSNAP, TANSTACK_TABLE_CORE } from "../core/constants";
@@ -442,6 +446,15 @@ export async function installComponents(
   const requested = [...new Set(components)];
   if (requested.length === 0) {
     return { installed: [], skipped: [], packages: [] };
+  }
+
+  // `shadcn-svelte add` exits 1 without a `components.json`, after the custom
+  // components and their packages are already in. Checked first, so a project
+  // without shadcn-svelte is refused whole rather than left half-written.
+  if (!existsSync(path.join(root, "components.json"))) {
+    throw new MissingShadcnError(
+      `Adding ${requested.length > 1 ? "components" : "a component"} (${requested.join(", ")})`,
+    );
   }
 
   const componentsDir = resolveUiDir(root);

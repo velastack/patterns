@@ -4,6 +4,7 @@ import { SvelteFile } from "../../../../runtime/svelte-file";
 import {
   ensureImports,
   withInMemoryScript,
+  formatLikeSource,
 } from "../../../../runtime/ts-morph-helpers";
 import type { ModifyOutcome } from "../../../../core/types";
 
@@ -146,7 +147,7 @@ function updateAppSidebarScript(source: string, legacyName: boolean): string {
       elementTexts.splice(insertIdx, 0, "team", "teams = []");
       pattern.replaceWithText(`{ ${elementTexts.join(", ")} }`);
     }
-    sf.formatText();
+    formatLikeSource(sf);
   });
   return out;
 }

@@ -46,6 +46,8 @@ export default {
     blog: false,
     contentNegotiation: false,
     cms: false,
+    // The pages are shadcn-svelte markup; there is no plain variant.
+    ui: "shadcn",
   },
   category: "content" as const,
   tags: ["sveltekit", "blog", "mdsvex", "markdown", "content", "rss"],

@@ -1,6 +1,9 @@
 import dedent from "dedent";
 import { describe, expect, it } from "vitest";
 import {
+  detectIndent,
+  ensureImports,
+  formatLikeSource,
   ensureBlankLineAfterImports,
   ensureNamedImport,
   ensurePropsBinding,
@@ -398,5 +401,38 @@ describe("removeUnusedBindingElement", () => {
       removeUnusedBindingElement(sf, "locals"),
     );
     expect(source).toBe(input);
+  });
+});
+
+describe("indentation", () => {
+  it("detects tabs, the narrowest space indent, and defaults to tabs", () => {
+    expect(detectIndent("a({\n\tb: 1\n});\n")).toBe("\t");
+    expect(detectIndent("a({\n    b: {\n        c: 1\n    }\n});\n")).toBe(
+      "    ",
+    );
+    expect(detectIndent("/**\n * doc\n */\na({\n  b: 1\n});\n")).toBe("  ");
+    expect(detectIndent("const a = 1;\n")).toBe("\t");
+  });
+
+  it("formats in the file's own indentation", () => {
+    const tabs = "export default {\n\tplugins: [\n\t\tone()\n\t]\n};\n";
+    expect(withInMemoryScript(tabs, (sf) => formatLikeSource(sf)).source).toBe(
+      tabs,
+    );
+
+    const two = "export default {\n  plugins: [\n    one()\n  ]\n};\n";
+    expect(withInMemoryScript(two, (sf) => formatLikeSource(sf)).source).toBe(
+      two,
+    );
+  });
+
+  it("adds a statement level with an indented <script> body", () => {
+    const script = "\n\timport a from 'a';\n\n\tlet { children } = $props();\n";
+    const { source } = withInMemoryScript(script, (sf) =>
+      ensureImports(sf, [{ defaultImport: "b", moduleSpecifier: "b" }]),
+    );
+    expect(source).toBe(
+      "\n\timport a from 'a';\n\timport b from 'b';\n\n\tlet { children } = $props();\n",
+    );
   });
 });

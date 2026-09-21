@@ -5,6 +5,7 @@ import type { ModifyOutcome } from "../../../../core/types";
 import {
   ensureImports,
   withInMemoryScript,
+  formatLikeSource,
 } from "../../../../runtime/ts-morph-helpers";
 
 const FAILURE_HINT = dedent`
@@ -96,7 +97,7 @@ export function modifyWebhookServer(filePath: string): ModifyOutcome {
       return;
     }
 
-    sf.formatText();
+    formatLikeSource(sf);
     addedCases = true;
   });
 

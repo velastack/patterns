@@ -78,6 +78,11 @@ export interface Options {
    * - `serverTests` (boolean): whether the project has the `vela test:server`
    *   harness. When false, the form generators and enable-ai generate no
    *   `server.test.ts`. Defaults to true.
+   * - `metaTags` (boolean): whether the project has `svelte-meta-tags`. When
+   *   false, enable-content-negotiation leaves out the demo page's meta tags
+   *   loader. Defaults to true.
+   * - `server` (boolean): whether the app runs as a Node server, which is what
+   *   enable-cms needs to host its backend. Defaults to `features.backend`.
    * - `provider` (string): for patterns that declare `providers`, the id of
    *   the one to generate. Falls back to `--provider <id>` in `argv`.
    * - `providerEnv` (Record<string, string>): values the CLI collected for

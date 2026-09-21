@@ -22,6 +22,7 @@ describe("installComponents", () => {
       JSON.stringify({ name: "tmp", dependencies: {} }),
       "utf8",
     );
+    writeFileSync(path.join(root, "components.json"), "{}", "utf8");
     const executeCommand = vi.fn<ExecuteCommand>(async () => {});
 
     const result = await installComponents(

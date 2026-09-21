@@ -11,6 +11,7 @@ import {
   type SourceFile,
 } from "ts-morph";
 import type { ModifyOutcome } from "../core/types";
+import { formatLikeSource } from "./ts-morph-helpers";
 
 export interface LoadRevertSpec {
   /** Declarations in the load body to drop, by name. */
@@ -161,7 +162,7 @@ export function removeFromLoad(
     fn.setIsAsync(false);
   }
 
-  sf.formatText();
+  formatLikeSource(sf);
 
   // Removing the statements just above `return` takes the blank line that
   // separated them with it; put it back so the layout reads as it did.

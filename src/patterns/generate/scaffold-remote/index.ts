@@ -69,6 +69,8 @@ export default {
     blog: false,
     contentNegotiation: false,
     cms: false,
+    // The pages are shadcn-svelte markup; there is no plain variant.
+    ui: "shadcn",
   },
   category: "generators" as const,
   tags: ["crud", "scaffold", "pocketbase", "sveltekit", "remote-functions"],

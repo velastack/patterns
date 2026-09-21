@@ -8,6 +8,7 @@ import {
   removeImportByModuleSpecifier,
   removeNamedImportIfUnused,
   removeTopLevelStatementByIdentifier,
+  formatLikeSource,
 } from "../../../../runtime/ts-morph-helpers";
 
 const I18N_HANDLE = "handleWuchale";
@@ -75,7 +76,7 @@ export function unmodifyHooksServerI18n(
   removeNamedImportIfUnused(sourceFile, "@sveltejs/kit/hooks", "sequence");
   removeNamedImportIfUnused(sourceFile, "@sveltejs/kit", "Handle");
 
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   ensureBlankLineAfterImports(sourceFile);
   sourceFile.saveSync();
   return {

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import dedent from "dedent";
 import { Project, SyntaxKind } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
+import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
 
 const FAILURE_HINT = dedent`
   Configure handlePocketbase() with the auth option in hooks.server.ts:
@@ -42,7 +43,7 @@ export function modifyHooksServer(hooksServerPath: string): ModifyOutcome {
   const args = callExpr.getArguments();
   if (args.length === 0) {
     callExpr.addArgument(`{ auth: { protectedRoutes: ['/(app)'] } }`);
-    sourceFile.formatText();
+    formatLikeSource(sourceFile);
     sourceFile.saveSync();
     return { status: "success", changed: true };
   }
@@ -50,7 +51,7 @@ export function modifyHooksServer(hooksServerPath: string): ModifyOutcome {
   const firstArg = args[0];
   if (firstArg.getKind() !== SyntaxKind.ObjectLiteralExpression) {
     callExpr.insertArgument(0, `{ auth: { protectedRoutes: ['/(app)'] } }`);
-    sourceFile.formatText();
+    formatLikeSource(sourceFile);
     sourceFile.saveSync();
     return { status: "success", changed: true };
   }
@@ -64,7 +65,7 @@ export function modifyHooksServer(hooksServerPath: string): ModifyOutcome {
       name: "auth",
       initializer: `{ protectedRoutes: ['/(app)'] }`,
     });
-    sourceFile.formatText();
+    formatLikeSource(sourceFile);
     sourceFile.saveSync();
     return { status: "success", changed: true };
   }
@@ -103,7 +104,7 @@ export function modifyHooksServer(hooksServerPath: string): ModifyOutcome {
     }
   }
 
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   sourceFile.saveSync();
   return {
     status: "success",

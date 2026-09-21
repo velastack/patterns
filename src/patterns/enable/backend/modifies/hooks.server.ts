@@ -7,6 +7,7 @@ import {
   ensureBlankLineAfterImports,
   ensureNamedImport,
   pruneUnusedImports,
+  formatLikeSource,
 } from "../../../../runtime/ts-morph-helpers";
 
 /** The handle `creates/src/hooks.server.ts` exports, for a file that already exists. */
@@ -80,7 +81,7 @@ export function modifyHooksServerBackend(
   ensureNamedImport(sourceFile, "$env/dynamic/private", "env");
   ensureNamedImport(sourceFile, "@velastack/pocketbase", "handlePocketbase");
 
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   ensureBlankLineAfterImports(sourceFile);
   sourceFile.saveSync();
   return {

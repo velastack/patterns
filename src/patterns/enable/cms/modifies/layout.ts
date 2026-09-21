@@ -10,6 +10,7 @@ import {
   newProject,
   returnedObject,
 } from "./load-function";
+import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
 
 const FAILURE_HINT = dedent`
   Forward the server load's data through the root +layout.ts, so \`cms\` reaches
@@ -86,7 +87,7 @@ export function modifyLayoutUniversal(layoutPath: string): ModifyOutcome {
     fn.addParameter({ name: "{ data }" });
   }
 
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   sourceFile.saveSync();
   return { status: "success", changed: true };
 }

@@ -51,5 +51,10 @@ describe("disable-auth reverts enable-auth", () => {
       "let { children }: { children?: Snippet; data?: any } = $props();",
     );
     expect(reverted).not.toContain("data.user");
+    // The auth menu's imports were last; the blank line setting the props
+    // declaration off from the import block is not theirs to take.
+    expect(reverted).toContain(
+      "import { Button } from '$lib/components/ui/button';\n\n\tlet { children }",
+    );
   });
 });

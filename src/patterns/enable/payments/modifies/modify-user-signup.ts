@@ -2,6 +2,7 @@ import fs from "node:fs";
 import dedent from "dedent";
 import { Project, QuoteKind, SyntaxKind } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
+import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
 
 const WORKFLOW_MODULE = "$lib/workflows/link-stripe-customer";
 
@@ -75,7 +76,7 @@ export function modifyUserSignup(userSignupPath: string): ModifyOutcome {
 
   statement.replaceWithText(RUN_SNIPPET + "\n\n" + statement.getText());
 
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   sourceFile.saveSync();
 
   return {

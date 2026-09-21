@@ -6,6 +6,7 @@ import fs from "node:fs";
 import { modifyViteConfig } from "./vite-config";
 import { modifySvelteConfig } from "./svelte-config";
 import { modifyHooksServerI18n } from "./hooks.server";
+import { modifyHooksI18n } from "./hooks";
 import { modifyAppHtml } from "./app-html";
 import { modifyGitignore } from "./gitignore";
 import { ensureRootLayoutI18n } from "./+layout";
@@ -197,6 +198,62 @@ describe("enable i18n modifiers", () => {
     await expect(modified).toMatchFormatted(expected, "+layout.ts");
   });
 
+  it("creates src/hooks.ts when missing", async () => {
+    const hooksPath = path.join(tempDir, "src", "hooks.ts");
+    expect(fs.existsSync(hooksPath)).toBe(false);
+
+    const outcome = modifyHooksI18n(hooksPath);
+
+    expect(outcome).toEqual({ status: "success", changed: true });
+    await expect(fs.readFileSync(hooksPath, "utf8")).toMatchFormatted(
+      fs.readFileSync(
+        path.join(fixturesPath, "expect", "src", "hooks.ts"),
+        "utf8",
+      ),
+      "hooks.ts",
+    );
+  });
+
+  it("composes with the reroute content negotiation wrote", async () => {
+    const filePath = path.join(tempDir, "hooks.negotiate.ts");
+
+    const outcome = modifyHooksI18n(filePath);
+
+    expect(outcome).toEqual({ status: "success", changed: true });
+    await expect(fs.readFileSync(filePath, "utf8")).toMatchFormatted(
+      fs.readFileSync(
+        path.join(fixturesPath, "expect", "hooks.negotiate.ts"),
+        "utf8",
+      ),
+      "hooks.ts",
+    );
+  });
+
+  it("is idempotent after composing with content negotiation", () => {
+    const filePath = path.join(tempDir, "hooks.negotiate.ts");
+
+    modifyHooksI18n(filePath);
+    const first = fs.readFileSync(filePath, "utf8");
+
+    const outcome = modifyHooksI18n(filePath);
+
+    expect(outcome).toEqual({ status: "success", changed: false });
+    expect(fs.readFileSync(filePath, "utf8")).toBe(first);
+  });
+
+  it("refuses to modify an unrecognized reroute", () => {
+    const filePath = path.join(tempDir, "hooks.custom.ts");
+    const original = fs.readFileSync(filePath, "utf8");
+
+    const outcome = modifyHooksI18n(filePath);
+
+    expect(outcome.status).toBe("failed");
+    if (outcome.status === "failed") {
+      expect(outcome.message).toContain("rerouteDeLocalize");
+    }
+    expect(fs.readFileSync(filePath, "utf8")).toBe(original);
+  });
+
   it("creates src/hooks.server.ts when missing", async () => {
     const hooksPath = path.join(tempDir, "src", "hooks.server.ts");
     expect(fs.existsSync(hooksPath)).toBe(false);
@@ -306,6 +363,37 @@ describe("enable i18n modifiers", () => {
 
     expect(outcome).toEqual({ status: "success", changed: false });
     expect(modified).toBe(original);
+  });
+
+  it("adds the loader to a +layout.ts that has no load", async () => {
+    const layoutPath = path.join(tempDir, "src", "routes", "+layout.ts");
+    fs.mkdirSync(path.dirname(layoutPath), { recursive: true });
+    fs.writeFileSync(layoutPath, "export const prerender = true;\n");
+
+    const outcome = ensureRootLayoutI18n(layoutPath);
+
+    expect(outcome).toEqual({ status: "success", changed: true });
+    const modified = fs.readFileSync(layoutPath, "utf8");
+    // The route options the file already held are still there.
+    expect(modified).toContain("export const prerender = true;");
+    expect(modified).toContain("await loadLocale(locale);");
+  });
+
+  it("joins the loader imports to what +layout.ts imports already", async () => {
+    const layoutPath = path.join(tempDir, "src", "routes", "+layout.ts");
+    fs.mkdirSync(path.dirname(layoutPath), { recursive: true });
+    fs.writeFileSync(
+      layoutPath,
+      `import { dev } from '$app/environment';\n\nexport const ssr = !dev;\n`,
+    );
+
+    ensureRootLayoutI18n(layoutPath);
+
+    const modified = fs.readFileSync(layoutPath, "utf8");
+    expect(modified).toContain(
+      "import { dev, browser } from '$app/environment';",
+    );
+    expect(modified).toContain("export const ssr = !dev;");
   });
 
   it("reports failure when +layout.ts already has a load export", () => {

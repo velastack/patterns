@@ -59,7 +59,10 @@ export function resolveMode(options: Options): CmsMode {
     return { endpoint, local: false };
   }
 
-  if (!options.features.backend) {
+  // A PocketBase backend implies a Node server, but it is not the only way to
+  // have one: a project on adapter-node alone can host the SQLite backend too.
+  // The caller detects that and says so with `input.server`.
+  if (!(options.input.server ?? options.features.backend)) {
     throw new InvalidArgumentError(
       "This site has no server to host the CMS backend. " +
         `Point it at a hosted CMS instead: vela enable cms --endpoint ${ENDPOINT_EXAMPLE}`,
@@ -144,8 +147,11 @@ export async function generate(options: Options) {
   // name rather than its own source tree; 0.2.1 breaks every consumer route.
   // 0.2.3 is the first whose shipped admin-bar.css declares its tokens on the
   // @scope root; before it the bar renders unstyled in every consumer.
+  // The backend's cms.ts resolves its database with `dataPath` from
+  // @velastack/kit, which a backend template has and a project on adapter-node
+  // alone does not.
   const packages = mode.local
-    ? ["@velastack/cms@^0.2.3", "better-sqlite3", "marked"]
+    ? ["@velastack/cms@^0.2.3", "@velastack/kit", "better-sqlite3", "marked"]
     : ["@velastack/cms@^0.2.3", "marked"];
 
   return {

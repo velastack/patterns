@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { Project, SyntaxKind } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
+import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
 
 export function unmodifyHooksServer(hooksServerPath: string): ModifyOutcome {
   if (!fs.existsSync(hooksServerPath)) {
@@ -42,7 +43,7 @@ export function unmodifyHooksServer(hooksServerPath: string): ModifyOutcome {
 
   apiKeysProp.remove();
 
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   sourceFile.saveSync();
 
   return {

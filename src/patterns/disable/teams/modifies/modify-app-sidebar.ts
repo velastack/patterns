@@ -5,6 +5,7 @@ import {
   ensureBlankLineAfterImports,
   removeImportByModuleSpecifier,
   withInMemoryScript,
+  formatLikeSource,
 } from "../../../../runtime/ts-morph-helpers";
 import type { ModifyOutcome } from "../../../../core/types";
 
@@ -96,7 +97,7 @@ function revertAppSidebarScript(source: string, markup: string): string {
         removeImportByModuleSpecifier(sf, moduleSpecifier);
       }
     }
-    sf.formatText();
+    formatLikeSource(sf);
     ensureBlankLineAfterImports(sf);
   });
   return out;

@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { SvelteFile } from "../../../../runtime/svelte-file";
 import {
+  ensureBlankLineAfterImports,
   removeImportByModuleSpecifier,
   removePropsBindingIfUnused,
   withInMemoryScript,
@@ -27,6 +28,7 @@ export function unmodifyRootLayoutSvelte(layoutPath: string): ModifyOutcome {
       removeImportByModuleSpecifier(sf, "$lib/components/ui/avatar");
       // enable-auth added `data` for the menu's `data.user`.
       removePropsBindingIfUnused(sf, "data", markup);
+      ensureBlankLineAfterImports(sf);
     });
     return out;
   });

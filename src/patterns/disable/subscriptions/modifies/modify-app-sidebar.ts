@@ -1,7 +1,10 @@
 import fs from "node:fs";
 import { SyntaxKind } from "ts-morph";
 import { SvelteFile } from "../../../../runtime/svelte-file";
-import { withInMemoryScript } from "../../../../runtime/ts-morph-helpers";
+import {
+  withInMemoryScript,
+  formatLikeSource,
+} from "../../../../runtime/ts-morph-helpers";
 import type { ModifyOutcome } from "../../../../core/types";
 
 function updateScript(source: string): string {
@@ -45,7 +48,7 @@ function updateScript(source: string): string {
         pattern.replaceWithText(`{ ${remaining.join(", ")} }`);
       }
     }
-    sf.formatText();
+    formatLikeSource(sf);
   });
   return out;
 }

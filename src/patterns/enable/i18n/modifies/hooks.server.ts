@@ -4,7 +4,10 @@ import dedent from "dedent";
 import { Project, QuoteKind } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
 import { addHandle } from "../../../../runtime/compose-handle";
-import { ensureNamedImport } from "../../../../runtime/ts-morph-helpers";
+import {
+  ensureNamedImport,
+  formatLikeSource,
+} from "../../../../runtime/ts-morph-helpers";
 
 const I18N_HANDLE = "handleWuchale";
 
@@ -139,7 +142,7 @@ export function modifyHooksServerI18n(hooksServerPath: string): ModifyOutcome {
     `${startupSnippet}\n\n${i18nHandleSnippet}\n\n`,
   );
 
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   sourceFile.saveSync();
   return { status: "success", changed: true };
 }

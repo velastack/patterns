@@ -24,6 +24,29 @@ describe("enable content-negotiation modifiers", () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
+  it("creates hooks.server.ts in a project that has none", () => {
+    const filePath = path.join(tempDir, "missing", "hooks.server.ts");
+    expect(modifyHooksServerNegotiate(filePath)).toEqual({
+      status: "success",
+      changed: true,
+    });
+    expect(fs.readFileSync(filePath, "utf8")).toBe(
+      "import { handle as handleNegotiate } from '$lib/negotiate';\n\n" +
+        "export const handle = handleNegotiate;\n",
+    );
+  });
+
+  it("leaves a project with hooks.server.js to its owner", () => {
+    const dir = path.join(tempDir, "js");
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, "hooks.server.js"), "");
+    const outcome = modifyHooksServerNegotiate(
+      path.join(dir, "hooks.server.ts"),
+    );
+    expect(outcome.status).toBe("failed");
+    expect(fs.existsSync(path.join(dir, "hooks.server.ts"))).toBe(false);
+  });
+
   it("wraps a plain handle in sequence(handleNegotiate, ...)", async () => {
     const filePath = path.join(tempDir, "hooks.server.ts");
     modifyHooksServerNegotiate(filePath);

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import dedent from "dedent";
 import { Project, SyntaxKind } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
+import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
 
 const FAILURE_HINT = dedent`
   Configure handlePocketbase() with API keys in hooks.server.ts:
@@ -49,7 +50,7 @@ export function modifyHooksServer(hooksServerPath: string): ModifyOutcome {
     callExpr.addArgument(
       `{ api: { enabled: true, apiKeys: { enabled: true } } }`,
     );
-    sourceFile.formatText();
+    formatLikeSource(sourceFile);
     sourceFile.saveSync();
     return { status: "success", changed: true };
   }
@@ -60,7 +61,7 @@ export function modifyHooksServer(hooksServerPath: string): ModifyOutcome {
       0,
       `{ api: { enabled: true, apiKeys: { enabled: true } } }`,
     );
-    sourceFile.formatText();
+    formatLikeSource(sourceFile);
     sourceFile.saveSync();
     return { status: "success", changed: true };
   }
@@ -73,7 +74,7 @@ export function modifyHooksServer(hooksServerPath: string): ModifyOutcome {
       name: "api",
       initializer: `{ enabled: true, apiKeys: { enabled: true } }`,
     });
-    sourceFile.formatText();
+    formatLikeSource(sourceFile);
     sourceFile.saveSync();
     return { status: "success", changed: true };
   }
@@ -121,7 +122,7 @@ export function modifyHooksServer(hooksServerPath: string): ModifyOutcome {
     }
   }
 
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   sourceFile.saveSync();
   return {
     status: "success",

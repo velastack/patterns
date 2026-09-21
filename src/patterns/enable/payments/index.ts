@@ -47,6 +47,8 @@ export default {
     contentNegotiation: false,
     cms: false,
     workflows: true,
+    // The pages are shadcn-svelte markup; there is no plain variant.
+    ui: "shadcn",
   },
   category: "payments" as const,
   tags: [

@@ -84,6 +84,18 @@ describe("enable cms generate", () => {
     expect(result.creates.map((f) => f.path)).toEqual(["src/lib/cms.ts"]);
   });
 
+  it("hosts the backend on a Node server that has no PocketBase", async () => {
+    const result = await generate(
+      makeOptions({ backend: false, input: { server: true } }),
+    );
+    expect(
+      resolveMode(makeOptions({ backend: false, input: { server: true } })),
+    ).toEqual({ endpoint: "/api/cms", local: true });
+    // `dataPath` comes from @velastack/kit, which only a backend template has.
+    expect(result.packages).toContain("@velastack/kit");
+    expect(result.packages).toContain("better-sqlite3");
+  });
+
   it("refuses a static site without an endpoint", async () => {
     await expect(generate(makeOptions({ backend: false }))).rejects.toThrow(
       InvalidArgumentError,

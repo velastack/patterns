@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { Project, QuoteKind, SyntaxKind } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
+import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
 
 const FAILURE_HINT = [
   "Add the wuchale plugin to your Vite config:",
@@ -98,7 +99,7 @@ export function modifyViteConfig(viteConfigPath: string): ModifyOutcome {
   }
 
   if (changed) {
-    sourceFile.formatText();
+    formatLikeSource(sourceFile);
     sourceFile.saveSync();
   }
 

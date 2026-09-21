@@ -1,7 +1,10 @@
 import fs from "node:fs";
 import { Project, QuoteKind, SyntaxKind } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
-import { removeImportByModuleSpecifier } from "../../../../runtime/ts-morph-helpers";
+import {
+  removeImportByModuleSpecifier,
+  formatLikeSource,
+} from "../../../../runtime/ts-morph-helpers";
 
 /** Remove `wuchale()` from the Vite plugins and its import. */
 export function unmodifyViteConfig(viteConfigPath: string): ModifyOutcome {
@@ -40,7 +43,7 @@ export function unmodifyViteConfig(viteConfigPath: string): ModifyOutcome {
 
   removeImportByModuleSpecifier(sourceFile, "wuchale/vite");
 
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   sourceFile.saveSync();
   return {
     status: "success",

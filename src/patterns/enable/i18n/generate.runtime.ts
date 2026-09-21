@@ -11,6 +11,7 @@ import {
 import { modifyViteConfig } from "./modifies/vite-config";
 import { modifySvelteConfig } from "./modifies/svelte-config";
 import { modifyHooksServerI18n } from "./modifies/hooks.server";
+import { modifyHooksI18n } from "./modifies/hooks";
 import { modifyAppHtml } from "./modifies/app-html";
 import { modifyGitignore } from "./modifies/gitignore";
 import { ensureRootLayoutI18n } from "./modifies/+layout";
@@ -45,6 +46,10 @@ export async function generate(options: Options) {
       modifyHooksServerI18n(hooksServerPath),
     ),
   );
+
+  logger.info("Modifying hooks.ts");
+  const hooksPath = path.join(options.root, "src", "hooks.ts");
+  pushResult(modifyOutcomeToFile(hooksPath, modifyHooksI18n(hooksPath)));
 
   logger.info("Modifying app.html");
   const appHtmlPath = path.join(options.root, "src", "app.html");

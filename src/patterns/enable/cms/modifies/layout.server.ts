@@ -14,6 +14,7 @@ import {
   newProject,
   returnedObject,
 } from "./load-function";
+import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
 
 export interface LayoutServerLocale {
   /**
@@ -183,7 +184,7 @@ export function modifyLayoutServer(
     ensureImportSpec(sourceFile, spec);
   }
 
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   sourceFile.saveSync();
   return { status: "success", changed: true };
 }

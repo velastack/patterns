@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { Project, QuoteKind, SyntaxKind, type SourceFile } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
+import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
 
 function removeNegotiateImport(sourceFile: SourceFile): boolean {
   const decl = sourceFile
@@ -77,7 +78,7 @@ export function unmodifyHooksNegotiate(hooksPath: string): ModifyOutcome {
     return { status: "success", changed: true };
   }
 
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   sourceFile.saveSync();
   return {
     status: "success",

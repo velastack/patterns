@@ -3,6 +3,7 @@ import path from "node:path";
 import dedent from "dedent";
 import { Project, QuoteKind, SyntaxKind, type SourceFile } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
+import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
 
 const NEGOTIATE_ONLY_SNIPPET = dedent`
   import { reroute as negotiateReroute } from '$lib/negotiate';
@@ -65,7 +66,7 @@ export function modifyHooksNegotiate(hooksPath: string): ModifyOutcome {
     sourceFile.addStatements(
       `\nexport const reroute = ({ url }) => negotiateReroute(url.pathname);\n`,
     );
-    sourceFile.formatText();
+    formatLikeSource(sourceFile);
     sourceFile.saveSync();
     return { status: "success", changed: true };
   }
@@ -92,7 +93,7 @@ export function modifyHooksNegotiate(hooksPath: string): ModifyOutcome {
     rerouteDecl.setInitializer(
       "({ url }) => rerouteDeLocalize(negotiateReroute(url.pathname))",
     );
-    sourceFile.formatText();
+    formatLikeSource(sourceFile);
     sourceFile.saveSync();
     return { status: "success", changed: true };
   }

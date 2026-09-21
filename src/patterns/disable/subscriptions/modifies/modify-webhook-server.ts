@@ -4,6 +4,7 @@ import type { ModifyOutcome } from "../../../../core/types";
 import {
   removeImportByModuleSpecifier,
   withInMemoryScript,
+  formatLikeSource,
 } from "../../../../runtime/ts-morph-helpers";
 
 const SUBSCRIPTION_CASE_VALUES = new Set([
@@ -51,7 +52,7 @@ export function unmodifyWebhookServer(filePath: string): ModifyOutcome {
       clause.remove();
     }
 
-    sf.formatText();
+    formatLikeSource(sf);
   });
 
   // Removing the clauses takes the blank line before `default:` with them.

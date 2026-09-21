@@ -1,5 +1,6 @@
 import type { File, Options, Result } from "../../../core/types";
 import { InvalidArgumentError } from "../../../core/errors";
+import { ZOD } from "../../../core/constants";
 import { languageFromPath } from "../../../core/util";
 import {
   generateSchemaSnippet,
@@ -45,7 +46,8 @@ export async function generate(options: Options) {
     modifies: [],
     deletes: [],
     components: [],
-    packages: [],
+    // vela's templates already have zod; a project vela did not create may not.
+    packages: [ZOD],
     collections: [],
     collectionPatches: [],
     collectionDrops: [],

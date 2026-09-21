@@ -2,6 +2,7 @@ import fs from "node:fs";
 import dedent from "dedent";
 import { Project, QuoteKind, type SourceFile } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
+import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
 
 const INIT_SNIPPET = dedent`
   // Runs once when the server starts: executes the workflows in src/lib/workflows.
@@ -93,7 +94,7 @@ export function modifyHooksServerWorkflows(
   // After everything else, so the hook reads as the last thing the server does on start.
   sourceFile.addStatements(`\n${INIT_SNIPPET}`);
 
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   sourceFile.saveSync();
   return { status: "success", changed: true };
 }

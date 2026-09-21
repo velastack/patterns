@@ -21,7 +21,11 @@ export function detectFeatures(root: string): Features {
     auth: has("src/routes/(app)"),
     api: hasApiRoutes(root),
     apiKeys: has("src/routes/api/api-keys") || has("src/routes/(app)/api-keys"),
-    backend: has("data"),
+    // `data/` is also where a self-hosted CMS keeps cms.sqlite, so the
+    // PocketBase client has to be there too.
+    backend:
+      has("data") &&
+      (hasDep("pocketbase-sveltekit") || hasDep("@velastack/pocketbase")),
     i18n: has("wuchale.config.js") || hasDep("wuchale"),
     teams: has("src/routes/(app)/teams") || has("src/lib/teams"),
     payments: has("src/routes/webhooks/stripe"),

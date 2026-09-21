@@ -76,6 +76,8 @@ describe("generate schema pattern", () => {
     );
 
     expect(result.creates).toHaveLength(1);
+    // The schema imports zod, which a project vela did not create may lack.
+    expect(result.packages).toEqual(["zod@^4.1.11"]);
     expect(result.creates[0].path).toBe("src/lib/schemas/contact.ts");
     expect(result.creates[0].content).toContain("export const contactSchema");
     expect(result.creates[0].content).toContain("name: z.string().nonempty()");

@@ -20,3 +20,18 @@ export class RegistryUnavailableError extends Error {
     this.url = url;
   }
 }
+
+/**
+ * The project has no shadcn-svelte setup (`components.json`), and what was
+ * asked for cannot be done without one. Raised before anything is written, so
+ * the project is left as it was.
+ */
+export class MissingShadcnError extends Error {
+  constructor(what: string) {
+    super(
+      `${what} needs shadcn-svelte, and this project has no components.json.\n\n` +
+        "Set it up with `npx shadcn-svelte@latest init` (it needs Tailwind CSS: `npx sv add tailwindcss`), then run this again.",
+    );
+    this.name = "MissingShadcnError";
+  }
+}

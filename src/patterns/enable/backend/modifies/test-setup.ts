@@ -3,7 +3,7 @@ import path from "node:path";
 import type { ModifyOutcome } from "../../../../core/types";
 
 // Source of truth: velastack-cli/templates/minimal/test/setup.ts
-const WITH_BACKEND = `import { beforeEach, afterEach, beforeAll } from 'vitest';
+export const WITH_BACKEND = `import { beforeEach, afterEach, beforeAll } from 'vitest';
 import supertest, { type Agent } from 'supertest';
 import PocketBase from 'pocketbase-sveltekit';
 import type { TestContext } from '@velastack/pocketbase/testing';
@@ -62,13 +62,60 @@ beforeEach(async (context: any) => {
 });
 `;
 
+// Source of truth: velastack-cli/templates/minimal/vitest.config.ts
+export const VITEST_CONFIG = `import { defineConfig, mergeConfig } from 'vitest/config';
+import viteConfig from './vite.config';
+
+export default mergeConfig(
+\tviteConfig,
+\tdefineConfig({
+\t\ttest: {
+\t\t\texpect: {
+\t\t\t\trequireAssertions: true
+\t\t\t},
+\t\t\tname: 'server',
+\t\t\tenvironment: 'node',
+\t\t\tinclude: ['src/**/*.{test,spec}.{js,ts}'],
+\t\t\texclude: ['src/**/*.svelte.{test,spec}.{js,ts}'],
+\t\t\tsetupFiles: ['test/setup.ts']
+\t\t}
+\t})
+);
+`;
+
+const VITEST_CONFIG_NAMES = ["ts", "mts", "js", "mjs"].flatMap((ext) => [
+  `vitest.config.${ext}`,
+  `vitest.workspace.${ext}`,
+]);
+
+/**
+ * Whether the project already configures vitest, in a file of its own or a
+ * `test` block in its vite config. Without either, `test/setup.ts` is never
+ * loaded and every generated `server.test.ts` fails on its missing context.
+ */
+export function hasVitestConfig(root: string): boolean {
+  if (
+    VITEST_CONFIG_NAMES.some((name) => fs.existsSync(path.join(root, name)))
+  ) {
+    return true;
+  }
+  return ["ts", "mts", "js", "mjs"].some((ext) => {
+    const viteConfig = path.join(root, `vite.config.${ext}`);
+    return (
+      fs.existsSync(viteConfig) &&
+      /\btest\s*:/.test(fs.readFileSync(viteConfig, "utf8"))
+    );
+  });
+}
+
+/**
+ * Brings an existing `test/setup.ts` up to the backend one. A project without
+ * the file gets it as a create instead (see `generate.runtime.ts`), so it is
+ * reported as created rather than modified.
+ */
 export function modifyTestSetup(testSetupPath: string): ModifyOutcome {
   if (!fs.existsSync(testSetupPath)) {
-    // The static template has no test/ directory; a backend brings server
-    // tests with it, so the setup is created rather than reported missing.
-    fs.mkdirSync(path.dirname(testSetupPath), { recursive: true });
-    fs.writeFileSync(testSetupPath, WITH_BACKEND, "utf8");
-    return { status: "success", changed: true };
+    return { status: "success", changed: false };
   }
 
   const original = fs.readFileSync(testSetupPath, "utf8");

@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { Project, QuoteKind, SyntaxKind } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
+import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
 
 const CALL_EXPRESSIONS = new Set([
   "linkStripeCustomer.run",
@@ -46,7 +47,7 @@ export function unmodifyUserSignup(userSignupPath: string): ModifyOutcome {
     if (stmt) stmt.remove();
   }
 
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   sourceFile.saveSync();
 
   return {

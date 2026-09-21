@@ -8,6 +8,7 @@ import {
   type PropertyAssignment,
 } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
+import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
 
 const FAILURE_HINT = [
   "Add the CMS plugin to your Vite config, ahead of sveltekit():",
@@ -119,7 +120,7 @@ export function modifyViteConfig(
   }
 
   if (changed) {
-    sourceFile.formatText();
+    formatLikeSource(sourceFile);
     sourceFile.saveSync();
   }
 

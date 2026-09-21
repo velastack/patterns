@@ -4,7 +4,7 @@ import { mergeResults } from "../../../core/util";
 import { generate as generateBase } from "./generate";
 
 const SLUG = "disable-i18n" as const;
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
 const SOURCE = "src/patterns/disable/i18n";
 const DOCS = "/disable/i18n";
 

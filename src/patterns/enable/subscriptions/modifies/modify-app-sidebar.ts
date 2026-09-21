@@ -1,7 +1,10 @@
 import fs from "node:fs";
 import { SyntaxKind } from "ts-morph";
 import { SvelteFile } from "../../../../runtime/svelte-file";
-import { withInMemoryScript } from "../../../../runtime/ts-morph-helpers";
+import {
+  withInMemoryScript,
+  formatLikeSource,
+} from "../../../../runtime/ts-morph-helpers";
 import type { ModifyOutcome } from "../../../../core/types";
 
 const SUBSCRIPTION_TYPE = "{ id: string; productName: string | null } | null";
@@ -68,7 +71,7 @@ function updateScript(source: string): {
       pattern.replaceWithText(`{ ${elementTexts.join(", ")} }`);
       wasAdded = true;
     }
-    sf.formatText();
+    formatLikeSource(sf);
   });
   return { source: out, wasAdded };
 }

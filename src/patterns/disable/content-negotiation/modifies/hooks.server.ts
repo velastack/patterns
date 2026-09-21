@@ -6,6 +6,7 @@ import { removeHandle } from "../../../../runtime/compose-handle";
 import {
   ensureBlankLineAfterImports,
   removeNamedImportIfUnused,
+  formatLikeSource,
 } from "../../../../runtime/ts-morph-helpers";
 
 const FAILURE_HINT = dedent`
@@ -67,7 +68,7 @@ export function unmodifyHooksServerNegotiate(
   }
   removeNegotiateImport(sourceFile);
   removeNamedImportIfUnused(sourceFile, "@sveltejs/kit/hooks", "sequence");
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   ensureBlankLineAfterImports(sourceFile);
   sourceFile.saveSync();
 

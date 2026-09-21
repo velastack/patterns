@@ -1,8 +1,10 @@
 import fs from "node:fs";
+import path from "node:path";
 import dedent from "dedent";
 import { Project, QuoteKind, type SourceFile } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
 import { addHandle } from "../../../../runtime/compose-handle";
+import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
 
 const FAILURE_HINT = dedent`
   Wrap your exported handle with the negotiation handler:
@@ -13,9 +15,7 @@ const FAILURE_HINT = dedent`
   export const handle = sequence(handleNegotiate, /* your existing handle */);
 `;
 
-const NOT_FOUND_HINT = dedent`
-  Create src/hooks.server.ts with a negotiation handle:
-
+const HOOKS_SERVER_SNIPPET = dedent`
   import { handle as handleNegotiate } from '$lib/negotiate';
 
   export const handle = handleNegotiate;
@@ -46,7 +46,14 @@ export function modifyHooksServerNegotiate(
   hooksServerPath: string,
 ): ModifyOutcome {
   if (!fs.existsSync(hooksServerPath)) {
-    return { status: "not-found", message: NOT_FOUND_HINT };
+    // SvelteKit loads the first `hooks.server.*` it finds, and `.js` sorts
+    // first, so a new `.ts` beside it would never run.
+    if (fs.existsSync(hooksServerPath.replace(/\.ts$/, ".js"))) {
+      return { status: "failed", message: FAILURE_HINT };
+    }
+    fs.mkdirSync(path.dirname(hooksServerPath), { recursive: true });
+    fs.writeFileSync(hooksServerPath, HOOKS_SERVER_SNIPPET + "\n");
+    return { status: "success", changed: true };
   }
 
   const original = fs.readFileSync(hooksServerPath, "utf8");
@@ -66,7 +73,7 @@ export function modifyHooksServerNegotiate(
   }
 
   ensureNegotiateHandleImport(sourceFile);
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   sourceFile.saveSync();
   return {
     status: "success",

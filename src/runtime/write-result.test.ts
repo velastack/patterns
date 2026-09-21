@@ -15,7 +15,7 @@ import type {
   PackageManagerOperation,
   Result,
 } from "../core/types";
-import { InvalidArgumentError } from "../core/errors";
+import { InvalidArgumentError, MissingShadcnError } from "../core/errors";
 import {
   formatPaths,
   installComponents,
@@ -199,6 +199,7 @@ describe("writeResult", () => {
 
   it("installs only missing packages and components", async () => {
     const root = makeTempRoot();
+    writeFileSync(path.join(root, "components.json"), "{}", "utf8");
     writeFileSync(
       path.join(root, "package.json"),
       JSON.stringify({ name: "tmp", dependencies: { existing: "^1.0.0" } }),
@@ -301,6 +302,7 @@ describe("writeResult", () => {
 
   it("ships data-table locally instead of asking shadcn-svelte for it", async () => {
     const root = makeTempRoot();
+    writeFileSync(path.join(root, "components.json"), "{}", "utf8");
     writeFileSync(
       path.join(root, "package.json"),
       JSON.stringify({ name: "tmp", dependencies: {} }),
@@ -397,6 +399,8 @@ describe("installComponents", () => {
       JSON.stringify({ name: "tmp", dependencies }),
       "utf8",
     );
+    // What makes it a shadcn-svelte project; without it nothing is installed.
+    writeFileSync(path.join(root, "components.json"), "{}", "utf8");
     for (const component of components) {
       mkdirSync(uiPath(root, component), { recursive: true });
     }
@@ -406,6 +410,22 @@ describe("installComponents", () => {
   function uiPath(root: string, ...rest: string[]) {
     return path.join(root, "src", "lib", "components", "ui", ...rest);
   }
+
+  it("refuses a project without components.json before writing anything", async () => {
+    const root = makeProject();
+    rmSync(path.join(root, "components.json"));
+    const executeCommand = execSpy();
+
+    await expect(
+      installComponents(
+        { root, components: ["data-table", "button"] },
+        { executeCommand },
+      ),
+    ).rejects.toBeInstanceOf(MissingShadcnError);
+
+    expect(executeCommand).not.toHaveBeenCalled();
+    expect(existsSync(uiPath(root))).toBe(false);
+  });
 
   it("reports requested components that already exist as skipped", async () => {
     const root = makeProject({}, ["button", "card"]);

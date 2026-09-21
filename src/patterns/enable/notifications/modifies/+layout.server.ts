@@ -2,6 +2,7 @@ import fs from "node:fs";
 import dedent from "dedent";
 import { Project, SyntaxKind } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
+import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
 
 const FETCH_STATEMENT = dedent`
   const notificationsList = await locals.pb
@@ -100,7 +101,7 @@ export function modifyLayoutServer(layoutServerPath: string): ModifyOutcome {
         "return { notifications };",
       ],
     });
-    sourceFile.formatText();
+    formatLikeSource(sourceFile);
     sourceFile.saveSync();
     return { status: "success", changed: true };
   }
@@ -260,7 +261,7 @@ export function modifyLayoutServer(layoutServerPath: string): ModifyOutcome {
     if (fnBody) augmentReturns(fnBody);
   }
 
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   sourceFile.saveSync();
   return {
     status: "success",

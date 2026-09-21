@@ -2,6 +2,7 @@ import fs from "node:fs";
 import dedent from "dedent";
 import { Project, SyntaxKind } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
+import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
 
 export function modifyLayoutServer(layoutServerPath: string): ModifyOutcome {
   if (!fs.existsSync(layoutServerPath)) {
@@ -100,7 +101,7 @@ export function modifyLayoutServer(layoutServerPath: string): ModifyOutcome {
         "return { user, team, teams, breadcrumbs };",
       ],
     });
-    sourceFile.formatText();
+    formatLikeSource(sourceFile);
     sourceFile.saveSync();
     return { status: "success", changed: true };
   }
@@ -291,7 +292,7 @@ export function modifyLayoutServer(layoutServerPath: string): ModifyOutcome {
     }
   }
 
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   sourceFile.saveSync();
   return {
     status: "success",

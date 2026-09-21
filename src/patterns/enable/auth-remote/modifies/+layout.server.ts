@@ -2,6 +2,7 @@ import fs from "node:fs";
 import dedent from "dedent";
 import { Project, SyntaxKind } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
+import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
 
 export function modifyLayoutServer(layoutPath: string): ModifyOutcome {
   if (!fs.existsSync(layoutPath)) {
@@ -84,7 +85,7 @@ export function modifyLayoutServer(layoutPath: string): ModifyOutcome {
       parameters: [{ name: "{ locals }" }],
       statements: `return { user: locals.pb.authStore.record };`,
     });
-    sourceFile.formatText();
+    formatLikeSource(sourceFile);
     sourceFile.saveSync();
     return { status: "success", changed: true };
   }
@@ -186,7 +187,7 @@ export function modifyLayoutServer(layoutPath: string): ModifyOutcome {
     }
   }
 
-  sourceFile.formatText();
+  formatLikeSource(sourceFile);
   sourceFile.saveSync();
   return {
     status: "success",

@@ -11,7 +11,11 @@ import type {
   SwitchStyleResult,
   WriteResultRuntime,
 } from "./core/types";
-export { InvalidArgumentError, RegistryUnavailableError } from "./core/errors";
+export {
+  InvalidArgumentError,
+  MissingShadcnError,
+  RegistryUnavailableError,
+} from "./core/errors";
 export type {
   ApplyBaseColorOptions,
   ApplyColorsResult,

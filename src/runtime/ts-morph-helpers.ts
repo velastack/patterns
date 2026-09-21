@@ -18,8 +18,61 @@ export interface ImportSpec {
 }
 
 /**
+ * The indentation unit a source uses: a tab, or that many spaces. Read from
+ * the shallowest indented line; a lone leading space is a comment
+ * continuation, not an indent. Tabs when nothing is indented, which is what
+ * `sv create` and vela's templates use.
+ */
+export function detectIndent(source: string): string {
+  let spaces = 0;
+  for (const line of source.split("\n")) {
+    if (line.startsWith("\t")) return "\t";
+    const width = line.match(/^ +(?=\S)/)?.[0].length ?? 0;
+    if (width >= 2 && (spaces === 0 || width < spaces)) spaces = width;
+  }
+  return spaces === 0 ? "\t" : " ".repeat(spaces);
+}
+
+/**
+ * `formatText()` in the file's own indentation. ts-morph's default is four
+ * spaces, which rewrote every line of a tab-indented config to change one; a
+ * project without prettier has nothing to put that back.
+ */
+export function formatLikeSource(sf: SourceFile): void {
+  const indent = detectIndent(sf.getFullText());
+  const size = indent === "\t" ? 4 : indent.length;
+  sf.formatText({
+    convertTabsToSpaces: indent !== "\t",
+    indentSize: size,
+    tabSize: size,
+  });
+}
+
+/** The whitespace every non-blank line starts with. */
+function commonIndent(source: string): string {
+  let common: string | null = null;
+  for (const line of source.split("\n")) {
+    if (line.trim() === "") continue;
+    const lead = line.match(/^[\t ]*/)![0];
+    if (common === null) {
+      common = lead;
+      continue;
+    }
+    let i = 0;
+    while (i < common.length && i < lead.length && common[i] === lead[i]) i++;
+    common = common.slice(0, i);
+  }
+  return common ?? "";
+}
+
+/**
  * Run a function with an in-memory ts-morph SourceFile and return the resulting
  * source plus whatever the callback returned.
+ *
+ * A `<script>` body is indented one level as a whole, which ts-morph knows
+ * nothing about: a statement it adds lands at column zero beside indented
+ * neighbours. The shared indent is taken off first and put back afterwards,
+ * so additions come out level with what was there.
  */
 export function withInMemoryScript<T>(
   source: string,
@@ -30,9 +83,30 @@ export function withInMemoryScript<T>(
     skipFileDependencyResolution: true,
     manipulationSettings: { quoteKind: QuoteKind.Single },
   });
-  const sf = project.createSourceFile("script.ts", source, { overwrite: true });
+  const indent = commonIndent(source);
+  const dedented = indent
+    ? source
+        .split("\n")
+        .map((line) =>
+          line.startsWith(indent) ? line.slice(indent.length) : line,
+        )
+        .join("\n")
+    : source;
+  const sf = project.createSourceFile("script.ts", dedented, {
+    overwrite: true,
+  });
   const result = fn(sf);
-  return { source: sf.getFullText(), result };
+  const out = sf.getFullText();
+  if (!indent) return { source: out, result };
+  if (out === dedented) return { source, result };
+  const lines = out.split("\n");
+  const reindented = lines
+    .map((line, i) =>
+      // The last line is the whitespace before `</script>`, never a statement.
+      line.trim() === "" || i === lines.length - 1 ? line : indent + line,
+    )
+    .join("\n");
+  return { source: reindented, result };
 }
 
 /** Add the given imports to the source file, skipping any whose module specifier already exists. */
@@ -507,7 +581,7 @@ export function addNavItemToScript(
       { defaultImport: icon, moduleSpecifier: iconImportPath },
     ]);
     arr.addElement(newNavItemSnippet);
-    sf.formatText();
+    formatLikeSource(sf);
     return { wasAdded: true };
   });
 
@@ -594,7 +668,7 @@ export function removeNavItemFromScript(
       }
     }
 
-    sf.formatText();
+    formatLikeSource(sf);
     return { wasRemoved: true };
   });
 

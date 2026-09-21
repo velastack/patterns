@@ -1,5 +1,6 @@
 import type { Options, Result } from "../../../core/types";
 import { appRelativePath, languageFromPath } from "../../../core/util";
+import { inPublicGroup } from "../../enable/content-negotiation/generate";
 
 const createsRaw = import.meta.glob<string>(
   "../../enable/content-negotiation/creates/**",
@@ -17,7 +18,7 @@ const CREATES_PREFIX = "../../enable/content-negotiation/creates/";
 const CREATES_WITH_BLOG_PREFIX =
   "../../enable/content-negotiation/creates-with-blog/";
 
-export async function generate(_options: Options) {
+export async function generate(options: Options) {
   const paths = [
     ...Object.keys(createsRaw).map((key) =>
       appRelativePath(key, CREATES_PREFIX),
@@ -27,6 +28,7 @@ export async function generate(_options: Options) {
     ),
   ];
   const deletes = [...new Set(paths)]
+    .map((path) => inPublicGroup(path, options))
     .map((path) => ({
       path,
       language: languageFromPath(path),
