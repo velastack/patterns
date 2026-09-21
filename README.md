@@ -62,6 +62,11 @@ The `modifies` directory contains scripts that modify the target project. Modifi
 Each modification should have an extensive test suite with `fixtures/expect` and `fixtures/original` to ensure that
 the modifications work across a wide range of project setups.
 
+Modifiers call `formatLikeSource(sf)` (`src/runtime/ts-morph-helpers.ts`) rather than `sf.formatText()`, whose
+four-space default re-indents every line of a tab-indented file; a project without prettier has nothing to put
+that back. `withInMemoryScript` takes the shared indent off a `<script>` body before ts-morph sees it and puts it
+back afterwards, so an added import lines up with its neighbours.
+
 ### Preview-Modifies
 
 The `preview-modifies` directory is the mock modify output used only for previews. It's bundled in the same way as the `creates` directory.
@@ -90,7 +95,8 @@ The CLI detects `features.ui` and the two keys; `--ui` sets `input.ui`, which wi
 
 Default routes follow `options.routeGroups` (`{ public, app }`, each a group directory name or `null`). The CLI
 detects it, so a project without `(public)` gets `src/routes/<model>`; absent means the Vela layout. Only routes
-resolved by `parseRoute` (form and scaffold generators and destroyers) follow it: `enable-*` patterns still write
+resolved by `parseRoute` (form and scaffold generators and destroyers) follow it, plus the demo pages of
+`enable-ai` and `enable-content-negotiation`, which move themselves; the other `enable-*` patterns still write
 into `(public)` / `(app)`.
 
 Field markup that does not go through formsnap lives in `src/core/field/plain.ts`, split into a **binding**
@@ -98,6 +104,28 @@ Field markup that does not go through formsnap lives in `src/core/field/plain.ts
 classes, or native). `remote.ts` is the remote binding in the shadcn style, so a new field type is added once
 there and once in the formsnap renderer (`index.ts`). The integration suite checks the plain path against the
 `bare` baseline (`sv create`), not a Vela template.
+
+### Plain projects
+
+Two more inputs follow the `flash` / `serverTests` convention, detected by the CLI and defaulting to what a Vela
+template has:
+
+- `metaTags` (`enable-content-negotiation`): when `false`, the demo page's `+page.ts`, which imports
+  `svelte-meta-tags`, is left out. Default `true`; the CLI sets it from `package.json`.
+- `server` (`enable-cms`): the app runs as a Node server, so the SQLite backend can be hosted in it. Defaults to
+  `features.backend`; the CLI sets it when it finds `@sveltejs/adapter-node` in a project without PocketBase.
+  The self-hosted install also brings `@velastack/kit`, which only a backend template already has.
+
+A pattern whose pages exist only as shadcn-svelte markup sets `requires.ui: "shadcn"`: `enable-api-keys`,
+`enable-auth`, `enable-auth-remote`, `enable-blog`, `enable-notifications`, `enable-payments`,
+`enable-subscriptions`, `enable-teams`, `generate-scaffold` and `generate-scaffold-remote`. Patterns with a plain
+variant (the form generators, `enable-i18n`, `enable-ai`) leave it unset and follow `features.ui`. The CLI refuses
+a `requires.ui: "shadcn"` pattern in a `plain` project before calling `generate`, so nothing is half-applied.
+As a backstop, `installComponents()` throws `MissingShadcnError` (exported) when the project has no
+`components.json`, before it writes anything.
+
+`enable-backend` brings the server test harness to a project without one: `test/setup.ts` and, when the project
+configures vitest nowhere, the `vitest.config.ts` that loads it, both reported as creates.
 
 ## UI components
 
@@ -132,7 +160,9 @@ lists in `components` is handed to `shadcn-svelte add`, which resolves it from t
 # Integration tests
 
 `npm run test:integration` scaffolds real projects with `vela create`, applies patterns the way the CLI
-does (feature flags re-detected from disk between steps, `getCollections` reading the live schema) and
+does (feature flags re-detected from disk between steps by `integration/features.ts`, a hand-kept mirror of the
+CLI's detection: `backend` is `data/` plus a PocketBase client dependency, since a self-hosted CMS also keeps
+its database under `data/`; `getCollections` reading the live schema) and
 then requires zero svelte-check errors with `noUnusedLocals`, zero `failed` / `not-found` file entries and
 prettier-clean output. `integration/cases.ts` holds one case per pattern plus stacks for patterns whose
 output depends on feature detection. CI runs the five suites in parallel; see `.github/workflows/ci.yml`.
