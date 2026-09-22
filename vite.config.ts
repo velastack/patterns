@@ -2,7 +2,7 @@ import { builtinModules } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
-import dts from "vite-plugin-dts";
+import dts from "unplugin-dts/vite";
 import pkg from "./package.json" with { type: "json" };
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -55,7 +55,7 @@ export default defineConfig({
   },
   plugins: [
     dts({
-      rollupTypes: true,
+      bundleTypes: true,
       insertTypesEntry: true,
       exclude: [
         "**/node_modules/**",
