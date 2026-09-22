@@ -1,6 +1,6 @@
 import dedent from "dedent";
 import type { Component, File, Options, Result } from "../../../core/types";
-import { TANSTACK_TABLE_CORE } from "../../../core/constants";
+import { SUPERFORMS, TANSTACK_TABLE_CORE, ZOD } from "../../../core/constants";
 import { InvalidArgumentError } from "../../../core/errors";
 import { languageFromPath } from "../../../core/util";
 import {
@@ -25,6 +25,19 @@ import {
   relationLoadReturnVars,
   resolveInputFields,
 } from "../../../core/shared";
+import {
+  NATIVE_STYLE,
+  geoPointState,
+  plainRenderer,
+  superformsBinding,
+  usesConstraints,
+} from "../../../core/field/plain";
+import { renderPlainValue } from "../../../core/field/plain-display";
+import { resolveUi } from "../../../core/field/ui";
+import {
+  listPageSnippet,
+  plainListPageSnippet,
+} from "../../../core/scaffold-list";
 import { generateScaffoldServerTestSnippet } from "../../../core/tests";
 import {
   urlJsExpr,
@@ -162,7 +175,6 @@ function newPageSnippet(
   injectables: Injectables,
   dynamicParams: string[],
 ): string {
-  const hasSelectFields = fields.some((field) => field.type === "select");
   const imports = uniqueImports([
     'import { untrack } from "svelte";',
     'import { superForm } from "sveltekit-superforms";',
@@ -172,9 +184,6 @@ function newPageSnippet(
     'import { Button } from "$lib/components/ui/button";',
     'import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";',
     'import * as Form from "$lib/components/ui/form";',
-    hasSelectFields
-      ? 'import type { Models } from "@velastack/pocketbase";'
-      : "",
   ]).join("\n");
   const fieldContent = fields.map((field) => renderField(field)).join("\n");
   const hiddenInputs = newHiddenInputs(injectables);
@@ -219,7 +228,6 @@ function editPageSnippet(
   injectables: Injectables,
   dynamicParams: string[],
 ): string {
-  const hasSelectFields = fields.some((field) => field.type === "select");
   const imports = uniqueImports([
     'import { untrack } from "svelte";',
     'import { superForm } from "sveltekit-superforms";',
@@ -229,9 +237,6 @@ function editPageSnippet(
     'import { Button } from "$lib/components/ui/button";',
     'import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";',
     'import * as Form from "$lib/components/ui/form";',
-    hasSelectFields
-      ? 'import type { Models } from "@velastack/pocketbase";'
-      : "",
   ]).join("\n");
   const fieldContent = fields.map((field) => renderField(field)).join("\n");
   const hiddenInputs = editHiddenInputs(injectables);
@@ -240,7 +245,7 @@ function editPageSnippet(
   const cancelHref = urlSvelteAttrValue(
     urls.list,
     dynamicParams,
-    "/${params.id}",
+    "/{params.id}",
   );
   return dedent`
     <script lang="ts">
@@ -268,261 +273,6 @@ function editPageSnippet(
             <Button href${cancelHref} variant="outline" size="sm">Cancel</Button>
           </div>
         </form>
-      </div>
-    </section>
-  `;
-}
-
-function listPageSnippet(
-  model: Model,
-  urls: ReturnType<typeof scaffoldUrls>,
-  fields: Field[],
-  dynamicParams: string[],
-): string {
-  const hasSelectFields = fields.some((field) => field.type === "select");
-  const selectFieldsLabelMaps = hasSelectFields
-    ? `${selectLabelMaps(fields)}`
-    : "";
-  const newHref = urlSvelteAttrValue(urls.new, dynamicParams);
-  const viewPath = urlJsExprWithSuffix(
-    urls.list,
-    dynamicParams,
-    "/${row.original.id}",
-  );
-  const editPath = urlJsExprWithSuffix(
-    urls.list,
-    dynamicParams,
-    "/${row.original.id}/edit",
-  );
-  const deletePath = urlJsExprWithSuffix(
-    urls.list,
-    dynamicParams,
-    "/${row.original.id}",
-  );
-  const columnDefs = fields
-    .map((field) => {
-      let cellParams = "{ getValue }";
-      let cellProps = "{ value: getValue() }";
-
-      if (field.type === "relation") {
-        cellParams = "{ getValue, row }";
-        cellProps = `{ value: getValue(), expanded: row.original.expand?.${field.name}, displayField: "${field.displayField}" }`;
-      }
-
-      if (field.type === "select") {
-        cellProps = `{ value: getValue(), options: ${field.name}Labels }`;
-      }
-
-      if (field.type === "file") {
-        cellParams = "{ getValue, row }";
-        cellProps =
-          "{ value: getValue(), collectionId: row.original.collectionId, id: row.original.id }";
-      }
-
-      return dedent`
-        columnHelper.accessor("${field.name}", {
-          header: ({ column }) => renderComponent(ColumnHeader, { column, title: "${field.title}" }),
-          cell: (${cellParams}) => renderComponent(Cells.${field.type.charAt(0).toUpperCase() + field.type.slice(1)}Cell, ${cellProps})
-        })
-      `;
-    })
-    .join(",\n");
-  const filterFields = fields
-    .filter((field) => field.type === "select")
-    .map(
-      (field) =>
-        `<FacetedFilter column={table.getColumn("${field.name}")!} title="${field.title}" options={Object.values(${field.name}Labels)} />`,
-    )
-    .join("\n");
-
-  return dedent`
-    <script lang="ts">
-      import {
-        type ColumnFiltersState,
-        type PaginationState,
-        type RowSelectionState,
-        type SortingState,
-        type VisibilityState,
-        getCoreRowModel,
-        getFacetedRowModel,
-        getFacetedUniqueValues,
-        getFilteredRowModel,
-        getPaginationRowModel,
-        getSortedRowModel,
-        createColumnHelper
-      } from "@tanstack/table-core";
-      import { createSvelteTable, FlexRender, renderComponent } from "$lib/components/ui/data-table";
-      import * as Table from "$lib/components/ui/table";
-      import { Checkbox } from "$lib/components/ui/checkbox";
-      import { ColumnHeader } from "$lib/components/ui/column-header";
-      import { Pagination } from "$lib/components/ui/pagination";
-      import { RowActions } from "$lib/components/ui/row-actions";
-      import * as Cells from "$lib/components/ui/cells";
-      import { Button } from "$lib/components/ui/button";
-      import { Input } from "$lib/components/ui/input";
-      ${hasSelectFields ? 'import { FacetedFilter } from "$lib/components/ui/faceted-filter";' : ""}
-      import XIcon from "@lucide/svelte/icons/x";
-      import PlusIcon from "@lucide/svelte/icons/plus";
-      import type { Models } from "@velastack/pocketbase";
-
-      ${propsLine(dynamicParams.length > 0)}
-      let rowSelection = $state<RowSelectionState>({});
-      let columnVisibility = $state<VisibilityState>({});
-      let columnFilters = $state<ColumnFiltersState>([]);
-      let sorting = $state<SortingState>([]);
-      let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 10 });
-
-      ${selectFieldsLabelMaps}
-
-      const columnHelper = createColumnHelper<Models["${model.tableName}"]>();
-      const columns = [
-        columnHelper.display({
-          id: "select",
-          header: ({ table }) =>
-            renderComponent(Checkbox, {
-              checked: table.getIsAllPageRowsSelected(),
-              onCheckedChange: (value) => table.toggleAllPageRowsSelected(value),
-              indeterminate: table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected(),
-              "aria-label": "Select all"
-            }),
-          cell: ({ row }) =>
-            renderComponent(Checkbox, {
-              checked: row.getIsSelected(),
-              onCheckedChange: (value) => row.toggleSelected(value),
-              "aria-label": "Select row"
-            }),
-          enableSorting: false,
-          enableHiding: false,
-          meta: { class: "w-0" },
-        }),
-        ${columnDefs}${fields.length > 0 ? "," : ""}
-        columnHelper.display({
-          id: "actions",
-          cell: ({ row }) =>
-            renderComponent(RowActions, {
-              viewPath: ${viewPath},
-              editPath: ${editPath},
-              deletePath: ${deletePath}
-            }),
-          meta: { class: "w-0 text-right" },
-        })
-      ];
-
-      const table = createSvelteTable({
-        get data() {
-          return data.${model.pluralName};
-        },
-        state: {
-          get sorting() {
-            return sorting;
-          },
-          get columnVisibility() {
-            return columnVisibility;
-          },
-          get rowSelection() {
-            return rowSelection;
-          },
-          get columnFilters() {
-            return columnFilters;
-          },
-          get pagination() {
-            return pagination;
-          }
-        },
-        columns,
-        enableRowSelection: true,
-        onRowSelectionChange: (updater) => {
-          rowSelection = typeof updater === "function" ? updater(rowSelection) : updater;
-        },
-        onSortingChange: (updater) => {
-          sorting = typeof updater === "function" ? updater(sorting) : updater;
-        },
-        onColumnFiltersChange: (updater) => {
-          columnFilters = typeof updater === "function" ? updater(columnFilters) : updater;
-        },
-        onColumnVisibilityChange: (updater) => {
-          columnVisibility = typeof updater === "function" ? updater(columnVisibility) : updater;
-        },
-        onPaginationChange: (updater) => {
-          pagination = typeof updater === "function" ? updater(pagination) : updater;
-        },
-        getCoreRowModel: getCoreRowModel(),
-        getFilteredRowModel: getFilteredRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        getFacetedRowModel: getFacetedRowModel(),
-        getFacetedUniqueValues: getFacetedUniqueValues()
-      });
-    </script>
-
-    <section data-role="content">
-      <div class="flex justify-between items-center mb-4">
-        <h1 class="text-3xl font-bold tracking-tight">${model.pluralDisplayName}</h1>
-      </div>
-
-      <div class="space-y-4">
-        <div class="flex items-center justify-between">
-          <div class="flex flex-1 items-center space-x-2">
-            <Input
-              placeholder="Filter ${model.pluralDisplayName.toLowerCase()}..."
-              value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-              oninput={(e) => {
-                table.getColumn("name")?.setFilterValue(e.currentTarget.value);
-              }}
-              onchange={(e) => {
-                table.getColumn("name")?.setFilterValue(e.currentTarget.value);
-              }}
-              class="h-8 w-[150px] lg:w-[250px]"
-            />
-            ${filterFields}
-            {#if table.getState().columnFilters.length > 0}
-              <Button variant="ghost" onclick={() => table.resetColumnFilters()} class="h-8 px-2 lg:px-3">
-                Reset
-                <XIcon />
-              </Button>
-            {/if}
-          </div>
-
-          <Button href${newHref} variant="outline" size="sm">
-            <PlusIcon class="w-4 h-4" />
-            New ${model.displayName.toLowerCase()}
-          </Button>
-        </div>
-
-        <div class="rounded-md border overflow-hidden">
-          <Table.Root>
-            <Table.Header>
-              {#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
-                <Table.Row>
-                  {#each headerGroup.headers as header (header.id)}
-                    <Table.Head colspan={header.colSpan} class={header.column.columnDef.meta?.class}>
-                      {#if !header.isPlaceholder}
-                        <FlexRender content={header.column.columnDef.header} context={header.getContext()} />
-                      {/if}
-                    </Table.Head>
-                  {/each}
-                </Table.Row>
-              {/each}
-            </Table.Header>
-            <Table.Body>
-              {#each table.getRowModel().rows as row (row.id)}
-                <Table.Row data-state={row.getIsSelected() && "selected"}>
-                  {#each row.getVisibleCells() as cell (cell.id)}
-                    <Table.Cell class={cell.column.columnDef.meta?.class}>
-                      <FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
-                    </Table.Cell>
-                  {/each}
-                </Table.Row>
-              {:else}
-                <Table.Row>
-                  <Table.Cell colspan={columns.length} class="h-24 text-center">No results.</Table.Cell>
-                </Table.Row>
-              {/each}
-            </Table.Body>
-          </Table.Root>
-        </div>
-
-        <Pagination {table} />
       </div>
     </section>
   `;
@@ -709,6 +459,128 @@ function showPageSnippet(
   `;
 }
 
+/**
+ * The new/edit page without shadcn-svelte, formsnap or tailwind: native
+ * elements bound to the superforms stores, as generate-form's plain page.
+ */
+function plainFormPageSnippet(
+  model: Model,
+  fields: Field[],
+  options: {
+    title: string;
+    submit: string;
+    cancelHref: string;
+    hiddenInputs: string;
+    withParams: boolean;
+  },
+): string {
+  const renderer = plainRenderer(superformsBinding(), NATIVE_STYLE);
+  const fieldContent = fields.map((field) => renderer.render(field)).join("\n");
+  const enctype = hasFiles(fields) ? ' enctype="multipart/form-data"' : "";
+  const stores = [
+    "form: formData",
+    "errors",
+    ...(usesConstraints(fields) ? ["constraints"] : []),
+    "enhance",
+  ].join(", ");
+
+  return dedent`
+    <script lang="ts">
+      import { untrack } from "svelte";
+      import { superForm } from "sveltekit-superforms";
+      import { zod4Client } from "sveltekit-superforms/adapters";
+      import { ${model.schemaName} } from "$lib/schemas/${model.name}";
+
+      ${propsLine(options.withParams)}
+
+      const { ${stores} } = superForm(untrack(() => data.form), {
+        validators: zod4Client(${model.schemaName}),
+      });
+
+      ${geoPointState(fields)}
+    </script>
+
+    <h1>${options.title}</h1>
+
+    <form method="POST"${enctype} use:enhance>
+      ${fieldContent}
+      ${options.hiddenInputs}
+      <button type="submit">${options.submit}</button>
+      <a href${options.cancelHref}>Cancel</a>
+    </form>
+  `;
+}
+
+function plainNewPageSnippet(
+  model: Model,
+  urls: ReturnType<typeof scaffoldUrls>,
+  fields: Field[],
+  injectables: Injectables,
+  dynamicParams: string[],
+): string {
+  return plainFormPageSnippet(model, fields, {
+    title: `New ${model.displayName.toLowerCase()}`,
+    submit: "Save",
+    cancelHref: urlSvelteAttrValue(urls.list, dynamicParams),
+    hiddenInputs: newHiddenInputs(injectables),
+    withParams: dynamicParams.length > 0,
+  });
+}
+
+function plainEditPageSnippet(
+  model: Model,
+  urls: ReturnType<typeof scaffoldUrls>,
+  fields: Field[],
+  injectables: Injectables,
+  dynamicParams: string[],
+): string {
+  return plainFormPageSnippet(model, fields, {
+    title: `Edit ${model.displayName.toLowerCase()}`,
+    submit: "Save changes",
+    cancelHref: urlSvelteAttrValue(urls.list, dynamicParams, "/{params.id}"),
+    hiddenInputs: editHiddenInputs(injectables),
+    withParams: true,
+  });
+}
+
+/** The detail page as a `<dl>`, with the edit link and the delete form. */
+function plainShowPageSnippet(
+  model: Model,
+  urls: ReturnType<typeof scaffoldUrls>,
+  fields: Field[],
+  dynamicParams: string[],
+): string {
+  const record = `data.${model.name}`;
+  const details = fields
+    .map(
+      (field) => dedent`
+        <dt>${field.title}</dt>
+        <dd>${renderPlainValue(field, record)}</dd>
+      `,
+    )
+    .join("\n");
+
+  return dedent`
+    <script lang="ts">
+      ${selectLabelMaps(fields)}
+
+      ${propsLine(dynamicParams.length > 0)}
+    </script>
+
+    <h1>${model.displayName} details</h1>
+
+    <dl>
+      ${details}
+    </dl>
+
+    <p><a href${urlSvelteAttrValue(urls.list, dynamicParams, `/{${record}.id}/edit`)}>Edit</a></p>
+    <form method="POST">
+      <button type="submit">Delete</button>
+    </form>
+    <p><a href${urlSvelteAttrValue(urls.list, dynamicParams)}>Back to list</a></p>
+  `;
+}
+
 function editServerSnippet(
   model: Model,
   urls: ReturnType<typeof scaffoldUrls>,
@@ -813,6 +685,46 @@ export async function generate(options: Options) {
       ),
   );
   const injectables = findInjectables(fields);
+  const ui = resolveUi(options);
+  const serverTests = options.input.serverTests ?? true;
+  const pages =
+    ui === "plain"
+      ? {
+          list: plainListPageSnippet(model, urls, uiFields, dynamicParams),
+          new: plainNewPageSnippet(
+            model,
+            urls,
+            uiFields,
+            injectables,
+            dynamicParams,
+          ),
+          show: plainShowPageSnippet(model, urls, uiFields, dynamicParams),
+          edit: plainEditPageSnippet(
+            model,
+            urls,
+            uiFields,
+            injectables,
+            dynamicParams,
+          ),
+        }
+      : {
+          list: listPageSnippet(model, urls, uiFields, dynamicParams),
+          new: newPageSnippet(
+            model,
+            urls,
+            uiFields,
+            injectables,
+            dynamicParams,
+          ),
+          show: showPageSnippet(model, urls, uiFields, dynamicParams),
+          edit: editPageSnippet(
+            model,
+            urls,
+            uiFields,
+            injectables,
+            dynamicParams,
+          ),
+        };
 
   const creates: File[] = [
     toFile(
@@ -826,10 +738,7 @@ export async function generate(options: Options) {
       `${paths.list}/+page.server.ts`,
       listServerSnippet(model, uiFields, pb),
     ),
-    toFile(
-      `${paths.list}/+page.svelte`,
-      listPageSnippet(model, urls, uiFields, dynamicParams),
-    ),
+    toFile(`${paths.list}/+page.svelte`, pages.list),
     toFile(
       `${paths.new}/+page.server.ts`,
       newServerSnippet(
@@ -842,64 +751,66 @@ export async function generate(options: Options) {
         dynamicParams,
       ),
     ),
-    toFile(
-      `${paths.new}/+page.svelte`,
-      newPageSnippet(model, urls, uiFields, injectables, dynamicParams),
-    ),
+    toFile(`${paths.new}/+page.svelte`, pages.new),
     toFile(
       `${paths.show}/+page.server.ts`,
       showServerSnippet(model, urls, uiFields, pb, dynamicParams),
     ),
-    toFile(
-      `${paths.show}/+page.svelte`,
-      showPageSnippet(model, urls, uiFields, dynamicParams),
-    ),
+    toFile(`${paths.show}/+page.svelte`, pages.show),
     toFile(
       `${paths.edit}/+page.server.ts`,
       editServerSnippet(model, urls, uiFields, injectables, pb, dynamicParams),
     ),
-    toFile(
-      `${paths.edit}/+page.svelte`,
-      editPageSnippet(model, urls, uiFields, injectables, dynamicParams),
-    ),
-    toFile(
-      `${paths.list}/server.test.ts`,
-      generateScaffoldServerTestSnippet(
-        model,
-        urls,
-        fields,
-        options,
-        collections,
-        dynamicParams,
-      ),
-    ),
+    toFile(`${paths.edit}/+page.svelte`, pages.edit),
+    ...(serverTests
+      ? [
+          toFile(
+            `${paths.list}/server.test.ts`,
+            generateScaffoldServerTestSnippet(
+              model,
+              urls,
+              fields,
+              options,
+              collections,
+              dynamicParams,
+            ),
+          ),
+        ]
+      : []),
   ];
 
-  const components = [
-    ...getFieldComponents(uiFields),
-    "button",
-    "table",
-    "data-table",
-    "command",
-    "popover",
-    "separator",
-    "badge",
-    "dropdown-menu",
-    "checkbox",
-    "select",
-    "cells",
-    "column-header",
-    "faceted-filter",
-    "pagination",
-    "row-actions",
-  ] as Component[];
+  // Plain markup needs nothing from the registry, and no TanStack Table.
+  const components =
+    ui === "plain"
+      ? []
+      : ([
+          ...getFieldComponents(uiFields),
+          "button",
+          "table",
+          "data-table",
+          "command",
+          "popover",
+          "separator",
+          "badge",
+          "dropdown-menu",
+          "checkbox",
+          "select",
+          "cells",
+          "column-header",
+          "faceted-filter",
+          "pagination",
+          "row-actions",
+        ] as Component[]);
 
   return {
     creates,
     modifies: [],
     deletes: [],
     components: [...new Set(components)],
-    packages: [TANSTACK_TABLE_CORE],
+    packages:
+      ui === "plain"
+        ? [SUPERFORMS, ZOD]
+        : [SUPERFORMS, ZOD, TANSTACK_TABLE_CORE],
     collections: shouldCreateCollection
       ? [collectionSpecFromModelFields(model, fields, auth)]
       : [],

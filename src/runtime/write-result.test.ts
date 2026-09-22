@@ -232,7 +232,7 @@ describe("writeResult", () => {
       "new-package",
     ]);
     expect(executeCommand).toHaveBeenNthCalledWith(2, root, "install", [
-      "@tanstack/table-core@^8.21.3",
+      "@tanstack/table-core@^9.2.4",
     ]);
     expect(executeCommand).toHaveBeenNthCalledWith(3, root, "execute", [
       "shadcn-svelte",
@@ -259,7 +259,7 @@ describe("writeResult", () => {
     expect(result.components).toEqual(["column-header", "dropdown-menu"]);
     expect(result.packages).toEqual([
       "new-package",
-      "@tanstack/table-core@^8.21.3",
+      "@tanstack/table-core@^9.2.4",
     ]);
   });
 
@@ -325,7 +325,7 @@ describe("writeResult", () => {
 
     expect(executeCommand).toHaveBeenCalledTimes(1);
     expect(executeCommand).toHaveBeenCalledWith(root, "install", [
-      "@tanstack/table-core@^8.21.3",
+      "@tanstack/table-core@^9.2.4",
     ]);
     for (const file of [
       "index.ts",
@@ -340,7 +340,7 @@ describe("writeResult", () => {
       ).toBe(true);
     }
     expect(result.components).toEqual(["data-table"]);
-    expect(result.packages).toEqual(["@tanstack/table-core@^8.21.3"]);
+    expect(result.packages).toEqual(["@tanstack/table-core@^9.2.4"]);
   });
 
   it("installs a pinned spec but skips it once the name is present", async () => {
@@ -448,6 +448,23 @@ describe("installComponents", () => {
     });
   });
 
+  it("refuses v9 table helpers next to a v8 @tanstack/table-core", async () => {
+    const root = makeProject({ "@tanstack/table-core": "^8.21.3" }, [
+      "data-table",
+    ]);
+    const executeCommand = execSpy();
+
+    await expect(
+      installComponents(
+        { root, components: ["data-table", "pagination"], overwrite: true },
+        { executeCommand, fetch: registryFetch() },
+      ),
+    ).rejects.toThrow("package.json pins @tanstack/table-core 8.x");
+    expect(executeCommand).not.toHaveBeenCalled();
+    expect(existsSync(uiPath(root, "pagination"))).toBe(false);
+    expect(existsSync(uiPath(root, "data-table", "index.ts"))).toBe(false);
+  });
+
   it("installs nothing and spawns nothing when everything is present", async () => {
     const root = makeProject({}, ["button", "data-table"]);
     const executeCommand = execSpy();
@@ -466,7 +483,7 @@ describe("installComponents", () => {
   });
 
   it("re-copies a custom component under overwrite but leaves its existing dependencies alone", async () => {
-    const root = makeProject({ "@tanstack/table-core": "^8.21.3" }, [
+    const root = makeProject({ "@tanstack/table-core": "^9.2.4" }, [
       "column-header",
       "dropdown-menu",
       "button",
@@ -510,7 +527,7 @@ describe("installComponents", () => {
   });
 
   it("copies custom components where components.json points aliases.ui", async () => {
-    const root = makeProject({ "@tanstack/table-core": "^8.21.3" });
+    const root = makeProject({ "@tanstack/table-core": "^9.2.4" });
     writeFileSync(
       path.join(root, "components.json"),
       JSON.stringify({ aliases: { ui: "$lib/ui" } }),
@@ -548,7 +565,7 @@ describe("installComponents", () => {
   });
 
   it("formats installed components with the project's prettier settings", async () => {
-    const root = makeProject({ "@tanstack/table-core": "^8.21.3" });
+    const root = makeProject({ "@tanstack/table-core": "^9.2.4" });
     writeFileSync(
       path.join(root, ".prettierrc"),
       JSON.stringify({ useTabs: true, singleQuote: true }),
@@ -575,7 +592,7 @@ describe("installComponents", () => {
       [
         "export { default as FlexRender } from './flex-render.svelte';",
         "export { renderComponent, renderSnippet } from './render-helpers.js';",
-        "export { createSvelteTable } from './data-table.svelte.js';",
+        "export { createTable } from './data-table.svelte.js';",
         "",
       ].join("\n"),
     );

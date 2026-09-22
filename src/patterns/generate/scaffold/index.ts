@@ -1,13 +1,20 @@
 import type { Options, Pattern } from "../../../core/types";
 import { formatResult } from "../../../core/format-result";
+import { resolveUi } from "../../../core/field/ui";
 import { generate as generateBase } from "./generate";
 
 const SLUG = "generate-scaffold" as const;
-const VERSION = "1.0.8";
+const VERSION = "1.1.0";
 const SOURCE = "src/patterns/generate/scaffold";
 const DOCS = "/generate/scaffold";
 
 export async function generate(options: Options) {
+  if (options.env === "runtime" && resolveUi(options) === "shadcn") {
+    // Before the collection is created: nothing is written for a v8 project.
+    const { assertTableCoreV9 } = await import("../../../runtime/table-core");
+    assertTableCoreV9(options.root);
+  }
+
   const baseRes = await generateBase(options);
 
   if (options.env !== "runtime") {
@@ -47,8 +54,6 @@ export default {
     blog: false,
     contentNegotiation: false,
     cms: false,
-    // The pages are shadcn-svelte markup; there is no plain variant.
-    ui: "shadcn",
   },
   category: "generators" as const,
   tags: ["crud", "scaffold", "pocketbase", "sveltekit"],

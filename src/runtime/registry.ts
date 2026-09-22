@@ -77,6 +77,26 @@ export function readComponentsConfig(root: string): ComponentsConfig {
   };
 }
 
+const DEFAULT_UI_DIR = ["src", "lib", "components", "ui"];
+
+/**
+ * Where shadcn-svelte writes items: `components.json` `aliases.ui`, resolved
+ * the way SvelteKit resolves `$lib` (`src/lib`). Anything else (a custom
+ * `kit.alias`, a missing or unreadable config) falls back to the default so
+ * the existence check here and shadcn's own target agree for every project
+ * the CLI creates.
+ */
+export function resolveUiDir(root: string): string {
+  const alias = readComponentsConfig(root).aliases.ui;
+  if (alias === "$lib") {
+    return path.join(root, "src", "lib");
+  }
+  if (alias?.startsWith("$lib/")) {
+    return path.join(root, "src", "lib", ...alias.slice(5).split("/"));
+  }
+  return path.join(root, ...DEFAULT_UI_DIR);
+}
+
 /** `${registry}/styles/${style}/index.json`: the items one style offers. */
 export function registryIndexUrl(registry: string, style: string): string {
   return `${registry.replace(/\/+$/, "")}/styles/${encodeURIComponent(style)}/index.json`;

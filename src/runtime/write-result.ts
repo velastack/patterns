@@ -28,7 +28,14 @@ import {
 import { getLogger, NOOP_LOGGER, type Logger } from "../core/logger";
 import { formatSource } from "../core/format-result";
 import { FORMSNAP, TANSTACK_TABLE_CORE } from "../core/constants";
-import { fetchRegistryIndex, readComponentsConfig } from "./registry";
+import {
+  fetchRegistryIndex,
+  readComponentsConfig,
+  resolveUiDir,
+} from "./registry";
+import { assertTableCorePackage } from "./table-core";
+
+export { resolveUiDir };
 
 type CustomNpmPackages = Record<string, string[]>;
 
@@ -313,7 +320,6 @@ function copyCustomComponent(
   }
 }
 
-const DEFAULT_UI_DIR = ["src", "lib", "components", "ui"];
 const FORMATTABLE_EXTENSIONS = new Set([
   ".ts",
   ".js",
@@ -365,24 +371,6 @@ export async function formatPaths(
     }
   }
   return changed;
-}
-
-/**
- * Where shadcn-svelte writes items: `components.json` `aliases.ui`, resolved
- * the way SvelteKit resolves `$lib` (`src/lib`). Anything else (a custom
- * `kit.alias`, a missing or unreadable config) falls back to the default so
- * the existence check here and shadcn's own target agree for every project
- * the CLI creates.
- */
-export function resolveUiDir(root: string): string {
-  const alias = readComponentsConfig(root).aliases.ui;
-  if (alias === "$lib") {
-    return path.join(root, "src", "lib");
-  }
-  if (alias?.startsWith("$lib/")) {
-    return path.join(root, "src", "lib", ...alias.slice(5).split("/"));
-  }
-  return path.join(root, ...DEFAULT_UI_DIR);
 }
 
 /** The component directories a project has, sorted. */
@@ -493,6 +481,9 @@ export async function installComponents(
       }
     }
   }
+
+  // `installPackages` keeps an existing @tanstack/table-core whatever its range.
+  assertTableCorePackage(root, [...customToInstall]);
 
   const installed: string[] = [];
   const customList = [...customToInstall].sort();

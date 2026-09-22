@@ -326,14 +326,18 @@ function resolveField(
     return { type: "autodate", name, title, required, onCreate, onUpdate };
   }
 
-  // select with inline options
+  // select with inline options; PocketBase refuses a maxSelect above the
+  // number of values.
   if (type === "select") {
     return {
       type: "select",
       name,
       title,
       required,
-      maxSelect: inferMaxSelect(name),
+      maxSelect: Math.max(
+        1,
+        Math.min(inferMaxSelect(name), selectOptions.length),
+      ),
       options: selectOptions,
     };
   }

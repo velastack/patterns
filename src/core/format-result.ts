@@ -67,6 +67,8 @@ async function projectOptions(
   return { ...resolved, plugins };
 }
 
+const MAX_FORMAT_PASSES = 3;
+
 /**
  * Formats one source text the way pattern output is formatted; the content
  * comes back unchanged when prettier cannot parse it, or when the project
@@ -88,11 +90,23 @@ export async function formatSource(
       (await projectOptions({ path: filePath }, context)) ??
       (created ? {} : null);
     if (!options) return content;
-    return await prettier.format(content, {
-      ...options,
-      filepath: filePath,
-      plugins: [...(options.plugins ?? []), sveltePlugin],
-    });
+    const format = (source: string) =>
+      prettier.format(source, {
+        ...options,
+        filepath: filePath,
+        plugins: [...(options.plugins ?? []), sveltePlugin],
+      });
+    // Prettier is not always idempotent: a long one-line member chain
+    // (`await context.admin.collection("x").create({ ... })`) comes out broken
+    // across lines on the first pass and joined on the second, which the
+    // project's `prettier --check` would flag. Format until it settles.
+    let formatted = await format(content);
+    for (let pass = 1; pass < MAX_FORMAT_PASSES; pass++) {
+      const again = await format(formatted);
+      if (again === formatted) break;
+      formatted = again;
+    }
+    return formatted;
   } catch {
     return content;
   }

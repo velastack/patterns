@@ -164,6 +164,8 @@ describe("generate scaffold-remote pattern", () => {
     expect(editPage?.content).toContain(
       '<input type="hidden" name="id" value={data.contact.id} />',
     );
+    expect(editPage?.content).toContain('href="/contacts/{params.id}"');
+    expect(editPage?.content).not.toContain("${params.id}");
 
     expect(editServer?.content).toContain(
       'await locals.pb.collection("contacts").getOne(params.id)',

@@ -64,6 +64,23 @@ export const PREREQ_ORDER: Slug[] = [
   "enable-cms",
 ];
 
+/** A scaffold with one field of each type the list and detail pages render. */
+const SCAFFOLD_FIELDS = [
+  "pet",
+  "name:text!",
+  "kind:select(dog:Dog,cat:Cat)",
+  "tags:select(small,large)",
+  "done:bool",
+  "born:date",
+  "site:url",
+  "notes:editor",
+  "meta:json",
+  "spot:geopoint",
+  "photo:file",
+  "photos:file",
+  "owner:user",
+];
+
 /** The reroute enable-i18n and enable-content-negotiation compose, whichever runs first. */
 const HOOKS = "src/hooks.ts";
 const COMPOSED_REROUTE = "rerouteDeLocalize(negotiateReroute(url.pathname))";
@@ -264,6 +281,18 @@ export const generateCases: CaseSpec[] = [
   singleCase("generate-migration"),
   singleCase("generate-resource"),
   singleCase("generate-scaffold"),
+  // Every cell type the list and detail pages render, and both facet
+  // filters (single and multi select) of the TanStack table.
+  singleCase(
+    "generate-scaffold",
+    { argv: SCAFFOLD_FIELDS },
+    "generate-scaffold-fields",
+  ),
+  // `sv create` has no shadcn-svelte: a native table and native forms.
+  makeCase("generate-scaffold-plain", "bare", [
+    step("enable-backend"),
+    step("generate-scaffold", { argv: SCAFFOLD_FIELDS, check: true }),
+  ]),
   singleCase("generate-scaffold-remote"),
   singleCase("generate-schema"),
   // zod is not part of `sv create`; the schema has to bring it.

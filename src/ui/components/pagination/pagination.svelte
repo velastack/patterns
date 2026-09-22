@@ -5,9 +5,23 @@
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 	import ChevronsRightIcon from '@lucide/svelte/icons/chevrons-right';
-	import type { Table as TableType } from '@tanstack/table-core';
+	import type {
+		PaginationState,
+		Table_RowModels_Filtered,
+		Table_RowPagination,
+		Table_RowSelection
+	} from '@tanstack/table-core';
 
-	let { table }: { table: TableType<any> } = $props();
+	let {
+		table
+	}: {
+		// Any table with the pagination, row selection and column filtering features.
+		table: Table_RowPagination<any, any> &
+			Table_RowSelection<any, any> &
+			Table_RowModels_Filtered<any, any> & { atoms: { pagination: { get(): PaginationState } } };
+	} = $props();
+
+	const pagination = $derived(table.atoms.pagination.get());
 </script>
 
 <div class="flex items-center justify-between px-2">
@@ -21,13 +35,13 @@
 			<Select.Root
 				allowDeselect={false}
 				type="single"
-				value={`${table.getState().pagination.pageSize}`}
+				value={`${pagination.pageSize}`}
 				onValueChange={(value) => {
 					table.setPageSize(Number(value));
 				}}
 			>
 				<Select.Trigger class="h-8 w-[70px]">
-					{String(table.getState().pagination.pageSize)}
+					{String(pagination.pageSize)}
 				</Select.Trigger>
 				<Select.Content side="top">
 					{#each [10, 20, 30, 40, 50] as pageSize (pageSize)}
@@ -39,14 +53,14 @@
 			</Select.Root>
 		</div>
 		<div class="flex w-[100px] items-center justify-center text-sm font-medium">
-			Page {table.getState().pagination.pageIndex + 1} of
-			{table.getPageCount()}
+			Page {pagination.pageIndex + 1} of
+			{Math.max(table.getPageCount(), 1)}
 		</div>
 		<div class="flex items-center space-x-2">
 			<Button
 				variant="outline"
 				class="hidden size-8 p-0 lg:flex"
-				onclick={() => table.setPageIndex(0)}
+				onclick={() => table.firstPage()}
 				disabled={!table.getCanPreviousPage()}
 			>
 				<span class="sr-only">Go to first page</span>
@@ -73,7 +87,7 @@
 			<Button
 				variant="outline"
 				class="hidden size-8 p-0 lg:flex"
-				onclick={() => table.setPageIndex(table.getPageCount() - 1)}
+				onclick={() => table.lastPage()}
 				disabled={!table.getCanNextPage()}
 			>
 				<span class="sr-only">Go to last page</span>

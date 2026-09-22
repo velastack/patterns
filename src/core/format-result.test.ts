@@ -66,6 +66,25 @@ describe("formatResult", () => {
     );
   });
 
+  it("formats until prettier's output is stable", async () => {
+    writeFileSync(
+      path.join(root, ".prettierrc"),
+      JSON.stringify({ useTabs: true, singleQuote: true, printWidth: 100 }),
+    );
+    // One pass breaks this chain across lines; a second joins it again.
+    const chain =
+      'user = await context.admin.collection("users").create({ name: "name value", email: `test-${Math.random().toString(36).slice(2)}@example.com`, password: "password" });\n';
+
+    const { creates } = await formatResult(resultWith(chain), {
+      env: "runtime",
+      root,
+    });
+
+    expect(creates[0].content).toContain(
+      "user = await context.admin.collection('users').create({",
+    );
+  });
+
   it("falls back to prettier defaults when the project depends on prettier without a config", async () => {
     writeFileSync(
       path.join(root, "package.json"),

@@ -777,7 +777,8 @@ describe("resolveFields", () => {
       noAuth,
     );
     expect((fields[0] as SelectField).maxSelect).toBe(1);
-    expect((fields[1] as SelectField).maxSelect).toBe(99);
+    // Capped at the number of values, which PocketBase requires.
+    expect((fields[1] as SelectField).maxSelect).toBe(2);
   });
 
   it("should generate auth rule when auth is enabled", () => {

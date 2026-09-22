@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { HTMLAttributes } from 'svelte/elements';
-	import type { Column } from '@tanstack/table-core';
+	import type { Column_RowSorting } from '@tanstack/table-core';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { Button } from '$lib/components/ui/button';
 	import ArrowUpIcon from '@lucide/svelte/icons/arrow-up';
@@ -13,7 +13,7 @@
 		title,
 		class: className,
 		...restProps
-	}: { column: Column<any>; title: string } & HTMLAttributes<HTMLDivElement> = $props();
+	}: { column: Column_RowSorting<any, any>; title: string } & HTMLAttributes<HTMLDivElement> = $props();
 </script>
 
 {#if !column?.getCanSort()}

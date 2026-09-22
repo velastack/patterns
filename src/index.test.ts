@@ -44,12 +44,12 @@ describe("installComponents", () => {
       ),
     ).toBe(true);
     expect(executeCommand).toHaveBeenCalledWith(root, "install", [
-      "@tanstack/table-core@^8.21.3",
+      "@tanstack/table-core@^9.2.4",
     ]);
     expect(result).toEqual({
       installed: ["data-table"],
       skipped: [],
-      packages: ["@tanstack/table-core@^8.21.3"],
+      packages: ["@tanstack/table-core@^9.2.4"],
     });
   });
 });

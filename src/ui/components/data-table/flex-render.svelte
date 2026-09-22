@@ -1,40 +1,65 @@
 <script
 	lang="ts"
-	generics="TData, TValue, TContext extends HeaderContext<TData, TValue> | CellContext<TData, TValue>"
+	generics="TFeatures extends TableFeatures, TData extends RowData, TValue extends CellData"
 >
-	import type { CellContext, ColumnDefTemplate, HeaderContext } from '@tanstack/table-core';
+	import type {
+		Cell,
+		CellContext,
+		CellData,
+		ColumnDefTemplate,
+		Header,
+		HeaderContext,
+		RowData,
+		TableFeatures
+	} from '@tanstack/table-core';
 	import { RenderComponentConfig, RenderSnippetConfig } from './render-helpers.js';
-	import type { Attachment } from 'svelte/attachments';
-	type Props = {
-		/** The cell or header field of the current cell's column definition. */
-		content?: TContext extends HeaderContext<TData, TValue>
-			? ColumnDefTemplate<HeaderContext<TData, TValue>>
-			: TContext extends CellContext<TData, TValue>
-				? ColumnDefTemplate<CellContext<TData, TValue>>
-				: never;
-		/** The result of the `getContext()` function of the header or cell */
-		context: TContext;
 
-		/** Used to pass attachments that can't be gotten through context */
-		attach?: Attachment;
-	};
+	type Context = HeaderContext<TFeatures, TData, TValue> | CellContext<TFeatures, TData, TValue>;
 
-	let { content, context, attach }: Props = $props();
+	type Props =
+		| {
+				/** The `header`/`cell` template of a column definition. */
+				content?: ColumnDefTemplate<Context>;
+				/** What the header's or cell's `getContext()` returned. */
+				context: Context;
+				cell?: never;
+				header?: never;
+				footer?: never;
+		  }
+		| { cell: Cell<TFeatures, TData, TValue>; content?: never; context?: never; header?: never; footer?: never }
+		| { header: Header<TFeatures, TData, TValue>; content?: never; context?: never; cell?: never; footer?: never }
+		| { footer: Header<TFeatures, TData, TValue>; content?: never; context?: never; cell?: never; header?: never };
+
+	let props: Props = $props();
+
+	const resolved = $derived.by(() => {
+		if (props.cell) {
+			return { content: props.cell.column.columnDef.cell, context: props.cell.getContext() };
+		}
+		if (props.header) {
+			return { content: props.header.column.columnDef.header, context: props.header.getContext() };
+		}
+		if (props.footer) {
+			return { content: props.footer.column.columnDef.footer, context: props.footer.getContext() };
+		}
+		return { content: props.content, context: props.context };
+	});
+
+	const result = $derived(
+		typeof resolved.content === 'function'
+			? // A header template never receives a cell context and vice versa.
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				(resolved.content as (context: any) => unknown)(resolved.context)
+			: undefined
+	);
 </script>
 
-{#if typeof content === 'string'}
-	{content}
-{:else if content instanceof Function}
-	<!-- It's unlikely that a CellContext will be passed to a Header -->
-	<!-- eslint-disable-next-line @typescript-eslint/no-explicit-any -->
-	{@const result = content(context as any)}
-	{#if result instanceof RenderComponentConfig}
-		{@const { component: Component, props } = result}
-		<Component {...props} {attach} />
-	{:else if result instanceof RenderSnippetConfig}
-		{@const { snippet, params } = result}
-		{@render snippet({ ...params, attach })}
-	{:else}
-		{result}
-	{/if}
+{#if typeof resolved.content === 'string'}
+	{resolved.content}
+{:else if result instanceof RenderComponentConfig}
+	<result.component {...result.props} />
+{:else if result instanceof RenderSnippetConfig}
+	{@render result.snippet(result.params)}
+{:else if result !== undefined && result !== null}
+	{result}
 {/if}

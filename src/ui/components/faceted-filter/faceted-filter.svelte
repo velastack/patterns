@@ -1,7 +1,7 @@
-<script lang="ts" generics="TData, TValue">
+<script lang="ts">
 	import type { Component } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import type { Column } from '@tanstack/table-core';
+	import type { Column_ColumnFaceting, Column_ColumnFiltering } from '@tanstack/table-core';
 	import CirclePlusIcon from '@lucide/svelte/icons/circle-plus';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import * as Command from '$lib/components/ui/command';
@@ -16,7 +16,7 @@
 		title,
 		options
 	}: {
-		column: Column<TData, TValue>;
+		column: Column_ColumnFiltering<any, any> & Column_ColumnFaceting<any, any>;
 		title: string;
 		options: {
 			label: string;

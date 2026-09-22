@@ -86,12 +86,14 @@ argv only). Shared behaviour (the layout modifier, writing the env keys to `.env
 
 ### Plain forms
 
-`generate-form` and `generate-form-remote` take `input.ui: "shadcn" | "plain"` (default: the detected `features.ui`, then `shadcn`). `plain` is for
+`generate-form`, `generate-form-remote` and `generate-scaffold` take `input.ui: "shadcn" | "plain"` (default: the detected `features.ui`, then `shadcn`). `plain` is for
 projects Vela did not create: native elements with no components and no classes, `data-field` / `data-invalid` /
 `data-error` hooks for styling, `components: []`, and hand-written `aria-invalid` / `aria-describedby` in place
 of what formsnap wires up. Two more keys say what else the project lacks: `flash: false` reports through
 superforms' `message()` instead of `sveltekit-flash-message`, and `serverTests: false` skips `server.test.ts`.
 The CLI detects `features.ui` and the two keys; `--ui` sets `input.ui`, which wins over the feature.
+A plain scaffold lists records in a native `<table>` (no TanStack Table, no sorting or paging), shows one as a
+`<dl>` and edits it with the plain form markup; values render through `src/core/field/plain-display.ts`.
 
 Default routes follow `options.routeGroups` (`{ public, app }`, each a group directory name or `null`). The CLI
 detects it, so a project without `(public)` gets `src/routes/<model>`; absent means the Vela layout. Only routes
@@ -118,8 +120,8 @@ template has:
 
 A pattern whose pages exist only as shadcn-svelte markup sets `requires.ui: "shadcn"`: `enable-api-keys`,
 `enable-auth`, `enable-auth-remote`, `enable-blog`, `enable-notifications`, `enable-payments`,
-`enable-subscriptions`, `enable-teams`, `generate-scaffold` and `generate-scaffold-remote`. Patterns with a plain
-variant (the form generators, `enable-i18n`, `enable-ai`) leave it unset and follow `features.ui`. The CLI refuses
+`enable-subscriptions`, `enable-teams` and `generate-scaffold-remote`. Patterns with a plain variant (the form
+generators, `generate-scaffold`, `enable-i18n`, `enable-ai`) leave it unset and follow `features.ui`. The CLI refuses
 a `requires.ui: "shadcn"` pattern in a `plain` project before calling `generate`, so nothing is half-applied.
 As a backstop, `installComponents()` throws `MissingShadcnError` (exported) when the project has no
 `components.json`, before it writes anything.
@@ -137,6 +139,13 @@ lists in `components` is handed to `shadcn-svelte add`, which resolves it from t
 
 - `customDependencies` must list every `$lib/components/ui/<x>` a shipped component imports, and
   `customNpmPackages` every npm package no shadcn item installs for it.
+- `data-table` is a local copy of `@tanstack/svelte-table`'s v9 adapter (`createTable`, `FlexRender`,
+  `renderComponent`) over `@tanstack/table-core` alone; `column-header`, `faceted-filter` and `pagination` type
+  their props with table-core's per-feature interfaces (`Column_RowSorting<any, any>`, ...), since a
+  `Column<typeof features, Row>` is not assignable to `Column<any, any>` in v9. The scaffold list page
+  (`src/core/scaffold-list.ts`) declares its own `tableFeatures`. `installPackages` never upgrades a package
+  that is already present, so a project still on v8 is refused by `assertTableCoreV9` (scaffold generators,
+  before the collection is created) and `assertTableCorePackage` (`installComponents()`), with the upgrade steps.
 - `installComponents()` is also exported from the package; `vela ui add` calls it. It is node-only and is
   loaded on the first call, the same rule as `generate.runtime.ts`. Before spawning `shadcn-svelte add` it
   checks bare item names against the style's registry index (`src/runtime/registry.ts`) and rejects
