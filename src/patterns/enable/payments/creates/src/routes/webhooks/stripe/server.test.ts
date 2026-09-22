@@ -9,7 +9,7 @@ describe("POST /webhooks/stripe", () => {
     const event = {
       id: `evt_test_${Date.now()}`,
       object: "event",
-      api_version: "2024-11-20.acacia",
+      api_version: "2026-08-26.dahlia",
       created: Math.floor(Date.now() / 1000),
       type: "test.event",
       data: {
@@ -47,7 +47,7 @@ describe("POST /webhooks/stripe", () => {
     const event = {
       id: `evt_test_${Date.now()}`,
       object: "event",
-      api_version: "2024-11-20.acacia",
+      api_version: "2026-08-26.dahlia",
       created: Math.floor(Date.now() / 1000),
       type: "test.event",
       data: {
@@ -77,7 +77,7 @@ describe("POST /webhooks/stripe", () => {
     const event = {
       id: `evt_test_${Date.now()}`,
       object: "event",
-      api_version: "2024-11-20.acacia",
+      api_version: "2026-08-26.dahlia",
       created: Math.floor(Date.now() / 1000),
       type: "test.event",
       data: {
@@ -107,7 +107,7 @@ describe("POST /webhooks/stripe", () => {
     const event = {
       id: `evt_test_${Date.now()}`,
       object: "event",
-      api_version: "2024-11-20.acacia",
+      api_version: "2026-08-26.dahlia",
       created: Math.floor(Date.now() / 1000),
       type: "test.event",
       data: {

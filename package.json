@@ -55,7 +55,7 @@
     "magic-string": "^1.2.3",
     "package-manager-detector": "^1.6.0",
     "pocketbase": "^0.28.0",
-    "stripe": "^19.0.0",
+    "stripe": "^22.0.0",
     "svelte": "^5.55.4",
     "ts-morph": "^28.0.0"
   },
