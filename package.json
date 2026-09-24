@@ -111,7 +111,7 @@
     "stripe": "^22.6.1",
     "svelte": "^5.56.10",
     "ts-morph": "^28.0.0",
-    "typescript": "^5.0.0",
+    "typescript": "^7.0.2",
     "unplugin-dts": "^1.1.1",
     "vite": "^8.2.2",
     "vite-node": "^6.0.0",
