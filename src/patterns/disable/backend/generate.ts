@@ -1,4 +1,5 @@
 import type { Options, Result } from "../../../core/types";
+import { ADAPTER_STATIC } from "../../../core/constants";
 import { appRelativePath, languageFromPath } from "../../../core/util";
 import { WORKFLOW_PACKAGES } from "../../enable/workflows/generate";
 
@@ -50,7 +51,7 @@ export async function generate(_options: Options) {
     deletes,
     components: [],
     // The adapter the config is switched back to, so the project still builds.
-    packages: ["@sveltejs/adapter-static"],
+    packages: [ADAPTER_STATIC],
     uninstalls: WORKFLOW_PACKAGES.map(packageName),
     collections: [],
     collectionPatches: [],

@@ -163,4 +163,42 @@ describe("disable ai runtime", () => {
       "POCKETBASE_URL=http://localhost:8090\n",
     );
   });
+
+  it("removes every provider's key from src/env.ts, keeping the rest", async () => {
+    project({
+      "src/env.ts": [
+        "import { defineEnvVars } from '@sveltejs/kit/env';",
+        "",
+        "export const variables = defineEnvVars({",
+        "\tPOCKETBASE_URL: { schema: (value) => value ?? '' },",
+        "\tOPENAI_API_KEY: { schema: (value) => value ?? '' }",
+        "});",
+        "",
+      ].join("\n"),
+    });
+    const result = await generateRuntime(makeOptions({}, { root }));
+    const decl = fs.readFileSync(path.join(root, "src", "env.ts"), "utf8");
+    expect(decl).toContain("POCKETBASE_URL");
+    expect(decl).not.toContain("OPENAI_API_KEY");
+    expect(result.modifies.map((f) => path.basename(f.path))).toEqual([
+      "env.ts",
+    ]);
+  });
+
+  it("deletes a src/env.ts that declared only the key", async () => {
+    project({
+      "src/env.ts": [
+        "import { defineEnvVars } from '@sveltejs/kit/env';",
+        "",
+        "export const variables = defineEnvVars({",
+        "\tAI_GATEWAY_API_KEY: { schema: (value) => value ?? '' }",
+        "});",
+        "",
+      ].join("\n"),
+    });
+    const result = await generateRuntime(makeOptions({}, { root }));
+    expect(result.deletes.map((f) => path.relative(root, f.path))).toEqual([
+      path.join("src", "env.ts"),
+    ]);
+  });
 });

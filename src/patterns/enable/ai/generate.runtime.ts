@@ -2,13 +2,21 @@ import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
 import { InvalidArgumentError } from "../../../core/errors";
 import { getLogger } from "../../../core/logger";
-import { resolveProvider, suppliedProviderEnv } from "../../../core/providers";
+import { ADAPTER_STATIC as ADAPTER_STATIC_SPEC } from "../../../core/constants";
+import {
+  providerEnvVars,
+  resolveProvider,
+  suppliedProviderEnv,
+} from "../../../core/providers";
 import { resolveConfigTarget } from "../../../runtime/config-target";
 import { modifyEnv } from "../../../runtime/env";
+import { modifyEnvVarsFiles } from "../../../runtime/env-vars";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
+import { packageName } from "../../../runtime/write-result";
 import { envEditsFor, META } from "./generate";
 
-const ADAPTER_STATIC = "@sveltejs/adapter-static";
+// The config imports the package, not the versioned spec the constant installs.
+const ADAPTER_STATIC = packageName(ADAPTER_STATIC_SPEC);
 
 export const STATIC_ADAPTER_MESSAGE = [
   `AI needs a server, and this project builds with ${ADAPTER_STATIC}.`,
@@ -36,7 +44,15 @@ export async function generate(options: Options) {
 
   const logger = getLogger(options);
   const provider = resolveProvider(META, options);
+  const creates: File[] = [];
   const modifies: File[] = [];
+
+  // SvelteKit 3 exposes only declared variables: `src/lib/server/ai.ts`
+  // imports the provider's key from `$app/env/private`.
+  logger.info("Declaring the API key in src/env.ts");
+  const envVars = modifyEnvVarsFiles(options.root, providerEnvVars(provider));
+  if (envVars.create) creates.push(envVars.create);
+  if (envVars.modify) modifies.push(envVars.modify);
 
   logger.info("Updating .env");
   const envPath = path.join(options.root, ".env");
@@ -47,7 +63,7 @@ export async function generate(options: Options) {
   if (envFile) modifies.push(envFile);
 
   return {
-    creates: [],
+    creates,
     modifies,
     deletes: [],
     components: [],

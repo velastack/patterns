@@ -6,9 +6,15 @@ import {
   type ConfigModifyResult,
   type ConfigTarget,
 } from "../../../../runtime/config-target";
+import { packageName } from "../../../../runtime/write-result";
+import {
+  ADAPTER_NODE as ADAPTER_NODE_SPEC,
+  ADAPTER_STATIC as ADAPTER_STATIC_SPEC,
+} from "../../../../core/constants";
 
-const ADAPTER_NODE = "@sveltejs/adapter-node";
-const ADAPTER_STATIC = "@sveltejs/adapter-static";
+// Imports name the package, not the versioned spec the constants install.
+const ADAPTER_NODE = packageName(ADAPTER_NODE_SPEC);
+const ADAPTER_STATIC = packageName(ADAPTER_STATIC_SPEC);
 const ADAPTER_AUTO = "@sveltejs/adapter-auto";
 
 const FAILURE_HINT = dedent`

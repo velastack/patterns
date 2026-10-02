@@ -20,7 +20,7 @@ import { libModule } from "../../../../runtime/lib-specifier";
 
 const HANDLE_HINT = dedent`
   Take handlePocketbase(...) out of the exported handle in src/hooks.server.ts,
-  and its imports from '@velastack/pocketbase' and '$env/dynamic/private'.
+  and its imports from '@velastack/pocketbase' and '$app/env/private'.
 `;
 
 const INIT_HINT = dedent`
@@ -30,9 +30,15 @@ const INIT_HINT = dedent`
   import { startWorker } from '#lib/server/workflows.js';
 `;
 
-/** Modules only the backend's handle and init import from. */
+/**
+ * Modules only the backend's handle and init import from. An import nothing
+ * references any more is dropped; a variable other code still reads stays.
+ * `$env/dynamic/private` is the `env` object hooks written before SvelteKit 3
+ * read the PocketBase variables from.
+ */
 const BACKEND_MODULES: ModuleMatch[] = [
   "@velastack/pocketbase",
+  "$app/env/private",
   "$env/dynamic/private",
   libModule("server/workflows"),
   "@sveltejs/kit",

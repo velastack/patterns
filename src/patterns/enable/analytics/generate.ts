@@ -11,9 +11,10 @@ export const COMPONENT_PATH = "src/lib/components/analytics/analytics.svelte";
 
 /**
  * The providers in prompt order. Each one's `env` keys are what the CLI asks
- * for and what `generate.runtime.ts` writes to `.env`; the generated
- * component reads them through `$env/dynamic/public` and stays inert while
- * they are blank.
+ * for, what `generate.runtime.ts` writes to `.env` and declares in
+ * `src/env.ts` (`public: true`, since the browser reads them); the generated
+ * component imports them from `$app/env/public` and stays inert while they
+ * are blank.
  */
 export const PROVIDERS: Provider[] = [
   {
@@ -22,6 +23,7 @@ export const PROVIDERS: Provider[] = [
     env: [
       {
         key: "PUBLIC_PLAUSIBLE_DOMAIN",
+        public: true,
         label: "Plausible site domain",
         placeholder: "example.com",
       },
@@ -33,6 +35,7 @@ export const PROVIDERS: Provider[] = [
     env: [
       {
         key: "PUBLIC_GA_MEASUREMENT_ID",
+        public: true,
         label: "Google Analytics measurement ID",
         placeholder: "G-XXXXXXXXXX",
       },
@@ -44,11 +47,13 @@ export const PROVIDERS: Provider[] = [
     env: [
       {
         key: "PUBLIC_POSTHOG_KEY",
+        public: true,
         label: "PostHog project API key",
         placeholder: "phc_...",
       },
       {
         key: "PUBLIC_POSTHOG_HOST",
+        public: true,
         label: "PostHog host",
         default: "https://us.i.posthog.com",
       },

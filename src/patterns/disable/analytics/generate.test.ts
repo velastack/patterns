@@ -93,4 +93,29 @@ describe("disable analytics runtime", () => {
     expect(result.deletes.map((f) => path.basename(f.path))).toEqual([".env"]);
     expect(result.modifies).toEqual([]);
   });
+
+  it("removes every provider's variables from src/env.ts, keeping the rest", async () => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), "disable-analytics-"));
+    fs.mkdirSync(path.join(root, "src"));
+    fs.writeFileSync(
+      path.join(root, "src", "env.ts"),
+      [
+        "import { defineEnvVars } from '@sveltejs/kit/env';",
+        "",
+        "export const variables = defineEnvVars({",
+        "\tPOCKETBASE_URL: { schema: (value) => value ?? '' },",
+        "\tPUBLIC_POSTHOG_KEY: { public: true, schema: (value) => value ?? '' },",
+        "\tPUBLIC_POSTHOG_HOST: { public: true, schema: (value) => value ?? '' }",
+        "});",
+        "",
+      ].join("\n"),
+    );
+    const result = await generateRuntime(makeOptions({}, root));
+    const decl = fs.readFileSync(path.join(root, "src", "env.ts"), "utf8");
+    expect(decl).toContain("POCKETBASE_URL");
+    expect(decl).not.toContain("POSTHOG");
+    expect(result.modifies.map((f) => path.basename(f.path))).toEqual([
+      "env.ts",
+    ]);
+  });
 });

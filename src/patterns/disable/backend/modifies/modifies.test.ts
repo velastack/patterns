@@ -133,7 +133,7 @@ describe("disable backend hooks.server.ts", () => {
     const modified = fs.readFileSync(filePath, "utf8");
     expect(modified).toContain("export const handle = handleWuchale;");
     expect(modified).not.toContain("handlePocketbase");
-    expect(modified).not.toContain("$env/dynamic/private");
+    expect(modified).not.toContain("$app/env/private");
     expect(modified).not.toContain("sequence");
 
     // And disabling i18n afterwards empties it.

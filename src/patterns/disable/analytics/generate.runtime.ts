@@ -6,7 +6,8 @@ import {
   envRevertOutcomeToFile,
   modifyOutcomeToFile,
 } from "../../../runtime/modify-file";
-import { allEnvEdits } from "./generate";
+import { allEnvEdits, allEnvNames } from "./generate";
+import { unmodifyEnvVarsFiles } from "../../../runtime/env-vars";
 import { unmodifyLayoutSvelte } from "./modifies/layout.svelte";
 
 export async function generate(options: Options) {
@@ -20,6 +21,13 @@ export async function generate(options: Options) {
   logger.info("Reverting src/routes/+layout.svelte");
   const layoutPath = path.join(options.root, "src", "routes", "+layout.svelte");
   pushResult(modifyOutcomeToFile(layoutPath, unmodifyLayoutSvelte(layoutPath)));
+
+  // Which provider was chosen is not recorded, so every one's variables go;
+  // the file goes too when these were all it declared.
+  logger.info("Removing analytics variables from src/env.ts");
+  const envVars = unmodifyEnvVarsFiles(options.root, allEnvNames());
+  pushResult(envVars.modify);
+  if (envVars.delete) deletes.push(envVars.delete);
 
   logger.info("Removing analytics variables from .env");
   const envPath = path.join(options.root, ".env");

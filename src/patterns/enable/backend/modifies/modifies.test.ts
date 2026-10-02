@@ -73,7 +73,9 @@ describe("enable backend hooks.server.ts", () => {
     expect(modified).toContain(
       "import { handlePocketbase } from '@velastack/pocketbase';",
     );
-    expect(modified).toContain("import { env } from '$env/dynamic/private';");
+    expect(modified).toMatch(
+      /import \{\s*POCKETBASE_URL,\s*POCKETBASE_SUPERUSER_EMAIL,\s*POCKETBASE_SUPERUSER_PASSWORD\s*\} from '\$app\/env\/private';/,
+    );
     expect(modified).toMatch(
       /export const handle = sequence\(\s*handleWuchale,\s*handlePocketbase\(\{/,
     );

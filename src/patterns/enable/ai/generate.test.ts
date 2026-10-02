@@ -92,7 +92,9 @@ describe("ai generate", () => {
     const ai = content(result.creates, AI_PATH);
     expect(ai).toContain("createGateway({ apiKey })");
     expect(ai).toContain("'AI_GATEWAY_API_KEY'");
-    expect(ai).toContain("$env/dynamic/private");
+    expect(ai).toContain(
+      "import { AI_GATEWAY_API_KEY } from '$app/env/private';",
+    );
     expect(result.packages).toEqual([
       "ai@^7.0.107",
       "@ai-sdk/svelte@^5.0.107",
@@ -125,6 +127,8 @@ describe("ai generate", () => {
     expect(endpoint).toContain("instructions: INSTRUCTIONS");
     expect(endpoint).toContain("createUIMessageStreamResponse");
     expect(endpoint).toContain("{ status: 503 }");
+    expect(endpoint).toContain("return new Response(");
+    expect(endpoint).not.toContain("@sveltejs/kit");
     expect(endpoint).not.toContain("authStore");
   });
 
@@ -136,7 +140,10 @@ describe("ai generate", () => {
     expect(paths(result.creates)).not.toContain(PUBLIC_PAGE_PATH);
     const endpoint = content(result.creates, ENDPOINT_PATH);
     expect(endpoint).toContain("locals.pb.authStore.isValid");
-    expect(endpoint).toContain("{ status: 401 }");
+    expect(endpoint).toContain(
+      "new Response('Sign in to chat.', { status: 401 })",
+    );
+    expect(endpoint).not.toContain("@sveltejs/kit");
     expect(content(result.creates, ENDPOINT_TEST_PATH)).toContain(
       "should return 401 when signed out",
     );
@@ -224,11 +231,19 @@ describe("demoDir", () => {
 });
 
 describe("ai preview", () => {
-  it("lists the provider's env key", async () => {
+  it("declares and lists the provider's env key", async () => {
     const result = await generatePreview(
       makeOptions({ provider: "anthropic" }, { env: "preview" }),
     );
     expect(result.modifies).toEqual([
+      {
+        path: "src/env.ts",
+        language: "ts",
+        content: expect.stringContaining(
+          "ANTHROPIC_API_KEY: {\n\t\tschema: (value) => value ?? '',\n\t\tdescription: 'Anthropic API key'\n\t}",
+        ),
+        status: "success",
+      },
       {
         path: ".env",
         language: "text",
@@ -264,10 +279,14 @@ describe("ai runtime", () => {
     if (root) fs.rmSync(root, { recursive: true, force: true });
   });
 
-  function project(viteConfig: string, env?: string): string {
+  function project(viteConfig: string, env?: string, envDecl?: string): string {
     root = fs.mkdtempSync(path.join(os.tmpdir(), "enable-ai-"));
     fs.writeFileSync(path.join(root, "vite.config.ts"), viteConfig);
     if (env !== undefined) fs.writeFileSync(path.join(root, ".env"), env);
+    if (envDecl !== undefined) {
+      fs.mkdirSync(path.join(root, "src"));
+      fs.writeFileSync(path.join(root, "src", "env.ts"), envDecl);
+    }
     return root;
   }
 
@@ -302,6 +321,42 @@ describe("ai runtime", () => {
     expect(fs.readFileSync(path.join(root, ".env"), "utf8")).toBe(
       "POCKETBASE_URL=x\n# AI SDK (OpenAI)\nOPENAI_API_KEY=sk-live\n",
     );
+    // No src/env.ts yet: one is created, declaring only the chosen key.
+    expect(result.creates).toEqual([
+      expect.objectContaining({
+        path: path.join(root, "src", "env.ts"),
+        content: expect.stringContaining("OPENAI_API_KEY: {"),
+      }),
+    ]);
+    expect(result.creates[0].content).not.toContain("ANTHROPIC_API_KEY");
+  });
+
+  it("declares the key in an existing src/env.ts", async () => {
+    project(
+      viteConfig("@sveltejs/adapter-node"),
+      undefined,
+      [
+        "import { defineEnvVars } from '@sveltejs/kit/env';",
+        "",
+        "export const variables = defineEnvVars({",
+        "\tPOCKETBASE_URL: {",
+        "\t\tschema: (value) => value ?? ''",
+        "\t}",
+        "});",
+        "",
+      ].join("\n"),
+    );
+    const result = await generateRuntime(
+      makeOptions({ provider: "anthropic" }, { root }),
+    );
+    expect(result.creates).toEqual([]);
+    expect(result.modifies.map((f) => path.basename(f.path))).toEqual([
+      "env.ts",
+      ".env",
+    ]);
+    const decl = fs.readFileSync(path.join(root, "src", "env.ts"), "utf8");
+    expect(decl).toContain("POCKETBASE_URL: {");
+    expect(decl).toContain("ANTHROPIC_API_KEY: {");
   });
 
   it("keeps a key .env already has", async () => {

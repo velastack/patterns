@@ -1,5 +1,6 @@
 import type { Options, Result } from "../../../core/types";
-import { resolveProvider } from "../../../core/providers";
+import { providerEnvVars, resolveProvider } from "../../../core/providers";
+import { envVarsFile } from "../../../runtime/env-vars-file";
 import { envEditsFor, META } from "./generate";
 
 export async function generate(options: Options) {
@@ -13,6 +14,13 @@ export async function generate(options: Options) {
   return {
     creates: [],
     modifies: [
+      {
+        // The declaration `$app/env/private` needs, for this provider's key.
+        path: "src/env.ts",
+        language: "ts",
+        content: envVarsFile(providerEnvVars(provider)),
+        status: "success" as const,
+      },
       {
         path: ".env",
         language: "text",

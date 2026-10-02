@@ -1,5 +1,9 @@
 import { sequence, type Handle, type ServerInit } from '@sveltejs/kit/hooks';
-import { env } from '$env/dynamic/private';
+import {
+	POCKETBASE_URL,
+	POCKETBASE_SUPERUSER_EMAIL,
+	POCKETBASE_SUPERUSER_PASSWORD
+} from '$app/env/private';
 import { handlePocketbase } from '@velastack/pocketbase';
 import { building } from '$app/env';
 import { startWorker } from '#lib/server/workflows.js';
@@ -12,9 +16,9 @@ const cors: Handle = async ({ event, resolve }) => {
 export const handle = sequence(
 	cors,
 	handlePocketbase({
-		pocketbaseUrl: env.POCKETBASE_URL!,
-		superuserEmail: env.POCKETBASE_SUPERUSER_EMAIL,
-		superuserPassword: env.POCKETBASE_SUPERUSER_PASSWORD,
+		pocketbaseUrl: POCKETBASE_URL,
+		superuserEmail: POCKETBASE_SUPERUSER_EMAIL,
+		superuserPassword: POCKETBASE_SUPERUSER_PASSWORD,
 		auth: { protectedRoutes: ['/(app)'] }
 	})
 );

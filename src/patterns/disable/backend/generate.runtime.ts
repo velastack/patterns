@@ -13,6 +13,8 @@ import { unmodifyLayoutServerMeta } from "./modifies/layout-server";
 import { unmodifySvelteConfig } from "../../enable/backend/modifies/svelte-config";
 import { unmodifyGitignore } from "../../enable/backend/modifies/gitignore";
 import { unmodifyTestSetup } from "../../enable/backend/modifies/test-setup";
+import { BACKEND_ENV_VARS } from "../../enable/backend/env-vars";
+import { unmodifyEnvVarsFiles } from "../../../runtime/env-vars";
 
 /** Every server test under a directory; they need the PocketBase test context. */
 function serverTestFiles(dir: string): string[] {
@@ -47,6 +49,15 @@ export async function generate(options: Options) {
   );
   if (hooksServerRevert.modify) modifies.push(hooksServerRevert.modify);
   if (hooksServerRevert.delete) deletes.push(hooksServerRevert.delete);
+
+  // The file goes when these were all it declared.
+  logger.info("Removing the PocketBase variables from src/env.ts");
+  const envVars = unmodifyEnvVarsFiles(
+    options.root,
+    BACKEND_ENV_VARS.map((spec) => spec.name),
+  );
+  if (envVars.modify) modifies.push(envVars.modify);
+  if (envVars.delete) deletes.push(envVars.delete);
 
   logger.info("Reverting .gitignore");
   const gitignorePath = path.join(options.root, ".gitignore");

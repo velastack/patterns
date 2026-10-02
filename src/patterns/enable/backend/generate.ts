@@ -1,4 +1,9 @@
 import type { Options, Result } from "../../../core/types";
+import {
+  ADAPTER_NODE,
+  VELASTACK_KIT,
+  VELASTACK_POCKETBASE,
+} from "../../../core/constants";
 import { appRelativePath, languageFromPath } from "../../../core/util";
 
 const createsRaw = import.meta.glob<string>("./creates/**", {
@@ -28,12 +33,12 @@ export async function generate(_options: Options) {
     deletes: [],
     components: [],
     packages: [
-      "@velastack/pocketbase",
-      "@velastack/kit",
+      VELASTACK_POCKETBASE,
+      VELASTACK_KIT,
       "pocketbase-sveltekit",
       // The adapter the config is switched to has to be installed with it,
       // or the config fails to load and takes every .svelte file with it.
-      "@sveltejs/adapter-node",
+      ADAPTER_NODE,
       // test/setup.ts and the server tests other patterns add need these; the
       // minimal template ships them, the static one does not. Pinned to the
       // template's ranges so both kinds of project end up alike.

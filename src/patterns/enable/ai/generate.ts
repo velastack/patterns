@@ -18,9 +18,9 @@ import { defaultGroup } from "../../../parse/route";
 
 /**
  * The providers in prompt order. Each one's `env` key is what the CLI asks
- * for (without echo) and what `generate.runtime.ts` writes to `.env`; the
- * generated `src/lib/server/ai.ts` reads it through `$env/dynamic/private`,
- * and `/api/chat` answers 503 while it is blank.
+ * for (without echo), what `generate.runtime.ts` writes to `.env` and
+ * declares in `src/env.ts`; the generated `src/lib/server/ai.ts` imports it
+ * from `$app/env/private`, and `/api/chat` answers 503 while it is blank.
  */
 export const PROVIDERS: Provider[] = [
   {

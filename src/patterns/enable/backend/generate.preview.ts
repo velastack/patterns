@@ -1,5 +1,7 @@
 import type { Options, Result } from "../../../core/types";
 import { appRelativePath, languageFromPath } from "../../../core/util";
+import { envVarsFile } from "../../../runtime/env-vars-file";
+import { BACKEND_ENV_VARS } from "./env-vars";
 
 const previewRaw = import.meta.glob<string>("./preview-modifies/**", {
   query: "?raw",
@@ -19,6 +21,13 @@ export async function generate(_options: Options) {
         content,
         status: "success" as const,
       };
+    })
+    .concat({
+      // Built from the same declarations the runtime writes.
+      path: "src/env.ts",
+      language: languageFromPath("src/env.ts"),
+      content: envVarsFile(BACKEND_ENV_VARS),
+      status: "success" as const,
     })
     .sort((a, b) => a.path.localeCompare(b.path));
 

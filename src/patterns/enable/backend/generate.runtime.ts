@@ -13,6 +13,8 @@ import {
   WITH_BACKEND,
 } from "./modifies/test-setup";
 import { modifyHooksServerBackend } from "./modifies/hooks.server";
+import { modifyEnvVarsFiles } from "../../../runtime/env-vars";
+import { BACKEND_ENV_VARS } from "./env-vars";
 
 export async function generate(options: Options) {
   const logger = getLogger(options);
@@ -45,6 +47,13 @@ export async function generate(options: Options) {
     logger.info("Modifying hooks.server.ts");
     modifies.push(hooksServerFile);
   }
+
+  // SvelteKit 3 exposes only declared variables: the handle above reads
+  // these three from `$app/env/private`.
+  logger.info("Declaring the PocketBase variables in src/env.ts");
+  const envVars = modifyEnvVarsFiles(options.root, BACKEND_ENV_VARS);
+  if (envVars.create) creates.push(envVars.create);
+  if (envVars.modify) modifies.push(envVars.modify);
 
   logger.info("Modifying .gitignore");
   const gitignorePath = path.join(options.root, ".gitignore");

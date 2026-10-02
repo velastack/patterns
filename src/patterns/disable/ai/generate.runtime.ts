@@ -6,7 +6,8 @@ import { modifyEnvRemove } from "../../../runtime/env";
 import { envRevertOutcomeToFile } from "../../../runtime/modify-file";
 import { toDeleteEntry } from "../../destroy/shared";
 import { demoDir } from "../../enable/ai/generate";
-import { allEnvEdits, demoDirs } from "./generate";
+import { allEnvEdits, allEnvNames, demoDirs } from "./generate";
+import { unmodifyEnvVarsFiles } from "../../../runtime/env-vars";
 
 export async function generate(options: Options) {
   const logger = getLogger(options);
@@ -22,6 +23,13 @@ export async function generate(options: Options) {
       deletes.push(toDeleteEntry(page));
     }
   }
+
+  // Which provider was chosen is not recorded, so every one's key goes; the
+  // file goes too when these were all it declared.
+  logger.info("Removing the AI provider's API key from src/env.ts");
+  const envVars = unmodifyEnvVarsFiles(options.root, allEnvNames());
+  if (envVars.modify) modifies.push(envVars.modify);
+  if (envVars.delete) deletes.push(envVars.delete);
 
   logger.info("Removing the AI provider's API key from .env");
   const envPath = path.join(options.root, ".env");

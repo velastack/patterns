@@ -1,4 +1,3 @@
-import { text } from '@sveltejs/kit';
 import { dev } from '$app/env';
 import {
 	convertToModelMessages,
@@ -22,18 +21,18 @@ const INSTRUCTIONS = 'You are a helpful assistant. Keep answers short unless ask
  */
 export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!locals.pb.authStore.isValid) {
-		return text('Sign in to chat.', { status: 401 });
+		return new Response('Sign in to chat.', { status: 401 });
 	}
 
 	const body = await request.json().catch(() => null);
 	const messages = await safeValidateUIMessages({ messages: body?.messages });
 	if (!messages.success) {
-		return text('Expected a JSON body with a messages array.', { status: 400 });
+		return new Response('Expected a JSON body with a messages array.', { status: 400 });
 	}
 
 	const model = languageModel();
 	if (!model) {
-		return text(`Set ${API_KEY} in .env to start chatting.`, { status: 503 });
+		return new Response(`Set ${API_KEY} in .env to start chatting.`, { status: 503 });
 	}
 
 	const result = streamText({

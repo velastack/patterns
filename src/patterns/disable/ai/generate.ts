@@ -77,6 +77,13 @@ export function allEnvEdits(): EnvEdit[] {
   return PROVIDERS.flatMap((provider) => envEditsFor(provider));
 }
 
+/** Every provider's env var names, as `src/env.ts` declares them. */
+export function allEnvNames(): string[] {
+  return PROVIDERS.flatMap((provider) =>
+    (provider.env ?? []).map((variable) => variable.key),
+  );
+}
+
 export async function generate(options: Options) {
   return {
     creates: [],

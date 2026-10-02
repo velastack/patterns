@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { afterNavigate } from '$app/navigation';
-	import { env } from '$env/dynamic/public';
+	import { PUBLIC_GA_MEASUREMENT_ID } from '$app/env/public';
 	import { pageView } from './gtag';
 
 	// PUBLIC_GA_MEASUREMENT_ID looks like G-XXXXXXXXXX. Nothing loads until it
 	// is set.
-	const measurementId = env.PUBLIC_GA_MEASUREMENT_ID ?? '';
+	const measurementId = PUBLIC_GA_MEASUREMENT_ID;
 
 	// The tag is configured with send_page_view: false; page views are sent
 	// from here instead. afterNavigate runs after the first render and after

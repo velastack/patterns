@@ -45,6 +45,8 @@ describe("analytics providers", () => {
       expect(provider.env?.length).toBeGreaterThan(0);
       for (const variable of provider.env ?? []) {
         expect(variable.key).toMatch(/^PUBLIC_/);
+        // Declared `public: true`, or `$app/env/public` does not export it.
+        expect(variable.public).toBe(true);
       }
     }
   });
@@ -124,6 +126,14 @@ describe("analytics preview", () => {
       f.path.endsWith("+layout.svelte"),
     );
     expect(layout?.content).toContain("<Analytics />");
+    const decl = result.modifies.find((f) => f.path === "src/env.ts");
+    expect(decl?.content).toContain(
+      "PUBLIC_POSTHOG_KEY: {\n\t\tpublic: true,\n\t\tschema: (value) => value ?? '',",
+    );
+    expect(decl?.content).toContain(
+      "PUBLIC_POSTHOG_HOST: {\n\t\tpublic: true,",
+    );
+    expect(decl?.content).not.toContain("PLAUSIBLE");
     const env = result.modifies.find((f) => f.path === ".env");
     expect(env?.content).toBe(
       [
