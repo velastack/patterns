@@ -11,6 +11,15 @@ import type {
   SwitchStyleResult,
   WriteResultRuntime,
 } from "./core/types";
+import type { EnvVarSpec } from "./runtime/env-vars-file";
+import type {
+  ModifyEnvVarsResult,
+  UnmodifyEnvVarsResult,
+} from "./runtime/env-vars";
+import type {
+  OverrideValue,
+  PackageJsonEditResult,
+} from "./runtime/package-imports";
 export {
   InvalidArgumentError,
   MissingShadcnError,
@@ -21,10 +30,14 @@ export type {
   ApplyColorsResult,
   ApplyThemeOptions,
   Component,
+  ExecuteCommand,
+  ExecuteCommandOptions,
+  File,
   InstallComponentsOptions,
   InstallComponentsResult,
   ListComponentsOptions,
   ListComponentsResult,
+  ModifyOutcome,
   Options,
   Package,
   Pattern,
@@ -37,10 +50,33 @@ export type {
 } from "./core/types";
 export {
   isLibSpecifier,
+  libAliasPath,
   libModule,
   libSpecifier,
 } from "./runtime/lib-specifier";
 export {
+  ENV_DECL_CANDIDATES,
+  envVarEntry,
+  envVarsFile,
+  type EnvVarSpec,
+} from "./runtime/env-vars-file";
+export type { ModifyEnvVarsResult, UnmodifyEnvVarsResult };
+export type { OverrideValue, PackageJsonEditResult };
+export {
+  ADAPTER_NODE,
+  ADAPTER_STATIC,
+  FLASH,
+  FORMSNAP,
+  FORMSNAP_OVERRIDES,
+  NEGOTIATE,
+  SUPERFORMS,
+  SUPERFORMS_VERSION,
+  VELASTACK_CMS,
+  VELASTACK_KIT,
+  VELASTACK_POCKETBASE,
+} from "./core/constants";
+export {
+  providerEnvVars,
   providerFromArgv,
   resolveProvider,
   unknownProviderMessage,
@@ -202,4 +238,73 @@ export async function applyTheme(
 ): Promise<ApplyColorsResult> {
   const { applyTheme: run } = await import("./runtime/ui");
   return run(options, runtime);
+}
+
+/*
+ * Project-file editors the CLI's `bless` and `migrate sveltekit-3` share with
+ * the patterns. Node-only, so each loads its module on first call (like
+ * `installComponents`) and the entry stays importable in the browser
+ * preview; the module functions themselves are synchronous.
+ */
+
+/**
+ * Declare `specs` in `src/env.ts` (or `src/env.js`); existing entries are
+ * never touched. Without a declaration file, `create` holds a new
+ * `src/env.ts` for the caller to write. An edited file is saved in place and
+ * reported in `modify`; one that can't be edited safely fails with the
+ * entries to paste.
+ */
+export async function modifyEnvVars(
+  root: string,
+  specs: EnvVarSpec[],
+): Promise<ModifyEnvVarsResult> {
+  const { modifyEnvVars: run } = await import("./runtime/env-vars");
+  return run(root, specs);
+}
+
+/**
+ * Remove the declarations of `names` from `src/env.ts`. `deleted` means only
+ * the import and an empty `variables` are left (the emptied file is saved;
+ * delete it).
+ */
+export async function unmodifyEnvVars(
+  root: string,
+  names: string[],
+): Promise<UnmodifyEnvVarsResult> {
+  const { unmodifyEnvVars: run } = await import("./runtime/env-vars");
+  return run(root, names);
+}
+
+/** Add missing package.json `imports` entries; never overwrites a different value. */
+export async function ensurePackageImports(
+  root: string,
+  entries: Record<string, string>,
+): Promise<PackageJsonEditResult> {
+  const { ensurePackageImports: run } =
+    await import("./runtime/package-imports");
+  return run(root, entries);
+}
+
+/**
+ * Remove package.json `imports` keys (only those still equal to `expected`,
+ * when given), dropping an `imports` left empty.
+ */
+export async function removePackageImports(
+  root: string,
+  keys: string[],
+  expected?: Record<string, string>,
+): Promise<PackageJsonEditResult> {
+  const { removePackageImports: run } =
+    await import("./runtime/package-imports");
+  return run(root, keys, expected);
+}
+
+/** Deep-merge package.json `overrides`; never overwrites a different version. */
+export async function ensurePackageOverrides(
+  root: string,
+  overrides: Record<string, OverrideValue>,
+): Promise<PackageJsonEditResult> {
+  const { ensurePackageOverrides: run } =
+    await import("./runtime/package-imports");
+  return run(root, overrides);
 }
