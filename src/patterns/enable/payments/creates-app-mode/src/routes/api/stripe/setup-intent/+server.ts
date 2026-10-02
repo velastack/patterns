@@ -1,11 +1,10 @@
-import { json } from "@sveltejs/kit";
 import stripe from "#lib/stripe.js";
 
 export const POST = async ({ locals }) => {
   const user = locals.pb.authStore.record?.id;
 
   if (!user) {
-    return json({ error: "Unauthorized" }, { status: 401 });
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const customer = await locals.admin
@@ -13,7 +12,7 @@ export const POST = async ({ locals }) => {
     .getFirstListItem(locals.admin.filter("user = {:user}", { user }));
 
   if (!customer) {
-    return json({ error: "Customer not found" }, { status: 404 });
+    return Response.json({ error: "Customer not found" }, { status: 404 });
   }
 
   const setupIntent = await stripe.setupIntents.create({
@@ -24,5 +23,5 @@ export const POST = async ({ locals }) => {
     },
   });
 
-  return json({ clientSecret: setupIntent.client_secret });
+  return Response.json({ clientSecret: setupIntent.client_secret });
 };

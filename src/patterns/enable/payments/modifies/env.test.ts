@@ -1,4 +1,16 @@
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { modifyEnvVars, unmodifyEnvVars } from "../../../../runtime/env-vars";
+import { STRIPE_ENV_VARS, STRIPE_ENV_VAR_NAMES } from "../runtime/env-vars";
 import {
   applyEnvEdits,
   removeEnvEdits,
@@ -65,5 +77,49 @@ describe("env edits", () => {
     ]);
     expect(removed).toContain("# Stripe credentials");
     expect(removed).toContain("STRIPE_EXTRA=hello");
+  });
+});
+
+describe("src/env.ts declarations", () => {
+  const preview = readFileSync(
+    fileURLToPath(new URL("../preview-modifies/src/env.ts", import.meta.url)),
+    "utf8",
+  ).replace(/^[ \t]*\/\/ \[!code highlight:\d+\]\n/m, "");
+
+  function project(content: string) {
+    const root = mkdtempSync(path.join(tmpdir(), "payments-env-"));
+    mkdirSync(path.join(root, "src"));
+    writeFileSync(path.join(root, "src", "env.ts"), content);
+    return root;
+  }
+
+  it("the preview shows what enable writes, and disable takes it back out", () => {
+    const root = project(preview);
+    try {
+      const removed = unmodifyEnvVars(root, STRIPE_ENV_VAR_NAMES);
+      expect(removed.outcome).toEqual({ status: "success", changed: true });
+      const without = readFileSync(path.join(root, "src", "env.ts"), "utf8");
+      for (const name of STRIPE_ENV_VAR_NAMES) {
+        expect(without).not.toContain(name);
+      }
+      expect(without).toContain("POCKETBASE_URL");
+
+      const added = modifyEnvVars(root, STRIPE_ENV_VARS);
+      expect(added.modify?.outcome).toEqual({
+        status: "success",
+        changed: true,
+      });
+      expect(readFileSync(path.join(root, "src", "env.ts"), "utf8")).toBe(
+        preview,
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("declares the publishable key public and the others private", () => {
+    expect(
+      STRIPE_ENV_VARS.filter((spec) => spec.public).map((spec) => spec.name),
+    ).toEqual(["PUBLIC_STRIPE_PUBLISHABLE_KEY"]);
   });
 });

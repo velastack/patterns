@@ -6,7 +6,7 @@
 	import SetupButton from '#lib/components/payments/setup-button.svelte';
 	import { CreditCard, Trash2, Check, Package } from '@lucide/svelte';
 	import { toast } from 'svelte-sonner';
-	import { invalidate, invalidateAll } from '$app/navigation';
+	import { invalidate, refreshAll } from '$app/navigation';
 	import { untrack } from 'svelte';
 
 	let { data } = $props();
@@ -17,7 +17,7 @@
 	// Local, mutable mirror of the server-side subscription. We optimistically
 	// update it on user actions so the UI reflects the change immediately; the
 	// $effect re-syncs from the server after the webhook has had a chance to
-	// fire (invalidateAll runs on a short delay below).
+	// fire (refreshAll runs on a short delay below).
 	let activeSubscription = $state(untrack(() => data.activeSubscription));
 	$effect(() => {
 		activeSubscription = data.activeSubscription;
@@ -169,7 +169,7 @@
 
 			toast.success(successMessage);
 			setTimeout(() => {
-				invalidateAll();
+				refreshAll();
 			}, 2000);
 		} catch (err) {
 			console.error('Error selecting plan:', err);
@@ -208,7 +208,7 @@
 
 			toast.success('Subscription resumed');
 			setTimeout(() => {
-				invalidateAll();
+				refreshAll();
 			}, 2000);
 		} catch (err) {
 			console.error('Error resuming subscription:', err);
@@ -240,7 +240,7 @@
 			toast.success('Subscription will cancel at period end');
 			showCancelDialog = false;
 			setTimeout(() => {
-				invalidateAll();
+				refreshAll();
 			}, 2000);
 		} catch (err) {
 			console.error('Error canceling subscription:', err);

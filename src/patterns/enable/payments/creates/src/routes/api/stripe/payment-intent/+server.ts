@@ -1,4 +1,3 @@
-import { json } from "@sveltejs/kit";
 import stripe from "#lib/stripe.js";
 import type { Stripe } from "stripe";
 
@@ -36,7 +35,7 @@ export const POST = async ({ request, locals }) => {
     body = await request.json();
   } catch (error) {
     console.error("Invalid JSON in request body");
-    return json({ error: "Invalid request body" }, { status: 400 });
+    return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
 
   const { priceId } = body as { priceId?: string };
@@ -44,7 +43,7 @@ export const POST = async ({ request, locals }) => {
   // Validate required fields
   if (!priceId || typeof priceId !== "string" || priceId === "") {
     console.error("Missing or invalid priceId");
-    return json({ error: "Price ID is required" }, { status: 400 });
+    return Response.json({ error: "Price ID is required" }, { status: 400 });
   }
 
   // Retrieve price from Stripe
@@ -53,7 +52,7 @@ export const POST = async ({ request, locals }) => {
     price = await stripe.prices.retrieve(priceId);
   } catch (error) {
     console.error("Failed to retrieve price from Stripe:", priceId);
-    return json(
+    return Response.json(
       { error: "Invalid price ID or price not found" },
       { status: 404 },
     );
@@ -62,7 +61,7 @@ export const POST = async ({ request, locals }) => {
   // Validate price is active
   if (!price.active) {
     console.error("Price is not active:", priceId);
-    return json(
+    return Response.json(
       { error: "This price is no longer available" },
       { status: 400 },
     );
@@ -70,13 +69,13 @@ export const POST = async ({ request, locals }) => {
 
   try {
     const res = await createPaymentIntent(price);
-    return json(res, { status: 200 });
+    return Response.json(res, { status: 200 });
   } catch (error) {
     console.error("Error creating payment intent for price:", priceId);
     const errorMessage =
       error instanceof Error
         ? error.message
         : "Failed to create payment intent";
-    return json({ error: errorMessage }, { status: 500 });
+    return Response.json({ error: errorMessage }, { status: 500 });
   }
 };

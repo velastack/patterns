@@ -14,7 +14,7 @@ export const actions = {
     try {
       invite = await locals.pb.collection("team_invites").getOne(inviteId);
     } catch {
-      return error(404, { message: "Invite not found" });
+      return error(404, "Invite not found");
     }
 
     await locals.admin.collection("team_memberships").create({
@@ -46,11 +46,11 @@ export const actions = {
           }),
         );
     } catch {
-      return error(404, { message: "Team not found" });
+      return error(404, "Team not found");
     }
 
     if (teamMembership.role === "owner") {
-      return error(400, { message: "You cannot leave a team you own" });
+      return error(400, "You cannot leave a team you own");
     }
 
     await locals.pb.collection("team_memberships").delete(teamMembership.id);

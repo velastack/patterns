@@ -21,7 +21,7 @@
 
 	const handleOpenChange = (open: boolean) => {
 		if (!open) {
-			goto('/teams', { noScroll: true });
+			goto('/teams', { reset: false });
 		}
 	};
 </script>

@@ -11,6 +11,8 @@ import {
 } from "../../../runtime/pocketbase";
 import { createCollectionIdempotent } from "../../../runtime/collections";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
+import { modifyEnvVarsFiles } from "../../../runtime/env-vars";
+import { STRIPE_ENV_VARS } from "./runtime/env-vars";
 import { modifyNavUser } from "./modifies/modify-nav-user";
 import { modifyUserSignup } from "./modifies/modify-user-signup";
 import { modifyEnv, type EnvEdit } from "./modifies/modify-env";
@@ -86,6 +88,11 @@ export async function generate(options: Options) {
 
   const envPath = path.join(options.root, ".env");
   pushResult(modifyOutcomeToFile(envPath, modifyEnv(envPath, envEdits)));
+
+  logger.info("Declaring Stripe variables in src/env.ts");
+  const envVars = modifyEnvVarsFiles(options.root, STRIPE_ENV_VARS);
+  if (envVars.create) creates.push(envVars.create);
+  pushResult(envVars.modify);
 
   await withPocketbase(options.root, async (pb) => {
     const create = (spec: Parameters<typeof createCollectionIdempotent>[1]) =>

@@ -8,7 +8,7 @@ export const load = async ({ params, locals }) => {
       expand: "team",
     });
   } catch {
-    return error(404, { message: "Invite not found" });
+    return error(404, "Invite not found");
   }
 
   return { invite };
@@ -22,7 +22,7 @@ export const actions = {
     try {
       invite = await locals.pb.collection("team_invites").getOne(params.id);
     } catch {
-      return error(404, { message: "Invite not found" });
+      return error(404, "Invite not found");
     }
 
     await locals.admin.collection("team_memberships").create({

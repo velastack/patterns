@@ -3,6 +3,8 @@ import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
 import { modifyEnvRemove, type EnvEdit } from "../../../runtime/env";
+import { unmodifyEnvVarsFiles } from "../../../runtime/env-vars";
+import { STRIPE_ENV_VAR_NAMES } from "../../enable/payments/runtime/env-vars";
 import { unmodifyNavUser } from "./modifies/modify-nav-user";
 import { unmodifyUserSignup } from "./modifies/modify-user-signup";
 import { planDropsForCollections } from "../../destroy/shared";
@@ -11,6 +13,7 @@ export async function generate(options: Options) {
   const isAppMode = options.features.auth;
   const logger = getLogger(options);
   const modifies: File[] = [];
+  const deletes: File[] = [];
   const pushResult = (file: File | null) => {
     if (file) modifies.push(file);
   };
@@ -24,6 +27,11 @@ export async function generate(options: Options) {
   ];
   const envPath = path.join(options.root, ".env");
   pushResult(modifyOutcomeToFile(envPath, modifyEnvRemove(envPath, envEdits)));
+
+  logger.info("Removing Stripe variables from src/env.ts");
+  const envVars = unmodifyEnvVarsFiles(options.root, STRIPE_ENV_VAR_NAMES);
+  pushResult(envVars.modify);
+  if (envVars.delete) deletes.push(envVars.delete);
 
   if (isAppMode) {
     logger.info("Reverting nav-user.svelte");
@@ -66,7 +74,7 @@ export async function generate(options: Options) {
   return {
     creates: [],
     modifies,
-    deletes: [],
+    deletes,
     components: [],
     packages: [],
     collections: [],

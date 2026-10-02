@@ -1,6 +1,5 @@
 import Stripe from 'stripe';
-import { json } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
+import { STRIPE_WEBHOOK_SECRET } from '$app/env/private';
 import stripe from '#lib/stripe.js';
 import { handleStripeEvent } from '#lib/workflows/stripe-event.js';
 
@@ -26,7 +25,7 @@ async function verifyWebhookSignature(request: Request, webhookSecret: string): 
 
 export const POST = async ({ request }) => {
 	try {
-		const event = await verifyWebhookSignature(request, env.STRIPE_WEBHOOK_SECRET);
+		const event = await verifyWebhookSignature(request, STRIPE_WEBHOOK_SECRET);
 
 		// Queued, not handled here: the workflow runs the handler with retries,
 		// and its idempotency key means a redelivery of the same event returns
@@ -34,7 +33,7 @@ export const POST = async ({ request }) => {
 		const handle = await handleStripeEvent.run(event, { idempotencyKey: event.id });
 		console.log(`Queued webhook event ${event.type} (${event.id}) as run ${handle.workflowRun.id}`);
 
-		return json({
+		return Response.json({
 			received: true,
 			eventId: event.id,
 			eventType: event.type,
@@ -43,7 +42,7 @@ export const POST = async ({ request }) => {
 	} catch (error) {
 		console.error('Webhook processing error:', error);
 
-		return json(
+		return Response.json(
 			{
 				error: 'Webhook processing failed',
 				message: error instanceof Error ? error.message : 'Unknown error'

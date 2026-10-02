@@ -33,13 +33,13 @@ export const actions = {
     const formData = await request.formData();
     const memberId = formData.get("member_id") as string;
     if (!memberId) {
-      return error(400, { message: "Member ID is required" });
+      return error(400, "Member ID is required");
     }
 
     try {
       await locals.pb.collection("team_memberships").delete(memberId);
     } catch {
-      return error(400, { message: "Failed to remove member" });
+      return error(400, "Failed to remove member");
     }
 
     redirect(
@@ -56,13 +56,13 @@ export const actions = {
     const formData = await request.formData();
     const inviteId = formData.get("invite_id") as string;
     if (!inviteId) {
-      return error(400, { message: "Invite ID is required" });
+      return error(400, "Invite ID is required");
     }
 
     try {
       await locals.pb.collection("team_invites").delete(inviteId);
     } catch {
-      return error(400, { message: "Failed to cancel invite" });
+      return error(400, "Failed to cancel invite");
     }
 
     redirect(
@@ -76,7 +76,7 @@ export const actions = {
     try {
       await locals.pb.collection("teams").delete(params.id);
     } catch {
-      return error(400, { message: "Failed to delete team" });
+      return error(400, "Failed to delete team");
     }
 
     const team = cookies.get("team");

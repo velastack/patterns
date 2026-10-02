@@ -3,12 +3,15 @@ import { dev } from "$app/env";
 
 export const load = async ({ params, cookies, url, locals }) => {
   const { id } = params;
-  const redirectUrl = url.searchParams.get("redirect") ?? "/dashboard";
+  // Follow only a same-site path (`/x`, not `//host` or `/\host`):
+  // `redirect()` throws on an external URL.
+  const next = url.searchParams.get("redirect");
+  const redirectUrl = next && /^\/(?![/\\])/.test(next) ? next : "/dashboard";
 
   try {
     await locals.pb.collection("teams").getOne(id);
   } catch {
-    return error(404, { message: "Team not found" });
+    return error(404, "Team not found");
   }
 
   cookies.set("team", id, {

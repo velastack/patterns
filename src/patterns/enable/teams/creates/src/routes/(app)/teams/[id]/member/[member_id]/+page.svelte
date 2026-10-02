@@ -36,7 +36,7 @@
 
 	const handleOpenChange = (open: boolean) => {
 		if (!open) {
-			goto(`/teams/${data.team.id}`, { noScroll: true });
+			goto(`/teams/${data.team.id}`, { reset: false });
 		}
 	};
 </script>

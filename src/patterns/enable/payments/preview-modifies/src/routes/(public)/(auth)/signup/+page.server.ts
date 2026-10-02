@@ -48,7 +48,10 @@ export const actions = {
 		await locals.pb.collection('users').requestVerification(user.email);
 		await locals.pb.collection('users').authWithPassword(form.data.email, form.data.password);
 
-		const redirectUrl = url.searchParams.get('redirect') ?? '/dashboard';
+		// Follow only a same-site path (`/x`, not `//host` or `/\host`):
+		// `redirect()` throws on an external URL.
+		const next = url.searchParams.get('redirect');
+		const redirectUrl = next && /^\/(?![/\\])/.test(next) ? next : '/dashboard';
 		const cookie = locals.pb.authStore.getCookie();
 		cookies.set('pb_auth', cookie, {
 			path: '/',
