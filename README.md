@@ -2,6 +2,23 @@
 
 The registry for VelaStack patterns.
 
+## Requirements
+
+Patterns write SvelteKit 3 code only, and the package needs Node 22.17 or later (`engines`), the same floor as
+SvelteKit 3. A project with a `svelte.config.*`, or with options still nested under `kit:`, is refused with
+`npx vela@^0.15 migrate sveltekit-3`. Config edits go into the inline `sveltekit({...})` call in `vite.config.ts`.
+
+- Imports from `src/lib` use `#lib` (the `"imports"` entries in `package.json`) with sv's extension rules:
+  `#lib/server/db.js`, `#lib/components/ui/button/index.js`, `#lib/x.svelte.js` for `x.svelte.ts`, while `.svelte` files
+  keep their extension. `$lib` is only read, as legacy input.
+- Environment variables are read as named imports from `$app/env/private` / `$app/env/public`. A pattern that
+  reads one declares it in `src/env.ts` (`modifyEnvVars` in `src/runtime/env-vars.ts`, creating the file when there
+  is none) as optional, `schema: (value) => value ?? ''`, so a build with an empty `.env` still passes. Existing
+  entries are never changed; `disable-*` removes the names its `enable-*` declares.
+- formsnap 2 peers superforms 2. Installing formsnap, or superforms into a project that has it, writes
+  `"overrides": { "formsnap": { "sveltekit-superforms": "<pinned version>" } }` to `package.json` first. superforms
+  and flash-message are on `next` releases and are installed with `--save-exact`.
+
 ## Runtime
 
 There's two modes this library can be used. One is in runtime, by the @velastack/cli. The VelaStack CLI uses
@@ -181,10 +198,35 @@ npm run test:integration -- integration/enable.test.ts            # one suite
 npm run test:integration -- integration/stacks.test.ts -t "teams" # one case
 ```
 
-- `VELA_BIN=/path/to/vela` picks the CLI (default: `vela` on PATH).
+- `VELA_BIN=/path/to/vela` picks the CLI (default: `vela` on PATH). Every `vela` command, `test:server`
+  included, runs through it, and the generated projects' own `vela` devDependency is dropped so it cannot shadow
+  the build under test.
 - `INTEGRATION_KEEP=1` keeps generated projects; failed cases are always kept.
 - `vela test:server` runs after each checked step in projects that have it; `INTEGRATION_SERVER_TESTS=0` skips it for a faster local loop.
 - `STRIPE_SECRET_KEY` + `STRIPE_PUBLISHABLE_KEY` enable the payments cases; they skip otherwise.
+- `node_modules` is installed once per dependency set and hard-linked into every project from
+  `.integration-tests/.cache`, except `node_modules/$app`, which SvelteKit's sync rewrites in place.
 - Failures point at `.integration-tests/<suite>/<case>/.integration/` (`commands.log`, `steps.json`,
   the raw svelte-check output). Expected failures live in `integration/known-failures.ts`, scoped per
   step or case, and turn into visible skips until they stop reproducing.
+
+## Against an unreleased CLI
+
+Patterns are applied from this checkout, but `vela create`, `vela sync` and `vela test:server` come from the CLI,
+which loads its own installed copy of `@velastack/patterns`. To test a CLI branch with these patterns in it (sibling
+checkouts assumed):
+
+```sh
+npm run build && npm pack                                   # here: velastack-patterns-<version>.tgz
+cd ../velastack-cli
+npm install ../velastack-patterns/velastack-patterns-*.tgz  # or ../velastack-patterns
+npm run build                                               # dist/bin.js
+cd ../velastack-patterns
+rm -rf .integration-tests/.cache                            # caches from an older harness or template
+VELA_BIN="$PWD/../velastack-cli/dist/bin.js" npm run test:integration -- integration/enable.test.ts
+```
+
+The install rewrites the CLI's `package.json` and lockfile; restore them before committing there. In CI, run the
+CI workflow by hand with `vela_ref` set to a branch, tag or SHA of `velastack/vela`: the integration job does the
+same steps and exports `VELA_BIN`. Without `vela_ref` it installs the newest published `vela` that scaffolds
+SvelteKit 3 (`latest`, then `next`), and skips the suites with a warning when there is none.

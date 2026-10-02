@@ -6,10 +6,11 @@ import type { Features, RouteGroups } from "../src/core/types";
  * Mirror of the CLI's feature detection.
  *
  * Source of truth: `velastack-cli/src/lib/workspace.ts` (`detectFeatures`,
- * plus the `isAppMode` / `isPaymentsMode` probes in `getWorkspace`). The CLI
- * has no programmatic API, so the rules are duplicated here on purpose: the
- * harness must hand patterns exactly the flags a user's `vela` would, because
- * that is what the stacking cases exercise. Keep the two in sync.
+ * `detectUi`, plus the `isAppMode` / `isPaymentsMode` probes in
+ * `getWorkspace`). The CLI has no programmatic API, so the rules are
+ * duplicated here on purpose: the harness must hand patterns exactly the flags
+ * a user's `vela` would, because that is what the stacking cases exercise.
+ * Keep the two in sync.
  */
 export function detectFeatures(root: string): Features {
   const has = (rel: string) => existsSync(path.join(root, rel));
@@ -34,10 +35,25 @@ export function detectFeatures(root: string): Features {
     cms: hasDep("@velastack/cms"),
     workflows: has("src/lib/server/workflows.ts"),
     ui:
-      has("components.json") && (hasDep("shadcn-svelte") || hasDep("bits-ui"))
+      hasComponentsJson(root) && (hasDep("shadcn-svelte") || hasDep("bits-ui"))
         ? "shadcn"
         : "plain",
   };
+}
+
+/**
+ * Mirror of the CLI's `readComponentsJson(root) !== undefined` (`detectUi`):
+ * a components.json that is not a JSON object counts as absent.
+ */
+function hasComponentsJson(root: string): boolean {
+  const file = path.join(root, "components.json");
+  if (!existsSync(file)) return false;
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(file, "utf8"));
+    return Boolean(parsed) && typeof parsed === "object";
+  } catch {
+    return false;
+  }
 }
 
 /** Mirror of the `routeGroups` the CLI's `getWorkspace` detects. */

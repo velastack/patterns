@@ -11,6 +11,7 @@ import {
   ADMIN_EMAIL,
   ADMIN_PASSWORD,
   INTEGRATION_ROOT,
+  copyGeneratedModules,
   hardLinkTree,
   projectEnv,
   velaBin,
@@ -112,6 +113,9 @@ export function cloneProject(baselineRoot: string, project: Project): void {
       recursive: true,
       force: true,
     });
+    // SvelteKit's sync rewrites `$app` in place (see `GENERATED_MODULES`);
+    // a real copy, since a pattern may resolve the tsconfig before the next sync.
+    copyGeneratedModules(baselineRoot, project.root);
   }
 
   mkdirSync(project.logDir, { recursive: true });

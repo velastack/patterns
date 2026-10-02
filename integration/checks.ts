@@ -7,7 +7,7 @@ import {
 } from "node:fs";
 import path from "node:path";
 import { REPO_ROOT, velaBin } from "./baseline";
-import { exitLabel, npmBin, npxBin } from "./exec";
+import { exitLabel, npxBin } from "./exec";
 import { detectFeatures } from "./features";
 import type { ErrorRecord } from "./apply";
 import type { Project } from "./project";
@@ -91,8 +91,9 @@ export function formatDiagnostic(d: Diagnostic): string {
 }
 
 /**
- * The project's own tsconfig plus the unused-locals rule. `exclude` is left
- * alone: overriding it would drop the SvelteKit-generated list, and
+ * The project's own tsconfig plus the unused-locals rule. It extends
+ * `./tsconfig.json`, which extends `$app/tsconfig` (compiler options only;
+ * the project owns `include` and `exclude`), so both are inherited unchanged.
  * svelte-check's `--ignore` only works without a tsconfig, so exclusions are
  * applied to the parsed diagnostics instead (`isIgnorable`).
  */
@@ -193,7 +194,9 @@ export function isIgnorable(
 }
 
 /**
- * The per-step gate: sync, type-check with unused-locals, format-check the
+ * The per-step gate: sync (`svelte-kit sync` writes `.svelte-kit/types` and
+ * the `node_modules/$app` tsconfig and types; `vela sync` the PocketBase
+ * types), type-check with unused-locals, format-check the
  * files the pattern wrote, and optionally run the generated server tests.
  * Returns error records rather than throwing so a case can report everything
  * at once.
@@ -279,7 +282,9 @@ export function runChecks(
   const serverTests =
     opts.serverTests ?? process.env.INTEGRATION_SERVER_TESTS !== "0";
   if (serverTests && hasServerTests(root)) {
-    const tests = project.run(npmBin(), ["run", "test:server"], {
+    // The script is `vela test:server`; run it through `velaBin()` so a
+    // `VELA_BIN` build is what runs, not the project's installed `vela`.
+    const tests = project.run(velaBin(), ["test:server"], {
       allowFailure: true,
     });
     // `vela test:server` exits with vitest's own code, so the status is the verdict.

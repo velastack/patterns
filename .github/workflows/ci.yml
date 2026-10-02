@@ -5,6 +5,15 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      vela_ref:
+        description: >-
+          Branch, tag or SHA of velastack/vela to build and run the integration
+          suites against, with these patterns installed into it. Empty: the
+          published CLI.
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -19,11 +28,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # No Node 20: vitest 5 declares `^22.12.0 || ^24.0.0 || >=26.0.0` and
-        # .npmrc sets engine-strict=true, so `npm ci` itself fails on 20. The
-        # package still declares node >=20 for consumers, who never install the
-        # dev toolchain.
-        node-version: [22, 24]
+        # 22.17 is the floor: SvelteKit 3 requires it, and so does this package
+        # (engines). Testing the floor itself, not just the latest 22, catches
+        # an API used before it existed.
+        node-version: ["22.17", "24"]
 
     steps:
       - uses: actions/checkout@v7
@@ -78,14 +86,56 @@ jobs:
 
       - run: npm ci
 
-      # The CLI (and therefore the project templates) under test: whatever is
-      # released, so a new CLI release can turn this red with no change here.
+      # The CLI (and therefore the project templates) under test. By default
+      # whatever is released, so a new CLI release can turn this red with no
+      # change here. A release older than MIN_VELA scaffolds SvelteKit 2
+      # projects, which these patterns refuse, so `latest` is tried first,
+      # then `next`, and when neither is new enough the suite is skipped with
+      # a warning instead of failing every case.
       - name: Install vela
+        id: vela
+        if: ${{ !inputs.vela_ref }}
+        env:
+          MIN_VELA: 0.15.0-0
         run: |
-          npm install -g vela@latest
-          vela --version
+          for tag in latest next; do
+            version=$(npm view "vela@$tag" version 2>/dev/null || true)
+            if [ -n "$version" ] && npx --yes semver -p -r ">=$MIN_VELA" "$version" >/dev/null; then
+              npm install -g "vela@$version"
+              vela --version
+              echo "run=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          echo "::warning::No published vela >= $MIN_VELA (latest: $(npm view vela@latest version)); skipping the integration suite. Run this workflow with vela_ref to test against an unreleased CLI."
+          echo "run=false" >> "$GITHUB_OUTPUT"
+
+      # An unreleased CLI: velastack/vela at `vela_ref`, with these patterns
+      # (packed, so `prepare` builds dist) in place of its registry dependency.
+      - name: Check out vela
+        if: ${{ inputs.vela_ref }}
+        uses: actions/checkout@v7
+        with:
+          repository: velastack/vela
+          ref: ${{ inputs.vela_ref }}
+          path: .vela-cli
+
+      - name: Build vela with these patterns
+        if: ${{ inputs.vela_ref }}
+        run: |
+          tarball=$(npm pack --pack-destination "$RUNNER_TEMP" | tail -n 1)
+          cd .vela-cli
+          # Not `npm ci`: the lockfile may pin a patterns release that is not
+          # published yet. This keeps every other locked version and swaps
+          # only that entry.
+          npm install "$RUNNER_TEMP/$tarball"
+          npm run build
+          chmod +x dist/bin.js
+          echo "VELA_BIN=$GITHUB_WORKSPACE/.vela-cli/dist/bin.js" >> "$GITHUB_ENV"
+          "$GITHUB_WORKSPACE/.vela-cli/dist/bin.js" --version
 
       - name: Integration (${{ matrix.suite }})
+        if: ${{ inputs.vela_ref || steps.vela.outputs.run == 'true' }}
         run: npm run test:integration -- integration/${{ matrix.suite }}.test.ts
 
       - name: Upload harness logs
