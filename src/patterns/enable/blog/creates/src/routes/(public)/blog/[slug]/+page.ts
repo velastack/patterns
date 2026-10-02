@@ -5,7 +5,7 @@ import {
   getBlogPost,
   getBlogPosts,
   getRelatedPosts,
-} from "$lib/content";
+} from "#lib/content.js";
 
 export const load = async ({ params, parent }) => {
   await parent();

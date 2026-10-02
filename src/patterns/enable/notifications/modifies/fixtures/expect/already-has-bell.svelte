@@ -1,6 +1,6 @@
 <script lang="ts">
-	import * as Sidebar from '$lib/components/ui/sidebar';
-	import NotificationsBell from '$lib/components/notifications-bell.svelte';
+	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
+	import NotificationsBell from '#lib/components/notifications-bell.svelte';
 
 	let { data, children } = $props();
 </script>

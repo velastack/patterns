@@ -1,9 +1,9 @@
 <script lang="ts">
-  import favicon from "$lib/assets/favicon.svg";
+  import favicon from "#lib/assets/favicon.svg";
 
   import type { ComponentProps } from "svelte";
   import HomeIcon from "@lucide/svelte/icons/home";
-  import * as Sidebar from "$lib/components/ui/sidebar";
+  import * as Sidebar from "#lib/components/ui/sidebar/index.js";
   import NavMain from "./nav-main.svelte";
   import NavUser from "./nav-user.svelte";
 

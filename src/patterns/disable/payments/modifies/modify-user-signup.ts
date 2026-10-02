@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { Project, QuoteKind, SyntaxKind } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
 import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
+import { isLibSpecifier } from "../../../../runtime/lib-specifier";
 
 const CALL_EXPRESSIONS = new Set([
   "linkStripeCustomer.run",
@@ -24,13 +25,10 @@ export function unmodifyUserSignup(userSignupPath: string): ModifyOutcome {
   });
   const sourceFile = project.addSourceFileAtPath(userSignupPath);
 
-  for (const specifier of [
-    "$lib/workflows/link-stripe-customer",
-    "$lib/stripe",
-  ]) {
+  for (const module of ["workflows/link-stripe-customer", "stripe"]) {
     const decl = sourceFile
       .getImportDeclarations()
-      .find((d) => d.getModuleSpecifierValue() === specifier);
+      .find((d) => isLibSpecifier(d.getModuleSpecifierValue(), module));
     if (decl) decl.remove();
   }
 

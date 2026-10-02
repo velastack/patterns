@@ -55,6 +55,27 @@ describe("disable analytics modifiers", () => {
     },
   );
 
+  it("takes <Analytics /> out of a legacy layout (pre-Kit 3 import)", async () => {
+    const own = path.join(__dirname, "fixtures");
+    const filePath = path.join(tempDir, "legacy-+layout.svelte");
+    fs.copyFileSync(
+      path.join(own, "original", "legacy-+layout.svelte"),
+      filePath,
+    );
+
+    expect(unmodifyLayoutSvelte(filePath)).toEqual({
+      status: "success",
+      changed: true,
+    });
+    await expect(fs.readFileSync(filePath, "utf8")).toMatchFormatted(
+      fs.readFileSync(
+        path.join(own, "expect", "legacy-+layout.svelte"),
+        "utf8",
+      ),
+      "+layout.svelte",
+    );
+  });
+
   it("leaves a layout without <Analytics /> alone", () => {
     const filePath = path.join(tempDir, LAYOUT_SVELTE);
     expect(unmodifyLayoutSvelte(filePath)).toEqual({

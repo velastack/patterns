@@ -1,5 +1,5 @@
 import { error, redirect } from '@sveltejs/kit';
-import { loadCms } from '$lib/cms';
+import { loadCms } from '#lib/cms.js';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async (event) => {

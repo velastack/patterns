@@ -158,7 +158,7 @@ function newPageSnippet(
   const components = getRemoteFieldComponents(fields);
   const imports = [
     `import { ${formVar} } from "./form.remote";`,
-    'import { Button } from "$lib/components/ui/button";',
+    'import { Button } from "#lib/components/ui/button/index.js";',
     'import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";',
     ...getRemoteFieldImports(components),
   ].join("\n");
@@ -211,7 +211,7 @@ function editPageSnippet(
   const components = getRemoteFieldComponents(fields);
   const imports = [
     `import { ${formVar} } from "./form.remote";`,
-    'import { Button } from "$lib/components/ui/button";',
+    'import { Button } from "#lib/components/ui/button/index.js";',
     'import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";',
     ...getRemoteFieldImports(components),
   ].join("\n");
@@ -323,7 +323,7 @@ function newRemoteSnippet(
   return dedent`
     import { form, getRequestEvent } from "$app/server";
     import { redirect } from "@sveltejs/kit";
-    import { ${model.schemaName} } from "$lib/schemas/${model.name}";
+    import { ${model.schemaName} } from "#lib/schemas/${model.name}.js";
 
     export const ${formVar} = form(${model.schemaName}, async (data) => {
       const { locals${dynamicParams.length > 0 ? ", params" : ""} } = getRequestEvent();
@@ -376,10 +376,10 @@ function showPageSnippet(
   const hasFileFields = fields.some((field) => field.type === "file");
 
   const imports = [
-    'import { Button } from "$lib/components/ui/button";',
+    'import { Button } from "#lib/components/ui/button/index.js";',
     'import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";',
     hasSelectFields || hasRelationFields
-      ? 'import { Badge } from "$lib/components/ui/badge";'
+      ? 'import { Badge } from "#lib/components/ui/badge/index.js";'
       : "",
     hasRelationFields
       ? 'import CircleArrowRightIcon from "@lucide/svelte/icons/circle-arrow-right";'
@@ -490,7 +490,7 @@ function editRemoteSnippet(
   return dedent`
     import { form, getRequestEvent } from "$app/server";
     import { error, redirect } from "@sveltejs/kit";
-    import { ${model.schemaName} } from "$lib/schemas/${model.name}";
+    import { ${model.schemaName} } from "#lib/schemas/${model.name}.js";
 
     export const ${formVar} = form(${model.schemaName}, async (data) => {
       const { locals${dynamicParams.length > 0 ? ", params" : ""} } = getRequestEvent();

@@ -1,8 +1,7 @@
-import { sequence } from '@sveltejs/kit/hooks';
-import type { Handle } from '@sveltejs/kit';
+import { sequence, type Handle } from '@sveltejs/kit/hooks';
 import { env } from '$env/dynamic/private';
 import { handlePocketbase } from '@velastack/pocketbase';
-import { building } from '$app/environment';
+import { building } from '$app/env';
 
 const cors: Handle = async ({ event, resolve }) => {
 	if (building) return resolve(event);

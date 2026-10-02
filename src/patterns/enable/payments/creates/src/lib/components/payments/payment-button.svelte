@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
-	import PaymentDialog from '$lib/components/payments/payment-dialog.svelte';
-	import ConfirmDialog from '$lib/components/payments/confirm-dialog.svelte';
-	import { useStripe } from '$lib/components/payments/use-stripe.svelte';
-	import { usePaymentIntent } from '$lib/components/payments/use-payment-intent.svelte';
-	import type { ButtonProps } from '$lib/components/ui/button';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import PaymentDialog from '#lib/components/payments/payment-dialog.svelte';
+	import ConfirmDialog from '#lib/components/payments/confirm-dialog.svelte';
+	import { useStripe } from '#lib/components/payments/use-stripe.svelte.js';
+	import { usePaymentIntent } from '#lib/components/payments/use-payment-intent.svelte.js';
+	import type { ButtonProps } from '#lib/components/ui/button/index.js';
 
 	interface Props {
 		priceId: string;

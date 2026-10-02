@@ -3,7 +3,7 @@ import type { Options } from "../types";
 
 /**
  * Which markup the form generators (and enable-i18n's language select) emit:
- * `shadcn` is formsnap plus the project's `$lib/components/ui/*`; `plain` is
+ * `shadcn` is formsnap plus the project's `#lib/components/ui/*`; `plain` is
  * native elements, for projects without shadcn-svelte and tailwind.
  */
 export type Ui = "shadcn" | "plain";

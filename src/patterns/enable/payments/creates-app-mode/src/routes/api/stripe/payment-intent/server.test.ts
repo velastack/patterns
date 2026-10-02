@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach } from "vitest";
 import type { Match } from "@velastack/kit";
 import type { RouteId } from "./$types";
-import stripe from "$lib/stripe";
+import stripe from "#lib/stripe.js";
 import type Stripe from "stripe";
 
 describe("POST /api/stripe/payment-intent", () => {

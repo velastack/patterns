@@ -219,8 +219,26 @@ function ensureSequenceImport(sf: SourceFile, kit: KitSequence): void {
         !d.isTypeOnly() &&
         !d.getNamespaceImport(),
     );
+  // `import type { Handle } from '@sveltejs/kit/hooks'` takes `sequence` in:
+  // `import { sequence, type Handle }`.
+  const typeOnly = decl
+    ? undefined
+    : sf
+        .getImportDeclarations()
+        .find(
+          (d) =>
+            d.getModuleSpecifierValue() === KIT_HOOKS &&
+            d.isTypeOnly() &&
+            !d.getDefaultImport() &&
+            !d.getNamespaceImport(),
+        );
   if (decl) decl.addNamedImport("sequence");
-  else {
+  else if (typeOnly) {
+    const names = typeOnly.getNamedImports();
+    typeOnly.setIsTypeOnly(false);
+    for (const named of names) named.setIsTypeOnly(true);
+    typeOnly.insertNamedImport(0, "sequence");
+  } else {
     sf.addImportDeclaration({
       namedImports: ["sequence"],
       moduleSpecifier: KIT_HOOKS,

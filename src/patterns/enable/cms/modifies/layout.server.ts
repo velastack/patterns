@@ -64,7 +64,7 @@ function importLine(spec: ImportSpec): string {
 export function createdLayoutServer(locale: LayoutServerLocale): string {
   const imports = [
     "import { error, redirect } from '@sveltejs/kit';",
-    "import { loadCms } from '$lib/cms';",
+    "import { loadCms } from '#lib/cms.js';",
     ...(locale.imports ?? []).map(importLine),
     "import type { LayoutServerLoad } from './$types';",
   ].join("\n");
@@ -179,7 +179,7 @@ export function modifyLayoutServer(
   if (!fn.isAsync()) fn.setIsAsync(true);
 
   ensureNamedImports(sourceFile, "@sveltejs/kit", ["error", "redirect"]);
-  ensureNamedImports(sourceFile, "$lib/cms", ["loadCms"]);
+  ensureNamedImports(sourceFile, "#lib/cms.js", ["loadCms"]);
   for (const spec of locale.imports ?? []) {
     ensureImportSpec(sourceFile, spec);
   }

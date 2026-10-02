@@ -36,6 +36,11 @@ export type {
   WriteResultRuntime,
 } from "./core/types";
 export {
+  isLibSpecifier,
+  libModule,
+  libSpecifier,
+} from "./runtime/lib-specifier";
+export {
   providerFromArgv,
   resolveProvider,
   unknownProviderMessage,

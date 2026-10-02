@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import * as Card from '$lib/components/ui/card';
-	import { Button, buttonVariants } from '$lib/components/ui/button';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import { Button, buttonVariants } from '#lib/components/ui/button/index.js';
 	import CrownIcon from '@lucide/svelte/icons/crown';
 	import ShieldIcon from '@lucide/svelte/icons/shield';
 	import UserCheckIcon from '@lucide/svelte/icons/user-check';
@@ -9,18 +9,18 @@
 	import CopyIcon from '@lucide/svelte/icons/copy';
 	import MailIcon from '@lucide/svelte/icons/mail';
 	import ClockIcon from '@lucide/svelte/icons/clock';
-	import * as Avatar from '$lib/components/ui/avatar';
-	import { Badge } from '$lib/components/ui/badge';
-	import * as Table from '$lib/components/ui/table';
+	import * as Avatar from '#lib/components/ui/avatar/index.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import * as Table from '#lib/components/ui/table/index.js';
 	import { getAuthorization } from './authorization';
 	import { toast } from 'svelte-sonner';
-	import * as AlertDialog from '$lib/components/ui/alert-dialog';
-	import * as Form from '$lib/components/ui/form';
+	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
+	import * as Form from '#lib/components/ui/form/index.js';
 	import TrashIcon from '@lucide/svelte/icons/trash-2';
-	import { Input } from '$lib/components/ui/input';
+	import { Input } from '#lib/components/ui/input/index.js';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import { teamSchema } from '$lib/schemas/team';
+	import { teamSchema } from '#lib/schemas/team.js';
 	import { page } from '$app/state';
 
 	let { data, children } = $props();

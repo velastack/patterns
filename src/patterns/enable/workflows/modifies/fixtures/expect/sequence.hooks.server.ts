@@ -1,9 +1,8 @@
-import { sequence } from '@sveltejs/kit/hooks';
-import type { Handle, ServerInit } from '@sveltejs/kit';
+import { sequence, type Handle, type ServerInit } from '@sveltejs/kit/hooks';
 import { env } from '$env/dynamic/private';
 import { handlePocketbase } from '@velastack/pocketbase';
-import { building } from '$app/environment';
-import { startWorker } from '$lib/server/workflows';
+import { building } from '$app/env';
+import { startWorker } from '#lib/server/workflows.js';
 
 const cors: Handle = async ({ event, resolve }) => {
 	if (building) return resolve(event);

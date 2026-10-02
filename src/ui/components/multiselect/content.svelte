@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Popover as PopoverPrimitive } from 'bits-ui';
-	import * as Popover from '$lib/components/ui/popover';
+	import * as Popover from '#lib/components/ui/popover/index.js';
 
 	let {
 		children,

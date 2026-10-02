@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import stripe from '$lib/stripe';
-import { getAdmin, ow } from '$lib/server/workflows';
+import stripe from '#lib/stripe.js';
+import { getAdmin, ow } from '#lib/server/workflows.js';
 
 /**
  * Gives a user a Stripe customer, reusing one that already carries the email

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import * as Avatar from '$lib/components/ui/avatar';
-	import type { BlogAuthor } from '$lib/content';
+	import * as Avatar from '#lib/components/ui/avatar/index.js';
+	import type { BlogAuthor } from '#lib/content.js';
 
 	let {
 		author,

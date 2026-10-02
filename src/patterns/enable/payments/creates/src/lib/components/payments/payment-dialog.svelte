@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { Stripe, StripeElements } from '@stripe/stripe-js';
-	import { Button } from '$lib/components/ui/button';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
 	import { toast } from 'svelte-sonner';
 	import { page } from '$app/state';
 	import { invalidate } from '$app/navigation';

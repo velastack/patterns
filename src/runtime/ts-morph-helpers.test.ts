@@ -1,5 +1,6 @@
 import dedent from "dedent";
 import { describe, expect, it } from "vitest";
+import { libModule } from "./lib-specifier";
 import {
   detectIndent,
   ensureImports,
@@ -68,6 +69,33 @@ describe("removeNamedImportIfUnused", () => {
     );
     expect(source).toContain("import { other } from '@sveltejs/kit/hooks';");
   });
+
+  it("turns a declaration left with type specifiers into import type", () => {
+    const { source } = withInMemoryScript(
+      dedent`
+        import { sequence, type Handle } from '@sveltejs/kit/hooks';
+
+        export const handle: Handle = handleA;
+      `,
+      (sf) => removeNamedImportIfUnused(sf, "@sveltejs/kit/hooks", "sequence"),
+    );
+    expect(source).toContain(
+      "import type { Handle } from '@sveltejs/kit/hooks';",
+    );
+  });
+
+  it("matches the module with a predicate", () => {
+    const { source, result } = withInMemoryScript(
+      dedent`
+        import { site } from '#lib/site.js';
+
+        export const x = 1;
+      `,
+      (sf) => removeNamedImportIfUnused(sf, libModule("site"), "site"),
+    );
+    expect(result.wasRemoved).toBe(true);
+    expect(source).not.toContain("site");
+  });
 });
 
 describe("pruneUnusedImports", () => {
@@ -110,11 +138,11 @@ describe("pruneUnusedImports", () => {
   it("keeps a type import used in an annotation", () => {
     const { result } = withInMemoryScript(
       dedent`
-        import type { ServerInit } from '@sveltejs/kit';
+        import type { ServerInit } from '@sveltejs/kit/hooks';
 
         export const init: ServerInit = () => {};
       `,
-      (sf) => pruneUnusedImports(sf, ["@sveltejs/kit"]),
+      (sf) => pruneUnusedImports(sf, ["@sveltejs/kit/hooks"]),
     );
     expect(result.removed).toEqual([]);
   });
@@ -122,11 +150,11 @@ describe("pruneUnusedImports", () => {
   it("checks an aliased binding by its local name", () => {
     const { result } = withInMemoryScript(
       dedent`
-        import { handle as handleNegotiate } from '$lib/negotiate';
+        import { handle as handleNegotiate } from '#lib/negotiate.js';
 
         export const handle = handleNegotiate;
       `,
-      (sf) => pruneUnusedImports(sf, ["$lib/negotiate"]),
+      (sf) => pruneUnusedImports(sf, ["#lib/negotiate.js"]),
     );
     expect(result.removed).toEqual([]);
   });
@@ -162,21 +190,23 @@ describe("ensureNamedImport", () => {
 
   it("joins a value import as an inline type specifier", () => {
     const { source } = withInMemoryScript(
-      `import { error } from '@sveltejs/kit';\n`,
-      (sf) => ensureNamedImport(sf, "@sveltejs/kit", "ServerInit", true),
+      `import { sequence } from '@sveltejs/kit/hooks';\n`,
+      (sf) => ensureNamedImport(sf, "@sveltejs/kit/hooks", "ServerInit", true),
     );
     expect(source).toBe(
-      `import { error, type ServerInit } from '@sveltejs/kit';\n`,
+      `import { sequence, type ServerInit } from '@sveltejs/kit/hooks';\n`,
     );
   });
 
   it("does not put a value name into an import type declaration", () => {
     const { source } = withInMemoryScript(
-      `import type { Handle } from '@sveltejs/kit';\n`,
-      (sf) => ensureNamedImport(sf, "@sveltejs/kit", "error"),
+      `import type { Handle } from '@sveltejs/kit/hooks';\n`,
+      (sf) => ensureNamedImport(sf, "@sveltejs/kit/hooks", "sequence"),
     );
-    expect(source).toContain("import type { Handle } from '@sveltejs/kit';");
-    expect(source).toContain("import { error } from '@sveltejs/kit';");
+    expect(source).toContain(
+      "import type { Handle } from '@sveltejs/kit/hooks';",
+    );
+    expect(source).toContain("import { sequence } from '@sveltejs/kit/hooks';");
   });
 });
 

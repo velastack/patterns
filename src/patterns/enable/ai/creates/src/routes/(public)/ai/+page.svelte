@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Chat } from '@ai-sdk/svelte';
-	import { Button } from '$lib/components/ui/button';
-	import { Textarea } from '$lib/components/ui/textarea';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
 
 	// Posts to /api/chat (src/routes/api/chat/+server.ts) and streams the reply
 	// into `chat.messages`. This page is a demo, and it is yours to delete.

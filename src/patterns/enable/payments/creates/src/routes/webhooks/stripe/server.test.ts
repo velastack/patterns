@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import type { RouteId } from "./$types";
 import type { Match } from "@velastack/kit";
 import type Stripe from "stripe";
-import stripe from "$lib/stripe";
+import stripe from "#lib/stripe.js";
 
 describe("POST /webhooks/stripe", () => {
   it("accepts valid webhook signature", async (context) => {

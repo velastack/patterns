@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
-	import * as Card from '$lib/components/ui/card';
-	import { Badge } from '$lib/components/ui/badge';
-	import * as AlertDialog from '$lib/components/ui/alert-dialog';
-	import SetupButton from '$lib/components/payments/setup-button.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
+	import SetupButton from '#lib/components/payments/setup-button.svelte';
 	import { CreditCard, Trash2, Check, Package } from '@lucide/svelte';
 	import { toast } from 'svelte-sonner';
 	import { invalidate, invalidateAll } from '$app/navigation';

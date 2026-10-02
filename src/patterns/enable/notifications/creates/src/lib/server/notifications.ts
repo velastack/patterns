@@ -5,7 +5,7 @@ export interface NotifyInput {
 	body?: string;
 }
 
-/** Drop a notification on a user. Server-only ($lib/server). */
+/** Drop a notification on a user. Server-only (src/lib/server). */
 export async function notify(pb: PocketBase, userId: string, input: NotifyInput) {
 	return pb.collection('notifications').create({
 		user: userId,

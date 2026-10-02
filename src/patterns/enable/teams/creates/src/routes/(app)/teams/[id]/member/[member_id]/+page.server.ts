@@ -1,6 +1,6 @@
 import { fail, superValidate } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { teamRoleSchema } from "$lib/schemas/teamRole";
+import { teamRoleSchema } from "#lib/schemas/teamRole.js";
 import { redirect } from "sveltekit-flash-message/server";
 import { setPocketbaseErrors } from "@velastack/pocketbase/form";
 

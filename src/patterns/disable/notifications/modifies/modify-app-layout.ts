@@ -6,6 +6,7 @@ import {
   withInMemoryScript,
 } from "../../../../runtime/ts-morph-helpers";
 import type { ModifyOutcome } from "../../../../core/types";
+import { libModule } from "../../../../runtime/lib-specifier";
 
 /** Take the bell (and the wrapper enable-notifications put it in) out of the header. */
 export function unmodifyAppLayout(layoutPath: string): ModifyOutcome {
@@ -23,7 +24,7 @@ export function unmodifyAppLayout(layoutPath: string): ModifyOutcome {
     const { source: out } = withInMemoryScript(source, (sf) => {
       removeImportByModuleSpecifier(
         sf,
-        "$lib/components/notifications-bell.svelte",
+        libModule("components/notifications-bell.svelte"),
       );
       ensureBlankLineAfterImports(sf);
     });

@@ -1,7 +1,7 @@
 import { form, getRequestEvent } from "$app/server";
 import { redirect } from "@sveltejs/kit";
-import { dev } from "$app/environment";
-import { otpSchema } from "$lib/schemas/otp";
+import { dev } from "$app/env";
+import { otpSchema } from "#lib/schemas/otp.js";
 
 export const otpForm = form(otpSchema, async (data) => {
   const { locals, cookies, params, url } = getRequestEvent();

@@ -10,7 +10,7 @@ import {
 } from "../../../../runtime/ts-morph-helpers";
 
 const IMPORT_SNIPPET = dedent`
-  import { browser } from '$app/environment';
+  import { browser } from '$app/env';
   import { loadLocale } from 'wuchale/load-utils';
 
   import { getLocale } from '$locales/main.url';
@@ -65,7 +65,7 @@ export function ensureRootLayoutI18n(layoutPath: string): ModifyOutcome {
   });
   const sourceFile = project.addSourceFileAtPath(layoutPath);
 
-  ensureNamedImport(sourceFile, "$app/environment", "browser");
+  ensureNamedImport(sourceFile, "$app/env", "browser");
   ensureNamedImport(sourceFile, "wuchale/load-utils", "loadLocale");
   ensureNamedImport(sourceFile, "$locales/main.url", "getLocale");
   ensureImports(sourceFile, [

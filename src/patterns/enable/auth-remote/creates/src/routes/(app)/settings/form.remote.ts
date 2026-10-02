@@ -1,8 +1,8 @@
 import { form, getRequestEvent } from "$app/server";
 import { setFlash } from "sveltekit-flash-message/server";
-import { profileSchema } from "$lib/schemas/profile";
-import { changeEmailSchema } from "$lib/schemas/changeEmail";
-import { changePasswordSchema } from "$lib/schemas/changePassword";
+import { profileSchema } from "#lib/schemas/profile.js";
+import { changeEmailSchema } from "#lib/schemas/changeEmail.js";
+import { changePasswordSchema } from "#lib/schemas/changePassword.js";
 
 export const updateProfileForm = form(profileSchema, async (data) => {
   const { locals, cookies } = getRequestEvent();

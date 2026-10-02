@@ -54,7 +54,28 @@ describe("disable-auth reverts enable-auth", () => {
     // The auth menu's imports were last; the blank line setting the props
     // declaration off from the import block is not theirs to take.
     expect(reverted).toContain(
-      "import { Button } from '$lib/components/ui/button';\n\n\tlet { children }",
+      "import { Button } from '#lib/components/ui/button/index.js';\n\n\tlet { children }",
+    );
+  });
+
+  it("takes the auth menu out of a legacy root layout (pre-Kit 3 imports)", async () => {
+    const fixtures = path.join(__dirname, "fixtures");
+    const file = path.join(tempDir, "legacy-root-layout.svelte");
+    fs.copyFileSync(
+      path.join(fixtures, "original", "legacy-root-layout.svelte"),
+      file,
+    );
+
+    expect(unmodifyRootLayoutSvelte(file)).toEqual({
+      status: "success",
+      changed: true,
+    });
+    await expect(fs.readFileSync(file, "utf8")).toMatchFormatted(
+      fs.readFileSync(
+        path.join(fixtures, "expect", "legacy-root-layout.svelte"),
+        "utf8",
+      ),
+      "root-layout.svelte",
     );
   });
 });

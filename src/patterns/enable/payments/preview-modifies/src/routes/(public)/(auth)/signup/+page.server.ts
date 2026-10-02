@@ -3,9 +3,9 @@ import { fail, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 import { setFlash } from 'sveltekit-flash-message/server';
 import { setPocketbaseErrors } from '@velastack/pocketbase/form';
-import { dev } from '$app/environment';
-import { signupSchema } from '$lib/schemas/signup';
-import { linkStripeCustomer } from '$lib/workflows/link-stripe-customer';
+import { dev } from '$app/env';
+import { signupSchema } from '#lib/schemas/signup.js';
+import { linkStripeCustomer } from '#lib/workflows/link-stripe-customer.js';
 
 export const load = async ({ locals }) => {
 	const authMethods = await locals.admin.collection('users').listAuthMethods();

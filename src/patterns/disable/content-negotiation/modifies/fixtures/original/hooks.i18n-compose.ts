@@ -1,7 +1,7 @@
 import { deLocalizeDefault } from "wuchale/url";
 import { matchUrl } from "$locales/main.url";
 import { locales } from "$locales/data";
-import { reroute as negotiateReroute } from "$lib/negotiate";
+import { reroute as negotiateReroute } from "#lib/negotiate.js";
 
 const rerouteDeLocalize = (url: string) => {
   const [upath, locale] = deLocalizeDefault(url, locales);

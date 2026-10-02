@@ -6,8 +6,10 @@ import {
   removeImportByModuleSpecifier,
   withInMemoryScript,
   formatLikeSource,
+  type ModuleMatch,
 } from "../../../../runtime/ts-morph-helpers";
 import type { ModifyOutcome } from "../../../../core/types";
+import { libModule } from "../../../../runtime/lib-specifier";
 
 /** The header enable-auth ships, which the team switcher replaced. */
 const ORIGINAL_HEADER = `<Sidebar.Header>
@@ -32,16 +34,16 @@ const ORIGINAL_HEADER = `<Sidebar.Header>
 	</Sidebar.Header>`;
 
 /**
- * A sidebar from before `$lib/site` names the app with a `meta` prop; the
+ * A sidebar from before `#lib/site.js` names the app with a `meta` prop; the
  * header goes back to whichever the team switcher's fallback used.
  */
 const LEGACY_NAME = "{meta.appName}";
 
 /** Imports enable-teams added, dropped once the markup no longer uses them. */
-const TEAM_IMPORTS: [name: string, moduleSpecifier: string][] = [
-  ["TeamSwitcher", "$lib/components/team-switcher.svelte"],
+const TEAM_IMPORTS: [name: string, module: ModuleMatch][] = [
+  ["TeamSwitcher", libModule("components/team-switcher.svelte")],
   ["ChevronsUpDownIcon", "@lucide/svelte/icons/chevrons-up-down"],
-  ["Avatar", "$lib/components/ui/avatar"],
+  ["Avatar", libModule("components/ui/avatar")],
 ];
 
 const TEAM_PROPS = ["team", "teams"];

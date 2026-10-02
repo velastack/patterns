@@ -1,12 +1,13 @@
 import fs from "node:fs";
 import dedent from "dedent";
 import type { ModifyOutcome } from "../../../../core/types";
+import { isLibSpecifier } from "../../../../runtime/lib-specifier";
 
 const FAILURE_HINT = dedent`
   src/routes/+layout.server.ts still reads locals.meta, which only the
   PocketBase hook provides. Read the values from a static module instead:
 
-  import { site } from '$lib/site';
+  import { site } from '#lib/site.js';
 
   // locals.meta.appName -> site.name
   // locals.meta.appURL  -> site.url
@@ -14,10 +15,10 @@ const FAILURE_HINT = dedent`
 `;
 
 /**
- * Point an older root layout's meta at `$lib/site` instead of `locals.meta`.
+ * Point an older root layout's meta at `#lib/site.js` instead of `locals.meta`.
  * Templates from before `src/lib/site.ts` read the app name and URL off the
  * PocketBase hook; without the backend nothing sets them, and `App.Locals` no
- * longer declares them. Current templates read `$lib/site` already, so this
+ * longer declares them. Current templates read `#lib/site.js` already, so this
  * leaves them alone.
  */
 export function unmodifyLayoutServerMeta(
@@ -53,8 +54,11 @@ export function unmodifyLayoutServerMeta(
     updated = withoutParam;
   }
 
-  if (!/from\s+['"]\$lib\/site['"]/.test(updated)) {
-    updated = "import { site } from '$lib/site';\n" + updated;
+  const importsSite = [...updated.matchAll(/from\s+['"]([^'"]+)['"]/g)].some(
+    (m) => isLibSpecifier(m[1], "site"),
+  );
+  if (!importsSite) {
+    updated = "import { site } from '#lib/site.js';\n" + updated;
   }
 
   fs.writeFileSync(layoutServerPath, updated, "utf8");

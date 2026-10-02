@@ -36,6 +36,17 @@ describe("disable notifications modifiers", () => {
     );
   });
 
+  it("takes the bell out of a legacy layout (pre-Kit 3 imports)", async () => {
+    const filePath = path.join(tempDir, "legacy-basic-layout.svelte");
+    const outcome = unmodifyAppLayout(filePath);
+
+    expect(outcome).toEqual({ status: "success", changed: true });
+    await expect(fs.readFileSync(filePath, "utf8")).toMatchFormatted(
+      expected("legacy-basic-layout.svelte"),
+      "basic-layout.svelte",
+    );
+  });
+
   it("leaves a layout without the bell alone", () => {
     const filePath = path.join(tempDir, "no-header-layout.svelte");
     const before = fs.readFileSync(filePath, "utf8");

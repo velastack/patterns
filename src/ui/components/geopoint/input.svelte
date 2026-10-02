@@ -57,7 +57,7 @@
 	</div>
 
 	{#if map.open}
-		{#await import('$lib/components/ui/leaflet/leaflet.svelte')}
+		{#await import('#lib/components/ui/leaflet/leaflet.svelte')}
 			<div class="h-[225px] w-full bg-input rounded-b-md"></div>
 		{:then { default: Leaflet }}
 			<Leaflet height={225} point={geopoint} class="rounded-b-md overflow-hidden" />

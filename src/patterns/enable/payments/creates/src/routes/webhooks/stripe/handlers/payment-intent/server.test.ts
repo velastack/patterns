@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import stripe from "$lib/stripe";
+import stripe from "#lib/stripe.js";
 import { handlePaymentIntentSucceeded } from "./succeeded";
 
 describe("payment_intent.succeeded", () => {

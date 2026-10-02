@@ -1,5 +1,5 @@
 import { error } from "@sveltejs/kit";
-import stripe from "$lib/stripe";
+import stripe from "#lib/stripe.js";
 
 export const load = async ({ locals, depends, parent }) => {
   const { user } = await parent();

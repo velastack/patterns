@@ -1,6 +1,6 @@
 import { fail, superValidate } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { confirmResetSchema } from "$lib/schemas/confirmReset";
+import { confirmResetSchema } from "#lib/schemas/confirmReset.js";
 import { redirect } from "@sveltejs/kit";
 import { setFlash } from "sveltekit-flash-message/server";
 import { getTokenPayload } from "pocketbase-sveltekit";

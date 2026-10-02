@@ -1,8 +1,8 @@
 import { fail, message, superValidate } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { otpSchema } from "$lib/schemas/otp";
+import { otpSchema } from "#lib/schemas/otp.js";
 import { redirect } from "@sveltejs/kit";
-import { dev } from "$app/environment";
+import { dev } from "$app/env";
 
 export const load = async ({ locals }) => {
   if (locals.pb.authStore.isValid) {

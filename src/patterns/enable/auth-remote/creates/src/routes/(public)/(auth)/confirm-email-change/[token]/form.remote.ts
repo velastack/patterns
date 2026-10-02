@@ -1,7 +1,7 @@
 import { form, getRequestEvent } from "$app/server";
 import { redirect } from "@sveltejs/kit";
 import { setFlash } from "sveltekit-flash-message/server";
-import { confirmEmailChangeSchema } from "$lib/schemas/confirmEmailChange";
+import { confirmEmailChangeSchema } from "#lib/schemas/confirmEmailChange.js";
 
 export const confirmEmailChangeForm = form(
   confirmEmailChangeSchema,

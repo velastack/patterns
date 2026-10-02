@@ -1,5 +1,5 @@
 import { json } from "@sveltejs/kit";
-import stripe from "$lib/stripe";
+import stripe from "#lib/stripe.js";
 import type { Stripe } from "stripe";
 
 const createPaymentIntent = async (price: Stripe.Price) => {

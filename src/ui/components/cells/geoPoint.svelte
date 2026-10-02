@@ -1,7 +1,7 @@
 <script lang="ts">
 	import MapPinIcon from '@lucide/svelte/icons/map-pin';
 	import type { HTMLAttributes } from 'svelte/elements';
-	import { cn } from '$lib/utils';
+	import { cn } from '#lib/utils.js';
 
 	let {
 		value,

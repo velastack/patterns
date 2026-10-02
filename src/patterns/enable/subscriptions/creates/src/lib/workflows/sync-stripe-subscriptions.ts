@@ -1,5 +1,5 @@
-import stripe from '$lib/stripe';
-import { getAdmin, ow } from '$lib/server/workflows';
+import stripe from '#lib/stripe.js';
+import { getAdmin, ow } from '#lib/server/workflows.js';
 import { subscriptionRecordFields } from '../../routes/webhooks/stripe/handlers/subscription/shared';
 
 /**

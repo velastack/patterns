@@ -45,7 +45,7 @@ export const load: PageServerLoad = async ({ locals }) => {
   }
 
   // Fetch payment methods from Stripe
-  const stripe = await import("$lib/stripe").then((m) => m.default);
+  const stripe = await import("#lib/stripe.js").then((m) => m.default);
   const paymentMethods = await stripe.paymentMethods.list({
     customer: user.stripeCustomerId,
     type: "card",
@@ -77,7 +77,7 @@ export const actions = {
     const paymentMethodId = formData.get("paymentMethodId");
 
     // Attach payment method to customer
-    const stripe = await import("$lib/stripe").then((m) => m.default);
+    const stripe = await import("#lib/stripe.js").then((m) => m.default);
     await stripe.paymentMethods.attach(paymentMethodId, {
       customer: locals.user.stripeCustomerId,
     });
@@ -90,7 +90,7 @@ export const actions = {
     const paymentMethodId = formData.get("paymentMethodId");
 
     // Detach payment method from customer
-    const stripe = await import("$lib/stripe").then((m) => m.default);
+    const stripe = await import("#lib/stripe.js").then((m) => m.default);
     await stripe.paymentMethods.detach(paymentMethodId);
 
     return { success: true };
@@ -101,7 +101,7 @@ export const actions = {
     const paymentMethodId = formData.get("paymentMethodId");
 
     // Update customer's default payment method
-    const stripe = await import("$lib/stripe").then((m) => m.default);
+    const stripe = await import("#lib/stripe.js").then((m) => m.default);
     await stripe.customers.update(locals.user.stripeCustomerId, {
       invoice_settings: {
         default_payment_method: paymentMethodId,

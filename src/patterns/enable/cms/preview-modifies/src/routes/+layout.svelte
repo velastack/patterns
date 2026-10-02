@@ -1,14 +1,14 @@
 <script lang="ts">
 	import '../app.css';
 
-	import favicon from '$lib/assets/favicon.svg';
-	import { site } from '$lib/site';
+	import favicon from '#lib/assets/favicon.svg';
+	import { site } from '#lib/site.js';
 
 	import { ModeWatcher } from 'mode-watcher';
 	import { getFlash } from 'sveltekit-flash-message';
 	import { toast } from 'svelte-sonner';
 	import { page } from '$app/state';
-	import { Toaster } from '$lib/components/ui/sonner';
+	import { Toaster } from '#lib/components/ui/sonner/index.js';
 	import { MetaTags, deepMerge } from 'svelte-meta-tags';
 	// [!code highlight:1]
 	import { AdminBar } from '@velastack/cms';

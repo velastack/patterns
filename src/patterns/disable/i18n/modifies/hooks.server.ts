@@ -74,6 +74,8 @@ export function unmodifyHooksServerI18n(
     removeImportByModuleSpecifier(sourceFile, moduleSpecifier);
   }
   removeNamedImportIfUnused(sourceFile, "@sveltejs/kit/hooks", "sequence");
+  removeNamedImportIfUnused(sourceFile, "@sveltejs/kit/hooks", "Handle");
+  // A project from before SvelteKit 3 imports it from the package root.
   removeNamedImportIfUnused(sourceFile, "@sveltejs/kit", "Handle");
 
   formatLikeSource(sourceFile);

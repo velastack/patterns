@@ -99,6 +99,15 @@ const astCases = [
     file: "+layout.svelte",
     modify: (target: string) => unmodifyAppLayoutSvelte(target),
   },
+  // Written before SvelteKit 3: the old lib alias.
+  {
+    file: "legacy-app-sidebar.svelte",
+    modify: (target: string) => unmodifyAppSidebar(target),
+  },
+  {
+    file: "legacy-+layout.svelte",
+    modify: (target: string) => unmodifyAppLayoutSvelte(target),
+  },
 ] as const;
 
 const templateCases = [

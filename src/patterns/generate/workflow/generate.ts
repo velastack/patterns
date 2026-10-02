@@ -76,7 +76,7 @@ export function parseWorkflowArgs(argv: string[]): WorkflowArgs {
 function workflowSnippet({ name, exportName }: WorkflowArgs): string {
   return dedent`
     import { z } from 'zod';
-    import { ow } from '$lib/server/workflows';
+    import { ow } from '#lib/server/workflows.js';
 
     /**
      * Start a run from any server code with \`${exportName}.run(input)\`. Runs
@@ -103,7 +103,7 @@ function workflowSnippet({ name, exportName }: WorkflowArgs): string {
 
 function cronWorkflowSnippet({ name, exportName, cron }: WorkflowArgs): string {
   return dedent`
-    import { ow } from '$lib/server/workflows';
+    import { ow } from '#lib/server/workflows.js';
 
     /**
      * Runs on the schedule below; \`${exportName}.run()\` starts an extra run.
@@ -131,7 +131,7 @@ function testSnippet({ name, exportName, cron }: WorkflowArgs): string {
   const expectation = cron ? "resolves.toBeNull()" : "resolves.toEqual({})";
   return dedent`
     import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-    import { startWorker, stopWorker } from '$lib/server/workflows';
+    import { startWorker, stopWorker } from '#lib/server/workflows.js';
     import { ${exportName} } from './${name}';
 
     describe('${name}', () => {

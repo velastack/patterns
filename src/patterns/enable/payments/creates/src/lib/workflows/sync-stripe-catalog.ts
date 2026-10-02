@@ -1,5 +1,5 @@
-import stripe from '$lib/stripe';
-import { getAdmin, ow } from '$lib/server/workflows';
+import stripe from '#lib/stripe.js';
+import { getAdmin, ow } from '#lib/server/workflows.js';
 
 /** Copies every Stripe product into stripe_products, adding new ones and updating the rest. */
 export const syncStripeProducts = ow.defineWorkflow(

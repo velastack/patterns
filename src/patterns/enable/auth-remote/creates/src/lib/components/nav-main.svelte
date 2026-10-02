@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Component } from 'svelte';
-	import * as Sidebar from '$lib/components/ui/sidebar';
+	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
 	import { page } from '$app/state';
 
 	const isActive = (url: string) => {

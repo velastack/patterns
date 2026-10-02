@@ -1,10 +1,10 @@
 <script lang="ts" generics="T extends Record<string, unknown>, U extends FormPath<T>">
 	import * as FormPrimitive from 'formsnap';
 	import type { FormPath } from 'sveltekit-superforms';
-	import { cn, type WithElementRef, type WithoutChildren } from '$lib/utils';
+	import { cn, type WithElementRef, type WithoutChildren } from '#lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { setContext } from 'svelte';
-	import * as Popover from '$lib/components/ui/popover';
+	import * as Popover from '#lib/components/ui/popover/index.js';
 
 	let {
 		ref = $bindable(null),

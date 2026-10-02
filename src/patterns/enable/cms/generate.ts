@@ -72,7 +72,7 @@ export function resolveMode(options: Options): CmsMode {
   return { endpoint: LOCAL_ENDPOINT, local: true };
 }
 
-/** `$lib/cms.ts`: the read path, with the endpoint and locales bound. */
+/** `src/lib/cms.ts`: the read path, with the endpoint and locales bound. */
 function cmsLibSource(mode: CmsMode, i18n: boolean): string {
   const imports = [
     "import { apiAdapter, createCms } from '@velastack/cms/server';",

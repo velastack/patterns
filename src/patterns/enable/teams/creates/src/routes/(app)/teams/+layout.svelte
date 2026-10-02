@@ -1,10 +1,10 @@
 <script lang="ts">
-	import * as Card from '$lib/components/ui/card';
-	import { Button } from '$lib/components/ui/button';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
 	import UserIcon from '@lucide/svelte/icons/user';
 	import UserPlusIcon from '@lucide/svelte/icons/user-plus';
 	import LogOutIcon from '@lucide/svelte/icons/log-out';
-	import * as Avatar from '$lib/components/ui/avatar';
+	import * as Avatar from '#lib/components/ui/avatar/index.js';
 
 	const roleLabels = {
 		owner: 'Owner',

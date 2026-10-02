@@ -400,7 +400,7 @@ describe("generate form pattern", () => {
     ]);
 
     const page = result.creates[0].content;
-    expect(page).not.toContain("$lib/components/ui");
+    expect(page).not.toContain("#lib/components/ui/");
     expect(page).not.toContain("class=");
     expect(page).toContain(
       "const { form: formData, errors, constraints, message, enhance } = superForm(",
@@ -482,7 +482,7 @@ describe("generate form pattern", () => {
     );
     expect(result.components).toEqual([]);
     const page = result.creates.find((f) => f.path.endsWith("+page.svelte"));
-    expect(page?.content).not.toContain("$lib/components/ui");
+    expect(page?.content).not.toContain("#lib/components/ui/");
   });
 
   it("lets input.ui override the detected ui", async () => {

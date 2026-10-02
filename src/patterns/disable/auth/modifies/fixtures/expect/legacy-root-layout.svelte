@@ -1,0 +1,55 @@
+<script lang="ts">
+	import type { Snippet } from 'svelte';
+	import favicon from '$lib/assets/favicon.svg';
+	import { site } from '$lib/site';
+
+	import { toggleMode } from 'mode-watcher';
+	import * as Navbar from '$lib/components/ui/navbar';
+	import { Button } from '$lib/components/ui/button';
+
+	let { children }: { children?: Snippet; data?: any } = $props();
+</script>
+
+<div class="min-h-dvh grid grid-rows-[max-content_1fr_max-content]">
+	<Navbar.Root>
+		<Navbar.Brand href="/">
+			<Navbar.Logo src={favicon} alt="Logo" />
+		</Navbar.Brand>
+
+		<Navbar.MobileToggle />
+
+		<Navbar.List>
+			<Navbar.Item>
+				<Button class="w-full justify-start md:justify-center md:w-auto" href="/" variant="ghost">
+					Home
+				</Button>
+			</Navbar.Item>
+
+			<Navbar.Item
+				class="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4"
+			>
+				
+			</Navbar.Item>
+		</Navbar.List>
+	</Navbar.Root>
+
+	{@render children?.()}
+
+	<footer class="border-t border-border py-4">
+		<div
+			class="mx-auto flex max-w-screen-xl px-4 flex-col items-center justify-between gap-3 sm:flex-row"
+		>
+			<p class="text-muted-foreground text-sm">
+				&copy; {new Date().getFullYear()}
+				{site.name}. All rights reserved.
+			</p>
+			<nav class="flex items-center gap-4 text-sm">
+				<Button onclick={toggleMode} variant="ghost" size="icon">
+					<Navbar.Mode />
+				</Button>
+				<a href="/privacy" class="underline-offset-4 hover:underline">Privacy</a>
+				<a href="/terms" class="underline-offset-4 hover:underline">Terms</a>
+			</nav>
+		</div>
+	</footer>
+</div>

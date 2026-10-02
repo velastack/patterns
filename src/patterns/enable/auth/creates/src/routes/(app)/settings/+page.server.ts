@@ -1,9 +1,9 @@
 import { superValidate, fail, withFiles } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
 import { setFlash } from "sveltekit-flash-message/server";
-import { profileSchema } from "$lib/schemas/profile";
-import { changeEmailSchema } from "$lib/schemas/changeEmail";
-import { changePasswordSchema } from "$lib/schemas/changePassword";
+import { profileSchema } from "#lib/schemas/profile.js";
+import { changeEmailSchema } from "#lib/schemas/changeEmail.js";
+import { changePasswordSchema } from "#lib/schemas/changePassword.js";
 
 export const load = async ({ parent }) => {
   const { user } = await parent();

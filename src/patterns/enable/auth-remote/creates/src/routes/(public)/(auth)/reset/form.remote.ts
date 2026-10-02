@@ -1,6 +1,6 @@
 import { form, getRequestEvent } from "$app/server";
 import { setFlash } from "sveltekit-flash-message/server";
-import { resetSchema } from "$lib/schemas/reset";
+import { resetSchema } from "#lib/schemas/reset.js";
 
 export const resetForm = form(resetSchema, async (data) => {
   const { locals, cookies } = getRequestEvent();

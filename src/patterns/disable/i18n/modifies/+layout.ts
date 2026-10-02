@@ -10,12 +10,13 @@ import {
   removeImportByModuleSpecifier,
   removeStatementWithComments,
   formatLikeSource,
+  type ModuleMatch,
 } from "../../../../runtime/ts-morph-helpers";
 
 const FAILURE_HINT = dedent`
   src/routes/+layout.ts still loads wuchale locales. Remove these from it:
 
-  import { browser } from '$app/environment';
+  import { browser } from '$app/env';
   import { loadLocale } from 'wuchale/load-utils';
   import { getLocale } from '$locales/main.url';
   import '$locales/main.loader.svelte';
@@ -28,8 +29,9 @@ const SIDE_EFFECT_MODULES = [
   "$locales/main.loader.svelte",
   "$locales/js.loader",
 ];
-const BINDING_MODULES = [
-  "$app/environment",
+const BINDING_MODULES: ModuleMatch[] = [
+  // `$app/env`, or the module it replaced before SvelteKit 3.
+  (specifier) => /^\$app\/env(ironment)?$/.test(specifier),
   "wuchale/load-utils",
   "$locales/main.url",
 ];

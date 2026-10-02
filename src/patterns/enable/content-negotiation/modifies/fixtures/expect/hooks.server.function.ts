@@ -1,6 +1,5 @@
-import type { Handle } from "@sveltejs/kit";
-import { sequence } from "@sveltejs/kit/hooks";
-import { handle as handleNegotiate } from "$lib/negotiate";
+import { sequence, type Handle } from "@sveltejs/kit/hooks";
+import { handle as handleNegotiate } from "#lib/negotiate.js";
 
 /** Tags every response with the app version. */
 const handleApp: Handle = async ({ event, resolve }) => {

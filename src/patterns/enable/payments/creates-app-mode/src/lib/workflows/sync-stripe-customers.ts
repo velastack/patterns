@@ -1,4 +1,4 @@
-import { getAdmin, ow } from '$lib/server/workflows';
+import { getAdmin, ow } from '#lib/server/workflows.js';
 import { linkStripeCustomer } from './link-stripe-customer';
 
 /**

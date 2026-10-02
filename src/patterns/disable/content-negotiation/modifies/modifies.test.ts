@@ -36,6 +36,25 @@ describe("disable content-negotiation modifiers", () => {
     await expect(modified).toMatchFormatted(expected, "hooks.server.ts");
   });
 
+  // Written before SvelteKit 3: the old lib alias.
+  it.each([
+    ["legacy-hooks.server.ts", unmodifyHooksServerNegotiate, "hooks.server.ts"],
+    ["legacy-hooks.i18n-compose.ts", unmodifyHooksNegotiate, "hooks.ts"],
+    [
+      "legacy-root-layout.svelte",
+      unmodifyRootLayoutNegotiate,
+      "root-layout.svelte",
+    ],
+  ] as const)("reverts %s", async (file, unmodify, parserPath) => {
+    const filePath = path.join(tempDir, file);
+    expect(unmodify(filePath)).toEqual({ status: "success", changed: true });
+
+    await expect(fs.readFileSync(filePath, "utf8")).toMatchFormatted(
+      fs.readFileSync(path.join(fixturesPath, "expect", file), "utf8"),
+      parserPath,
+    );
+  });
+
   it("removes handleNegotiate from a multi-arg sequence", async () => {
     const filePath = path.join(tempDir, "hooks.server.many.ts");
     unmodifyHooksServerNegotiate(filePath);
@@ -65,7 +84,7 @@ describe("disable content-negotiation modifiers", () => {
     const filePath = path.join(tempDir, "hooks.server.negotiate-only.ts");
     fs.writeFileSync(
       filePath,
-      `import { handle as handleNegotiate } from '$lib/negotiate';\n\nexport const handle = handleNegotiate;\n`,
+      `import { handle as handleNegotiate } from '#lib/negotiate.js';\n\nexport const handle = handleNegotiate;\n`,
     );
 
     const outcome = unmodifyHooksServerNegotiate(filePath);
@@ -76,7 +95,7 @@ describe("disable content-negotiation modifiers", () => {
 
   it("reports failure and leaves the file when the handle is not recognised", () => {
     const filePath = path.join(tempDir, "hooks.server.wrapped.ts");
-    const original = `import { handle as handleNegotiate } from '$lib/negotiate';\n\nexport const handle = dev ? handleNegotiate : handleProd;\n`;
+    const original = `import { handle as handleNegotiate } from '#lib/negotiate.js';\n\nexport const handle = dev ? handleNegotiate : handleProd;\n`;
     fs.writeFileSync(filePath, original);
 
     const outcome = unmodifyHooksServerNegotiate(filePath);

@@ -14,7 +14,7 @@ const BELL_SNIPPET = `
 	`;
 
 const IMPORT_SNIPPET = dedent`
-  import NotificationsBell from '$lib/components/notifications-bell.svelte';
+  import NotificationsBell from '#lib/components/notifications-bell.svelte';
 `;
 
 const FAILURE_HINT = [
@@ -57,7 +57,7 @@ export function modifyAppLayout(layoutPath: string): ModifyOutcome {
       ensureImports(sf, [
         {
           defaultImport: "NotificationsBell",
-          moduleSpecifier: "$lib/components/notifications-bell.svelte",
+          moduleSpecifier: "#lib/components/notifications-bell.svelte",
         },
       ]);
     });

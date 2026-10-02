@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { site } from '$lib/site';
+	import { site } from '#lib/site.js';
 	import { toggleMode } from 'mode-watcher';
-	import * as Navbar from '$lib/components/ui/navbar';
-	import { Button } from '$lib/components/ui/button';
+	import * as Navbar from '#lib/components/ui/navbar/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
 
 	let { children }: { children?: Snippet; data?: any } = $props();
 </script>

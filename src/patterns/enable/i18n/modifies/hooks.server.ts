@@ -43,7 +43,7 @@ const FAILURE_HINT = dedent`
  * is all that is left.
  */
 export const HOOKS_SERVER_SNIPPET = dedent`
-  import type { Handle } from '@sveltejs/kit';
+  import type { Handle } from '@sveltejs/kit/hooks';
   import { runWithLocale, loadLocales } from 'wuchale/load-utils/server';
   import { getLocale } from '$locales/main.url';
   import { locales } from '$locales/data';

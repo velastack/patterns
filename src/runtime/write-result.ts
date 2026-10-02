@@ -42,7 +42,7 @@ type CustomNpmPackages = Record<string, string[]>;
 /**
  * The components under `src/ui/components` are copied into a project rather
  * than fetched from the shadcn-svelte registry, so their dependencies have to
- * be declared here: every `$lib/components/ui/<x>` import a component makes
+ * be declared here: every `#lib/components/ui/<x>/index.js` import a component makes
  * must appear in `customDependencies`, and every npm package that no shadcn
  * item installs for it must appear in `customNpmPackages`.
  */

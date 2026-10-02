@@ -53,10 +53,10 @@ const STATIC = dedent`
 `;
 
 const MINIMAL = dedent`
-  import type { ServerInit } from '@sveltejs/kit';
+  import type { ServerInit } from '@sveltejs/kit/hooks';
   import { env } from '$env/dynamic/private';
   import { handlePocketbase } from '@velastack/pocketbase';
-  import { startWorker } from '$lib/server/workflows';
+  import { startWorker } from '#lib/server/workflows.js';
 
   export const handle = handlePocketbase({
     pocketbaseUrl: env.POCKETBASE_URL,
@@ -90,12 +90,12 @@ const SUPPORTED: { name: string; source: string; added: string }[] = [
   {
     name: "no handle, only an init",
     source: dedent`
-      import type { ServerInit } from '@sveltejs/kit';
+      import type { ServerInit } from '@sveltejs/kit/hooks';
 
       export const init: ServerInit = () => {};
     `,
     added: dedent`
-      import type { ServerInit } from '@sveltejs/kit';
+      import type { ServerInit } from '@sveltejs/kit/hooks';
 
       export const init: ServerInit = () => {};
 
@@ -147,11 +147,10 @@ const SUPPORTED: { name: string; source: string; added: string }[] = [
     name: "multi-line call with an init (minimal template)",
     source: MINIMAL,
     added: dedent`
-      import type { ServerInit } from '@sveltejs/kit';
+      import { sequence, type ServerInit } from '@sveltejs/kit/hooks';
       import { env } from '$env/dynamic/private';
       import { handlePocketbase } from '@velastack/pocketbase';
-      import { startWorker } from '$lib/server/workflows';
-      import { sequence } from '@sveltejs/kit/hooks';
+      import { startWorker } from '#lib/server/workflows.js';
 
       export const handle = sequence(
         handleNew,
@@ -251,13 +250,12 @@ const SUPPORTED: { name: string; source: string; added: string }[] = [
   {
     name: "type annotation",
     source: dedent`
-      import type { Handle } from '@sveltejs/kit';
+      import type { Handle } from '@sveltejs/kit/hooks';
 
       export const handle: Handle = handleA;
     `,
     added: dedent`
-      import type { Handle } from '@sveltejs/kit';
-      import { sequence } from '@sveltejs/kit/hooks';
+      import { sequence, type Handle } from '@sveltejs/kit/hooks';
 
       export const handle: Handle = sequence(handleNew, handleA);
     `,
@@ -265,13 +263,12 @@ const SUPPORTED: { name: string; source: string; added: string }[] = [
   {
     name: "satisfies",
     source: dedent`
-      import type { Handle } from '@sveltejs/kit';
+      import type { Handle } from '@sveltejs/kit/hooks';
 
       export const handle = handleA satisfies Handle;
     `,
     added: dedent`
-      import type { Handle } from '@sveltejs/kit';
-      import { sequence } from '@sveltejs/kit/hooks';
+      import { sequence, type Handle } from '@sveltejs/kit/hooks';
 
       export const handle = sequence(handleNew, handleA) satisfies Handle;
     `,
@@ -279,13 +276,12 @@ const SUPPORTED: { name: string; source: string; added: string }[] = [
   {
     name: "as",
     source: dedent`
-      import type { Handle } from '@sveltejs/kit';
+      import type { Handle } from '@sveltejs/kit/hooks';
 
       export const handle = handleA as Handle;
     `,
     added: dedent`
-      import type { Handle } from '@sveltejs/kit';
-      import { sequence } from '@sveltejs/kit/hooks';
+      import { sequence, type Handle } from '@sveltejs/kit/hooks';
 
       export const handle = sequence(handleNew, handleA) as Handle;
     `,
@@ -306,7 +302,7 @@ const SUPPORTED: { name: string; source: string; added: string }[] = [
   {
     name: "function declaration with JSDoc",
     source: dedent`
-      import type { Handle } from '@sveltejs/kit';
+      import type { Handle } from '@sveltejs/kit/hooks';
 
       /** Adds a header. */
       export async function handle({ event, resolve }) {
@@ -316,8 +312,7 @@ const SUPPORTED: { name: string; source: string; added: string }[] = [
       }
     `,
     added: dedent`
-      import type { Handle } from '@sveltejs/kit';
-      import { sequence } from '@sveltejs/kit/hooks';
+      import { sequence, type Handle } from '@sveltejs/kit/hooks';
 
       /** Adds a header. */
       async function handleApp({ event, resolve }) {
@@ -332,15 +327,14 @@ const SUPPORTED: { name: string; source: string; added: string }[] = [
   {
     name: "arrow function with a type annotation",
     source: dedent`
-      import type { Handle } from '@sveltejs/kit';
+      import type { Handle } from '@sveltejs/kit/hooks';
 
       export const handle: Handle = async ({ event, resolve }) => {
         return resolve(event);
       };
     `,
     added: dedent`
-      import type { Handle } from '@sveltejs/kit';
-      import { sequence } from '@sveltejs/kit/hooks';
+      import { sequence, type Handle } from '@sveltejs/kit/hooks';
 
       const handleApp: Handle = async ({ event, resolve }) => {
         return resolve(event);
@@ -369,13 +363,12 @@ const SUPPORTED: { name: string; source: string; added: string }[] = [
   {
     name: "arrow wrapped in satisfies",
     source: dedent`
-      import type { Handle } from '@sveltejs/kit';
+      import type { Handle } from '@sveltejs/kit/hooks';
 
       export const handle = (async ({ event, resolve }) => resolve(event)) satisfies Handle;
     `,
     added: dedent`
-      import type { Handle } from '@sveltejs/kit';
-      import { sequence } from '@sveltejs/kit/hooks';
+      import { sequence, type Handle } from '@sveltejs/kit/hooks';
 
       const handleApp = (async ({ event, resolve }) => resolve(event)) satisfies Handle;
 
@@ -527,7 +520,7 @@ describe("addHandle", () => {
 
   it("keeps the JSDoc of a function handle in a .js file", async () => {
     const source = dedent`
-      /** @type {import('@sveltejs/kit').Handle} */
+      /** @type {import('@sveltejs/kit/hooks').Handle} */
       export async function handle({ event, resolve }) {
         return resolve(event);
       }
@@ -537,7 +530,7 @@ describe("addHandle", () => {
       dedent`
         import { sequence } from '@sveltejs/kit/hooks';
 
-        /** @type {import('@sveltejs/kit').Handle} */
+        /** @type {import('@sveltejs/kit/hooks').Handle} */
         async function handleApp({ event, resolve }) {
           return resolve(event);
         }
@@ -581,10 +574,10 @@ describe("removeHandle", () => {
     const { text } = run(MINIMAL, [remove("handlePocketbase")]);
     await expect(text).toMatchFormatted(
       dedent`
-        import type { ServerInit } from '@sveltejs/kit';
+        import type { ServerInit } from '@sveltejs/kit/hooks';
         import { env } from '$env/dynamic/private';
         import { handlePocketbase } from '@velastack/pocketbase';
-        import { startWorker } from '$lib/server/workflows';
+        import { startWorker } from '#lib/server/workflows.js';
 
         // Runs once when the server starts: executes the workflows in src/lib/workflows.
         export const init: ServerInit = () => startWorker();
@@ -863,7 +856,7 @@ describe("removeHandle", () => {
 
   it("keeps a restored function's JSDoc in a .js file", async () => {
     const source = dedent`
-      /** @type {import('@sveltejs/kit').Handle} */
+      /** @type {import('@sveltejs/kit/hooks').Handle} */
       export async function handle({ event, resolve }) {
         return resolve(event);
       }
@@ -973,7 +966,7 @@ describe("unsupported shapes leave the file untouched", () => {
     [
       {
         name: "re-export from a module",
-        source: `export { handle } from '$lib/negotiate';`,
+        source: `export { handle } from '#lib/negotiate.js';`,
         op: add("handleNew"),
         reason: "re-export",
       },

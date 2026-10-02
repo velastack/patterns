@@ -7,6 +7,7 @@ import {
   withInMemoryScript,
 } from "../../../../runtime/ts-morph-helpers";
 import type { ModifyOutcome } from "../../../../core/types";
+import { libModule } from "../../../../runtime/lib-specifier";
 
 export function unmodifyRootLayoutSvelte(layoutPath: string): ModifyOutcome {
   if (!fs.existsSync(layoutPath)) {
@@ -24,8 +25,8 @@ export function unmodifyRootLayoutSvelte(layoutPath: string): ModifyOutcome {
 
   file.modifyScript((content) => {
     const { source: out } = withInMemoryScript(content, (sf) => {
-      removeImportByModuleSpecifier(sf, "$lib/components/ui/auth-menu");
-      removeImportByModuleSpecifier(sf, "$lib/components/ui/avatar");
+      removeImportByModuleSpecifier(sf, libModule("components/ui/auth-menu"));
+      removeImportByModuleSpecifier(sf, libModule("components/ui/avatar"));
       // enable-auth added `data` for the menu's `data.user`.
       removePropsBindingIfUnused(sf, "data", markup);
       ensureBlankLineAfterImports(sf);

@@ -12,7 +12,7 @@ const INIT_SNIPPET = dedent`
 const FAILURE_HINT = dedent`
   src/hooks.server.ts already exports an init hook. Start the workflow worker from it:
 
-  import { startWorker } from '$lib/server/workflows';
+  import { startWorker } from '#lib/server/workflows.js';
 
   export const init: ServerInit = async () => {
     await startWorker();
@@ -23,8 +23,8 @@ const FAILURE_HINT = dedent`
 const NOT_FOUND_HINT = dedent`
   Create src/hooks.server.ts and start the workflow worker from its init hook:
 
-  import type { ServerInit } from '@sveltejs/kit';
-  import { startWorker } from '$lib/server/workflows';
+  import type { ServerInit } from '@sveltejs/kit/hooks';
+  import { startWorker } from '#lib/server/workflows.js';
 
   export const init: ServerInit = () => startWorker();
 `;
@@ -88,8 +88,8 @@ export function modifyHooksServerWorkflows(
     return { status: "failed", message: FAILURE_HINT };
   }
 
-  ensureNamedImport(sourceFile, "@sveltejs/kit", "ServerInit", true);
-  ensureNamedImport(sourceFile, "$lib/server/workflows", "startWorker");
+  ensureNamedImport(sourceFile, "@sveltejs/kit/hooks", "ServerInit", true);
+  ensureNamedImport(sourceFile, "#lib/server/workflows.js", "startWorker");
 
   // After everything else, so the hook reads as the last thing the server does on start.
   sourceFile.addStatements(`\n${INIT_SNIPPET}`);

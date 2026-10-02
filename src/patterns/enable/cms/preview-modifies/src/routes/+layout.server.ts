@@ -1,8 +1,8 @@
 import { loadFlash } from 'sveltekit-flash-message/server';
 import { defineBaseMetaTags } from 'svelte-meta-tags';
 import { error, redirect } from '@sveltejs/kit';
-import { loadCms } from '$lib/cms';
-import { site } from '$lib/site';
+import { loadCms } from '#lib/cms.js';
+import { site } from '#lib/site.js';
 
 export const load = loadFlash(async (event) => {
 	const { url } = event;

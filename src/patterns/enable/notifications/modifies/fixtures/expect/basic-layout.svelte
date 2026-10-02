@@ -1,10 +1,10 @@
 <script lang="ts">
-	import * as Sidebar from '$lib/components/ui/sidebar';
-	import { Separator } from '$lib/components/ui/separator';
-	import AppSidebar from '$lib/components/app-sidebar.svelte';
-	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
+	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
+	import { Separator } from '#lib/components/ui/separator/index.js';
+	import AppSidebar from '#lib/components/app-sidebar.svelte';
+	import * as Breadcrumb from '#lib/components/ui/breadcrumb/index.js';
 	import { page } from '$app/state';
-	import NotificationsBell from '$lib/components/notifications-bell.svelte';
+	import NotificationsBell from '#lib/components/notifications-bell.svelte';
 
 	let breadcrumbs = $derived(page.data.breadcrumbs || []) as { title: string; url: string }[];
 	let { data, children } = $props();

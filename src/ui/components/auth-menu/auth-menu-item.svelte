@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
-	import { Button } from '$lib/components/ui/button';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
 	import { getContext } from 'svelte';
 	import { AUTH_MENU_CONTEXT_KEY, type AuthMenuContext } from './context.js';
 	let { children, href = undefined, ...restProps } = $props();

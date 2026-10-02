@@ -1,5 +1,5 @@
 import { error } from "@sveltejs/kit";
-import stripe from "$lib/stripe";
+import stripe from "#lib/stripe.js";
 
 type RecurringInfo = {
   interval: string;

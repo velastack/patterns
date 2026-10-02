@@ -179,11 +179,11 @@ function newPageSnippet(
     'import { untrack } from "svelte";',
     'import { superForm } from "sveltekit-superforms";',
     'import { zod4Client } from "sveltekit-superforms/adapters";',
-    `import { ${model.schemaName} } from "$lib/schemas/${model.name}";`,
+    `import { ${model.schemaName} } from "#lib/schemas/${model.name}.js";`,
     ...getFieldImports(getFieldComponents(fields)),
-    'import { Button } from "$lib/components/ui/button";',
+    'import { Button } from "#lib/components/ui/button/index.js";',
     'import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";',
-    'import * as Form from "$lib/components/ui/form";',
+    'import * as Form from "#lib/components/ui/form/index.js";',
   ]).join("\n");
   const fieldContent = fields.map((field) => renderField(field)).join("\n");
   const hiddenInputs = newHiddenInputs(injectables);
@@ -232,11 +232,11 @@ function editPageSnippet(
     'import { untrack } from "svelte";',
     'import { superForm } from "sveltekit-superforms";',
     'import { zod4Client } from "sveltekit-superforms/adapters";',
-    `import { ${model.schemaName} } from "$lib/schemas/${model.name}";`,
+    `import { ${model.schemaName} } from "#lib/schemas/${model.name}.js";`,
     ...getFieldImports(getFieldComponents(fields)),
-    'import { Button } from "$lib/components/ui/button";',
+    'import { Button } from "#lib/components/ui/button/index.js";',
     'import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";',
-    'import * as Form from "$lib/components/ui/form";',
+    'import * as Form from "#lib/components/ui/form/index.js";',
   ]).join("\n");
   const fieldContent = fields.map((field) => renderField(field)).join("\n");
   const hiddenInputs = editHiddenInputs(injectables);
@@ -326,7 +326,7 @@ function newServerSnippet(
     import { superValidate${withFiles ? ", withFiles" : ""} } from "sveltekit-superforms";
     import { zod4 } from "sveltekit-superforms/adapters";
     import { setPocketbaseErrors } from "@velastack/pocketbase/form";
-    import { ${model.schemaName} } from "$lib/schemas/${model.name}";
+    import { ${model.schemaName} } from "#lib/schemas/${model.name}.js";
 
     export const load = async ({ locals }) => {
       ${relationLoads}
@@ -399,10 +399,10 @@ function showPageSnippet(
   const hasFileFields = fields.some((field) => field.type === "file");
 
   const imports = [
-    'import { Button } from "$lib/components/ui/button";',
+    'import { Button } from "#lib/components/ui/button/index.js";',
     'import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";',
     hasSelectFields || hasRelationFields
-      ? 'import { Badge } from "$lib/components/ui/badge";'
+      ? 'import { Badge } from "#lib/components/ui/badge/index.js";'
       : "",
     hasRelationFields
       ? 'import CircleArrowRightIcon from "@lucide/svelte/icons/circle-arrow-right";'
@@ -489,7 +489,7 @@ function plainFormPageSnippet(
       import { untrack } from "svelte";
       import { superForm } from "sveltekit-superforms";
       import { zod4Client } from "sveltekit-superforms/adapters";
-      import { ${model.schemaName} } from "$lib/schemas/${model.name}";
+      import { ${model.schemaName} } from "#lib/schemas/${model.name}.js";
 
       ${propsLine(options.withParams)}
 
@@ -620,7 +620,7 @@ function editServerSnippet(
     import { setPocketbaseErrors, setDefaultData } from "@velastack/pocketbase/form";
     import { superValidate${withFiles ? ", withFiles" : ""} } from "sveltekit-superforms";
     import { zod4 } from "sveltekit-superforms/adapters";
-    import { ${model.schemaName} } from "$lib/schemas/${model.name}";
+    import { ${model.schemaName} } from "#lib/schemas/${model.name}.js";
 
     export const load = async ({ locals, params }) => {
       let ${model.name};

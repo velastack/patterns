@@ -1,8 +1,7 @@
-import type { ServerInit } from '@sveltejs/kit';
+import { sequence, type ServerInit } from '@sveltejs/kit/hooks';
 import { env } from '$env/dynamic/private';
 import { handlePocketbase } from '@velastack/pocketbase';
-import { startWorker } from '$lib/server/workflows';
-import { sequence } from '@sveltejs/kit/hooks';
+import { startWorker } from '#lib/server/workflows.js';
 import { runWithLocale, loadLocales } from 'wuchale/load-utils/server';
 import { getLocale } from '$locales/main.url';
 import { locales } from '$locales/data';

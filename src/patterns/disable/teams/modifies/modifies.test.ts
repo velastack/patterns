@@ -17,6 +17,9 @@ const cases = [
   { file: "multiline-app-layout.svelte", unmodify: unmodifyAppLayoutSvelte },
   { file: "app-sidebar.svelte", unmodify: unmodifyAppSidebar },
   { file: "spaced-app-sidebar.svelte", unmodify: unmodifyAppSidebar },
+  // Written before SvelteKit 3: the old lib alias.
+  { file: "legacy-+layout.svelte", unmodify: unmodifyAppLayoutSvelte },
+  { file: "legacy-app-sidebar.svelte", unmodify: unmodifyAppSidebar },
 ] as const;
 
 describe("disable teams modifiers (enable-teams output as input)", () => {

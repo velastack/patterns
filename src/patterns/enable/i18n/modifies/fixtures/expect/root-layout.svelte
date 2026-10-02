@@ -1,10 +1,10 @@
 <script lang="ts">
-	import favicon from '$lib/assets/favicon.svg';
+	import favicon from '#lib/assets/favicon.svg';
 
 	import { toggleMode } from 'mode-watcher';
-	import * as Navbar from '$lib/components/ui/navbar';
-	import { Button } from '$lib/components/ui/button';
-	import LanguageSelect from '$lib/components/language-select.svelte';
+	import * as Navbar from '#lib/components/ui/navbar/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import LanguageSelect from '#lib/components/language-select.svelte';
 
 	let { children, data } = $props();
 </script>

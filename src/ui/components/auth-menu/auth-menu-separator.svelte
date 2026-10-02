@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
 	import { getContext } from 'svelte';
 	import { AUTH_MENU_CONTEXT_KEY, type AuthMenuContext } from './context.js';
 	const { isDesktop } =

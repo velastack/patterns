@@ -14,7 +14,9 @@ import {
   pruneUnusedImports,
   removeStatementWithComments,
   formatLikeSource,
+  type ModuleMatch,
 } from "../../../../runtime/ts-morph-helpers";
+import { libModule } from "../../../../runtime/lib-specifier";
 
 const HANDLE_HINT = dedent`
   Take handlePocketbase(...) out of the exported handle in src/hooks.server.ts,
@@ -25,14 +27,14 @@ const INIT_HINT = dedent`
   The workflows are removed with the backend. Take the startWorker() call out
   of the init hook in src/hooks.server.ts, and its import:
 
-  import { startWorker } from '$lib/server/workflows';
+  import { startWorker } from '#lib/server/workflows.js';
 `;
 
 /** Modules only the backend's handle and init import from. */
-const BACKEND_MODULES = [
+const BACKEND_MODULES: ModuleMatch[] = [
   "@velastack/pocketbase",
   "$env/dynamic/private",
-  "$lib/server/workflows",
+  libModule("server/workflows"),
   "@sveltejs/kit",
   "@sveltejs/kit/hooks",
 ];

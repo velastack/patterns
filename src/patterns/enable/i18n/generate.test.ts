@@ -51,7 +51,7 @@ describe("enable i18n generate", () => {
     expect(result.components).toEqual([]);
     const component = languageSelect(result);
     expect(component).toContain("<select");
-    expect(component).not.toContain("$lib/components/ui");
+    expect(component).not.toContain("#lib/components/ui/");
   });
 
   it("creates the same files whatever the ui", async () => {

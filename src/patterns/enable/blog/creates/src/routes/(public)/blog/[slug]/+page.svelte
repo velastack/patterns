@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { Badge } from "$lib/components/ui/badge";
-  import { Separator } from "$lib/components/ui/separator";
-  import AuthorChip from "$lib/components/blog/AuthorChip.svelte";
-  import PostCard from "$lib/components/blog/PostCard.svelte";
-  import { formatDate } from "$lib/utils/date";
+  import { Badge } from "#lib/components/ui/badge/index.js";
+  import { Separator } from "#lib/components/ui/separator/index.js";
+  import AuthorChip from "#lib/components/blog/AuthorChip.svelte";
+  import PostCard from "#lib/components/blog/PostCard.svelte";
+  import { formatDate } from "#lib/utils/date.js";
   import ArrowLeft from "@lucide/svelte/icons/arrow-left";
   import ArrowRight from "@lucide/svelte/icons/arrow-right";
 

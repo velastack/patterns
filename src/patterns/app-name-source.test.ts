@@ -7,11 +7,11 @@ const patternsDir = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Directories whose files end up in a project or on the website preview.
- * Fixtures are test inputs and may model a project from before `$lib/site`.
+ * Fixtures are test inputs and may model a project from before `#lib/site.js`.
  */
 const SHIPPED = /^(creates[^/]*|variants|providers|preview-modifies)$/;
 
-/** PocketBase meta as the app's name and URL, which `$lib/site` replaced. */
+/** PocketBase meta as the app's name and URL, which `#lib/site.js` replaced. */
 const META_READ = /\b(?:locals|data)\??\.meta\b|\bmeta\??\.app(?:Name|URL)\b/;
 
 function shippedFiles(dir: string, shipped = false): string[] {
@@ -29,7 +29,7 @@ function shippedFiles(dir: string, shipped = false): string[] {
 }
 
 describe("app name and URL", () => {
-  it("come from $lib/site in every file a pattern ships", () => {
+  it("come from #lib/site.js in every file a pattern ships", () => {
     const offenders = shippedFiles(patternsDir)
       .filter((file) => META_READ.test(fs.readFileSync(file, "utf8")))
       .map((file) => path.relative(patternsDir, file));

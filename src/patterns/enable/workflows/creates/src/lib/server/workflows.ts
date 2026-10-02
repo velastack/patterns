@@ -1,5 +1,5 @@
 import process from 'node:process';
-import { building } from '$app/environment';
+import { building } from '$app/env';
 import { env } from '$env/dynamic/private';
 import { Cron } from 'croner';
 import { OpenWorkflow, type Worker } from 'openworkflow';

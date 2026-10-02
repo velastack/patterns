@@ -1,6 +1,6 @@
 import { error } from "@sveltejs/kit";
 import { definePageMetaTags } from "svelte-meta-tags";
-import { getAllTags, getBlogPostsByTag } from "$lib/content";
+import { getAllTags, getBlogPostsByTag } from "#lib/content.js";
 
 export const load = async ({ params, parent }) => {
   await parent();

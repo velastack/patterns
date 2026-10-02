@@ -7,7 +7,7 @@ import {
 } from "../../../../runtime/ts-morph-helpers";
 import type { ModifyOutcome } from "../../../../core/types";
 
-const MODULE_SPECIFIER = "$lib/components/analytics/analytics.svelte";
+const MODULE_SPECIFIER = "#lib/components/analytics/analytics.svelte";
 
 const IMPORT_SNIPPET = dedent`
   import Analytics from '${MODULE_SPECIFIER}';

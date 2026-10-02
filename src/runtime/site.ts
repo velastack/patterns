@@ -75,7 +75,7 @@ async function existingName(options: Options): Promise<string> {
 }
 
 /**
- * Create `src/lib/site.ts` for a pattern whose files import `$lib/site`, when
+ * Create `src/lib/site.ts` for a pattern whose files import `#lib/site.js`, when
  * the project doesn't have one yet. Every template ships it; projects created
  * before that read the app name from `locals.meta` instead.
  *

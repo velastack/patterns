@@ -1,7 +1,7 @@
 import { redirect } from "@sveltejs/kit";
 import { superValidate } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { teamSchema } from "$lib/schemas/team";
+import { teamSchema } from "#lib/schemas/team.js";
 
 export const load = async ({ params, locals, parent }) => {
   const { user, breadcrumbs } = await parent();

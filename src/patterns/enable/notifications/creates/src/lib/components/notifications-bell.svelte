@@ -4,10 +4,10 @@
 	import { page } from '$app/state';
 	import { toast } from 'svelte-sonner';
 	import BellIcon from '@lucide/svelte/icons/bell';
-	import { Button } from '$lib/components/ui/button';
-	import { Badge } from '$lib/components/ui/badge';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
-	import { timeAgo } from '$lib/utils';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import { timeAgo } from '#lib/utils.js';
 
 	interface NotificationItem {
 		id: string;

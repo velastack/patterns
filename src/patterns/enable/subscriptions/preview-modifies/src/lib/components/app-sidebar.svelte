@@ -13,12 +13,12 @@
 </script>
 
 <script lang="ts">
-	import favicon from '$lib/assets/favicon.svg';
-	import { site } from '$lib/site';
+	import favicon from '#lib/assets/favicon.svg';
+	import { site } from '#lib/site.js';
 
 	import NavMain from './nav-main.svelte';
 	import NavUser from './nav-user.svelte';
-	import * as Sidebar from '$lib/components/ui/sidebar';
+	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
 	import type { ComponentProps } from 'svelte';
 
 	let {

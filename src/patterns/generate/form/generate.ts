@@ -102,7 +102,7 @@ function pageImports(model: Model, fields: Field[]): string[] {
     'import { untrack } from "svelte";',
     'import { superForm } from "sveltekit-superforms";',
     'import { zod4Client } from "sveltekit-superforms/adapters";',
-    `import { ${model.schemaName} } from "$lib/schemas/${model.name}";`,
+    `import { ${model.schemaName} } from "#lib/schemas/${model.name}.js";`,
     ...getFieldImports(components),
   ];
 
@@ -202,7 +202,7 @@ function plainPageSnippet(
       import { untrack } from "svelte";
       import { superForm } from "sveltekit-superforms";
       import { zod4Client } from "sveltekit-superforms/adapters";
-      import { ${model.schemaName} } from "$lib/schemas/${model.name}";
+      import { ${model.schemaName} } from "#lib/schemas/${model.name}.js";
 
       let { data } = $props();
 
@@ -236,7 +236,7 @@ function genericServerSnippet(
   const imports = dedent`
     import { fail, ${flash ? "" : "message, "}superValidate${withFiles ? ", withFiles" : ""} } from "sveltekit-superforms";
     import { zod4 } from "sveltekit-superforms/adapters";
-    import { ${model.schemaName} } from "$lib/schemas/${model.name}";
+    import { ${model.schemaName} } from "#lib/schemas/${model.name}.js";
     ${flash ? 'import { setFlash } from "sveltekit-flash-message/server";' : ""}
   `;
   // `message()` strips files from the returned form itself.
@@ -312,7 +312,7 @@ function createServerSnippet(
     import { zod4 } from "sveltekit-superforms/adapters";
     import { setPocketbaseErrors } from "@velastack/pocketbase/form";
     ${flash ? 'import { setFlash } from "sveltekit-flash-message/server";' : ""}
-    import { ${model.schemaName} } from "$lib/schemas/${model.name}";
+    import { ${model.schemaName} } from "#lib/schemas/${model.name}.js";
 
     export const load = async (${relations.args}) => {
       ${relations.lines}

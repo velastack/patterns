@@ -1,15 +1,15 @@
 <script lang="ts">
-	import favicon from '$lib/assets/favicon.svg';
-	import { site } from '$lib/site';
+	import favicon from '#lib/assets/favicon.svg';
+	import { site } from '#lib/site.js';
 
 	import { untrack } from 'svelte';
-	import { Button } from '$lib/components/ui/button';
-	import * as Card from '$lib/components/ui/card';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import { resetSchema } from '$lib/schemas/reset';
-	import * as Form from '$lib/components/ui/form';
-	import { Input } from '$lib/components/ui/input';
+	import { resetSchema } from '#lib/schemas/reset.js';
+	import * as Form from '#lib/components/ui/form/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
 
 	let { data } = $props();
 

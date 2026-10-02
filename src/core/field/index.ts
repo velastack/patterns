@@ -40,18 +40,26 @@ const FIELD_COMPONENTS: Record<Field["type"], FieldComponent[]> = {
 };
 
 const FIELD_IMPORTS: Record<FieldComponent, string[]> = {
-  form: ['import * as Form from "$lib/components/ui/form";'],
-  "file-form": ['import * as FileForm from "$lib/components/ui/file-form";'],
-  multiselect: [
-    'import * as MultiSelect from "$lib/components/ui/multiselect";',
-    'import * as Command from "$lib/components/ui/command";',
+  form: ['import * as Form from "#lib/components/ui/form/index.js";'],
+  "file-form": [
+    'import * as FileForm from "#lib/components/ui/file-form/index.js";',
   ],
-  input: ['import { Input } from "$lib/components/ui/input";'],
-  checkbox: ['import { Checkbox } from "$lib/components/ui/checkbox";'],
-  textarea: ['import { Textarea } from "$lib/components/ui/textarea";'],
-  select: ['import * as Select from "$lib/components/ui/select";'],
-  geopoint: ['import { GeopointInput } from "$lib/components/ui/geopoint";'],
-  button: ['import { Button } from "$lib/components/ui/button";'],
+  multiselect: [
+    'import * as MultiSelect from "#lib/components/ui/multiselect/index.js";',
+    'import * as Command from "#lib/components/ui/command/index.js";',
+  ],
+  input: ['import { Input } from "#lib/components/ui/input/index.js";'],
+  checkbox: [
+    'import { Checkbox } from "#lib/components/ui/checkbox/index.js";',
+  ],
+  textarea: [
+    'import { Textarea } from "#lib/components/ui/textarea/index.js";',
+  ],
+  select: ['import * as Select from "#lib/components/ui/select/index.js";'],
+  geopoint: [
+    'import { GeopointInput } from "#lib/components/ui/geopoint/index.js";',
+  ],
+  button: ['import { Button } from "#lib/components/ui/button/index.js";'],
 };
 
 export function fieldValueBinding(field: Pick<Field, "name">): string {
@@ -564,7 +572,7 @@ function renderDisplayGeoPointField(
 ): string {
   const dataPath = displayDataPath(model, field);
   const content = dedent`
-    {#await import("$lib/components/ui/leaflet/leaflet.svelte")}
+    {#await import("#lib/components/ui/leaflet/leaflet.svelte")}
       <div class="h-56.25 w-full bg-input rounded-md"></div>
     {:then { default: Leaflet }}
       <Leaflet point={${dataPath}} readonly class="rounded-md overflow-hidden" />

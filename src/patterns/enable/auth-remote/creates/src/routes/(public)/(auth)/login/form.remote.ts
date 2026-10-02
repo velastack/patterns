@@ -1,7 +1,7 @@
 import { form, getRequestEvent } from "$app/server";
 import { redirect } from "@sveltejs/kit";
-import { dev } from "$app/environment";
-import { loginSchema } from "$lib/schemas/login";
+import { dev } from "$app/env";
+import { loginSchema } from "#lib/schemas/login.js";
 
 export const loginForm = form(loginSchema, async (data) => {
   const { locals, cookies, url } = getRequestEvent();

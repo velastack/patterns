@@ -8,18 +8,19 @@ import {
   removeNamedImportIfUnused,
   formatLikeSource,
 } from "../../../../runtime/ts-morph-helpers";
+import { isLibSpecifier } from "../../../../runtime/lib-specifier";
 
 const FAILURE_HINT = dedent`
   Take handleNegotiate out of the exported handle in src/hooks.server.ts, then
   remove its import:
 
-  import { handle as handleNegotiate } from '$lib/negotiate';
+  import { handle as handleNegotiate } from '#lib/negotiate.js';
 `;
 
 function removeNegotiateImport(sourceFile: SourceFile): boolean {
   const decl = sourceFile
     .getImportDeclarations()
-    .find((d) => d.getModuleSpecifierValue() === "$lib/negotiate");
+    .find((d) => isLibSpecifier(d.getModuleSpecifierValue(), "negotiate"));
   if (!decl) return false;
 
   const named = decl.getNamedImports().find((ni) => {

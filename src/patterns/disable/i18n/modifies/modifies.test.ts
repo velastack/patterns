@@ -96,7 +96,7 @@ describe("disable i18n modifiers", () => {
     [
       "a file with an init and no handle",
       dedent`
-        import type { ServerInit } from '@sveltejs/kit';
+        import type { ServerInit } from '@sveltejs/kit/hooks';
 
         export const init: ServerInit = () => {};
       `,
@@ -179,6 +179,25 @@ describe("disable i18n modifiers", () => {
     expect(fs.readFileSync(filePath, "utf8")).toBe("");
   });
 
+  it("empties a legacy +layout.ts (pre-Kit 3 environment module)", () => {
+    const filePath = path.join(tempDir, "src", "routes", "legacy-+layout.ts");
+
+    expect(unmodifyRootLayoutI18n(filePath)).toEqual({
+      status: "success",
+      changed: true,
+    });
+    expect(fs.readFileSync(filePath, "utf8")).toBe("");
+  });
+
+  it("empties a legacy hooks.server.ts enable-i18n created (Handle from @sveltejs/kit)", () => {
+    const filePath = path.join(tempDir, "legacy-hooks.created.ts");
+
+    const outcome = unmodifyHooksServerI18n(filePath);
+
+    expect(outcome).toEqual({ status: "success", changed: true });
+    expect(fs.readFileSync(filePath, "utf8").trim()).toBe("");
+  });
+
   it("keeps the route options a +layout.ts held before i18n", async () => {
     const filePath = path.join(tempDir, "src", "routes", "+layout.plain.ts");
     const source = "export const prerender = true;\n";
@@ -227,7 +246,7 @@ describe("disable i18n modifiers", () => {
   it("leaves the reroute content negotiation wrote in hooks.ts", async () => {
     const filePath = path.join(tempDir, "src", "hooks.negotiate.ts");
     const source = dedent`
-      import { reroute as negotiateReroute } from '$lib/negotiate';
+      import { reroute as negotiateReroute } from '#lib/negotiate.js';
 
       export const reroute = ({ url }) => negotiateReroute(url.pathname);
     `;
@@ -269,6 +288,17 @@ describe("disable i18n modifiers", () => {
       changed: false,
     });
     expect(fs.readFileSync(filePath, "utf8")).toBe(original);
+  });
+
+  it("takes the language select out of a legacy root layout (pre-Kit 3 imports)", async () => {
+    const filePath = path.join(tempDir, "legacy-root-layout.svelte");
+    const outcome = unmodifyRootLayoutLanguageSelect(filePath);
+
+    expect(outcome).toEqual({ status: "success", changed: true });
+    await expect(fs.readFileSync(filePath, "utf8")).toMatchFormatted(
+      expected("legacy-root-layout.svelte"),
+      "root-layout.svelte",
+    );
   });
 
   it("takes the language select out of the root layout", async () => {

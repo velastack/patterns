@@ -1,8 +1,8 @@
 <script>
-	import { Button } from '$lib/components/ui/button';
+	import { Button } from '#lib/components/ui/button/index.js';
 	import MapIcon from '@lucide/svelte/icons/map';
 	import { getContext } from 'svelte';
-	import { cn } from '$lib/utils';
+	import { cn } from '#lib/utils.js';
 
 	let { map } = getContext('geopoint');
 </script>

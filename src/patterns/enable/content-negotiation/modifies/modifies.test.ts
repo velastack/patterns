@@ -31,7 +31,7 @@ describe("enable content-negotiation modifiers", () => {
       changed: true,
     });
     expect(fs.readFileSync(filePath, "utf8")).toBe(
-      "import { handle as handleNegotiate } from '$lib/negotiate';\n\n" +
+      "import { handle as handleNegotiate } from '#lib/negotiate.js';\n\n" +
         "export const handle = handleNegotiate;\n",
     );
   });
@@ -113,7 +113,7 @@ describe("enable content-negotiation modifiers", () => {
 
     const written = fs.readFileSync(hooksPath, "utf8");
     expect(written).toContain(
-      "import { reroute as negotiateReroute } from '$lib/negotiate';",
+      "import { reroute as negotiateReroute } from '#lib/negotiate.js';",
     );
     expect(written).toContain(
       "export const reroute = ({ url }) => negotiateReroute(url.pathname);",

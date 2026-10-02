@@ -81,7 +81,7 @@ function pageImports(fields: Field[], formVar: string): string[] {
   const components = getRemoteFieldComponents(fields);
   const imports = [
     `import { ${formVar} } from "./form.remote";`,
-    'import { Button } from "$lib/components/ui/button";',
+    'import { Button } from "#lib/components/ui/button/index.js";',
     ...getRemoteFieldImports(components),
   ];
 
@@ -171,7 +171,7 @@ function genericRemoteSnippet(
   if (!flash) {
     return dedent`
       import { form } from "$app/server";
-      import { ${model.schemaName} } from "$lib/schemas/${model.name}";
+      import { ${model.schemaName} } from "#lib/schemas/${model.name}.js";
 
       export const ${formVar} = form(${model.schemaName}, async () => {
         return { success: true };
@@ -182,7 +182,7 @@ function genericRemoteSnippet(
   return dedent`
     import { form, getRequestEvent } from "$app/server";
     import { setFlash } from "sveltekit-flash-message/server";
-    import { ${model.schemaName} } from "$lib/schemas/${model.name}";
+    import { ${model.schemaName} } from "#lib/schemas/${model.name}.js";
 
     export const ${formVar} = form(${model.schemaName}, async (data) => {
       const { cookies } = getRequestEvent();
@@ -221,7 +221,7 @@ function createRemoteSnippet(
   return dedent`
     import { form, getRequestEvent } from "$app/server";
     ${flash ? 'import { setFlash } from "sveltekit-flash-message/server";' : ""}
-    import { ${model.schemaName} } from "$lib/schemas/${model.name}";
+    import { ${model.schemaName} } from "#lib/schemas/${model.name}.js";
 
     export const ${formVar} = form(${model.schemaName}, async (data) => {
       const { locals${flash ? ", cookies" : ""} } = getRequestEvent();

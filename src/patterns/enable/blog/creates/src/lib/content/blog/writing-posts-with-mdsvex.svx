@@ -60,7 +60,7 @@ same as any other Svelte file:
 
 ```svelte
 <script>
-  import Callout from '$lib/components/Callout.svelte';
+  import Callout from '#lib/components/Callout.svelte';
 </script>
 
 <Callout>This is a real component inside a markdown post.</Callout>

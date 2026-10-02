@@ -1,10 +1,10 @@
 <script lang="ts">
-  import favicon from "$lib/assets/favicon.svg";
-  import { site } from "$lib/site";
+  import favicon from "#lib/assets/favicon.svg";
+  import { site } from "#lib/site.js";
 
-  import { Button } from "$lib/components/ui/button";
-  import * as Card from "$lib/components/ui/card";
-  import { Input } from "$lib/components/ui/input";
+  import { Button } from "#lib/components/ui/button/index.js";
+  import * as Card from "#lib/components/ui/card/index.js";
+  import { Input } from "#lib/components/ui/input/index.js";
   import PocketBase from "pocketbase-sveltekit";
   import { goto } from "$app/navigation";
   import { page } from "$app/state";

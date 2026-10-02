@@ -3,7 +3,7 @@
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
   import { deLocalizeDefault } from "wuchale/url";
-  import { defaultLocale, translateUrl } from "$lib/url";
+  import { defaultLocale, translateUrl } from "#lib/url.js";
 
   let locale: Locale = $derived.by(() => {
     const [_, locale] = deLocalizeDefault(page.url.pathname, locales);

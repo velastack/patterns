@@ -1,6 +1,6 @@
 import { fail, superValidate } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { resetSchema } from "$lib/schemas/reset";
+import { resetSchema } from "#lib/schemas/reset.js";
 import { redirect } from "@sveltejs/kit";
 import { setFlash } from "sveltekit-flash-message/server";
 

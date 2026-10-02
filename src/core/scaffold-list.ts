@@ -169,17 +169,17 @@ export function listPageSnippet(
 
   const imports = [
     `import {\n${tableCoreImports.join(",\n")}\n} from "@tanstack/table-core";`,
-    'import { createTable, FlexRender, renderComponent } from "$lib/components/ui/data-table";',
-    'import * as Table from "$lib/components/ui/table";',
-    'import { Checkbox } from "$lib/components/ui/checkbox";',
-    'import { ColumnHeader } from "$lib/components/ui/column-header";',
-    'import { Pagination } from "$lib/components/ui/pagination";',
-    'import { RowActions } from "$lib/components/ui/row-actions";',
-    'import * as Cells from "$lib/components/ui/cells";',
-    'import { Button } from "$lib/components/ui/button";',
-    search ? 'import { Input } from "$lib/components/ui/input";' : "",
+    'import { createTable, FlexRender, renderComponent } from "#lib/components/ui/data-table/index.js";',
+    'import * as Table from "#lib/components/ui/table/index.js";',
+    'import { Checkbox } from "#lib/components/ui/checkbox/index.js";',
+    'import { ColumnHeader } from "#lib/components/ui/column-header/index.js";',
+    'import { Pagination } from "#lib/components/ui/pagination/index.js";',
+    'import { RowActions } from "#lib/components/ui/row-actions/index.js";',
+    'import * as Cells from "#lib/components/ui/cells/index.js";',
+    'import { Button } from "#lib/components/ui/button/index.js";',
+    search ? 'import { Input } from "#lib/components/ui/input/index.js";' : "",
     selects.length > 0
-      ? 'import { FacetedFilter } from "$lib/components/ui/faceted-filter";'
+      ? 'import { FacetedFilter } from "#lib/components/ui/faceted-filter/index.js";'
       : "",
     hasFilters ? 'import XIcon from "@lucide/svelte/icons/x";' : "",
     'import PlusIcon from "@lucide/svelte/icons/plus";',

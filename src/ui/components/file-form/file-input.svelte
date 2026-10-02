@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
 	import { fileProxy, filesProxy, type SuperForm } from 'sveltekit-superforms';
-	import { Input } from '$lib/components/ui/input';
+	import { Input } from '#lib/components/ui/input/index.js';
 
 	const ctx = getContext<{ form: SuperForm<any, any>; name: string }>('file-field');
 	const { multiple } = getContext<{ multiple: boolean }>('file-field-multiple');

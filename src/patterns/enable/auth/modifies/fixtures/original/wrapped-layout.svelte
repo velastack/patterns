@@ -1,9 +1,9 @@
 <script lang="ts">
-	import favicon from '$lib/assets/favicon.svg';
+	import favicon from '#lib/assets/favicon.svg';
 
 	import { toggleMode } from 'mode-watcher';
-	import * as Navbar from '$lib/components/ui/navbar';
-	import { Button } from '$lib/components/ui/button';
+	import * as Navbar from '#lib/components/ui/navbar/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
 
 	let { children, data } = $props();
 </script>

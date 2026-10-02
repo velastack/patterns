@@ -1,6 +1,6 @@
 <script lang="ts">
-	import * as Select from '$lib/components/ui/select';
-	import { Button } from '$lib/components/ui/button';
+	import * as Select from '#lib/components/ui/select/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
 	import ChevronsLeftIcon from '@lucide/svelte/icons/chevrons-left';
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';

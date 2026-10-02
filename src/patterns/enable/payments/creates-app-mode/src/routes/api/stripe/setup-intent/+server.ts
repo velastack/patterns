@@ -1,5 +1,5 @@
 import { json } from "@sveltejs/kit";
-import stripe from "$lib/stripe";
+import stripe from "#lib/stripe.js";
 
 export const POST = async ({ locals }) => {
   const user = locals.pb.authStore.record?.id;

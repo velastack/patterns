@@ -1,5 +1,5 @@
 import { definePageMetaTags } from "svelte-meta-tags";
-import { getAllTags } from "$lib/content";
+import { getAllTags } from "#lib/content.js";
 
 export const load = async ({ parent }) => {
   await parent();

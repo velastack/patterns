@@ -1,7 +1,7 @@
 import { form, getRequestEvent } from "$app/server";
 import { redirect } from "@sveltejs/kit";
 import { setFlash } from "sveltekit-flash-message/server";
-import { confirmResetSchema } from "$lib/schemas/confirmReset";
+import { confirmResetSchema } from "#lib/schemas/confirmReset.js";
 
 export const confirmResetForm = form(confirmResetSchema, async (data) => {
   const { locals, cookies, params } = getRequestEvent();

@@ -1,13 +1,13 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import favicon from '$lib/assets/favicon.svg';
-	import { site } from '$lib/site';
+	import favicon from '#lib/assets/favicon.svg';
+	import { site } from '#lib/site.js';
 
 	import { toggleMode } from 'mode-watcher';
-	import * as Navbar from '$lib/components/ui/navbar';
-	import { Button } from '$lib/components/ui/button';
-	import * as AuthMenu from '$lib/components/ui/auth-menu';
-	import * as Avatar from '$lib/components/ui/avatar';
+	import * as Navbar from '#lib/components/ui/navbar/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as AuthMenu from '#lib/components/ui/auth-menu/index.js';
+	import * as Avatar from '#lib/components/ui/avatar/index.js';
 
 	let { children, data }: { children?: Snippet; data?: any } = $props();
 </script>

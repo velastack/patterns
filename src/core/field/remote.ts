@@ -26,9 +26,9 @@ const REMOTE_FIELD_COMPONENTS: Record<Field["type"], RemoteFieldComponent[]> = {
 };
 
 const REMOTE_FIELD_IMPORTS: Record<RemoteFieldComponent, string> = {
-  input: 'import { Input } from "$lib/components/ui/input";',
-  textarea: 'import { Textarea } from "$lib/components/ui/textarea";',
-  button: 'import { Button } from "$lib/components/ui/button";',
+  input: 'import { Input } from "#lib/components/ui/input/index.js";',
+  textarea: 'import { Textarea } from "#lib/components/ui/textarea/index.js";',
+  button: 'import { Button } from "#lib/components/ui/button/index.js";',
 };
 
 export function getRemoteFieldComponents(

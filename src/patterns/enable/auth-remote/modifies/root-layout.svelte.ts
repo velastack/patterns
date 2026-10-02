@@ -58,8 +58,8 @@ const AUTH_MENU_NAVBAR_ITEM = `
 	`;
 
 const IMPORT_SNIPPET = dedent`
-  import * as AuthMenu from '$lib/components/ui/auth-menu';
-  import * as Avatar from '$lib/components/ui/avatar';
+  import * as AuthMenu from '#lib/components/ui/auth-menu/index.js';
+  import * as Avatar from '#lib/components/ui/avatar/index.js';
 `;
 
 const FAILURE_HINT = [
@@ -102,11 +102,11 @@ export function modifyRootLayoutSvelte(layoutPath: string): ModifyOutcome {
       ensureImports(sf, [
         {
           namespaceImport: "AuthMenu",
-          moduleSpecifier: "$lib/components/ui/auth-menu",
+          moduleSpecifier: "#lib/components/ui/auth-menu/index.js",
         },
         {
           namespaceImport: "Avatar",
-          moduleSpecifier: "$lib/components/ui/avatar",
+          moduleSpecifier: "#lib/components/ui/avatar/index.js",
         },
       ]);
       // The menu reads `data.user`; the template's layout takes no props.

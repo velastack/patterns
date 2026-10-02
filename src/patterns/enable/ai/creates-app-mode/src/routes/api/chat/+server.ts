@@ -1,5 +1,5 @@
 import { text } from '@sveltejs/kit';
-import { dev } from '$app/environment';
+import { dev } from '$app/env';
 import {
 	convertToModelMessages,
 	createUIMessageStreamResponse,
@@ -7,7 +7,7 @@ import {
 	streamText,
 	toUIMessageStream
 } from 'ai';
-import { API_KEY, languageModel } from '$lib/server/ai';
+import { API_KEY, languageModel } from '#lib/server/ai.js';
 import type { RequestHandler } from './$types';
 
 // Sent ahead of every conversation: give the assistant its role here.

@@ -374,7 +374,7 @@ describe("generate scaffold pattern", () => {
     )?.content;
 
     expect(listPage).toContain(
-      'import { createTable, FlexRender, renderComponent } from "$lib/components/ui/data-table";',
+      'import { createTable, FlexRender, renderComponent } from "#lib/components/ui/data-table/index.js";',
     );
     expect(listPage).toContain("const features = tableFeatures({");
     expect(listPage).toContain(
@@ -420,7 +420,7 @@ describe("generate scaffold pattern", () => {
       file.path.endsWith("/readings/+page.svelte"),
     )?.content;
     expect(numericList).not.toContain("getColumn(");
-    expect(numericList).not.toContain("$lib/components/ui/input");
+    expect(numericList).not.toContain("#lib/components/ui/input/index.js");
     expect(numericList).not.toContain("filterFns:");
     expect(numericList).not.toContain("columnFacetingFeature");
   });
@@ -466,7 +466,7 @@ describe("generate scaffold pattern", () => {
       "/contacts/[id]/+page.svelte",
       "/contacts/[id]/edit/+page.svelte",
     ]) {
-      expect(page(suffix)).not.toContain("$lib/components/ui");
+      expect(page(suffix)).not.toContain("#lib/components/ui/");
       expect(page(suffix)).not.toContain("class=");
     }
 

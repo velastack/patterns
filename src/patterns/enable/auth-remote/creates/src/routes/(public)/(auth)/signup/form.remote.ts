@@ -1,8 +1,8 @@
 import { form, getRequestEvent } from "$app/server";
 import { redirect } from "@sveltejs/kit";
 import { setFlash } from "sveltekit-flash-message/server";
-import { dev } from "$app/environment";
-import { signupSchema } from "$lib/schemas/signup";
+import { dev } from "$app/env";
+import { signupSchema } from "#lib/schemas/signup.js";
 
 export const signupForm = form(signupSchema, async (data) => {
   const { locals, cookies, url } = getRequestEvent();

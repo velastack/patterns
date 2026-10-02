@@ -1,10 +1,10 @@
 <script lang="ts">
-  import * as Select from "$lib/components/ui/select/index.js";
+  import * as Select from "#lib/components/ui/select/index.js";
   import { locales, type Locale } from "$locales/data.js";
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
   import { deLocalizeDefault } from "wuchale/url";
-  import { defaultLocale, translateUrl } from "$lib/url";
+  import { defaultLocale, translateUrl } from "#lib/url.js";
 
   let locale: Locale = $derived.by(() => {
     const [_, locale] = deLocalizeDefault(page.url.pathname, locales);

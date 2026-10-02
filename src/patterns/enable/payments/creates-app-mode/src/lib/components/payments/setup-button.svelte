@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
-	import SetupDialog from '$lib/components/payments/setup-dialog.svelte';
-	import { useStripe } from '$lib/components/payments/use-stripe.svelte';
-	import { usePaymentIntent } from '$lib/components/payments/use-payment-intent.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import SetupDialog from '#lib/components/payments/setup-dialog.svelte';
+	import { useStripe } from '#lib/components/payments/use-stripe.svelte.js';
+	import { usePaymentIntent } from '#lib/components/payments/use-payment-intent.svelte.js';
 
 	interface Props {
 		disabled?: boolean;

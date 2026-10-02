@@ -1,8 +1,8 @@
 import Stripe from 'stripe';
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
-import stripe from '$lib/stripe';
-import { handleStripeEvent } from '$lib/workflows/stripe-event';
+import stripe from '#lib/stripe.js';
+import { handleStripeEvent } from '#lib/workflows/stripe-event.js';
 
 async function verifyWebhookSignature(request: Request, webhookSecret: string): Promise<Stripe.Event> {
 	const body = await request.text();

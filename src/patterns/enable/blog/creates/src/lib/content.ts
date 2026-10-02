@@ -38,13 +38,13 @@ export type BlogPostSummary = Omit<BlogPost, "component">;
 const WORDS_PER_MINUTE = 220;
 
 function getBlogModules() {
-  return import.meta.glob("$lib/content/blog/*.svx", {
+  return import.meta.glob("/src/lib/content/blog/*.svx", {
     eager: true,
   }) as BlogModules;
 }
 
 function getBlogRawModules() {
-  return import.meta.glob("$lib/content/blog/*.svx", {
+  return import.meta.glob("/src/lib/content/blog/*.svx", {
     eager: true,
     query: "?raw",
     import: "default",

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Button } from "$lib/components/ui/button";
-  import PostCard from "$lib/components/blog/PostCard.svelte";
+  import { Button } from "#lib/components/ui/button/index.js";
+  import PostCard from "#lib/components/blog/PostCard.svelte";
   import Rss from "@lucide/svelte/icons/rss";
 
   let { data } = $props();

@@ -10,13 +10,13 @@ const FAILURE_HINT = dedent`
   Wrap your exported handle with the negotiation handler:
 
   import { sequence } from '@sveltejs/kit/hooks';
-  import { handle as handleNegotiate } from '$lib/negotiate';
+  import { handle as handleNegotiate } from '#lib/negotiate.js';
 
   export const handle = sequence(handleNegotiate, /* your existing handle */);
 `;
 
 const HOOKS_SERVER_SNIPPET = dedent`
-  import { handle as handleNegotiate } from '$lib/negotiate';
+  import { handle as handleNegotiate } from '#lib/negotiate.js';
 
   export const handle = handleNegotiate;
 `;
@@ -24,7 +24,7 @@ const HOOKS_SERVER_SNIPPET = dedent`
 function ensureNegotiateHandleImport(sourceFile: SourceFile) {
   const existing = sourceFile
     .getImportDeclarations()
-    .find((d) => d.getModuleSpecifierValue() === "$lib/negotiate");
+    .find((d) => d.getModuleSpecifierValue() === "#lib/negotiate.js");
   if (existing) {
     const has = existing.getNamedImports().some((ni) => {
       return (
@@ -38,7 +38,7 @@ function ensureNegotiateHandleImport(sourceFile: SourceFile) {
   }
   sourceFile.addImportDeclaration({
     namedImports: [{ name: "handle", alias: "handleNegotiate" }],
-    moduleSpecifier: "$lib/negotiate",
+    moduleSpecifier: "#lib/negotiate.js",
   });
 }
 

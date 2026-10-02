@@ -5,6 +5,7 @@ import {
   withInMemoryScript,
 } from "../../../../runtime/ts-morph-helpers";
 import type { ModifyOutcome } from "../../../../core/types";
+import { libModule } from "../../../../runtime/lib-specifier";
 
 export function unmodifyRootLayoutNegotiate(layoutPath: string): ModifyOutcome {
   if (!fs.existsSync(layoutPath)) {
@@ -16,7 +17,7 @@ export function unmodifyRootLayoutNegotiate(layoutPath: string): ModifyOutcome {
 
   file.modifyScript((source) => {
     const { source: out } = withInMemoryScript(source, (sf) => {
-      removeImportByModuleSpecifier(sf, "$lib/negotiate");
+      removeImportByModuleSpecifier(sf, libModule("negotiate"));
     });
     return out;
   });

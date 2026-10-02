@@ -1,5 +1,5 @@
 import { error, redirect } from "@sveltejs/kit";
-import { dev } from "$app/environment";
+import { dev } from "$app/env";
 
 export const load = async ({ params, cookies, url, locals }) => {
   const { id } = params;

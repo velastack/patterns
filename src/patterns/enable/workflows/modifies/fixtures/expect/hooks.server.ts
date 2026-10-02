@@ -1,7 +1,7 @@
 import { env } from '$env/dynamic/private';
 import { handlePocketbase } from '@velastack/pocketbase';
-import type { ServerInit } from '@sveltejs/kit';
-import { startWorker } from '$lib/server/workflows';
+import type { ServerInit } from '@sveltejs/kit/hooks';
+import { startWorker } from '#lib/server/workflows.js';
 
 export const handle = handlePocketbase({
 	pocketbaseUrl: env.POCKETBASE_URL,

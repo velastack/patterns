@@ -6,7 +6,7 @@ import type { ModifyOutcome } from "../../../../core/types";
 import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
 
 const NEGOTIATE_ONLY_SNIPPET = dedent`
-  import { reroute as negotiateReroute } from '$lib/negotiate';
+  import { reroute as negotiateReroute } from '#lib/negotiate.js';
 
   export const reroute = ({ url }) => negotiateReroute(url.pathname);
 `;
@@ -14,7 +14,7 @@ const NEGOTIATE_ONLY_SNIPPET = dedent`
 const FAILURE_HINT = dedent`
   Compose your existing reroute in src/hooks.ts with the negotiation reroute:
 
-  import { reroute as negotiateReroute } from '$lib/negotiate';
+  import { reroute as negotiateReroute } from '#lib/negotiate.js';
 
   export const reroute = ({ url }) => existingReroute(negotiateReroute(url.pathname));
 `;
@@ -22,7 +22,7 @@ const FAILURE_HINT = dedent`
 function ensureNegotiateImport(sourceFile: SourceFile) {
   const existing = sourceFile
     .getImportDeclarations()
-    .find((d) => d.getModuleSpecifierValue() === "$lib/negotiate");
+    .find((d) => d.getModuleSpecifierValue() === "#lib/negotiate.js");
   if (existing) {
     const has = existing.getNamedImports().some((ni) => {
       return (
@@ -37,7 +37,7 @@ function ensureNegotiateImport(sourceFile: SourceFile) {
   }
   sourceFile.addImportDeclaration({
     namedImports: [{ name: "reroute", alias: "negotiateReroute" }],
-    moduleSpecifier: "$lib/negotiate",
+    moduleSpecifier: "#lib/negotiate.js",
   });
 }
 

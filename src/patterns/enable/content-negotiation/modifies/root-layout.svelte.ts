@@ -8,7 +8,7 @@ import {
 import type { ModifyOutcome } from "../../../../core/types";
 
 const IMPORT_SNIPPET = dedent`
-  import { Negotiate } from '$lib/negotiate';
+  import { Negotiate } from '#lib/negotiate.js';
 `;
 
 const MARKUP_SNIPPET = "\n<Negotiate />\n";
@@ -39,7 +39,7 @@ export function modifyRootLayoutNegotiate(layoutPath: string): ModifyOutcome {
       ensureImports(sf, [
         {
           namedImports: ["Negotiate"],
-          moduleSpecifier: "$lib/negotiate",
+          moduleSpecifier: "#lib/negotiate.js",
         },
       ]);
     });

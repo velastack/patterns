@@ -123,7 +123,7 @@ describe("generate form-remote pattern", () => {
     expect(result.packages).toEqual(["zod@^4.1.11"]);
 
     const page = result.creates[0].content;
-    expect(page).not.toContain("$lib/components/ui");
+    expect(page).not.toContain("#lib/components/ui/");
     expect(page).not.toContain("class=");
     expect(page).toContain(
       '<input id="title" {...submitNoteForm.fields.title.as("text")} required />',

@@ -384,15 +384,13 @@ describe("enable i18n modifiers", () => {
     fs.mkdirSync(path.dirname(layoutPath), { recursive: true });
     fs.writeFileSync(
       layoutPath,
-      `import { dev } from '$app/environment';\n\nexport const ssr = !dev;\n`,
+      `import { dev } from '$app/env';\n\nexport const ssr = !dev;\n`,
     );
 
     ensureRootLayoutI18n(layoutPath);
 
     const modified = fs.readFileSync(layoutPath, "utf8");
-    expect(modified).toContain(
-      "import { dev, browser } from '$app/environment';",
-    );
+    expect(modified).toContain("import { dev, browser } from '$app/env';");
     expect(modified).toContain("export const ssr = !dev;");
   });
 

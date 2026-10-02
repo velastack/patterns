@@ -243,7 +243,7 @@ describe("renderDisplayField", () => {
 
     expect(display).toContain("{#if data.user.location}");
     expect(display).toContain(
-      '{#await import("$lib/components/ui/leaflet/leaflet.svelte")}',
+      '{#await import("#lib/components/ui/leaflet/leaflet.svelte")}',
     );
     expect(display).toContain(
       "{data.user.location?.lat.toFixed(6)}, {data.user.location?.lon.toFixed(6)}",

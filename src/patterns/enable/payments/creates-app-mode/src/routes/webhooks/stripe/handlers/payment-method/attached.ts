@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import stripe from "$lib/stripe";
+import stripe from "#lib/stripe.js";
 
 /**
  * Handles payment_method.attached event

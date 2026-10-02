@@ -1,5 +1,5 @@
-import { getBlogPosts } from "$lib/content";
-import { site } from "$lib/site";
+import { getBlogPosts } from "#lib/content.js";
+import { site } from "#lib/site.js";
 
 export const prerender = true;
 

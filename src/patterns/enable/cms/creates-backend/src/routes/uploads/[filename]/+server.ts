@@ -1,4 +1,4 @@
-import { cms } from '$lib/server/cms';
+import { cms } from '#lib/server/cms.js';
 
 // Uploads land in the data directory after the build, so no static handler
 // would find them. Media URLs written into content are root-relative

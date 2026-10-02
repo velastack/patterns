@@ -8,6 +8,7 @@ import { modifyHooksServerI18n } from "../../../enable/i18n/modifies/hooks.serve
 import { unmodifyHooksServerI18n } from "../../i18n/modifies/hooks.server";
 import { revertOutcomeToFile } from "../../../../runtime/modify-file";
 import { unmodifyHooksServerBackend } from "./hooks.server";
+import { unmodifyLayoutServerMeta } from "./layout-server";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -58,6 +59,25 @@ describe("disable backend hooks.server.ts", () => {
     unmodifyHooksServerBackend(filePath);
     await expect(fs.readFileSync(filePath, "utf8")).toMatchFormatted(
       expected("other-init.hooks.server.ts"),
+      "hooks.server.ts",
+    );
+  });
+
+  // Written before SvelteKit 3: the old lib alias, hook types from the package root.
+  it("empties a legacy minimal template's hooks", () => {
+    const filePath = path.join(tempDir, "legacy-minimal.hooks.server.ts");
+
+    const outcome = unmodifyHooksServerBackend(filePath);
+
+    expect(outcome).toEqual({ status: "success", changed: true });
+    expect(revertOutcomeToFile(filePath, outcome).delete?.path).toBe(filePath);
+  });
+
+  it("leaves a legacy init that does not start the worker", async () => {
+    const filePath = path.join(tempDir, "legacy-other-init.hooks.server.ts");
+    unmodifyHooksServerBackend(filePath);
+    await expect(fs.readFileSync(filePath, "utf8")).toMatchFormatted(
+      expected("legacy-other-init.hooks.server.ts"),
       "hooks.server.ts",
     );
   });
@@ -137,5 +157,47 @@ describe("disable backend hooks.server.ts", () => {
 
       expect(fs.readFileSync(filePath, "utf8").trim()).toBe("");
     }
+  });
+});
+
+describe("disable backend +layout.server.ts", () => {
+  beforeEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+    fs.cpSync(path.join(fixturesPath, "original"), tempDir, {
+      recursive: true,
+    });
+  });
+
+  afterEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it("reads site instead of locals.meta, importing it", () => {
+    const filePath = path.join(tempDir, "layout.server.ts");
+    fs.writeFileSync(
+      filePath,
+      "export const load = async ({ locals }) => ({ meta: locals.meta });\n",
+    );
+
+    expect(unmodifyLayoutServerMeta(filePath)).toEqual({
+      status: "success",
+      changed: true,
+    });
+    const updated = fs.readFileSync(filePath, "utf8");
+    expect(updated).toMatch(/^import \{ site \} from '#lib\/site\.js';\n/);
+    expect(updated).toContain("meta: { appName: site.name, appURL: site.url }");
+  });
+
+  it("keeps a legacy layout's own site import (pre-Kit 3 alias)", async () => {
+    const filePath = path.join(tempDir, "legacy-layout.server.ts");
+
+    expect(unmodifyLayoutServerMeta(filePath)).toEqual({
+      status: "success",
+      changed: true,
+    });
+    await expect(fs.readFileSync(filePath, "utf8")).toMatchFormatted(
+      expected("legacy-layout.server.ts"),
+      "+layout.server.ts",
+    );
   });
 });

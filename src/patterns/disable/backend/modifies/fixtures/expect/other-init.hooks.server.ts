@@ -1,5 +1,5 @@
-import type { ServerInit } from '@sveltejs/kit';
-import { warmCache } from '$lib/server/cache';
+import type { ServerInit } from '@sveltejs/kit/hooks';
+import { warmCache } from '#lib/server/cache.js';
 
 export async function init() {
 	await warmCache();

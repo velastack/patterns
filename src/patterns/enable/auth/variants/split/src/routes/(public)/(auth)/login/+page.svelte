@@ -1,14 +1,14 @@
 <script lang="ts">
-  import favicon from "$lib/assets/favicon.svg";
-  import { site } from "$lib/site";
+  import favicon from "#lib/assets/favicon.svg";
+  import { site } from "#lib/site.js";
 
   import { untrack } from "svelte";
-  import { Button } from "$lib/components/ui/button";
+  import { Button } from "#lib/components/ui/button/index.js";
   import { superForm } from "sveltekit-superforms";
   import { zod4Client } from "sveltekit-superforms/adapters";
-  import { loginSchema } from "$lib/schemas/login";
-  import * as Form from "$lib/components/ui/form";
-  import { Input } from "$lib/components/ui/input";
+  import { loginSchema } from "#lib/schemas/login.js";
+  import * as Form from "#lib/components/ui/form/index.js";
+  import { Input } from "#lib/components/ui/input/index.js";
   import PocketBase from "pocketbase-sveltekit";
   import { goto } from "$app/navigation";
   import { page } from "$app/state";

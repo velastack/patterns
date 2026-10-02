@@ -4,7 +4,7 @@ import { Project, QuoteKind, SyntaxKind } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
 import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
 
-const WORKFLOW_MODULE = "$lib/workflows/link-stripe-customer";
+const WORKFLOW_MODULE = "#lib/workflows/link-stripe-customer.js";
 
 const RUN_SNIPPET = dedent`
   // Queued here, done in the background: the Stripe calls retry on their own,

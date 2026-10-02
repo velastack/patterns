@@ -2,10 +2,10 @@
 	import { getFlash } from 'sveltekit-flash-message';
 	import { page } from '$app/state';
 	import { toast } from 'svelte-sonner';
-	import * as AlertDialog from '$lib/components/ui/alert-dialog';
-	import { Button } from '$lib/components/ui/button';
-	import { Badge } from '$lib/components/ui/badge';
-	import { timeAgo } from '$lib/utils';
+	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { timeAgo } from '#lib/utils.js';
 	import PlusIcon from '@lucide/svelte/icons/plus';
 	import SquareDashedMousePointerIcon from '@lucide/svelte/icons/square-dashed-mouse-pointer';
 

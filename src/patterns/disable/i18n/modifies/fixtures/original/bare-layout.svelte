@@ -1,6 +1,6 @@
 <script lang="ts">
-	import favicon from '$lib/assets/favicon.svg';
-	import LanguageSelect from '$lib/components/language-select.svelte';
+	import favicon from '#lib/assets/favicon.svg';
+	import LanguageSelect from '#lib/components/language-select.svelte';
 
 	let { children } = $props();
 </script>

@@ -2,18 +2,18 @@
 	import { untrack } from 'svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import { changeEmailSchema } from '$lib/schemas/changeEmail';
-	import { changePasswordSchema } from '$lib/schemas/changePassword';
-	import { profileSchema } from '$lib/schemas/profile';
-	import { Button, buttonVariants } from '$lib/components/ui/button';
-	import * as Form from '$lib/components/ui/form';
-	import * as Card from '$lib/components/ui/card';
-	import { Input } from '$lib/components/ui/input';
-	import { Badge } from '$lib/components/ui/badge';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import { Checkbox } from '$lib/components/ui/checkbox';
-	import * as Avatar from '$lib/components/ui/avatar';
-	import * as FileForm from '$lib/components/ui/file-form';
+	import { changeEmailSchema } from '#lib/schemas/changeEmail.js';
+	import { changePasswordSchema } from '#lib/schemas/changePassword.js';
+	import { profileSchema } from '#lib/schemas/profile.js';
+	import { Button, buttonVariants } from '#lib/components/ui/button/index.js';
+	import * as Form from '#lib/components/ui/form/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
+	import { Checkbox } from '#lib/components/ui/checkbox/index.js';
+	import * as Avatar from '#lib/components/ui/avatar/index.js';
+	import * as FileForm from '#lib/components/ui/file-form/index.js';
 
 	let { data } = $props();
 

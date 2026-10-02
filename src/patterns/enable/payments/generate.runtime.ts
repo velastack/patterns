@@ -42,7 +42,7 @@ async function pushMigrationCreates(
 function paymentPageSnippet(priceId: string): string {
   return dedent`
     <script lang="ts">
-      import PaymentButton from '$lib/components/payments/payment-button.svelte';
+      import PaymentButton from '#lib/components/payments/payment-button.svelte';
     </script>
 
     <section data-role="content">

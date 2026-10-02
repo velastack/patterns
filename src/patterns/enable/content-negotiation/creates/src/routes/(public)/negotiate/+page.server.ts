@@ -1,4 +1,4 @@
-import { negotiate } from "$lib/negotiate";
+import { negotiate } from "#lib/negotiate.js";
 
 export const load = async ({ locals }) => {
   const message = "Hello, content negotiation!";

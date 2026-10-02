@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { site } from '$lib/site';
+	import { site } from '#lib/site.js';
 	import '../app.css';
 	// [!code highlight:1]
 	import '../css/prism-vsc-dark-plus.css';
@@ -8,7 +8,7 @@
 	import { getFlash } from 'sveltekit-flash-message';
 	import { toast } from 'svelte-sonner';
 	import { page } from '$app/state';
-	import { Toaster } from '$lib/components/ui/sonner';
+	import { Toaster } from '#lib/components/ui/sonner/index.js';
 	import { MetaTags, deepMerge } from 'svelte-meta-tags';
 
 	let { data, children } = $props();

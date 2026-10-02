@@ -2,11 +2,12 @@ import fs from "node:fs";
 import { Project, QuoteKind, SyntaxKind, type SourceFile } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
 import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
+import { isLibSpecifier } from "../../../../runtime/lib-specifier";
 
 function removeNegotiateImport(sourceFile: SourceFile): boolean {
   const decl = sourceFile
     .getImportDeclarations()
-    .find((d) => d.getModuleSpecifierValue() === "$lib/negotiate");
+    .find((d) => isLibSpecifier(d.getModuleSpecifierValue(), "negotiate"));
   if (!decl) return false;
 
   const named = decl.getNamedImports().find((ni) => {

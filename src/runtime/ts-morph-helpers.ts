@@ -10,6 +10,21 @@ import {
   type StringLiteral,
 } from "ts-morph";
 
+/**
+ * A module specifier, or a test for one. Disable modifiers pass
+ * `libModule("negotiate")` so `#lib/negotiate.js` and the alias a project
+ * from before SvelteKit 3 imports it by both match.
+ */
+export type ModuleMatch = string | ((specifier: string) => boolean);
+
+function importsModule(
+  decl: { getModuleSpecifierValue(): string },
+  match: ModuleMatch,
+): boolean {
+  const specifier = decl.getModuleSpecifierValue();
+  return typeof match === "string" ? specifier === match : match(specifier);
+}
+
 export interface ImportSpec {
   defaultImport?: string;
   namespaceImport?: string;
@@ -130,11 +145,11 @@ export function ensureImports(sf: SourceFile, imports: ImportSpec[]): void {
 /** Remove the import declaration for the given module specifier, if present. */
 export function removeImportByModuleSpecifier(
   sf: SourceFile,
-  moduleSpecifier: string,
+  moduleSpecifier: ModuleMatch,
 ): { wasRemoved: boolean } {
   const decl = sf
     .getImportDeclarations()
-    .find((d) => d.getModuleSpecifierValue() === moduleSpecifier);
+    .find((d) => importsModule(d, moduleSpecifier));
   if (!decl) return { wasRemoved: false };
   decl.remove();
   return { wasRemoved: true };
@@ -164,12 +179,16 @@ export function isReferenced(sf: SourceFile, local: string): boolean {
  */
 export function removeNamedImportIfUnused(
   sf: SourceFile,
-  moduleSpecifier: string,
+  moduleSpecifier: ModuleMatch,
   name: string,
 ): { wasRemoved: boolean } {
   const decl = sf
     .getImportDeclarations()
-    .find((d) => d.getModuleSpecifierValue() === moduleSpecifier);
+    .find(
+      (d) =>
+        importsModule(d, moduleSpecifier) &&
+        d.getNamedImports().some((ni) => ni.getName() === name),
+    );
   if (!decl) return { wasRemoved: false };
 
   const named = decl.getNamedImports().find((ni) => ni.getName() === name);
@@ -182,6 +201,13 @@ export function removeNamedImportIfUnused(
     decl.remove();
   } else {
     named.remove();
+    // `import { sequence, type Handle }` less `sequence` reads as
+    // `import type { Handle }`, the way it was before `sequence` joined it.
+    const rest = decl.getNamedImports();
+    if (!decl.getDefaultImport() && rest.every((ni) => ni.isTypeOnly())) {
+      for (const ni of rest) ni.setIsTypeOnly(false);
+      decl.setIsTypeOnly(true);
+    }
   }
   return { wasRemoved: true };
 }
@@ -193,11 +219,11 @@ export function removeNamedImportIfUnused(
  */
 export function pruneUnusedImports(
   sf: SourceFile,
-  moduleSpecifiers: string[],
+  moduleSpecifiers: ModuleMatch[],
 ): { removed: string[] } {
   const removed: string[] = [];
   for (const decl of sf.getImportDeclarations()) {
-    if (!moduleSpecifiers.includes(decl.getModuleSpecifierValue())) continue;
+    if (!moduleSpecifiers.some((m) => importsModule(decl, m))) continue;
     if (!decl.getImportClause()) continue;
 
     for (const named of decl.getNamedImports()) {

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { getContext, type Snippet } from 'svelte';
-	import { cn } from '$lib/utils';
+	import { cn } from '#lib/utils.js';
 	import { Command as CommandPrimitive } from 'bits-ui';
-	import * as Command from '$lib/components/ui/command';
+	import * as Command from '#lib/components/ui/command/index.js';
 	import CheckIcon from '@lucide/svelte/icons/check';
 
 	let {

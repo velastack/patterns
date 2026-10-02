@@ -40,7 +40,7 @@ export async function generate(options: Options) {
     ),
   );
 
-  // The timeAgo helper enable-notifications added to $lib/utils stays: it is
+  // The timeAgo helper enable-notifications added to #lib/utils.js stays: it is
   // generic, and other code may have started using it.
 
   const collectionDrops = await planDropsForCollections(

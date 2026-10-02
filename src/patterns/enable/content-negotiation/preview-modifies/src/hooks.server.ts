@@ -2,7 +2,7 @@ import { env } from "$env/dynamic/private";
 import { sequence } from "@sveltejs/kit/hooks";
 import { handlePocketbase } from "@velastack/pocketbase";
 // [!code highlight:1]
-import { handle as handleNegotiate } from "$lib/negotiate";
+import { handle as handleNegotiate } from "#lib/negotiate.js";
 
 export const handle = sequence(
   // [!code highlight:1]

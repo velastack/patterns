@@ -1,5 +1,5 @@
 <script lang="ts">
-  import PostCard from "$lib/components/blog/PostCard.svelte";
+  import PostCard from "#lib/components/blog/PostCard.svelte";
 
   let { data } = $props();
 </script>

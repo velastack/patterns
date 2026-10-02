@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import { Input } from '$lib/components/ui/input';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
 	import { goto } from '$app/navigation';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import { teamInviteSchema } from '$lib/schemas/teamInvite';
-	import * as Form from '$lib/components/ui/form';
+	import { teamInviteSchema } from '#lib/schemas/teamInvite.js';
+	import * as Form from '#lib/components/ui/form/index.js';
 
 	let { data } = $props();
 

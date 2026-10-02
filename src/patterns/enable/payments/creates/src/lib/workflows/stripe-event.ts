@@ -1,5 +1,5 @@
 import type Stripe from 'stripe';
-import { getAdmin, ow } from '$lib/server/workflows';
+import { getAdmin, ow } from '#lib/server/workflows.js';
 import { dispatchStripeEvent } from '../../routes/webhooks/stripe/handlers/dispatch';
 
 /**

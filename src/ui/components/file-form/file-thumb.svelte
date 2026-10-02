@@ -3,7 +3,7 @@
 	import { type SuperForm } from 'sveltekit-superforms';
 	import FileIcon from '@lucide/svelte/icons/file';
 	import ImageIcon from '@lucide/svelte/icons/image';
-	import { cn } from '$lib/utils';
+	import { cn } from '#lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
 
 	const ctx = getContext<{ form: SuperForm<any, any>; name: string }>('file-field');

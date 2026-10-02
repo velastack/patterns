@@ -1,9 +1,9 @@
 <script lang="ts">
-  import * as Card from "$lib/components/ui/card";
-  import { Badge } from "$lib/components/ui/badge";
+  import * as Card from "#lib/components/ui/card/index.js";
+  import { Badge } from "#lib/components/ui/badge/index.js";
   import AuthorChip from "./AuthorChip.svelte";
-  import { formatDate } from "$lib/utils/date";
-  import type { BlogPost, BlogPostSummary } from "$lib/content";
+  import { formatDate } from "#lib/utils/date.js";
+  import type { BlogPost, BlogPostSummary } from "#lib/content.js";
 
   let { post }: { post: BlogPost | BlogPostSummary } = $props();
 </script>

@@ -137,7 +137,7 @@ configures vitest nowhere, the `vitest.config.ts` that loads it, both reported a
 lists in `components` is handed to `shadcn-svelte add`, which resolves it from the style-scoped registry
 (`/registry/styles/<style>/`) named by the project's `components.json`.
 
-- `customDependencies` must list every `$lib/components/ui/<x>` a shipped component imports, and
+- `customDependencies` must list every `#lib/components/ui/<x>/index.js` a shipped component imports, and
   `customNpmPackages` every npm package no shadcn item installs for it.
 - `data-table` is a local copy of `@tanstack/svelte-table`'s v9 adapter (`createTable`, `FlexRender`,
   `renderComponent`) over `@tanstack/table-core` alone; `column-header`, `faceted-filter` and `pagination` type

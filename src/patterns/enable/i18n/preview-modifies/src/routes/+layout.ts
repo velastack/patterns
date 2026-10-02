@@ -1,4 +1,4 @@
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 // [!code highlight:4]
 import { loadLocale } from "wuchale/load-utils";
 import { getLocale } from "$locales/main.url";

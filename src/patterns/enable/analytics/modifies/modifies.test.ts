@@ -13,7 +13,7 @@ const tempDir = path.join(__dirname, "temp");
 const LAYOUT_SVELTE = path.join("src", "routes", "+layout.svelte");
 const STATIC_LAYOUT_SVELTE = path.join("static", LAYOUT_SVELTE);
 const IMPORT =
-  "import Analytics from '$lib/components/analytics/analytics.svelte';";
+  "import Analytics from '#lib/components/analytics/analytics.svelte';";
 
 function read(rel: string): string {
   return fs.readFileSync(path.join(tempDir, rel), "utf8");

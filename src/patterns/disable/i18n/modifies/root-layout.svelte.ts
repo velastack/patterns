@@ -6,6 +6,7 @@ import {
   withInMemoryScript,
 } from "../../../../runtime/ts-morph-helpers";
 import type { ModifyOutcome } from "../../../../core/types";
+import { libModule } from "../../../../runtime/lib-specifier";
 
 /** Take the language select (and the nav item enable-i18n wrapped it in) back out. */
 export function unmodifyRootLayoutLanguageSelect(
@@ -25,7 +26,7 @@ export function unmodifyRootLayoutLanguageSelect(
     const { source: out } = withInMemoryScript(source, (sf) => {
       removeImportByModuleSpecifier(
         sf,
-        "$lib/components/language-select.svelte",
+        libModule("components/language-select.svelte"),
       );
       ensureBlankLineAfterImports(sf);
     });

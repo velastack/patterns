@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { Button, buttonVariants } from "$lib/components/ui/button";
-  import * as Card from "$lib/components/ui/card";
-  import { Input } from "$lib/components/ui/input";
-  import { Badge } from "$lib/components/ui/badge";
-  import * as Dialog from "$lib/components/ui/dialog";
-  import { Checkbox } from "$lib/components/ui/checkbox";
-  import * as Avatar from "$lib/components/ui/avatar";
+  import { Button, buttonVariants } from "#lib/components/ui/button/index.js";
+  import * as Card from "#lib/components/ui/card/index.js";
+  import { Input } from "#lib/components/ui/input/index.js";
+  import { Badge } from "#lib/components/ui/badge/index.js";
+  import * as Dialog from "#lib/components/ui/dialog/index.js";
+  import { Checkbox } from "#lib/components/ui/checkbox/index.js";
+  import * as Avatar from "#lib/components/ui/avatar/index.js";
   import {
     updateProfileForm,
     changeEmailForm,

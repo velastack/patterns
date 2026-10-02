@@ -41,15 +41,15 @@ const NEW_HEADER = `<Sidebar.Header>
 	</Sidebar.Header>`;
 
 const IMPORT_SNIPPET = [
-  "import favicon from '$lib/assets/favicon.svg';",
-  "import TeamSwitcher from '$lib/components/team-switcher.svelte';",
+  "import favicon from '#lib/assets/favicon.svg';",
+  "import TeamSwitcher from '#lib/components/team-switcher.svelte';",
   "import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';",
-  "import * as Avatar from '$lib/components/ui/avatar';",
-  "import { site } from '$lib/site';",
+  "import * as Avatar from '#lib/components/ui/avatar/index.js';",
+  "import { site } from '#lib/site.js';",
 ].join("\n");
 
 /**
- * A sidebar from before `$lib/site` names the app with a `meta` prop. Keep
+ * A sidebar from before `#lib/site.js` names the app with a `meta` prop. Keep
  * whichever the header already uses, so an older project stays consistent.
  */
 const LEGACY_NAME = "{meta.appName}";
@@ -82,17 +82,17 @@ function updateAppSidebarScript(source: string, legacyName: boolean): string {
   const { source: out } = withInMemoryScript(source, (sf) => {
     if (!legacyName) {
       ensureImports(sf, [
-        { namedImports: ["site"], moduleSpecifier: "$lib/site" },
+        { namedImports: ["site"], moduleSpecifier: "#lib/site.js" },
       ]);
     }
     ensureImports(sf, [
       {
         defaultImport: "favicon",
-        moduleSpecifier: "$lib/assets/favicon.svg",
+        moduleSpecifier: "#lib/assets/favicon.svg",
       },
       {
         defaultImport: "TeamSwitcher",
-        moduleSpecifier: "$lib/components/team-switcher.svelte",
+        moduleSpecifier: "#lib/components/team-switcher.svelte",
       },
       {
         defaultImport: "ChevronsUpDownIcon",
@@ -100,7 +100,7 @@ function updateAppSidebarScript(source: string, legacyName: boolean): string {
       },
       {
         namespaceImport: "Avatar",
-        moduleSpecifier: "$lib/components/ui/avatar",
+        moduleSpecifier: "#lib/components/ui/avatar/index.js",
       },
     ]);
 

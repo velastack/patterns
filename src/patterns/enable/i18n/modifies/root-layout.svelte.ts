@@ -16,7 +16,7 @@ const LANGUAGE_SELECT_SNIPPET = `<Navbar.Item>
 const PLAIN_LANGUAGE_SELECT_SNIPPET = "<LanguageSelect />";
 
 const IMPORT_SNIPPET = dedent`
-  import LanguageSelect from '$lib/components/language-select.svelte';
+  import LanguageSelect from '#lib/components/language-select.svelte';
 `;
 
 const FAILURE_HINT = [
@@ -71,7 +71,7 @@ function addImport(file: SvelteFile): void {
       ensureImports(sf, [
         {
           defaultImport: "LanguageSelect",
-          moduleSpecifier: "$lib/components/language-select.svelte",
+          moduleSpecifier: "#lib/components/language-select.svelte",
         },
       ]);
     });

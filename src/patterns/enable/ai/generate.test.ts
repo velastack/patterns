@@ -120,7 +120,7 @@ describe("ai generate", () => {
   it("streams through the provider-agnostic model from the endpoint", async () => {
     const result = await generate(makeOptions({ provider: "openai" }));
     const endpoint = content(result.creates, ENDPOINT_PATH);
-    expect(endpoint).toContain("from '$lib/server/ai'");
+    expect(endpoint).toContain("from '#lib/server/ai.js'");
     expect(endpoint).toContain("safeValidateUIMessages");
     expect(endpoint).toContain("instructions: INSTRUCTIONS");
     expect(endpoint).toContain("createUIMessageStreamResponse");
@@ -166,7 +166,7 @@ describe("ai generate", () => {
     const page = content(result.creates, PUBLIC_PAGE_PATH);
     expect(page).toContain("new Chat({})");
     expect(page).toContain("<textarea");
-    expect(page).not.toContain("$lib/components/ui");
+    expect(page).not.toContain("#lib/components/ui/");
     expect(result.components).toEqual([]);
   });
 
@@ -174,7 +174,7 @@ describe("ai generate", () => {
     const result = await generate(makeOptions({ provider: "gateway" }));
     const page = content(result.creates, PUBLIC_PAGE_PATH);
     expect(page).toContain("new Chat({})");
-    expect(page).toContain("$lib/components/ui/textarea");
+    expect(page).toContain("#lib/components/ui/textarea/index.js");
     expect(page).toContain("chat.stop()");
     expect(page).toContain("chat.regenerate()");
   });

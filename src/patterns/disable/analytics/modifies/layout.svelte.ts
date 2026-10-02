@@ -6,8 +6,9 @@ import {
   withInMemoryScript,
 } from "../../../../runtime/ts-morph-helpers";
 import type { ModifyOutcome } from "../../../../core/types";
+import { libModule } from "../../../../runtime/lib-specifier";
 
-const MODULE_SPECIFIER = "$lib/components/analytics/analytics.svelte";
+const MODULE = "components/analytics/analytics.svelte";
 
 /**
  * Takes `<Analytics />` and its import back out of the root layout. The
@@ -20,17 +21,14 @@ export function unmodifyLayoutSvelte(layoutPath: string): ModifyOutcome {
   }
 
   const original = fs.readFileSync(layoutPath, "utf8");
-  if (
-    !original.includes(MODULE_SPECIFIER) &&
-    !original.includes("<Analytics")
-  ) {
+  if (!original.includes(MODULE) && !original.includes("<Analytics")) {
     return { status: "success", changed: false };
   }
 
   const file = SvelteFile.fromPath(layoutPath);
   file.modifyScript((source) => {
     const { source: out } = withInMemoryScript(source, (sf) => {
-      removeImportByModuleSpecifier(sf, MODULE_SPECIFIER);
+      removeImportByModuleSpecifier(sf, libModule(MODULE));
       ensureBlankLineAfterImports(sf);
     });
     return out;

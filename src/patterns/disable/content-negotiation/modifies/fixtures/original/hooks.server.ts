@@ -1,6 +1,6 @@
 import { env } from "$env/dynamic/private";
 import { handlePocketbase } from "@velastack/pocketbase";
-import { handle as handleNegotiate } from "$lib/negotiate";
+import { handle as handleNegotiate } from "#lib/negotiate.js";
 import { sequence } from "@sveltejs/kit/hooks";
 
 export const handle = sequence(

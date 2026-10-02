@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import type Stripe from "stripe";
-import stripe from "$lib/stripe";
+import stripe from "#lib/stripe.js";
 import { handlePaymentMethodAttached } from "./attached";
 
 describe("payment_method.attached", () => {

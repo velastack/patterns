@@ -1,4 +1,4 @@
-import type { ServerInit } from '@sveltejs/kit';
+import type { ServerInit } from '@sveltejs/kit/hooks';
 import { env } from '$env/dynamic/private';
 import { handlePocketbase } from '@velastack/pocketbase';
 
