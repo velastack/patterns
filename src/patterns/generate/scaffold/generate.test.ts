@@ -301,7 +301,7 @@ describe("generate scaffold pattern", () => {
     );
     // delete redirect interpolates params.team_id
     expect(showServer?.content).toContain(
-      "throw redirect(303, `/${params.team_id}/projects`);",
+      "redirect(303, `/${params.team_id}/projects`);",
     );
 
     const editServer = result.creates.find((file) =>
@@ -317,7 +317,7 @@ describe("generate scaffold pattern", () => {
     );
     // create redirect chains team_id and the freshly-created project id
     expect(newServer?.content).toContain(
-      "return redirect(303, `/${params.team_id}/projects/${project.id}`);",
+      "redirect(303, `/${params.team_id}/projects/${project.id}`);",
     );
 
     const newPage = result.creates.find((file) =>

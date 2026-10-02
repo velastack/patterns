@@ -30,6 +30,8 @@ export interface PlainBinding {
   invalid(field: Field): string;
   /** Field types the binding has no markup for; they render as a TODO comment. */
   unsupported: Field["type"][];
+  /** Further fields the binding has no markup for, rendered the same way. */
+  unsupportedField?(field: Field): boolean;
   /** Name used in the TODO comment of an unsupported field. */
   label: string;
 }
@@ -92,6 +94,24 @@ export function isMultiple(field: Field): boolean {
 
 const flag = (on: boolean | undefined, attr: string) => (on ? ` ${attr}` : "");
 
+/** `<input>` types a remote form field's `.as()` takes as they are. */
+const REMOTE_INPUT_TYPES = [
+  "text",
+  "number",
+  "email",
+  "password",
+  "url",
+  "date",
+];
+
+/**
+ * A remote form posts each control under the name `.as()` generates (the
+ * field path plus a type prefix, an array marker and the form id), and
+ * SvelteKit 3 rejects any other name. So every control spreads `.as()` and
+ * none writes `name`, `type` or `multiple` by hand: `.as()` sets `type` for
+ * everything but text and selects, and `multiple` for `select multiple`,
+ * whose `[]` name marker is what lets several values through.
+ */
 export function remoteBinding(formVar: string): PlainBinding {
   const as = (field: Field, type: string) =>
     `{...${formVar}.fields.${field.name}.as(${JSON.stringify(type)})}`;
@@ -99,24 +119,26 @@ export function remoteBinding(formVar: string): PlainBinding {
   return {
     label: "remote form variant",
     unsupported: ["geoPoint", "relation"],
+    // A multi-file field uploads through PocketBase's `name+` key, which is
+    // not a valid remote form field path, and its own key holds the kept
+    // filenames, so neither takes `.as("file multiple")`.
+    unsupportedField: (field) => field.type === "file" && isMultiple(field),
     control(field, kind, { htmlType, multiple, required }) {
-      const tail = `${flag(multiple, "multiple")}${flag(required, "required")}`;
+      const tail = flag(required, "required");
       switch (kind) {
         case "input": {
-          const asType = htmlType === "number" ? "number" : "text";
-          const type =
-            htmlType && htmlType !== "text" && htmlType !== "number"
-              ? ` type="${htmlType}"`
-              : "";
-          return `${as(field, asType)}${type}${tail}`;
+          const asType =
+            htmlType && REMOTE_INPUT_TYPES.includes(htmlType)
+              ? htmlType
+              : "text";
+          return `${as(field, asType)}${tail}`;
         }
         case "textarea":
           return `${as(field, "text")}${tail}`;
         case "checkbox":
-          // `.as("checkbox")` sets `type` itself; a literal one is a duplicate attribute.
           return `${as(field, "checkbox")}${tail}`;
         case "select":
-          return `${as(field, "select")}${tail}`;
+          return `${as(field, multiple ? "select multiple" : "select")}${tail}`;
         case "file":
           return `${as(field, "file")}${tail}`;
         case "readonly":
@@ -332,7 +354,10 @@ export function plainRenderer(
 
   return {
     render(field) {
-      if (binding.unsupported.includes(field.type)) {
+      if (
+        binding.unsupported.includes(field.type) ||
+        binding.unsupportedField?.(field)
+      ) {
         return `<!-- TODO: ${field.type} field "${field.name}" is not yet supported by the ${binding.label} -->`;
       }
 

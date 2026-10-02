@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { getContext } from 'svelte';
@@ -8,22 +7,24 @@
 
 	const { isDesktop } =
 		getContext<AuthMenuContext>(AUTH_MENU_CONTEXT_KEY) ?? ({ isDesktop: false } as AuthMenuContext);
-
-	const handleClick = () => {
-		if (restProps.onclick) {
-			restProps.onclick();
-		} else {
-			if (href) {
-				goto(href);
-			}
-		}
-	};
 </script>
 
 {#if isDesktop}
-	<DropdownMenu.Item {...restProps} onclick={handleClick}>
-		{@render children?.()}
-	</DropdownMenu.Item>
+	{#if href && !restProps.onclick}
+		<!-- A link rather than goto(), which rejects any URL that is not a page of
+		     the app: SvelteKit still routes app pages, and the browser loads the rest. -->
+		<DropdownMenu.Item {...restProps}>
+			{#snippet child({ props })}
+				<a {href} {...props}>
+					{@render children?.()}
+				</a>
+			{/snippet}
+		</DropdownMenu.Item>
+	{:else}
+		<DropdownMenu.Item {...restProps}>
+			{@render children?.()}
+		</DropdownMenu.Item>
+	{/if}
 {:else}
 	<Button
 		class="w-full justify-start md:justify-center md:w-auto"

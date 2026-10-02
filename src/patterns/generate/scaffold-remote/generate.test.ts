@@ -162,7 +162,7 @@ describe("generate scaffold-remote pattern", () => {
       'import { updateContactForm } from "./form.remote";',
     );
     expect(editPage?.content).toContain(
-      '<input type="hidden" name="id" value={data.contact.id} />',
+      '<input {...updateContactForm.fields.id.as("hidden", data.contact.id)} />',
     );
     expect(editPage?.content).toContain('href="/contacts/{params.id}"');
     expect(editPage?.content).not.toContain("${params.id}");

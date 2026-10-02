@@ -193,7 +193,7 @@ describe("generate form-remote pattern", () => {
     );
     // current_user field is hidden with sentinel value, not a relation picker.
     expect(page?.content).toContain(
-      '<input type="hidden" name="owner" value="current_user" />',
+      '<input {...submitPostForm.fields.owner.as("hidden", "current_user")} />',
     );
     // No TODO emitted for the injected relation.
     expect(page?.content).not.toContain(
@@ -252,7 +252,7 @@ describe("generate form-remote pattern", () => {
     expect(page?.content).toContain("{...submitContactForm}");
     expect(page?.content).toContain('submitContactForm.fields.name.as("text")');
     expect(page?.content).toContain(
-      'submitContactForm.fields.attachments.as("file")',
+      '<!-- TODO: file field "attachments" is not yet supported by the remote form variant -->',
     );
     expect(page?.content).toContain(
       "{#each submitContactForm.fields.name.issues() as issue}",

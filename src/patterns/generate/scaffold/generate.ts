@@ -352,7 +352,7 @@ function newServerSnippet(
           return fail(400, ${withFiles ? "withFiles({ form })" : "{ form }"});
         }
 
-        return redirect(303, ${urlJsExprWithSuffix(urls.list, dynamicParams, `/\${${model.name}.id}`)});
+        redirect(303, ${urlJsExprWithSuffix(urls.list, dynamicParams, `/\${${model.name}.id}`)});
       },
     };
   `;
@@ -375,14 +375,14 @@ function showServerSnippet(
         const ${model.name} = await ${pb}.collection("${model.tableName}").getOne(params.id${getOneArgs});
         return { ${model.name} };
       } catch {
-        throw error(404, "Not found");
+        error(404, "Not found");
       }
     };
 
     export const actions = {
       default: async ({ locals, params }) => {
         await ${pb}.collection("${model.tableName}").delete(params.id);
-        throw redirect(303, ${urlJsExpr(urls.list, dynamicParams)});
+        redirect(303, ${urlJsExpr(urls.list, dynamicParams)});
       },
     };
   `;
@@ -627,7 +627,7 @@ function editServerSnippet(
       try {
         ${model.name} = await ${pb}.collection("${model.tableName}").getOne(params.id);
       } catch {
-        throw error(404, "Not found");
+        error(404, "Not found");
       }
       ${relationLoads}
       return { form: await superValidate(${model.name}, zod4(${model.schemaName}))${relationReturn} };
@@ -652,7 +652,7 @@ function editServerSnippet(
         }
 
         // Outside the try: redirect() throws, and the catch would swallow it.
-        return redirect(303, ${urlJsExprWithSuffix(urls.list, dynamicParams, "/${params.id}")});
+        redirect(303, ${urlJsExprWithSuffix(urls.list, dynamicParams, "/${params.id}")});
       },
     };
   `;

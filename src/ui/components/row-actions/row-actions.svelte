@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import EllipsisIcon from '@lucide/svelte/icons/ellipsis';
@@ -25,8 +24,16 @@
 		{/snippet}
 	</DropdownMenu.Trigger>
 	<DropdownMenu.Content class="w-[160px]" align="end">
-		<DropdownMenu.Item onclick={() => goto(viewPath)}>View</DropdownMenu.Item>
-		<DropdownMenu.Item onclick={() => goto(editPath)}>Edit</DropdownMenu.Item>
+		<DropdownMenu.Item>
+			{#snippet child({ props })}
+				<a href={viewPath} {...props}>View</a>
+			{/snippet}
+		</DropdownMenu.Item>
+		<DropdownMenu.Item>
+			{#snippet child({ props })}
+				<a href={editPath} {...props}>Edit</a>
+			{/snippet}
+		</DropdownMenu.Item>
 		<DropdownMenu.Item>
 			<form method="POST" action={deletePath}>
 				<button type="submit" class="contents">Delete</button>

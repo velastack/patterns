@@ -55,7 +55,10 @@ function findInjectables(fields: Field[]): Injectables {
   };
 }
 
-function injectableHiddenInputs(injectables: Injectables): string {
+function injectableHiddenInputs(
+  injectables: Injectables,
+  formVar: string,
+): string {
   const sentinels: Array<[InjectableField, string]> = [];
   if (injectables.currentUserField) {
     sentinels.push([injectables.currentUserField, "current_user"]);
@@ -66,7 +69,7 @@ function injectableHiddenInputs(injectables: Injectables): string {
   return sentinels
     .map(
       ([field, value]) =>
-        `<input type="hidden" name="${field.name}" value="${value}" />`,
+        `<input {...${formVar}.fields.${field.name}.as("hidden", "${value}")} />`,
     )
     .join("\n");
 }
@@ -98,7 +101,7 @@ function pageSnippet(
   const fieldSnippet = fields
     .map((field) => renderRemoteField(field, { formVar }))
     .join("\n");
-  const hiddenInputs = injectableHiddenInputs(injectables);
+  const hiddenInputs = injectableHiddenInputs(injectables, formVar);
   const enctype = hasFiles(fields) ? ' enctype="multipart/form-data"' : "";
 
   return dedent`
@@ -136,7 +139,7 @@ function plainPageSnippet(
   const fieldSnippet = fields
     .map((field) => renderRemoteField(field, { formVar, native: true }))
     .join("\n");
-  const hiddenInputs = injectableHiddenInputs(injectables);
+  const hiddenInputs = injectableHiddenInputs(injectables, formVar);
   const enctype = hasFiles(fields) ? ' enctype="multipart/form-data"' : "";
   const status = flash
     ? ""

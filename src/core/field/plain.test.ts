@@ -152,7 +152,7 @@ describe("plainRenderer with the remote binding", () => {
 
     expect(html).toContain('<div class="space-y-2 col-span-1">');
     expect(html).toContain(
-      '<Input id="email" {...submitForm.fields.email.as("text")} type="email" required />',
+      '<Input id="email" {...submitForm.fields.email.as("email")} required />',
     );
     expect(html).toContain('<p class="text-destructive text-sm">');
   });
@@ -171,6 +171,33 @@ describe("plainRenderer with the remote binding", () => {
       '<input id="age" {...submitForm.fields.age.as("number")} />',
     );
     expect(html).toContain("<p data-error>{issue.message}</p>");
+  });
+
+  it("lets .as() set multiple, with the [] name SvelteKit 3 needs for several values", () => {
+    const html = compact(
+      plainRenderer(remoteBinding("f"), NATIVE_STYLE).render(
+        field({
+          name: "tags",
+          type: "select",
+          maxSelect: 3,
+          options: [{ value: "a", label: "A" }],
+        }),
+      ),
+    );
+
+    expect(html).toContain(
+      '<select id="tags" {...f.fields.tags.as("select multiple")}>',
+    );
+  });
+
+  it("leaves a TODO for a multi-file field, whose name+ key is no remote field path", () => {
+    expect(
+      plainRenderer(remoteBinding("f"), NATIVE_STYLE).render(
+        field({ name: "docs", type: "file", maxSelect: 5 }),
+      ),
+    ).toBe(
+      '<!-- TODO: file field "docs" is not yet supported by the remote form variant -->',
+    );
   });
 
   it("leaves a TODO for field types remote forms cannot express", () => {

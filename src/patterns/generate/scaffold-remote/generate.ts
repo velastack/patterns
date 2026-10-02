@@ -105,7 +105,11 @@ function findInjectables(fields: Field[]): Injectables {
   };
 }
 
-function newHiddenInputs(injectables: Injectables): string {
+/**
+ * SvelteKit 3 rejects a remote form input whose `name` was written by hand:
+ * hidden inputs spread `.as("hidden", value)` like every other control.
+ */
+function newHiddenInputs(injectables: Injectables, formVar: string): string {
   const sentinels: Array<[InjectableField, string]> = [];
   if (injectables.currentUserField) {
     sentinels.push([injectables.currentUserField, "current_user"]);
@@ -116,12 +120,16 @@ function newHiddenInputs(injectables: Injectables): string {
   return sentinels
     .map(
       ([field, value]) =>
-        `<input type="hidden" name="${field.name}" value="${value}" />`,
+        `<input {...${formVar}.fields.${field.name}.as("hidden", "${value}")} />`,
     )
     .join("\n");
 }
 
-function editHiddenInputs(model: Model, injectables: Injectables): string {
+function editHiddenInputs(
+  model: Model,
+  injectables: Injectables,
+  formVar: string,
+): string {
   const fields = [
     injectables.currentUserField,
     injectables.currentTeamField,
@@ -129,7 +137,7 @@ function editHiddenInputs(model: Model, injectables: Injectables): string {
   return fields
     .map(
       (field) =>
-        `<input type="hidden" name="${field.name}" value={data.${model.name}.${field.name}} />`,
+        `<input {...${formVar}.fields.${field.name}.as("hidden", data.${model.name}.${field.name})} />`,
     )
     .join("\n");
 }
@@ -165,7 +173,7 @@ function newPageSnippet(
   const fieldContent = fields
     .map((field) => renderRemoteField(field, { formVar }))
     .join("\n");
-  const hiddenInputs = newHiddenInputs(injectables);
+  const hiddenInputs = newHiddenInputs(injectables, formVar);
   const enctype = hasFiles(fields) ? ' enctype="multipart/form-data"' : "";
   const listHref = urlSvelteAttrValue(urls.list, dynamicParams);
 
@@ -218,7 +226,7 @@ function editPageSnippet(
   const fieldContent = fields
     .map((field) => renderRemoteField(field, { formVar }))
     .join("\n");
-  const hiddenInputs = editHiddenInputs(model, injectables);
+  const hiddenInputs = editHiddenInputs(model, injectables, formVar);
   const enctype = hasFiles(fields) ? ' enctype="multipart/form-data"' : "";
   const listHref = urlSvelteAttrValue(urls.list, dynamicParams);
   const cancelHref = urlSvelteAttrValue(
@@ -245,7 +253,7 @@ function editPageSnippet(
 
       <div class="bg-card rounded-lg shadow-sm border p-4">
         <form {...${formVar}}${enctype}>
-          <input type="hidden" name="id" value={data.${model.name}.id} />
+          <input {...${formVar}.fields.id.as("hidden", data.${model.name}.id)} />
           ${hiddenInputs}
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             ${fieldContent}
@@ -352,14 +360,14 @@ function showServerSnippet(
         const ${model.name} = await ${pb}.collection("${model.tableName}").getOne(params.id${getOneArgs});
         return { ${model.name} };
       } catch {
-        throw error(404, "Not found");
+        error(404, "Not found");
       }
     };
 
     export const actions = {
       default: async ({ locals, params }) => {
         await ${pb}.collection("${model.tableName}").delete(params.id);
-        throw redirect(303, ${urlJsExpr(urls.list, dynamicParams)});
+        redirect(303, ${urlJsExpr(urls.list, dynamicParams)});
       },
     };
   `;
@@ -448,7 +456,7 @@ function editServerSnippet(model: Model, fields: Field[], pb: string): string {
       try {
         ${model.name} = await ${pb}.collection("${model.tableName}").getOne(params.id);
       } catch {
-        throw error(404, "Not found");
+        error(404, "Not found");
       }
       ${relationLoads}
       return { ${model.name}${relationReturn} };
