@@ -6,7 +6,7 @@ import { generate as generateBase } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
 
 const SLUG = "generate-form-remote" as const;
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const SOURCE = "src/patterns/generate/form-remote";
 const DOCS = "/generate/form";
 

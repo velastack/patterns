@@ -5,7 +5,7 @@ import { generate as generateBase } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
 
 const SLUG = "enable-cms" as const;
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 const SOURCE = "src/patterns/enable/cms";
 const DOCS = "/enable/cms";
 

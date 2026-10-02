@@ -5,7 +5,7 @@ import { generate as generateBase } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
 
 const SLUG = "enable-workflows" as const;
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const SOURCE = "src/patterns/enable/workflows";
 const DOCS = "/enable/workflows";
 

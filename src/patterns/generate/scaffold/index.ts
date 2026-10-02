@@ -4,7 +4,7 @@ import { resolveUi } from "../../../core/field/ui";
 import { generate as generateBase } from "./generate";
 
 const SLUG = "generate-scaffold" as const;
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 const SOURCE = "src/patterns/generate/scaffold";
 const DOCS = "/generate/scaffold";
 

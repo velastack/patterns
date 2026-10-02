@@ -5,7 +5,7 @@ import { generate as generateBase } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
 
 const SLUG = "enable-auth" as const;
-const VERSION = "1.0.8";
+const VERSION = "1.1.0";
 const SOURCE = "src/patterns/enable/auth";
 const DOCS = "/enable/auth";
 

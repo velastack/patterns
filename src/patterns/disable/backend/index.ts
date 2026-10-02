@@ -4,7 +4,7 @@ import { mergeResults } from "../../../core/util";
 import { generate as generateBase } from "./generate";
 
 const SLUG = "disable-backend" as const;
-const VERSION = "1.0.1";
+const VERSION = "1.1.0";
 const SOURCE = "src/patterns/disable/backend";
 const DOCS = "/disable/backend";
 

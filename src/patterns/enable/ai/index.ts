@@ -5,7 +5,7 @@ import { generate as generateBase, PROVIDERS } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
 
 const SLUG = "enable-ai" as const;
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const SOURCE = "src/patterns/enable/ai";
 const DOCS = "/enable/ai";
 

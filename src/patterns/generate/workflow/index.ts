@@ -4,7 +4,7 @@ import { InvalidArgumentError } from "../../../core/errors";
 import { generate as generateBase } from "./generate";
 
 const SLUG = "generate-workflow" as const;
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const SOURCE = "src/patterns/generate/workflow";
 const DOCS = "/generate/workflow";
 
