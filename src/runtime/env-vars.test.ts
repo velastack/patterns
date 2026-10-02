@@ -322,6 +322,21 @@ describe("modifyEnvVars", () => {
       "export function variables() {}\n",
       "not a variable this can edit",
     ],
+    [
+      "a destructured binding",
+      "export const { variables } = load();\n",
+      "not a variable this can edit",
+    ],
+    [
+      "a renamed destructured binding",
+      "export const { env: variables } = load();\n",
+      "not a variable this can edit",
+    ],
+    [
+      "an import",
+      "import { variables } from './shared';\n",
+      "not a variable this can edit",
+    ],
   ])("fails with paste-ready entries on %s", (_, source, why) => {
     const root = makeRoot({ "src/env.ts": source });
     const { modify } = modifyEnvVars(root, STRIPE);

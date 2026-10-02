@@ -92,6 +92,39 @@ function exportedLocalName(sf: SourceFile): string | null | "re-export" {
   return null;
 }
 
+/** A top-level import or destructuring pattern that binds `name`. */
+function bindsName(sf: SourceFile, name: string): boolean {
+  const imported = sf
+    .getImportDeclarations()
+    .some(
+      (decl) =>
+        decl.getDefaultImport()?.getText() === name ||
+        decl.getNamespaceImport()?.getText() === name ||
+        decl
+          .getNamedImports()
+          .some(
+            (ni) => (ni.getAliasNode()?.getText() ?? ni.getName()) === name,
+          ),
+    );
+  if (imported) return true;
+  return sf.getVariableStatements().some((statement) =>
+    statement.getDeclarations().some((decl) => {
+      const nameNode = decl.getNameNode();
+      return (
+        !Node.isIdentifier(nameNode) &&
+        nameNode
+          .getDescendantsOfKind(SyntaxKind.Identifier)
+          .some(
+            (id) =>
+              id.getText() === name &&
+              (Node.isBindingElement(id.getParent()) ||
+                Node.isShorthandPropertyAssignment(id.getParent())),
+          )
+      );
+    }),
+  );
+}
+
 function locateVariables(sf: SourceFile): Located {
   const reExported = exportedLocalName(sf);
   if (reExported === "re-export") {
@@ -101,10 +134,11 @@ function locateVariables(sf: SourceFile): Located {
 
   const decl = sf.getVariableDeclaration(local);
   if (!decl) {
-    // A function or class of that name, exported or not, is not ours to replace.
+    // A function, class, import or destructured binding of that name,
+    // exported or not, is not ours to replace.
     const taken =
       sf.getFunction(local) ?? sf.getClass(local) ?? sf.getEnum(local);
-    if (taken || reExported) {
+    if (taken || reExported || bindsName(sf, local)) {
       return { kind: "unsupported", reason: "not-variable" };
     }
     return { kind: "missing" };
