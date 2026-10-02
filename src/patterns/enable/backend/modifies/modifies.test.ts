@@ -5,6 +5,7 @@ import fs from "node:fs";
 
 import { HOOKS_SERVER_SNIPPET } from "../../i18n/modifies/hooks.server";
 import { modifyHooksServerBackend } from "./hooks.server";
+import { modifyTsconfigBackend, POCKETBASE_TYPES } from "./tsconfig";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -124,5 +125,94 @@ describe("enable backend hooks.server.ts", () => {
       expect(outcome.message).toContain("handlePocketbase");
     }
     expect(fs.readFileSync(filePath, "utf8")).toBe(original);
+  });
+});
+
+describe("enable backend tsconfig.json", () => {
+  let root: string;
+  beforeEach(() => {
+    root = fs.mkdtempSync(path.join(__dirname, "tsconfig-"));
+  });
+  afterEach(() => {
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  const write = (config: unknown) =>
+    fs.writeFileSync(
+      path.join(root, "tsconfig.json"),
+      `${JSON.stringify(config, null, "\t")}\n`,
+    );
+  const read = () =>
+    JSON.parse(fs.readFileSync(path.join(root, "tsconfig.json"), "utf8"));
+
+  it("adds the test harness and PocketBase's types to what sv create writes, once", () => {
+    write({ extends: "$app/tsconfig", include: ["src", "vite.config.ts"] });
+    expect(modifyTsconfigBackend(root)).toEqual({
+      status: "success",
+      changed: true,
+    });
+    expect(read().include).toEqual([
+      "src",
+      "test",
+      "vite.config.ts",
+      "vitest.config.ts",
+      POCKETBASE_TYPES,
+    ]);
+    expect(modifyTsconfigBackend(root)).toEqual({
+      status: "success",
+      changed: false,
+    });
+  });
+
+  it("leaves vela's minimal template as it is", () => {
+    const include = [
+      "src",
+      "test",
+      "vite.config.ts",
+      "vitest.config.ts",
+      POCKETBASE_TYPES,
+    ];
+    write({ extends: "$app/tsconfig", include });
+    expect(modifyTsconfigBackend(root)).toEqual({
+      status: "success",
+      changed: false,
+    });
+  });
+
+  it("names the vitest config the project has", () => {
+    fs.writeFileSync(path.join(root, "vitest.config.js"), "");
+    write({ include: ["./src", "vite.config.js"] });
+    modifyTsconfigBackend(root);
+    expect(read().include).toEqual([
+      "./src",
+      "test",
+      "vite.config.js",
+      "vitest.config.js",
+      POCKETBASE_TYPES,
+    ]);
+  });
+
+  it("leaves a tsconfig with no include, or none at all, alone", () => {
+    expect(modifyTsconfigBackend(root)).toEqual({
+      status: "success",
+      changed: false,
+    });
+    write({ extends: "$app/tsconfig" });
+    expect(modifyTsconfigBackend(root)).toEqual({
+      status: "success",
+      changed: false,
+    });
+  });
+
+  it("reports what to add when the file has comments", () => {
+    fs.writeFileSync(
+      path.join(root, "tsconfig.json"),
+      '{\n\t// mine\n\t"include": ["src"]\n}\n',
+    );
+    const outcome = modifyTsconfigBackend(root);
+    expect(outcome.status).toBe("failed");
+    expect(outcome.status === "failed" && outcome.message).toContain(
+      POCKETBASE_TYPES,
+    );
   });
 });

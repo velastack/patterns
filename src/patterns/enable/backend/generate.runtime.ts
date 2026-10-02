@@ -5,6 +5,7 @@ import { getLogger } from "../../../core/logger";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
 import { modifySvelteConfig } from "./modifies/svelte-config";
 import { modifyGitignore } from "./modifies/gitignore";
+import { modifyTsconfigBackend } from "./modifies/tsconfig";
 import { languageFromPath } from "../../../core/util";
 import {
   hasVitestConfig,
@@ -82,6 +83,18 @@ export async function generate(options: Options) {
   if (!hasVitestConfig(options.root)) {
     logger.info("Creating vitest.config.ts");
     create("vitest.config.ts", VITEST_CONFIG);
+  }
+
+  // Kit 3's tsconfig lists no files, so the test harness and PocketBase's
+  // generated types are type-checked only when the project's include names them.
+  const tsconfigPath = path.join(options.root, "tsconfig.json");
+  const tsconfigFile = modifyOutcomeToFile(
+    tsconfigPath,
+    modifyTsconfigBackend(options.root),
+  );
+  if (tsconfigFile) {
+    logger.info("Modifying tsconfig.json");
+    modifies.push(tsconfigFile);
   }
 
   return {
