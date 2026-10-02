@@ -59,6 +59,19 @@ export function isLibSpecifier(spec: string, relPath: string): boolean {
   return modulePath(match[1] ?? "") === modulePath(relPath);
 }
 
+/**
+ * The directory under `src/lib` a `components.json` alias names: `#lib` and
+ * `#lib/components/ui` (what shadcn-svelte writes for a SvelteKit 3 project),
+ * or the `$lib` forms of a project from before it. Aliases name directories,
+ * so no extension is involved. `""` is `src/lib` itself; anything else (a
+ * custom alias) is null.
+ */
+export function libAliasPath(alias: string): string | null {
+  const match = /^[#$]lib(?:\/(.*))?$/.exec(alias);
+  if (!match) return null;
+  return trimSlashes(match[1] ?? "");
+}
+
 /** `isLibSpecifier` bound to one path, for the import helpers' module matchers. */
 export function libModule(relPath: string): (spec: string) => boolean {
   return (spec) => isLibSpecifier(spec, relPath);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isLibSpecifier, libSpecifier } from "./lib-specifier";
+import { isLibSpecifier, libAliasPath, libSpecifier } from "./lib-specifier";
 
 // sv 1.0.1 `lib-alias`: a `$lib/<path>` import becomes `#lib/<path>`, with
 // `.js`, `.ts`, `/index.js` or `/index.ts` appended (whichever exists first;
@@ -70,4 +70,26 @@ describe("isLibSpecifier", () => {
   ])("%s does not import %s", (spec, rel) => {
     expect(isLibSpecifier(spec, rel)).toBe(false);
   });
+});
+
+describe("libAliasPath", () => {
+  it.each([
+    ["#lib", ""],
+    ["#lib/", ""],
+    ["#lib/components/ui", "components/ui"],
+    ["#lib/ui/", "ui"],
+    ["#lib/utils", "utils"],
+    // A components.json written before SvelteKit 3.
+    ["$lib", ""],
+    ["$lib/components/ui", "components/ui"],
+  ])("%s → src/lib/%s", (alias, rel) => {
+    expect(libAliasPath(alias)).toBe(rel);
+  });
+
+  it.each(["@ui", "src/lib/ui", "#libs/ui", "lib/ui", "~/lib"])(
+    "%s is not under src/lib",
+    (alias) => {
+      expect(libAliasPath(alias)).toBeNull();
+    },
+  );
 });

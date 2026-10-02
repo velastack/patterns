@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { RegistryItem, WriteResultRuntime } from "../core/types";
 import { RegistryUnavailableError } from "../core/errors";
+import { libAliasPath } from "./lib-specifier";
 
 /**
  * shadcn-svelte's schema defaults. A `components.json` that names no `style`
@@ -81,20 +82,19 @@ const DEFAULT_UI_DIR = ["src", "lib", "components", "ui"];
 
 /**
  * Where shadcn-svelte writes items: `components.json` `aliases.ui`, resolved
- * the way SvelteKit resolves `$lib` (`src/lib`). Anything else (a custom
- * `kit.alias`, a missing or unreadable config) falls back to the default so
- * the existence check here and shadcn's own target agree for every project
- * the CLI creates.
+ * under `src/lib` for `#lib/...`, or the alias a project from before
+ * SvelteKit 3 still has.
+ * Anything else (a custom alias, a missing or unreadable config) falls back
+ * to the default so the existence check here and shadcn's own target agree
+ * for every project the CLI creates.
  */
 export function resolveUiDir(root: string): string {
   const alias = readComponentsConfig(root).aliases.ui;
-  if (alias === "$lib") {
-    return path.join(root, "src", "lib");
+  const rel = alias === undefined ? null : libAliasPath(alias);
+  if (rel === null) {
+    return path.join(root, ...DEFAULT_UI_DIR);
   }
-  if (alias?.startsWith("$lib/")) {
-    return path.join(root, "src", "lib", ...alias.slice(5).split("/"));
-  }
-  return path.join(root, ...DEFAULT_UI_DIR);
+  return path.join(root, "src", "lib", ...rel.split("/").filter(Boolean));
 }
 
 /** `${registry}/styles/${style}/index.json`: the items one style offers. */

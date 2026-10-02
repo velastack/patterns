@@ -19,7 +19,7 @@ function makeProject(
   config: Record<string, unknown> = {
     style: "vega",
     tailwind: { css: "src/app.css", baseColor: "neutral" },
-    aliases: { ui: "$lib/components/ui" },
+    aliases: { ui: "#lib/components/ui" },
     iconLibrary: "lucide",
   },
 ) {

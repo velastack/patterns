@@ -102,7 +102,7 @@ describe("assertTableCoreV9", () => {
     const root = makeProject(
       {},
       {
-        "components.json": JSON.stringify({ aliases: { ui: "$lib/ui" } }),
+        "components.json": JSON.stringify({ aliases: { ui: "#lib/ui" } }),
         "src/lib/ui/data-table/index.ts": V8_INDEX,
       },
     );

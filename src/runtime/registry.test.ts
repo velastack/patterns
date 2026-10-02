@@ -54,7 +54,7 @@ describe("readComponentsConfig", () => {
     const root = makeProject({
       style: "vega",
       tailwind: { css: "src/styles/app.css", baseColor: "zinc" },
-      aliases: { ui: "$lib/components/ui", utils: "$lib/utils" },
+      aliases: { ui: "#lib/components/ui", utils: "#lib/utils" },
       registry: "https://r.example/registry",
       iconLibrary: "lucide",
       menuColor: "inverted",
@@ -67,7 +67,7 @@ describe("readComponentsConfig", () => {
       iconLibrary: "lucide",
       menuColor: "inverted",
       menuAccent: "bold",
-      aliases: { ui: "$lib/components/ui", utils: "$lib/utils" },
+      aliases: { ui: "#lib/components/ui", utils: "#lib/utils" },
       cssPath: "src/styles/app.css",
     });
   });
@@ -76,7 +76,7 @@ describe("readComponentsConfig", () => {
     const root = makeProject({
       style: 3,
       tailwind: { baseColor: null },
-      aliases: { ui: ["$lib"] },
+      aliases: { ui: ["#lib"] },
     });
     const config = readComponentsConfig(root);
     expect(config.style).toBe(DEFAULT_STYLE);

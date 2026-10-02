@@ -36,19 +36,12 @@ const files = [
 const LEGACY_FIXTURE = /\/fixtures\/(.+\/)?legacy-[^/]*$/;
 
 /**
- * Files that handle `$lib` on purpose: the specifier helper (it matches the
- * legacy alias) and components.json `aliases` values.
- * TODO(P1): `resolveUiDir` accepts `#lib`; drop the registry/ui/table-core/
- * write-result entries once their components.json cases move to `#lib`.
+ * Files that handle `$lib` on purpose: the specifier helper, which matches
+ * the legacy alias in imports and components.json `aliases`.
  */
 const LIB_ALLOWED = new Set([
   "src/runtime/lib-specifier.ts",
   "src/runtime/lib-specifier.test.ts",
-  "src/runtime/registry.ts",
-  "src/runtime/registry.test.ts",
-  "src/runtime/ui.test.ts",
-  "src/runtime/table-core.test.ts",
-  "src/runtime/write-result.test.ts",
 ]);
 
 const HOOK_TYPES = [
@@ -66,6 +59,9 @@ const HOOK_TYPES = [
 ];
 
 const KEPT_EXTENSION = /\.(js|svelte|svg|svx|css|json)$/;
+
+/** Right before a components.json `aliases` value: `ui: `, `"utils": `. */
+const ALIAS_KEY = /["']?\b(ui|utils|components|hooks|lib)["']?\s*:\s*$/;
 
 function scan(
   test: (source: string, file: string) => string[],
@@ -107,10 +103,21 @@ describe("SvelteKit 3 guard", () => {
       scan(
         (source) =>
           [...source.matchAll(/(['"])(#lib\/[^'"\n]*)\1/g)]
-            .map((m) => m[2])
-            // A trailing slash is a prefix (`not.toContain("#lib/components/ui/")`).
+            // components.json `aliases` name directories, not modules.
             .filter(
-              (spec) => !spec.endsWith("/") && !KEPT_EXTENSION.test(spec),
+              (m) =>
+                !ALIAS_KEY.test(
+                  source.slice(Math.max(0, m.index - 40), m.index),
+                ),
+            )
+            .map((m) => m[2])
+            // A trailing slash is a prefix (`not.toContain("#lib/components/ui/")`),
+            // and `#lib/*` is the package.json `imports` pattern.
+            .filter(
+              (spec) =>
+                !spec.endsWith("/") &&
+                !spec.endsWith("/*") &&
+                !KEPT_EXTENSION.test(spec),
             ),
         (f) => f.startsWith("src/runtime/lib-specifier"),
       ),
