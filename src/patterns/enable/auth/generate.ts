@@ -1,5 +1,6 @@
 import { Options, Result } from "../../../core/types";
 import { composeCreates } from "../../../core/util";
+import { FLASH, FORMSNAP, SUPERFORMS, ZOD } from "../../../core/constants";
 
 const createsRaw = import.meta.glob<string>("./creates/**", {
   query: "?raw",
@@ -117,13 +118,8 @@ export async function generate(options: Options) {
     deletes: [],
     components,
     // The minimal template ships these; a static project turned backend
-    // does not. Pinned to the template's ranges.
-    packages: [
-      "formsnap@^2.0.1",
-      "sveltekit-flash-message@^2.4.6",
-      "sveltekit-superforms@^2.30.2",
-      "zod@^4.1.11",
-    ],
+    // does not. Pinned to the template's versions.
+    packages: [FORMSNAP, FLASH, SUPERFORMS, ZOD],
     collections,
     collectionPatches: [],
     collectionDrops: [],

@@ -1,5 +1,6 @@
 import { Options, Result } from "../../../core/types";
 import { appRelativePath, languageFromPath } from "../../../core/util";
+import { FLASH, ZOD } from "../../../core/constants";
 
 const createsRaw = import.meta.glob<string>("./creates/**", {
   query: "?raw",
@@ -109,8 +110,8 @@ export async function generate(options: Options) {
     deletes: [],
     components,
     // The minimal template ships these; a static project turned backend
-    // does not. Pinned to the template's ranges.
-    packages: ["sveltekit-flash-message@^2.4.6", "zod@^4.1.11"],
+    // does not. Pinned to the template's versions.
+    packages: [FLASH, ZOD],
     collections,
     collectionPatches: [],
     collectionDrops: [],

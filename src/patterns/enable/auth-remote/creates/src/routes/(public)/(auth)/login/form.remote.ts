@@ -6,7 +6,10 @@ import { loginSchema } from "#lib/schemas/login.js";
 export const loginForm = form(loginSchema, async (data) => {
   const { locals, cookies, url } = getRequestEvent();
 
-  const redirectParam = url.searchParams.get("redirect");
+  // Follow only a same-site path (`/x`, not `//host` or `/\host`):
+  // `redirect()` throws on an external URL.
+  const next = url.searchParams.get("redirect");
+  const redirectParam = next && /^\/(?![/\\])/.test(next) ? next : null;
   if (data.type === "otp") {
     const req = await locals.pb.collection("users").requestOTP(data.email);
     redirect(

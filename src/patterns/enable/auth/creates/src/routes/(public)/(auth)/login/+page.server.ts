@@ -33,7 +33,10 @@ export const actions = {
       return fail(400, { form });
     }
 
-    const redirectParam = url.searchParams.get("redirect");
+    // Follow only a same-site path (`/x`, not `//host` or `/\host`):
+    // `redirect()` throws on an external URL.
+    const next = url.searchParams.get("redirect");
+    const redirectParam = next && /^\/(?![/\\])/.test(next) ? next : null;
     if (form.data.type === "otp") {
       const req = await locals.pb
         .collection("users")

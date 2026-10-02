@@ -180,11 +180,7 @@
                   {/if}
                 </div>
 
-                <input
-                  type="hidden"
-                  {...loginForm.fields.type.as("text")}
-                  value={mode}
-                />
+                <input {...loginForm.fields.type.as("hidden", mode)} />
               {/if}
 
               <div class="text-center text-sm">
