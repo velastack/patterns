@@ -14,6 +14,7 @@ import { unmodifySvelteConfig } from "../../enable/backend/modifies/svelte-confi
 import { unmodifyGitignore } from "../../enable/backend/modifies/gitignore";
 import { unmodifyTestSetup } from "../../enable/backend/modifies/test-setup";
 import { BACKEND_ENV_VARS } from "../../enable/backend/env-vars";
+import { WORKFLOWS_ENV_VARS } from "../../enable/workflows/env-vars";
 import { unmodifyEnvVarsFiles } from "../../../runtime/env-vars";
 
 /** Every server test under a directory; they need the PocketBase test context. */
@@ -50,11 +51,22 @@ export async function generate(options: Options) {
   if (hooksServerRevert.modify) modifies.push(hooksServerRevert.modify);
   if (hooksServerRevert.delete) deletes.push(hooksServerRevert.delete);
 
-  // The file goes when these were all it declared.
-  logger.info("Removing the PocketBase variables from src/env.ts");
+  // The file goes when these were all it declared. The workflow runtime
+  // (deleted with the backend) is the only reader of its switches, so they
+  // go too, but only from a project that has it: `TEST` is a common name.
+  const hasWorkflows = fs.existsSync(
+    path.join(options.root, "src", "lib", "server", "workflows.ts"),
+  );
+  logger.info(
+    hasWorkflows
+      ? "Removing the PocketBase and workflow variables from src/env.ts"
+      : "Removing the PocketBase variables from src/env.ts",
+  );
   const envVars = unmodifyEnvVarsFiles(
     options.root,
-    BACKEND_ENV_VARS.map((spec) => spec.name),
+    (hasWorkflows ? WORKFLOWS_ENV_VARS : BACKEND_ENV_VARS).map(
+      (spec) => spec.name,
+    ),
   );
   if (envVars.modify) modifies.push(envVars.modify);
   if (envVars.delete) deletes.push(envVars.delete);
