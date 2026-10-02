@@ -3,6 +3,7 @@ import { InvalidArgumentError } from "./errors";
 import {
   capabilityName,
   providerCreates,
+  providerEnvVars,
   providerFromArgv,
   resolveProvider,
   unknownProviderMessage,
@@ -155,5 +156,35 @@ describe("providerCreates", () => {
 
   it("returns nothing for an unknown provider", () => {
     expect(providerCreates(raw, "missing")).toEqual([]);
+  });
+});
+
+describe("providerEnvVars", () => {
+  it("declares each env var optional, public only where the provider says so", () => {
+    expect(
+      providerEnvVars({
+        id: "posthog",
+        label: "PostHog",
+        env: [
+          {
+            key: "PUBLIC_POSTHOG_KEY",
+            label: "PostHog project key",
+            public: true,
+          },
+          { key: "POSTHOG_PERSONAL_KEY", label: "Personal key", secret: true },
+        ],
+      }),
+    ).toEqual([
+      {
+        name: "PUBLIC_POSTHOG_KEY",
+        public: true,
+        description: "PostHog project key",
+      },
+      { name: "POSTHOG_PERSONAL_KEY", description: "Personal key" },
+    ]);
+  });
+
+  it("declares nothing for a provider without env vars", () => {
+    expect(providerEnvVars({ id: "x", label: "X" })).toEqual([]);
   });
 });

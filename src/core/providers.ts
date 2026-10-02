@@ -1,4 +1,5 @@
 import type { EnvEdit } from "../runtime/env";
+import type { EnvVarSpec } from "../runtime/env-vars-file";
 import { InvalidArgumentError } from "./errors";
 import type { File, Options, Pattern, Provider } from "./types";
 import { filesUnderPrefix } from "./util";
@@ -96,6 +97,18 @@ export function providerEnvEdits(
       value: supplied[variable.key]?.trim() || variable.default || "",
     })),
   ];
+}
+
+/**
+ * The `src/env.ts` declarations for a provider's env vars: optional, so an
+ * empty `.env` still builds, and public only where the provider says so.
+ */
+export function providerEnvVars(provider: Provider): EnvVarSpec[] {
+  return (provider.env ?? []).map((variable) => ({
+    name: variable.key,
+    ...(variable.public ? { public: true } : {}),
+    description: variable.label,
+  }));
 }
 
 /** The string values of `input.providerEnv`, as the CLI collected them. */

@@ -102,10 +102,21 @@ export type Component = string;
 export type Package = string;
 
 export type PackageManagerOperation = "execute" | "install" | "uninstall";
+
+export interface ExecuteCommandOptions {
+  /**
+   * Save the exact version installed rather than a range (`--save-exact`,
+   * or the package manager's equivalent). Set for specs that name one version.
+   */
+  exact?: boolean;
+}
+
+/** `options` is passed only when set, so a seam may ignore it. */
 export type ExecuteCommand = (
   cwd: string,
   operation: PackageManagerOperation,
   args: string[],
+  options?: ExecuteCommandOptions,
 ) => Promise<void>;
 
 /**
@@ -322,6 +333,12 @@ export interface ProviderEnvVar {
    * it back. Written to `.env` like any other value.
    */
   secret?: boolean;
+  /**
+   * Read in the browser: declared `public: true` in `src/env.ts`, so it is
+   * imported from `$app/env/public`. SvelteKit 3 goes by this declaration,
+   * not by a `PUBLIC_` prefix.
+   */
+  public?: boolean;
 }
 
 /**
