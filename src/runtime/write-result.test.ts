@@ -20,6 +20,7 @@ import {
   formatPaths,
   installComponents,
   installedComponents,
+  isExactSpec,
   packageName,
   resolveUiDir,
   writeResult,
@@ -530,7 +531,7 @@ describe("installComponents", () => {
     const root = makeProject({ "@tanstack/table-core": "^9.2.4" });
     writeFileSync(
       path.join(root, "components.json"),
-      JSON.stringify({ aliases: { ui: "$lib/ui" } }),
+      JSON.stringify({ aliases: { ui: "#lib/ui" } }),
       "utf8",
     );
 
@@ -557,7 +558,7 @@ describe("installComponents", () => {
     writeFileSync(configPath, JSON.stringify({ aliases: { ui: "@ui" } }));
     expect(resolveUiDir(root)).toBe(fallback);
 
-    writeFileSync(configPath, JSON.stringify({ aliases: { ui: "$lib" } }));
+    writeFileSync(configPath, JSON.stringify({ aliases: { ui: "#lib" } }));
     expect(resolveUiDir(root)).toBe(path.join(root, "src", "lib"));
 
     writeFileSync(configPath, "{ not json");
@@ -801,5 +802,200 @@ describe("packageName", () => {
 
   it("handles a pinned exact version", () => {
     expect(packageName("stripe@19.3.0")).toBe("stripe");
+  });
+});
+
+describe("isExactSpec", () => {
+  it.each([
+    ["sveltekit-superforms@3.0.0-next.1", true],
+    ["sveltekit-flash-message@3.0.0-next.0", true],
+    ["@scope/pkg@1.2.3", true],
+    ["stripe@19.3.0", true],
+    ["formsnap@^2.0.1", false],
+    ["@sveltejs/adapter-node@^6.0.0", false],
+    ["leaflet", false],
+    ["@types/leaflet", false],
+    ["vite@>=8", false],
+  ])("%s → %s", (spec, exact) => {
+    expect(isExactSpec(spec)).toBe(exact);
+  });
+});
+
+describe("writeResult package installs", () => {
+  type Call = {
+    operation: string;
+    args: string[];
+    exact: boolean;
+    pkg: string;
+  };
+
+  /** A fake package manager that records each call and adds the packages to package.json. */
+  function recordingInstall(root: string) {
+    const calls: Call[] = [];
+    const executeCommand: ExecuteCommand = async (
+      _cwd,
+      operation,
+      args,
+      options,
+    ) => {
+      const pkgPath = path.join(root, "package.json");
+      calls.push({
+        operation,
+        args,
+        exact: options?.exact ?? false,
+        pkg: readFileSync(pkgPath, "utf8"),
+      });
+      if (operation !== "install") return;
+      const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
+      pkg.dependencies ??= {};
+      for (const spec of args) {
+        const name = packageName(spec);
+        const range = spec.slice(name.length + 1) || "*";
+        pkg.dependencies[name] = options?.exact
+          ? range
+          : range.replace(/^(\d)/, "^$1");
+      }
+      writeFileSync(pkgPath, JSON.stringify(pkg, null, "\t") + "\n");
+    };
+    return { calls, executeCommand };
+  }
+
+  function projectWith(pkg: Record<string, unknown>) {
+    const root = makeTempRoot();
+    writeFileSync(
+      path.join(root, "package.json"),
+      JSON.stringify(pkg, null, "\t") + "\n",
+    );
+    return root;
+  }
+
+  it("installs exact pins in their own --save-exact command", async () => {
+    const root = projectWith({ name: "tmp" });
+    const { calls, executeCommand } = recordingInstall(root);
+    const result = await writeResult(
+      {
+        ...emptyResult(),
+        packages: [
+          "sveltekit-flash-message@3.0.0-next.0",
+          "zod@^4.1.11",
+          "sveltekit-superforms@3.0.0-next.1",
+        ],
+      },
+      makeOptions(root),
+      { executeCommand, fetch: registryFetch() },
+    );
+    expect(calls.map(({ args, exact }) => ({ args, exact }))).toEqual([
+      {
+        args: [
+          "sveltekit-flash-message@3.0.0-next.0",
+          "sveltekit-superforms@3.0.0-next.1",
+        ],
+        exact: true,
+      },
+      { args: ["zod@^4.1.11"], exact: false },
+    ]);
+    expect(result.packages).toEqual([
+      "sveltekit-flash-message@3.0.0-next.0",
+      "zod@^4.1.11",
+      "sveltekit-superforms@3.0.0-next.1",
+    ]);
+  });
+
+  it("writes the formsnap override before installing formsnap", async () => {
+    const root = projectWith({ name: "tmp" });
+    const { calls, executeCommand } = recordingInstall(root);
+    await writeResult(
+      {
+        ...emptyResult(),
+        packages: ["formsnap@^2.0.1", "sveltekit-superforms@3.0.0-next.1"],
+      },
+      makeOptions(root),
+      { executeCommand, fetch: registryFetch() },
+    );
+    expect(calls).toHaveLength(2);
+    for (const call of calls) {
+      expect(JSON.parse(call.pkg).overrides).toEqual({
+        formsnap: { "sveltekit-superforms": "3.0.0-next.1" },
+      });
+    }
+  });
+
+  it("writes the override when a component brings formsnap in", async () => {
+    const root = projectWith({ name: "tmp" });
+    writeFileSync(path.join(root, "components.json"), "{}", "utf8");
+    const { calls, executeCommand } = recordingInstall(root);
+    await writeResult(
+      { ...emptyResult(), components: ["file-form"] },
+      makeOptions(root),
+      { executeCommand, fetch: registryFetch(["input"]) },
+    );
+    const install = calls.find((call) => call.operation === "install");
+    expect(install?.args).toEqual(["formsnap@^2.0.1"]);
+    expect(JSON.parse(install!.pkg).overrides).toEqual({
+      formsnap: { "sveltekit-superforms": "3.0.0-next.1" },
+    });
+  });
+
+  it("writes the override when superforms joins an existing formsnap", async () => {
+    const root = projectWith({
+      name: "tmp",
+      dependencies: { formsnap: "^2.0.1" },
+    });
+    const { calls, executeCommand } = recordingInstall(root);
+    await writeResult(
+      { ...emptyResult(), packages: ["sveltekit-superforms@3.0.0-next.1"] },
+      makeOptions(root),
+      { executeCommand, fetch: registryFetch() },
+    );
+    expect(JSON.parse(calls[0]!.pkg).overrides).toBeDefined();
+  });
+
+  it("leaves package.json alone for installs without formsnap", async () => {
+    const root = projectWith({ name: "tmp" });
+    const { calls, executeCommand } = recordingInstall(root);
+    await writeResult(
+      { ...emptyResult(), packages: ["sveltekit-superforms@3.0.0-next.1"] },
+      makeOptions(root),
+      { executeCommand, fetch: registryFetch() },
+    );
+    expect(JSON.parse(calls[0]!.pkg).overrides).toBeUndefined();
+  });
+
+  it("writes a package.json modify before the install, which then keeps it", async () => {
+    const root = projectWith({ name: "tmp", type: "module" });
+    const modified =
+      JSON.stringify(
+        {
+          name: "tmp",
+          type: "module",
+          imports: { "#locales/*": "./src/locales/*" },
+        },
+        null,
+        "\t",
+      ) + "\n";
+    const { calls, executeCommand } = recordingInstall(root);
+    const result = await writeResult(
+      {
+        ...emptyResult(),
+        modifies: [
+          {
+            path: path.join(root, "package.json"),
+            language: "text",
+            content: modified,
+            status: "success",
+          },
+        ],
+        packages: ["wuchale@^0.26.3"],
+      },
+      makeOptions(root),
+      { executeCommand, fetch: registryFetch() },
+    );
+    expect(calls[0]!.pkg).toBe(modified);
+    const pkg = JSON.parse(
+      readFileSync(path.join(root, "package.json"), "utf8"),
+    );
+    expect(pkg.imports).toEqual({ "#locales/*": "./src/locales/*" });
+    expect(pkg.dependencies).toEqual({ wuchale: "^0.26.3" });
+    expect(result.modifies.map((file) => file.path)).toEqual(["package.json"]);
   });
 });

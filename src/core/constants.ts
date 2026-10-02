@@ -21,8 +21,40 @@ export const TANSTACK_TABLE_CORE_MAJOR = 9;
 export const FORMSNAP = "formsnap@^2.0.1";
 
 /**
+ * The superforms release that supports SvelteKit 3 (its `latest` accepts
+ * only Kit 1 and 2). Installed exactly, not with a caret: a caret on a
+ * prerelease would follow later `next` builds.
+ */
+export const SUPERFORMS_VERSION = "3.0.0-next.1";
+
+/**
  * What a generated superforms page needs. Vela's templates already carry
  * both; a project vela did not create may have neither.
  */
-export const SUPERFORMS = "sveltekit-superforms@^2.30.2";
+export const SUPERFORMS = `sveltekit-superforms@${SUPERFORMS_VERSION}`;
+
+/**
+ * formsnap 2 peers `sveltekit-superforms ^2`, so every project that installs
+ * it needs this npm override, or `npm install` fails with ERESOLVE. The value
+ * is the literal version: `$sveltekit-superforms` breaks on npm 10.
+ * `writeResult` adds it before any install that brings formsnap in.
+ */
+export const FORMSNAP_OVERRIDES = {
+  formsnap: { "sveltekit-superforms": SUPERFORMS_VERSION },
+};
+
+/** The flash-message release that supports SvelteKit 3; installed exactly, like superforms. */
+export const FLASH = "sveltekit-flash-message@3.0.0-next.0";
+
+/** The adapter `vela enable backend` moves a project to. */
+export const ADAPTER_NODE = "@sveltejs/adapter-node@^6.0.0";
+
+/** The adapter a static project builds with (`vela disable backend`). */
+export const ADAPTER_STATIC = "@sveltejs/adapter-static@^4.0.0";
+
+/** The VelaStack libraries' SvelteKit 3 releases. */
+export const VELASTACK_KIT = "@velastack/kit@^0.4.0";
+export const VELASTACK_POCKETBASE = "@velastack/pocketbase@^0.4.0";
+export const VELASTACK_CMS = "@velastack/cms@^0.6.0";
+export const NEGOTIATE = "sveltekit-negotiate@^0.3.0";
 export const ZOD = "zod@^4.1.11";

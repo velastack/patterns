@@ -13,6 +13,7 @@ import { resolveCommand } from "package-manager-detector/commands";
 import spawn from "cross-spawn";
 import type {
   Component,
+  ExecuteCommandOptions,
   InstallComponentsOptions,
   InstallComponentsResult,
   Options,
@@ -27,13 +28,18 @@ import {
 } from "../core/errors";
 import { getLogger, NOOP_LOGGER, type Logger } from "../core/logger";
 import { formatSource } from "../core/format-result";
-import { FORMSNAP, TANSTACK_TABLE_CORE } from "../core/constants";
+import {
+  FORMSNAP,
+  FORMSNAP_OVERRIDES,
+  TANSTACK_TABLE_CORE,
+} from "../core/constants";
 import {
   fetchRegistryIndex,
   readComponentsConfig,
   resolveUiDir,
 } from "./registry";
 import { assertTableCorePackage } from "./table-core";
+import { ensurePackageOverrides } from "./package-imports";
 
 export { resolveUiDir };
 
@@ -42,9 +48,10 @@ type CustomNpmPackages = Record<string, string[]>;
 /**
  * The components under `src/ui/components` are copied into a project rather
  * than fetched from the shadcn-svelte registry, so their dependencies have to
- * be declared here: every `#lib/components/ui/<x>/index.js` import a component makes
- * must appear in `customDependencies`, and every npm package that no shadcn
- * item installs for it must appear in `customNpmPackages`.
+ * be declared here: every shadcn-svelte component a bundled one imports
+ * (`#lib/components/ui/<x>/index.js`) must appear in `customDependencies`, and
+ * every npm package that no shadcn item installs for it must appear in
+ * `customNpmPackages`.
  */
 const customDependencies: Record<string, string[]> = {
   "file-form": ["input"],
@@ -151,13 +158,28 @@ function pruneEmptyDirectories(dir: string, root: string): void {
   }
 }
 
+/** Each package manager's flag for saving the exact version instead of a range. */
+const EXACT_FLAG: Record<string, string> = {
+  npm: "--save-exact",
+  pnpm: "--save-exact",
+  yarn: "--exact",
+  bun: "--exact",
+};
+
 async function executeWithDetectedPackageManager(
   cwd: string,
   operation: PackageManagerOperation,
   args: string[],
+  options: ExecuteCommandOptions = {},
 ): Promise<void> {
   const packageManager = (await detect({ cwd }))?.name ?? "npm";
-  const resolved = resolveCommand(packageManager, operation, args);
+  // Adding named packages is `add` (`npm i`, `pnpm add`, `yarn add`):
+  // `yarn install <pkg>` is an error.
+  const resolved = resolveCommand(
+    packageManager,
+    operation === "install" && args.length > 0 ? "add" : operation,
+    args,
+  );
   if (!resolved) {
     throw new Error(
       `Unable to resolve ${operation} command for ${packageManager}`,
@@ -167,6 +189,10 @@ async function executeWithDetectedPackageManager(
   const commandArgs = [...resolved.args];
   if (packageManager === "npm") {
     commandArgs.unshift("--yes");
+  }
+  const exactFlag = EXACT_FLAG[packageManager];
+  if (options.exact && exactFlag) {
+    commandArgs.push(exactFlag);
   }
 
   await new Promise<void>((resolve, reject) => {
@@ -192,13 +218,16 @@ export async function executeCommand(
   operation: PackageManagerOperation,
   args: string[],
   runtime?: WriteResultRuntime,
+  options?: ExecuteCommandOptions,
 ): Promise<void> {
   if (runtime?.executeCommand) {
-    await runtime.executeCommand(cwd, operation, args);
+    await (options
+      ? runtime.executeCommand(cwd, operation, args, options)
+      : runtime.executeCommand(cwd, operation, args));
     return;
   }
 
-  await executeWithDetectedPackageManager(cwd, operation, args);
+  await executeWithDetectedPackageManager(cwd, operation, args, options);
 }
 
 /** Package names `package.json` records, whichever dependency block they sit in. */
@@ -235,6 +264,43 @@ export function packageName(spec: string): string {
   return at === -1 ? spec : spec.slice(0, at);
 }
 
+/**
+ * A spec naming one exact version (`sveltekit-superforms@3.0.0-next.1`),
+ * which is saved as written. Package managers otherwise save a caret, and a
+ * caret on a prerelease follows every later `next` build.
+ */
+export function isExactSpec(spec: string): boolean {
+  const name = packageName(spec);
+  return /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(
+    spec.slice(name.length + 1),
+  );
+}
+
+/**
+ * formsnap 2 peers superforms ^2 and projects run superforms 3, so the
+ * override has to be in package.json before an install that brings either in
+ * next to formsnap, or npm stops with ERESOLVE.
+ */
+function ensureFormsnapOverride(
+  root: string,
+  installed: Set<string>,
+  toInstall: string[],
+  logger: Logger,
+): void {
+  const names = new Set(toInstall.map(packageName));
+  const formsnap = names.has("formsnap") || installed.has("formsnap");
+  const touched = names.has("formsnap") || names.has("sveltekit-superforms");
+  if (!formsnap || !touched) {
+    return;
+  }
+  const { outcome } = ensurePackageOverrides(root, FORMSNAP_OVERRIDES);
+  if (outcome.status === "failed") {
+    logger.info(outcome.message);
+  } else if (outcome.status === "success" && outcome.changed) {
+    logger.info("Added the formsnap override for sveltekit-superforms");
+  }
+}
+
 async function installPackages(
   root: string,
   packages: string[],
@@ -253,8 +319,18 @@ async function installPackages(
     return [];
   }
 
+  ensureFormsnapOverride(root, installed, toInstall, logger);
+
   logger.info(`Installing packages: ${toInstall.join(", ")}`);
-  await executeCommand(root, "install", toInstall, runtime);
+  // `--save-exact` applies to a whole command, so exact pins go in their own.
+  const exact = toInstall.filter(isExactSpec);
+  const ranged = toInstall.filter((spec) => !isExactSpec(spec));
+  if (exact.length > 0) {
+    await executeCommand(root, "install", exact, runtime, { exact: true });
+  }
+  if (ranged.length > 0) {
+    await executeCommand(root, "install", ranged, runtime);
+  }
   return toInstall;
 }
 
@@ -554,6 +630,17 @@ export async function writeResult(
     );
   }
 
+  // A package.json edit lands before the package manager runs, so the install
+  // builds on it. Written after, its content (read before the install) would
+  // take back every dependency the install just recorded.
+  const packageJsonPath = path.resolve(options.root, "package.json");
+  const isPackageJson = (file: Result["modifies"][number]) =>
+    file.status === "success" &&
+    path.resolve(toTargetPath(options.root, file.path)) === packageJsonPath;
+  for (const file of result.modifies.filter(isPackageJson)) {
+    writeFile(packageJsonPath, file.content);
+  }
+
   const packageInstalls = await installPackages(
     options.root,
     result.packages,
@@ -606,6 +693,13 @@ export async function writeResult(
   }
 
   for (const file of result.modifies) {
+    if (isPackageJson(file)) {
+      writtenResult.modifies.push({
+        ...file,
+        path: toRelativePath(options.root, file.path),
+      });
+      continue;
+    }
     if (file.status !== "success") {
       // Carried through unwritten, so the caller can report the failure. See
       // the note in the creates loop above.
