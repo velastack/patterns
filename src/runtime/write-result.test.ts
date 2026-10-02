@@ -17,12 +17,15 @@ import type {
 } from "../core/types";
 import { InvalidArgumentError, MissingShadcnError } from "../core/errors";
 import {
+  ensureSvelteKitSync,
+  executeCommand,
   formatPaths,
   installComponents,
   installedComponents,
   isExactSpec,
   packageName,
   resolveUiDir,
+  restoreDowngradedDependencies,
   writeResult,
 } from "./write-result";
 import { offlineFetch, registryFetch } from "./registry.mock";
@@ -240,6 +243,7 @@ describe("writeResult", () => {
       "add",
       "--yes",
       "--overwrite",
+      "--no-deps-install",
       "dropdown-menu",
     ]);
 
@@ -384,7 +388,13 @@ describe("writeResult", () => {
 });
 
 describe("installComponents", () => {
-  const SHADCN_ADD = ["shadcn-svelte", "add", "--yes", "--overwrite"];
+  const SHADCN_ADD = [
+    "shadcn-svelte",
+    "add",
+    "--yes",
+    "--overwrite",
+    "--no-deps-install",
+  ];
 
   function execSpy() {
     return vi.fn<ExecuteCommand>(async () => {});
@@ -447,6 +457,67 @@ describe("installComponents", () => {
       skipped: ["button", "card"],
       packages: [],
     });
+  });
+
+  it("puts back a pin shadcn-svelte moved backwards, then installs once", async () => {
+    const root = makeProject({
+      "sveltekit-superforms": "3.0.0-next.1",
+      formsnap: "^2.0.1",
+    });
+    // What shadcn-svelte's form item does under --no-deps-install: it records
+    // its own ranges, replacing any the project has that they do not cover.
+    const executeCommand = vi.fn<ExecuteCommand>(async (cwd, operation) => {
+      if (operation !== "execute") return;
+      const file = path.join(cwd, "package.json");
+      const pkg = JSON.parse(readFileSync(file, "utf8"));
+      pkg.dependencies["sveltekit-superforms"] = "^2.30.0";
+      pkg.devDependencies = { "bits-ui": "^2.14.4" };
+      writeFileSync(file, JSON.stringify(pkg, null, 2));
+    });
+    const messages: string[] = [];
+
+    await installComponents(
+      {
+        root,
+        components: ["badge"],
+        logger: { info: (m) => messages.push(m) },
+      },
+      { executeCommand, fetch: registryFetch() },
+    );
+
+    expect(executeCommand.mock.calls.map((c) => [c[1], c[2]])).toEqual([
+      ["execute", [...SHADCN_ADD, "badge"]],
+      ["install", []],
+    ]);
+    const pkg = JSON.parse(
+      readFileSync(path.join(root, "package.json"), "utf8"),
+    );
+    expect(pkg.dependencies).toEqual({
+      "sveltekit-superforms": "3.0.0-next.1",
+      formsnap: "^2.0.1",
+    });
+    expect(pkg.devDependencies).toEqual({ "bits-ui": "^2.14.4" });
+    expect(messages).toContain(
+      "Kept sveltekit-superforms@3.0.0-next.1 (shadcn-svelte asked for an older range)",
+    );
+  });
+
+  it("re-syncs SvelteKit before shadcn-svelte when an install pruned node_modules/$app", async () => {
+    const root = makeProject();
+    mkdirSync(path.join(root, "node_modules", "@sveltejs", "kit"), {
+      recursive: true,
+    });
+    const executeCommand = execSpy();
+
+    await installComponents(
+      { root, components: ["badge"] },
+      { executeCommand, fetch: registryFetch() },
+    );
+
+    expect(executeCommand.mock.calls.map((c) => c[2])).toEqual([
+      ["svelte-kit", "sync"],
+      [...SHADCN_ADD, "badge"],
+    ]);
   });
 
   it("refuses v9 table helpers next to a v8 @tanstack/table-core", async () => {
@@ -997,5 +1068,102 @@ describe("writeResult package installs", () => {
     expect(pkg.imports).toEqual({ "#locales/*": "./src/locales/*" });
     expect(pkg.dependencies).toEqual({ wuchale: "^0.26.3" });
     expect(result.modifies.map((file) => file.path)).toEqual(["package.json"]);
+  });
+});
+
+describe("ensureSvelteKitSync", () => {
+  it("syncs only when SvelteKit is installed and node_modules/$app is gone", async () => {
+    const root = makeTempRoot();
+    const executeCommand = vi.fn<ExecuteCommand>(async () => {});
+    expect(await ensureSvelteKitSync(root, { executeCommand })).toBe(false);
+
+    mkdirSync(path.join(root, "node_modules", "@sveltejs", "kit"), {
+      recursive: true,
+    });
+    expect(await ensureSvelteKitSync(root, { executeCommand })).toBe(true);
+    expect(executeCommand).toHaveBeenCalledWith(root, "execute", [
+      "svelte-kit",
+      "sync",
+    ]);
+
+    mkdirSync(path.join(root, "node_modules", "$app"), { recursive: true });
+    writeFileSync(
+      path.join(root, "node_modules", "$app", "tsconfig.json"),
+      "{}",
+    );
+    expect(await ensureSvelteKitSync(root, { executeCommand })).toBe(false);
+    expect(executeCommand).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("executeCommand", () => {
+  it("puts back node_modules/$app when an install prunes it", async () => {
+    const root = makeTempRoot();
+    const appDir = path.join(root, "node_modules", "$app");
+    mkdirSync(appDir, { recursive: true });
+    writeFileSync(path.join(appDir, "tsconfig.json"), '{"x":1}');
+    const prune = vi.fn<ExecuteCommand>(async () => {
+      rmSync(appDir, { recursive: true, force: true });
+    });
+
+    await executeCommand(root, "install", ["a"], { executeCommand: prune });
+    expect(readFileSync(path.join(appDir, "tsconfig.json"), "utf8")).toBe(
+      '{"x":1}',
+    );
+
+    // `execute` runs tools, not installs: what they do to $app is theirs.
+    await executeCommand(root, "execute", ["x"], { executeCommand: prune });
+    expect(existsSync(appDir)).toBe(false);
+  });
+});
+
+describe("restoreDowngradedDependencies", () => {
+  it("restores downgrades and non-semver specs, keeps raises and additions", () => {
+    const before = {
+      dependencies: {
+        "sveltekit-superforms": "3.0.0-next.1",
+        local: "file:../x",
+      },
+      devDependencies: {
+        formsnap: "^2.0.1",
+        "bits-ui": "^2.8.0",
+        zod: "^4.1.0",
+      },
+    };
+    const after = {
+      dependencies: { "sveltekit-superforms": "^2.30.0", local: "^1.0.0" },
+      devDependencies: {
+        formsnap: "^2.0.1",
+        "bits-ui": "^2.14.4",
+        zod: "^3.25.0",
+        "tailwind-variants": "^3.1.1",
+      },
+    };
+    const { pkg, restored } = restoreDowngradedDependencies(before, after);
+    expect(pkg).toEqual({
+      dependencies: {
+        "sveltekit-superforms": "3.0.0-next.1",
+        local: "file:../x",
+      },
+      devDependencies: {
+        formsnap: "^2.0.1",
+        "bits-ui": "^2.14.4",
+        zod: "^4.1.0",
+        "tailwind-variants": "^3.1.1",
+      },
+    });
+    expect(restored).toEqual([
+      "sveltekit-superforms@3.0.0-next.1",
+      "local@file:../x",
+      "zod@^4.1.0",
+    ]);
+  });
+
+  it("treats a release as above its own prerelease", () => {
+    const { restored } = restoreDowngradedDependencies(
+      { devDependencies: { a: "3.0.0" } },
+      { devDependencies: { a: "^3.0.0-next.1" } },
+    );
+    expect(restored).toEqual(["a@3.0.0"]);
   });
 });

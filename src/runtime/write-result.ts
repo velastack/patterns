@@ -1,12 +1,15 @@
 import {
+  cpSync,
   existsSync,
   mkdirSync,
+  mkdtempSync,
   readdirSync,
   readFileSync,
   rmSync,
   statSync,
   writeFileSync,
 } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { detect } from "package-manager-detector";
 import { resolveCommand } from "package-manager-detector/commands";
@@ -220,14 +223,20 @@ export async function executeCommand(
   runtime?: WriteResultRuntime,
   options?: ExecuteCommandOptions,
 ): Promise<void> {
-  if (runtime?.executeCommand) {
-    await (options
-      ? runtime.executeCommand(cwd, operation, args, options)
-      : runtime.executeCommand(cwd, operation, args));
-    return;
-  }
+  const restoreTypes =
+    operation === "execute" ? null : preserveSvelteKitTypes(cwd);
+  try {
+    if (runtime?.executeCommand) {
+      await (options
+        ? runtime.executeCommand(cwd, operation, args, options)
+        : runtime.executeCommand(cwd, operation, args));
+      return;
+    }
 
-  await executeWithDetectedPackageManager(cwd, operation, args, options);
+    await executeWithDetectedPackageManager(cwd, operation, args, options);
+  } finally {
+    restoreTypes?.();
+  }
 }
 
 /** Package names `package.json` records, whichever dependency block they sit in. */
@@ -299,6 +308,150 @@ function ensureFormsnapOverride(
   } else if (outcome.status === "success" && outcome.changed) {
     logger.info("Added the formsnap override for sveltekit-superforms");
   }
+}
+
+/**
+ * SvelteKit 3's tsconfig extends `$app/tsconfig`, which `svelte-kit sync`
+ * writes to `node_modules/$app`. A package-manager install prunes that folder
+ * (it is no package) and only an argument-less npm install's `prepare` writes
+ * it back, so after `npm install <pkg>` every tool that reads the tsconfig
+ * (shadcn-svelte, svelte-check without sync, the editor) fails on the missing
+ * `extends`. Syncing again is no fix mid-pattern: it loads vite.config, which
+ * may already name a plugin whose own config the pattern has not written yet.
+ * So the folder is copied aside before an install and put back after.
+ */
+function preserveSvelteKitTypes(root: string): (() => void) | null {
+  const appDir = path.join(root, "node_modules", "$app");
+  if (!existsSync(appDir)) {
+    return null;
+  }
+  const saved = mkdtempSync(path.join(os.tmpdir(), "vela-app-types-"));
+  cpSync(appDir, path.join(saved, "$app"), { recursive: true });
+  return () => {
+    try {
+      if (!existsSync(appDir) && existsSync(path.join(root, "node_modules"))) {
+        cpSync(path.join(saved, "$app"), appDir, { recursive: true });
+      }
+    } finally {
+      rmSync(saved, { recursive: true, force: true });
+    }
+  };
+}
+
+/**
+ * Run `svelte-kit sync` when SvelteKit is installed but `node_modules/$app`
+ * is missing (a fresh copy of `node_modules`, or an install made outside
+ * vela), so shadcn-svelte can read the tsconfig. Best effort: a sync that
+ * fails is reported and left to shadcn-svelte to complain about.
+ */
+export async function ensureSvelteKitSync(
+  root: string,
+  runtime?: WriteResultRuntime,
+  logger: Logger = NOOP_LOGGER,
+): Promise<boolean> {
+  if (!existsSync(path.join(root, "node_modules", "@sveltejs", "kit"))) {
+    return false;
+  }
+  if (existsSync(path.join(root, "node_modules", "$app", "tsconfig.json"))) {
+    return false;
+  }
+  try {
+    await executeCommand(root, "execute", ["svelte-kit", "sync"], runtime);
+    return true;
+  } catch (error) {
+    logger.info(
+      `svelte-kit sync failed (${error instanceof Error ? error.message : String(error)}); node_modules/$app is missing`,
+    );
+    return false;
+  }
+}
+
+type DependencyBlocks = Record<string, Record<string, string> | undefined>;
+
+const DEPENDENCY_BLOCKS = [
+  "dependencies",
+  "devDependencies",
+  "optionalDependencies",
+] as const;
+
+/** The lowest version a range names, as numbers, or null when it is no semver range. */
+function rangeFloor(spec: string): number[] | null {
+  const match = spec
+    .trim()
+    .match(
+      /^(?:[\^~=v]|>=?)?\s*(\d+)(?:\.(\d+|[xX*]))?(?:\.(\d+|[xX*]))?(-[0-9A-Za-z.-]+)?$/,
+    );
+  if (!match) {
+    return null;
+  }
+  const part = (value: string | undefined) =>
+    value === undefined || /[xX*]/.test(value) ? 0 : Number(value);
+  // A prerelease sorts below its release.
+  return [part(match[1]), part(match[2]), part(match[3]), match[4] ? 0 : 1];
+}
+
+function compareFloors(a: number[], b: number[]): number {
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) {
+      return a[i]! - b[i]!;
+    }
+  }
+  return 0;
+}
+
+/**
+ * The dependency entries `shadcn-svelte add` changed that have to go back:
+ * shadcn replaces any range its registry item's own range does not cover,
+ * downgrades included. The form item still asks for `sveltekit-superforms`
+ * ^2, which SvelteKit 3 cannot install, over the project's 3.x pin. So an
+ * entry the project already had is restored when shadcn moved it below
+ * where it was, or when it is not a semver range at all (file:, git,
+ * workspace:). A raised floor and every new entry are kept.
+ */
+export function restoreDowngradedDependencies(
+  before: DependencyBlocks,
+  after: DependencyBlocks,
+): { pkg: DependencyBlocks; restored: string[] } {
+  const pkg: DependencyBlocks = { ...after };
+  const restored: string[] = [];
+  const previous = new Map<string, string>();
+  for (const block of DEPENDENCY_BLOCKS) {
+    for (const [name, spec] of Object.entries(before[block] ?? {})) {
+      previous.set(name, spec);
+    }
+  }
+  for (const block of DEPENDENCY_BLOCKS) {
+    const entries = after[block];
+    if (!entries) {
+      continue;
+    }
+    for (const [name, spec] of Object.entries(entries)) {
+      const old = previous.get(name);
+      if (old === undefined || old === spec) {
+        continue;
+      }
+      const oldFloor = rangeFloor(old);
+      const newFloor = rangeFloor(spec);
+      const keep =
+        oldFloor !== null &&
+        newFloor !== null &&
+        compareFloors(newFloor, oldFloor) >= 0;
+      if (keep) {
+        continue;
+      }
+      pkg[block] = { ...(pkg[block] as Record<string, string>), [name]: old };
+      restored.push(`${name}@${old}`);
+    }
+  }
+  return { pkg, restored };
+}
+
+function readPackageJson(root: string): Record<string, unknown> | null {
+  const file = path.join(root, "package.json");
+  if (!existsSync(file)) {
+    return null;
+  }
+  return JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
 }
 
 async function installPackages(
@@ -585,13 +738,51 @@ export async function installComponents(
     logger.info(
       `Installing shadcn-svelte components: ${publicList.join(", ")}`,
     );
+    // shadcn-svelte reads the tsconfig, whose `extends` an install may have pruned.
+    await ensureSvelteKitSync(root, runtime, logger);
+    // shadcn only records its packages; they are installed below, once any
+    // pin it moved backwards is put back.
+    const before = readPackageJson(root);
     await executeCommand(
       root,
       "execute",
-      ["shadcn-svelte", "add", "--yes", "--overwrite", ...publicList],
+      [
+        "shadcn-svelte",
+        "add",
+        "--yes",
+        "--overwrite",
+        "--no-deps-install",
+        ...publicList,
+      ],
       runtime,
     );
     installed.push(...publicList);
+    const after = readPackageJson(root);
+    if (before && after && JSON.stringify(before) !== JSON.stringify(after)) {
+      const { pkg, restored } = restoreDowngradedDependencies(
+        before as DependencyBlocks,
+        after as DependencyBlocks,
+      );
+      if (restored.length > 0) {
+        logger.info(
+          `Kept ${restored.join(", ")} (shadcn-svelte asked for an older range)`,
+        );
+        const file = path.join(root, "package.json");
+        const indent =
+          readFileSync(file, "utf8").match(/^[{]\s*\n([\t ]+)/)?.[1] ?? "\t";
+        writeFileSync(file, `${JSON.stringify(pkg, null, indent)}\n`, "utf8");
+      }
+      const recorded = (pkg: Record<string, unknown>) =>
+        new Set(
+          DEPENDENCY_BLOCKS.flatMap((block) =>
+            Object.keys((pkg[block] as Record<string, string>) ?? {}),
+          ),
+        );
+      const had = recorded(before);
+      const added = [...recorded(after)].filter((name) => !had.has(name));
+      ensureFormsnapOverride(root, had, added, logger);
+      await executeCommand(root, "install", [], runtime);
+    }
   }
 
   const installedList = [...new Set(installed)].sort();

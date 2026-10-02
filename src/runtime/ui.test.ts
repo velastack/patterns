@@ -151,6 +151,7 @@ describe("switchStyle", () => {
       "add",
       "--yes",
       "--overwrite",
+      "--no-deps-install",
       "button",
       "card",
       "sonner",
