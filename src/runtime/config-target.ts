@@ -53,6 +53,11 @@ export interface ConfigTarget {
   configObject: ObjectLiteralExpression;
   /** Full text captured before any mutation, for change detection. */
   originalText: string;
+  /**
+   * The `sveltekit()` call when resolving it added the `{}` arg; saving drops
+   * that arg again while it is still empty.
+   */
+  addedArgTo?: CallExpression;
 }
 
 /** Why a config could not be resolved for editing. */
@@ -232,6 +237,7 @@ export function resolveConfigTarget(
         filePath: vitePath,
         configObject: created,
         originalText,
+        addedArgTo: call,
       },
     };
   }
@@ -259,8 +265,15 @@ export function resolveConfigTarget(
   };
 }
 
-/** Format, compare against the captured original, and save only if changed. */
+/**
+ * Format, compare against the captured original, and save only if changed.
+ * A `{}` that resolving added to a bare `sveltekit()` is taken out again when
+ * nothing went into it, so a no-op edit reports unchanged.
+ */
 export function saveTarget(target: ConfigTarget): ModifyOutcome {
+  if (target.addedArgTo && target.configObject.getProperties().length === 0) {
+    target.addedArgTo.removeArgument(0);
+  }
   formatLikeSource(target.sourceFile);
   const newText = target.sourceFile.getFullText();
   if (newText === target.originalText) {

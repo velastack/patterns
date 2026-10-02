@@ -82,11 +82,16 @@ describe("disable i18n modifiers", () => {
       path.join(tempDir, "vite.config.ts"),
       path.join(root, "vite.config.ts"),
     );
+    const before = fs.readFileSync(path.join(root, "vite.config.ts"), "utf8");
 
+    // A bare `sveltekit()`: the `{}` resolving adds is not kept.
     expect(unmodifyLocalesAlias(root).outcome).toEqual({
       status: "success",
       changed: false,
     });
+    expect(fs.readFileSync(path.join(root, "vite.config.ts"), "utf8")).toBe(
+      before,
+    );
   });
 
   it("refuses a svelte.config.js (SvelteKit 2) with the migrate message", () => {

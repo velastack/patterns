@@ -34,12 +34,6 @@ export function unmodifyLocalesAlias(root: string): ConfigModifyResult {
   }
 
   const { target } = res;
-  const unchanged: ConfigModifyResult = {
-    filePath: target.filePath,
-    outcome: { status: "success", changed: false },
-  };
-  // Resolving a bare `sveltekit()` gives it a `{}` arg; nothing is saved
-  // unless the alias was actually there.
   const aliasProp = target.configObject
     .getProperty("alias")
     ?.asKind(SyntaxKind.PropertyAssignment);
@@ -49,9 +43,9 @@ export function unmodifyLocalesAlias(root: string): ConfigModifyResult {
   const locales = aliasObj
     ?.getProperties()
     .find((p) => p.getText().replace(/['"]/g, "").startsWith("$locales"));
-  if (!aliasProp || !aliasObj || !locales) return unchanged;
-
-  locales.remove();
-  if (aliasObj.getProperties().length === 0) aliasProp.remove();
+  if (aliasProp && aliasObj && locales) {
+    locales.remove();
+    if (aliasObj.getProperties().length === 0) aliasProp.remove();
+  }
   return { filePath: target.filePath, outcome: saveTarget(target) };
 }

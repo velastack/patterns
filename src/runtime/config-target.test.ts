@@ -3,7 +3,12 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { resolveConfigTarget, SVELTE_CONFIG_MESSAGE } from "./config-target";
+import {
+  ensureBooleanTrue,
+  modifyConfig,
+  resolveConfigTarget,
+  SVELTE_CONFIG_MESSAGE,
+} from "./config-target";
 import { modifySvelteConfigRemote } from "./modify-svelte-config-remote";
 import { modifyViteConfigMdsvex } from "../patterns/enable/blog/modifies/vite-config";
 import {
@@ -191,6 +196,35 @@ describe("resolveConfigTarget", () => {
   it("not-found on an empty project", () => {
     const root = makeRoot({});
     expect(resolveConfigTarget(root).status).toBe("not-found");
+  });
+});
+
+describe("modifyConfig", () => {
+  const HINTS = { notFound: "not found", failed: "failed" };
+
+  it("leaves a bare sveltekit() untouched when the mutator adds nothing", () => {
+    const root = makeRoot({ "vite.config.ts": VITE_BARE });
+    const { outcome } = modifyConfig(root, HINTS, () => true);
+    expect(outcome).toEqual({ status: "success", changed: false });
+    expect(read(root, "vite.config.ts")).toBe(VITE_BARE);
+  });
+
+  it("keeps the {} it adds to a bare sveltekit() once something goes in", () => {
+    const root = makeRoot({ "vite.config.ts": VITE_BARE });
+    const { outcome } = modifyConfig(root, HINTS, (target) =>
+      ensureBooleanTrue(target.configObject, "experimental"),
+    );
+    expect(outcome).toEqual({ status: "success", changed: true });
+    expect(read(root, "vite.config.ts")).toMatch(
+      /sveltekit\(\{\s*experimental: true\s*\}\)/,
+    );
+  });
+
+  it("keeps an inline {} the project wrote itself", () => {
+    const root = makeRoot({ "vite.config.ts": VITE_INLINE });
+    const { outcome } = modifyConfig(root, HINTS, () => true);
+    expect(outcome).toEqual({ status: "success", changed: false });
+    expect(read(root, "vite.config.ts")).toBe(VITE_INLINE);
   });
 });
 
