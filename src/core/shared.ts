@@ -72,10 +72,17 @@ function escapeFieldName(fieldName: string): string {
   return validIdentifierRegex.test(fieldName) ? fieldName : `'${fieldName}'`;
 }
 
-function zodSchemaForField(
-  field: SchemaField,
-  options: { forForm: boolean },
-): string {
+interface SchemaOptions {
+  forForm: boolean;
+  /**
+   * The schema backs a remote form, whose `fields.x.as(...)` exists only on
+   * fields typed as form values: a `z.any()` json field would be an
+   * `UnknownField` with no `.as()`.
+   */
+  remote?: boolean;
+}
+
+function zodSchemaForField(field: SchemaField, options: SchemaOptions): string {
   const selectValues =
     field.type === "select"
       ? `[${(field.options ?? []).map((option) => JSON.stringify(option.value)).join(", ")}]`
@@ -127,7 +134,8 @@ function zodSchemaForField(
           : "z.union([z.instanceof(File), z.string()])";
       break;
     case "json":
-      schema = "z.any()";
+      // The remote form's textarea posts the JSON as text.
+      schema = options.remote ? "z.string()" : "z.any()";
       break;
     case "geoPoint":
       schema = options.forForm
@@ -243,7 +251,7 @@ export async function resolveInputFields(
 export function generateSchemaSnippet(
   model: Pick<Model, "schemaName" | "tableName">,
   fields: Field[],
-  options: { includeModelFields: boolean; forForm: boolean },
+  options: SchemaOptions & { includeModelFields: boolean },
 ): string {
   const entries: Array<{ name: string; schema: string }> = [];
 

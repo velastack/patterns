@@ -136,6 +136,24 @@ describe("generate form-remote pattern", () => {
     expect(remote).toContain("return { success: true };");
   });
 
+  it("types a json field as a string, so its textarea can call .as()", async () => {
+    const result = await generateBase(
+      makeOptions({
+        env: "preview",
+        argv: ["note", "title:text!", "meta:json"],
+        input: { ui: "plain", flash: false, serverTests: false },
+      }),
+    );
+
+    const schema = result.creates.find((file) =>
+      file.path.endsWith("src/lib/schemas/note.ts"),
+    )?.content;
+    expect(schema).toContain("meta: z.string().optional()");
+    expect(result.creates[0].content).toContain(
+      'submitNoteForm.fields.meta.as("text")',
+    );
+  });
+
   it("derives fields from an existing collection and creates a record on submit", async () => {
     const result = await generateBase(
       makeOptions({

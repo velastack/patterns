@@ -534,6 +534,7 @@ export async function generate(options: Options) {
       generateSchemaSnippet(model, fields, {
         includeModelFields: true,
         forForm: true,
+        remote: true,
       }),
     ),
     toFile(

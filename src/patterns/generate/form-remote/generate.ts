@@ -310,6 +310,7 @@ export async function generate(options: Options) {
       generateSchemaSnippet(model, fields, {
         includeModelFields: false,
         forForm: true,
+        remote: true,
       }),
     ),
   ];
