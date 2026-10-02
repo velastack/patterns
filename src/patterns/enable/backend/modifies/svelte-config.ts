@@ -46,9 +46,8 @@ function adapterCalls(sourceFile: ConfigTarget["sourceFile"]) {
 }
 
 /**
- * Switch the adapter to `@sveltejs/adapter-node` and drop its arguments, in
- * whichever file holds the adapter import + `adapter()` call (vite.config when
- * the project uses inline config, else svelte.config). A project with a
+ * Switch the adapter to `@sveltejs/adapter-node` and drop its arguments in
+ * vite.config, which holds the adapter import + `adapter()` call. A project with a
  * backend is served from a Node process, which is what `vela deploy` runs.
  * Operates on the import and call expression directly, so it never needs the
  * config object.
@@ -90,18 +89,25 @@ export function modifySvelteConfig(root: string): ConfigModifyResult {
 /**
  * Reverse of {@link modifySvelteConfig}: switch back to
  * `@sveltejs/adapter-static` and restore the `{ fallback: '200.html' }` arg.
- * Lenient — if no config or no adapter import is found, it's a no-op success.
+ * Lenient when there is no config or no adapter import: a no-op success. A
+ * config that can't be edited (a leftover svelte.config) still fails.
  */
 export function unmodifySvelteConfig(root: string): ConfigModifyResult {
   const res = resolveConfigTarget(root, {
     notFound: NOT_FOUND_HINT,
     failed: FAILURE_HINT,
   });
-  if (res.status !== "resolved") {
-    // Nothing to revert — treat missing/unparseable config as a no-op.
+  if (res.status === "not-found") {
+    // Nothing to revert.
     return {
       filePath: res.filePath,
       outcome: { status: "success", changed: false },
+    };
+  }
+  if (res.status === "failed") {
+    return {
+      filePath: res.filePath,
+      outcome: { status: "failed", message: res.message },
     };
   }
   const { target } = res;

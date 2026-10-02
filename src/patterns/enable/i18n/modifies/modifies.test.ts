@@ -5,6 +5,7 @@ import fs from "node:fs";
 
 import { modifyViteConfig } from "./vite-config";
 import { modifySvelteConfig } from "./svelte-config";
+import { SVELTE_CONFIG_MESSAGE } from "../../../../runtime/config-target";
 import { modifyHooksServerI18n } from "./hooks.server";
 import { modifyHooksI18n } from "./hooks";
 import { modifyAppHtml } from "./app-html";
@@ -41,20 +42,21 @@ describe("enable i18n modifiers", () => {
     await expect(modified).toMatchFormatted(expected, "vite.config.ts");
   });
 
-  it("modifies svelte.config.js (legacy: present alongside a bare sveltekit())", async () => {
-    // The fixture has both a svelte.config.js and a vite.config.ts whose
-    // sveltekit() has no inline arg, so the resolver targets svelte.config.
-    modifySvelteConfig(tempDir);
-
-    const modified = fs.readFileSync(
+  it("refuses a svelte.config.js (SvelteKit 2) with the migrate message", () => {
+    // TODO(P-D): this modifier goes away with the move to #locales.
+    const before = fs.readFileSync(
       path.join(tempDir, "svelte.config.js"),
       "utf8",
     );
-    const expected = fs.readFileSync(
-      path.join(fixturesPath, "expect", "svelte.config.js"),
-      "utf8",
-    );
-    await expect(modified).toMatchFormatted(expected, "svelte.config.js");
+    const { outcome } = modifySvelteConfig(tempDir);
+
+    expect(outcome).toEqual({
+      status: "failed",
+      message: SVELTE_CONFIG_MESSAGE,
+    });
+    expect(
+      fs.readFileSync(path.join(tempDir, "svelte.config.js"), "utf8"),
+    ).toBe(before);
   });
 
   it("modifies hooks.server.ts", async () => {

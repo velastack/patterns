@@ -7,7 +7,7 @@ import {
 
 const FAILURE_HINT = [
   "Enable SvelteKit remote functions and Svelte async in your config",
-  "(the sveltekit() plugin arg in vite.config, or svelte.config):",
+  "(the sveltekit() plugin arg in vite.config):",
   "",
   "experimental: { remoteFunctions: true },",
   "compilerOptions: { experimental: { async: true } },",
@@ -32,21 +32,16 @@ const NOT_FOUND_HINT = [
 
 /**
  * Enable SvelteKit remote functions (`experimental.remoteFunctions`) and Svelte
- * async (`compilerOptions.experimental.async`) in whichever config the project
- * uses — the inline `sveltekit()` arg in vite.config, or svelte.config.
- *
- * `remoteFunctions` is kit-namespaced (→ `kitContainer()`); `async` is a
- * root-level compiler option (→ `configObject`).
+ * async (`compilerOptions.experimental.async`) in the inline `sveltekit()` arg
+ * in vite.config, where both sit at the top level.
  */
 export function modifySvelteConfigRemote(root: string): ConfigModifyResult {
   return modifyConfig(
     root,
     { notFound: NOT_FOUND_HINT, failed: FAILURE_HINT },
     (target) => {
-      const kit = target.kitContainer();
-      if (!kit) return false;
       const kitExperimental = getOrCreateObjectLiteralProperty(
-        kit,
+        target.configObject,
         "experimental",
         "{}",
       );

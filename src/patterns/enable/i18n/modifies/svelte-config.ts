@@ -6,7 +6,7 @@ import {
 } from "../../../../runtime/config-target";
 
 const FAILURE_HINT = [
-  "Add the $locales alias to your config (sveltekit() arg in vite.config, or svelte.config):",
+  "Add the $locales alias to your config (the sveltekit() arg in vite.config):",
   "",
   "alias: {",
   "  $locales: 'src/locales',",
@@ -30,9 +30,11 @@ export function modifySvelteConfig(root: string): ConfigModifyResult {
     root,
     { notFound: NOT_FOUND_HINT, failed: FAILURE_HINT },
     (target) => {
-      const kit = target.kitContainer();
-      if (!kit) return false;
-      const aliasObj = getOrCreateObjectLiteralProperty(kit, "alias", "{}");
+      const aliasObj = getOrCreateObjectLiteralProperty(
+        target.configObject,
+        "alias",
+        "{}",
+      );
       if (!aliasObj) return false;
 
       const existing = aliasObj.getProperty("$locales");

@@ -12,10 +12,7 @@ const HINTS = {
 /** Remove the `$locales` alias; drop `alias` too once it is empty. */
 export function unmodifySvelteConfig(root: string): ConfigModifyResult {
   const result = modifyConfig(root, HINTS, (target) => {
-    const kit = target.kitContainer();
-    if (!kit) return true;
-
-    const aliasProp = kit.getProperty("alias");
+    const aliasProp = target.configObject.getProperty("alias");
     if (!aliasProp || aliasProp.getKind() !== SyntaxKind.PropertyAssignment) {
       return true;
     }

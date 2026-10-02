@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { resolveConfigTarget } from "./config-target";
+import { resolveConfigTarget, SVELTE_CONFIG_MESSAGE } from "./config-target";
 import { modifySvelteConfigRemote } from "./modify-svelte-config-remote";
 import { modifySvelteConfig as modifyI18nAlias } from "../patterns/enable/i18n/modifies/svelte-config";
 import { modifySvelteConfigMdsvex } from "../patterns/enable/blog/modifies/svelte.config";
@@ -101,48 +101,90 @@ const VITE_INLINE_ADAPTER_NODE = VITE_INLINE_ADAPTER_AUTO.replace(
   "@sveltejs/adapter-node",
 );
 
-describe("resolveConfigTarget precedence", () => {
-  it("rule 1: inline sveltekit() arg wins even when svelte.config exists", () => {
-    const root = makeRoot({
-      "vite.config.ts": VITE_INLINE,
-      "svelte.config.js": SVELTE_CONFIG,
-    });
+const VITE_KIT_NESTING = `import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+	plugins: [sveltekit({ kit: { adapter: adapter() } })]
+});
+`;
+
+describe("resolveConfigTarget", () => {
+  it("resolves the inline sveltekit() arg", () => {
+    const root = makeRoot({ "vite.config.ts": VITE_INLINE });
     const res = resolveConfigTarget(root);
     expect(res.status).toBe("resolved");
     if (res.status === "resolved") {
-      expect(res.target.kind).toBe("vite-inline");
       expect(res.target.filePath.endsWith("vite.config.ts")).toBe(true);
+      expect(res.target.configObject.getText()).toBe("{}");
     }
   });
 
-  it("rule 2: svelte.config when vite has only a bare sveltekit()", () => {
+  it("adds {} to a bare sveltekit()", () => {
+    const root = makeRoot({ "vite.config.ts": VITE_BARE });
+    const res = resolveConfigTarget(root);
+    expect(res.status).toBe("resolved");
+    if (res.status === "resolved") {
+      expect(res.target.configObject.getText()).toBe("{}");
+      expect(res.target.sourceFile.getFullText()).toContain("sveltekit({})");
+    }
+  });
+
+  it("fails with the migrate message when a svelte.config exists", () => {
     const root = makeRoot({
       "vite.config.ts": VITE_BARE,
       "svelte.config.js": SVELTE_CONFIG,
     });
     const res = resolveConfigTarget(root);
-    expect(res.status).toBe("resolved");
-    if (res.status === "resolved") {
-      expect(res.target.kind).toBe("svelte-config");
-    }
+    expect(res).toMatchObject({
+      status: "failed",
+      reason: "svelte-config",
+      message: SVELTE_CONFIG_MESSAGE,
+    });
+    expect(res.status !== "resolved" && res.filePath).toMatch(
+      /svelte\.config\.js$/,
+    );
+    expect(SVELTE_CONFIG_MESSAGE).toContain(
+      "npx vela@^0.15 migrate sveltekit-3",
+    );
   });
 
-  it("rule 2: svelte.config when there is no vite config", () => {
+  it("fails on a svelte.config even when the inline arg exists too", () => {
+    const root = makeRoot({
+      "vite.config.ts": VITE_INLINE,
+      "svelte.config.ts": SVELTE_CONFIG,
+    });
+    expect(resolveConfigTarget(root)).toMatchObject({
+      status: "failed",
+      reason: "svelte-config",
+    });
+  });
+
+  it("fails on a svelte.config with no vite config", () => {
     const root = makeRoot({ "svelte.config.js": SVELTE_CONFIG });
-    const res = resolveConfigTarget(root);
-    expect(res.status === "resolved" && res.target.kind).toBe("svelte-config");
+    expect(resolveConfigTarget(root)).toMatchObject({
+      status: "failed",
+      reason: "svelte-config",
+    });
   });
 
-  it("rule 3: bare sveltekit() and no svelte.config creates a vite-inline arg", () => {
-    const root = makeRoot({ "vite.config.ts": VITE_BARE });
-    const res = resolveConfigTarget(root);
-    expect(res.status).toBe("resolved");
-    if (res.status === "resolved") {
-      expect(res.target.kind).toBe("vite-inline");
-    }
+  it("fails on options still nested under kit:", () => {
+    const root = makeRoot({ "vite.config.ts": VITE_KIT_NESTING });
+    expect(resolveConfigTarget(root)).toMatchObject({
+      status: "failed",
+      reason: "kit-nesting",
+    });
   });
 
-  it("not-found when there is no svelte config and no sveltekit() call", () => {
+  it("fails on a non-object sveltekit() arg", () => {
+    const root = makeRoot({ "vite.config.ts": VITE_NONOBJECT_ARG });
+    expect(resolveConfigTarget(root)).toMatchObject({
+      status: "failed",
+      reason: "non-object-arg",
+    });
+  });
+
+  it("not-found when the vite config has no sveltekit() call", () => {
     const root = makeRoot({ "vite.config.ts": VITE_NO_SVELTEKIT });
     expect(resolveConfigTarget(root).status).toBe("not-found");
   });
@@ -150,20 +192,6 @@ describe("resolveConfigTarget precedence", () => {
   it("not-found on an empty project", () => {
     const root = makeRoot({});
     expect(resolveConfigTarget(root).status).toBe("not-found");
-  });
-
-  it("failed for a non-object sveltekit() arg with no svelte.config", () => {
-    const root = makeRoot({ "vite.config.ts": VITE_NONOBJECT_ARG });
-    expect(resolveConfigTarget(root).status).toBe("failed");
-  });
-
-  it("non-object sveltekit() arg falls back to svelte.config when present", () => {
-    const root = makeRoot({
-      "vite.config.ts": VITE_NONOBJECT_ARG,
-      "svelte.config.js": SVELTE_CONFIG,
-    });
-    const res = resolveConfigTarget(root);
-    expect(res.status === "resolved" && res.target.kind).toBe("svelte-config");
   });
 });
 
@@ -179,25 +207,19 @@ describe("modifiers target the resolved config", () => {
     expect(vite).toMatch(/async:\s*true/);
   });
 
-  it("remote functions land in svelte.config when that's the only config", () => {
-    const root = makeRoot({ "svelte.config.js": SVELTE_CONFIG });
-    const { filePath, outcome } = modifySvelteConfigRemote(root);
-    expect(outcome).toEqual({ status: "success", changed: true });
-    expect(filePath.endsWith("svelte.config.js")).toBe(true);
-    const svelte = read(root, "svelte.config.js");
-    expect(svelte).toMatch(/remoteFunctions:\s*true/);
-    expect(svelte).toMatch(/async:\s*true/);
-  });
-
-  it("with both present, vite-inline is modified and svelte.config is untouched", () => {
+  it("a svelte.config fails the modifier and is left untouched", () => {
     const root = makeRoot({
       "vite.config.ts": VITE_INLINE,
       "svelte.config.js": SVELTE_CONFIG,
     });
-    const { filePath } = modifySvelteConfigRemote(root);
-    expect(filePath.endsWith("vite.config.ts")).toBe(true);
+    const { filePath, outcome } = modifySvelteConfigRemote(root);
+    expect(outcome).toEqual({
+      status: "failed",
+      message: SVELTE_CONFIG_MESSAGE,
+    });
+    expect(filePath.endsWith("svelte.config.js")).toBe(true);
     expect(read(root, "svelte.config.js")).toBe(SVELTE_CONFIG);
-    expect(read(root, "vite.config.ts")).toMatch(/remoteFunctions:\s*true/);
+    expect(read(root, "vite.config.ts")).toBe(VITE_INLINE);
   });
 
   it("remote modification is idempotent", () => {
@@ -261,6 +283,14 @@ describe("modifiers target the resolved config", () => {
     const vite = read(root, "vite.config.ts");
     expect(vite).toContain("@sveltejs/adapter-static");
     expect(vite).toContain("fallback");
+  });
+
+  it("disable backend fails on a svelte.config rather than skipping it", () => {
+    const root = makeRoot({ "svelte.config.js": SVELTE_CONFIG });
+    expect(unmodifySvelteConfig(root).outcome).toEqual({
+      status: "failed",
+      message: SVELTE_CONFIG_MESSAGE,
+    });
   });
 
   it("disable backend is a no-op when there is no config", () => {

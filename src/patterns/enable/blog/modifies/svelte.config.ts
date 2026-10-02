@@ -11,7 +11,7 @@ import {
 import { ensureImports } from "../../../../runtime/ts-morph-helpers";
 
 const FAILURE_HINT = dedent`
-  Enable mdsvex in your config (sveltekit() arg in vite.config, or svelte.config):
+  Enable mdsvex in your config (the sveltekit() arg in vite.config):
 
   import { mdsvex } from 'mdsvex';
 
@@ -103,9 +103,8 @@ function ensurePreprocessMdsvex(obj: ObjectLiteralExpression): boolean {
 
 /**
  * Enable mdsvex: ensure `extensions` includes `.svx`, `preprocess` includes
- * `mdsvex()`, and the `mdsvex` import is present. All root-level, so they apply
- * identically to svelte.config and the inline sveltekit() arg; the import lands
- * in whichever file was resolved.
+ * `mdsvex()`, and the `mdsvex` import is present, at the top level of the
+ * inline sveltekit() arg in vite.config.
  */
 export function modifySvelteConfigMdsvex(root: string): ConfigModifyResult {
   return modifyConfig(

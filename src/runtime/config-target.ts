@@ -18,6 +18,7 @@ export const VITE_CONFIG_CANDIDATES = [
   "vite.config.cjs",
 ];
 
+/** SvelteKit 2's config files; SvelteKit 3 refuses to start with any of them. */
 export const SVELTE_CONFIG_CANDIDATES = [
   "svelte.config.ts",
   "svelte.config.js",
@@ -25,37 +26,53 @@ export const SVELTE_CONFIG_CANDIDATES = [
   "svelte.config.cjs",
 ];
 
-export type ConfigKind = "svelte-config" | "vite-inline";
+/**
+ * The message every pattern prints for a project still on SvelteKit 2's
+ * `svelte.config.*`. SvelteKit 3 refuses to start with one, so editing it
+ * would be pointless; the migration moves it into `vite.config.ts`.
+ */
+export const SVELTE_CONFIG_MESSAGE =
+  "SvelteKit 3 no longer reads svelte.config.* — run `npx vela@^0.15 migrate sveltekit-3` to move it into vite.config.ts.";
+
+/** SvelteKit 3 fails on a leftover `kit: {...}` inside the `sveltekit()` arg. */
+export const KIT_NESTING_MESSAGE =
+  "SvelteKit 3 reads its options at the top level of sveltekit({...}), not under `kit:` — run `npx vela@^0.15 migrate sveltekit-3` to move them.";
 
 /**
- * A resolved place to read/write SvelteKit configuration. Either the default
- * export object of a `svelte.config.*` file, or the inline argument object of
- * the `sveltekit()` call inside a `vite.config.*` file.
- *
- * The only structural difference between the two is where kit-namespaced
- * settings (adapter, alias, experimental) live: under `config.kit` in
- * svelte.config, but flattened onto the `sveltekit()` arg in vite-inline.
- * `kitContainer()` papers over that; everything else (`compilerOptions`,
- * `preprocess`, `extensions`) sits at the root of `configObject` in both.
+ * Where SvelteKit 3 reads its configuration: the inline argument object of the
+ * `sveltekit()` call in `vite.config.*`. The former `kit.*` options (adapter,
+ * alias, experimental, paths, ...) sit at its top level, beside
+ * `compilerOptions`, `preprocess` and `extensions`.
  */
 export interface ConfigTarget {
-  kind: ConfigKind;
   /** The file to add imports to and save. */
   sourceFile: SourceFile;
   /** Absolute path of the resolved file. */
   filePath: string;
-  /** svelte.config default-export object OR the `sveltekit()` arg object. */
+  /** The `sveltekit()` arg object. */
   configObject: ObjectLiteralExpression;
   /** Full text captured before any mutation, for change detection. */
   originalText: string;
-  /** Object that owns kit-namespaced settings (adapter, alias, experimental). */
-  kitContainer(): ObjectLiteralExpression | null;
 }
+
+/** Why a config could not be resolved for editing. */
+export type ConfigFailure =
+  /** A `svelte.config.*` exists: a SvelteKit 2 project that needs migrating. */
+  | "svelte-config"
+  /** The `sveltekit()` arg still nests options under `kit:`. */
+  | "kit-nesting"
+  /** The `sveltekit()` arg is not an object literal (`sveltekit(config)`). */
+  | "non-object-arg";
 
 export type ResolveResult =
   | { status: "resolved"; target: ConfigTarget }
   | { status: "not-found"; message: string; filePath: string }
-  | { status: "failed"; message: string; filePath: string };
+  | {
+      status: "failed";
+      reason: ConfigFailure;
+      message: string;
+      filePath: string;
+    };
 
 /** Result shape returned by every config modifier so call sites can build a File. */
 export interface ConfigModifyResult {
@@ -80,31 +97,6 @@ function newProject(): Project {
     compilerOptions: { allowJs: true },
     manipulationSettings: { quoteKind: QuoteKind.Single },
   });
-}
-
-/**
- * Resolve the config object exported as default — handles both
- * `export default { ... }` and `const config = { ... }; export default config`.
- */
-export function getDefaultExportObject(
-  sourceFile: SourceFile,
-): ObjectLiteralExpression | null {
-  const defaultExport = sourceFile.getExportAssignment(
-    (ea) => !ea.isExportEquals(),
-  );
-  const exportedExpr = defaultExport?.getExpression();
-  if (exportedExpr?.getKind() === SyntaxKind.ObjectLiteralExpression) {
-    return exportedExpr as ObjectLiteralExpression;
-  }
-  if (exportedExpr?.getKind() === SyntaxKind.Identifier) {
-    const ident = exportedExpr.getText();
-    const varDecl = sourceFile.getVariableDeclaration(ident);
-    const init = varDecl?.getInitializer();
-    if (init?.getKind() === SyntaxKind.ObjectLiteralExpression) {
-      return init as ObjectLiteralExpression;
-    }
-  }
-  return null;
 }
 
 /**
@@ -174,140 +166,97 @@ function findSveltekitCall(sourceFile: SourceFile): CallExpression | null {
   );
 }
 
-function makeViteTarget(
-  sourceFile: SourceFile,
-  filePath: string,
-  configObject: ObjectLiteralExpression,
-  originalText: string,
-): ConfigTarget {
-  return {
-    kind: "vite-inline",
-    sourceFile,
-    filePath,
-    configObject,
-    originalText,
-    // kit-namespaced settings are flattened onto the sveltekit() arg.
-    kitContainer: () => configObject,
-  };
-}
-
-function makeSvelteTarget(
-  sourceFile: SourceFile,
-  filePath: string,
-  configObject: ObjectLiteralExpression,
-  originalText: string,
-): ConfigTarget {
-  return {
-    kind: "svelte-config",
-    sourceFile,
-    filePath,
-    configObject,
-    originalText,
-    kitContainer: () =>
-      getOrCreateObjectLiteralProperty(configObject, "kit", "{}"),
-  };
-}
-
 /**
- * Resolve where SvelteKit config should be read/written, mirroring SvelteKit's
- * own resolution order:
- *   1. `vite.config.*` has a `sveltekit(<object>)` call with an inline arg → use it
- *      (svelte.config is ignored by Kit when this exists).
- *   2. else a `svelte.config.*` with a parseable default-export object → use it.
- *   3. else a bare `sveltekit()` in vite.config → create `{}` and use it (the new default).
+ * Resolve the `sveltekit()` arg in `vite.config.*` for editing:
+ *   - any `svelte.config.*` → failed (`svelte-config`), even when the inline
+ *     arg exists too: SvelteKit 3 refuses to start until it is gone;
+ *   - an object arg with a `kit:` property → failed (`kit-nesting`);
+ *   - an object arg → resolved;
+ *   - a bare `sveltekit()` → `{}` is added and resolved;
+ *   - any other arg → failed (`non-object-arg`);
+ *   - no vite config, or no `sveltekit()` call in it → not-found.
+ *
+ * `hints.failed` is the message for a shape that can't be edited; the
+ * `svelte-config` and `kit-nesting` failures always carry the migrate message.
  */
 export function resolveConfigTarget(
   root: string,
   hints?: { notFound?: string; failed?: string },
 ): ResolveResult {
-  const notFound =
-    hints?.notFound ?? "Could not find a Svelte or Vite config to modify.";
-  const failed = hints?.failed ?? "Could not modify the Svelte or Vite config.";
+  const notFound = hints?.notFound ?? "Could not find a Vite config to modify.";
+  const failed = hints?.failed ?? "Could not modify the Vite config.";
 
-  // --- Inspect vite.config.* ---
-  const vitePath = probeFirstExisting(root, VITE_CONFIG_CANDIDATES);
-  let viteSourceFile: SourceFile | null = null;
-  let viteOriginal = "";
-  let sveltekitCall: CallExpression | null = null;
-  let viteInlineArg: ObjectLiteralExpression | null = null;
-  let viteNonObjectArg = false;
-
-  if (vitePath) {
-    viteSourceFile = newProject().addSourceFileAtPath(vitePath);
-    viteOriginal = viteSourceFile.getFullText();
-    sveltekitCall = findSveltekitCall(viteSourceFile);
-    const arg = sveltekitCall?.getArguments()[0];
-    if (arg) {
-      if (arg.getKind() === SyntaxKind.ObjectLiteralExpression) {
-        viteInlineArg = arg as ObjectLiteralExpression;
-      } else {
-        viteNonObjectArg = true;
-      }
-    }
-  }
-
-  // Rule 1: vite.config carries an inline object arg → target it.
-  if (viteSourceFile && vitePath && viteInlineArg) {
-    return {
-      status: "resolved",
-      target: makeViteTarget(
-        viteSourceFile,
-        vitePath,
-        viteInlineArg,
-        viteOriginal,
-      ),
-    };
-  }
-
-  // --- Inspect svelte.config.* ---
   const sveltePath = probeFirstExisting(root, SVELTE_CONFIG_CANDIDATES);
-  let svelteSourceFile: SourceFile | null = null;
-  let svelteOriginal = "";
-  let svelteConfigObj: ObjectLiteralExpression | null = null;
   if (sveltePath) {
-    svelteSourceFile = newProject().addSourceFileAtPath(sveltePath);
-    svelteOriginal = svelteSourceFile.getFullText();
-    svelteConfigObj = getDefaultExportObject(svelteSourceFile);
-  }
-
-  // Rule 2: svelte.config with a parseable config object → target it.
-  if (svelteSourceFile && sveltePath && svelteConfigObj) {
     return {
-      status: "resolved",
-      target: makeSvelteTarget(
-        svelteSourceFile,
-        sveltePath,
-        svelteConfigObj,
-        svelteOriginal,
-      ),
+      status: "failed",
+      reason: "svelte-config",
+      message: SVELTE_CONFIG_MESSAGE,
+      filePath: sveltePath,
     };
   }
 
-  // Rule 3: bare `sveltekit()` in vite.config → create `{}` arg and target it.
-  if (viteSourceFile && vitePath && sveltekitCall) {
-    if (viteNonObjectArg) {
-      return { status: "failed", message: failed, filePath: vitePath };
-    }
-    const created = sveltekitCall
+  const vitePath = probeFirstExisting(root, VITE_CONFIG_CANDIDATES);
+  if (!vitePath) {
+    return {
+      status: "not-found",
+      message: notFound,
+      filePath: path.join(root, VITE_CONFIG_CANDIDATES[0]),
+    };
+  }
+
+  const sourceFile = newProject().addSourceFileAtPath(vitePath);
+  const originalText = sourceFile.getFullText();
+  const call = findSveltekitCall(sourceFile);
+  if (!call) {
+    return { status: "not-found", message: notFound, filePath: vitePath };
+  }
+
+  const arg = call.getArguments()[0];
+  if (!arg) {
+    const created = call
       .addArgument("{}")
       .asKind(SyntaxKind.ObjectLiteralExpression);
     if (!created) {
-      return { status: "failed", message: failed, filePath: vitePath };
+      return {
+        status: "failed",
+        reason: "non-object-arg",
+        message: failed,
+        filePath: vitePath,
+      };
     }
     return {
       status: "resolved",
-      target: makeViteTarget(viteSourceFile, vitePath, created, viteOriginal),
+      target: {
+        sourceFile,
+        filePath: vitePath,
+        configObject: created,
+        originalText,
+      },
     };
   }
 
-  // svelte.config exists but its shape is unparseable.
-  if (sveltePath && !svelteConfigObj) {
-    return { status: "failed", message: failed, filePath: sveltePath };
+  const configObject = arg.asKind(SyntaxKind.ObjectLiteralExpression);
+  if (!configObject) {
+    return {
+      status: "failed",
+      reason: "non-object-arg",
+      message: failed,
+      filePath: vitePath,
+    };
   }
-
-  const reportPath =
-    vitePath ?? sveltePath ?? path.join(root, VITE_CONFIG_CANDIDATES[0]);
-  return { status: "not-found", message: notFound, filePath: reportPath };
+  if (configObject.getProperty("kit")) {
+    return {
+      status: "failed",
+      reason: "kit-nesting",
+      message: KIT_NESTING_MESSAGE,
+      filePath: vitePath,
+    };
+  }
+  return {
+    status: "resolved",
+    target: { sourceFile, filePath: vitePath, configObject, originalText },
+  };
 }
 
 /** Format, compare against the captured original, and save only if changed. */

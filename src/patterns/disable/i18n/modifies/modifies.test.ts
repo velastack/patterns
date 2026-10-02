@@ -11,6 +11,7 @@ import {
 } from "../../../enable/i18n/modifies/hooks.server";
 import { unmodifyViteConfig } from "./vite-config";
 import { unmodifySvelteConfig } from "./svelte-config";
+import { SVELTE_CONFIG_MESSAGE } from "../../../../runtime/config-target";
 import { unmodifyHooksServerI18n } from "./hooks.server";
 import { unmodifyAppHtml } from "./app-html";
 import { modifyHooksI18n } from "../../../enable/i18n/modifies/hooks";
@@ -50,14 +51,19 @@ describe("disable i18n modifiers", () => {
     );
   });
 
-  it("removes the $locales alias from svelte.config.js", async () => {
+  it("refuses a svelte.config.js (SvelteKit 2) with the migrate message", () => {
+    // TODO(P-D): remove the legacy alias from the sveltekit() arg instead.
+    const before = fs.readFileSync(
+      path.join(tempDir, "svelte.config.js"),
+      "utf8",
+    );
     const result = unmodifySvelteConfig(tempDir);
 
-    expect(result.outcome).toEqual({ status: "success", changed: true });
-    await expect(fs.readFileSync(result.filePath, "utf8")).toMatchFormatted(
-      expected("svelte.config.js"),
-      "svelte.config.js",
-    );
+    expect(result.outcome).toEqual({
+      status: "failed",
+      message: SVELTE_CONFIG_MESSAGE,
+    });
+    expect(fs.readFileSync(result.filePath, "utf8")).toBe(before);
   });
 
   it("unwraps the wuchale handle out of hooks.server.ts", async () => {
