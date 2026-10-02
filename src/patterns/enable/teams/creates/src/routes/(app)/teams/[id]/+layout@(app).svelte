@@ -175,7 +175,7 @@
 													href="/teams/{data.team.id}/member/{member.membership_id}"
 													variant="outline"
 													size="sm"
-													data-sveltekit-reset="false"
+													data-sveltekit-reset={false}
 												>
 													Change Role
 												</Button>
@@ -313,7 +313,7 @@
 							size="sm"
 							href="/teams/{data.team.id}/invite"
 							class="ml-auto"
-							data-sveltekit-reset="false"
+							data-sveltekit-reset={false}
 						>
 							<UserPlusIcon class="w-4 h-4" />
 							Invite member
