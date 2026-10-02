@@ -36,12 +36,26 @@ const files = [
 const LEGACY_FIXTURE = /\/fixtures\/(.+\/)?legacy-[^/]*$/;
 
 /**
- * Files that handle `$lib` on purpose: the specifier helper, which matches
- * the legacy alias in imports and components.json `aliases`.
+ * Files that handle `$lib` on purpose, each with why. Kit 2-shaped fixtures
+ * are already skipped by {@link LEGACY_FIXTURE}.
  */
-const LIB_ALLOWED = new Set([
-  "src/runtime/lib-specifier.ts",
-  "src/runtime/lib-specifier.test.ts",
+const LIB_ALLOWED = new Map([
+  [
+    "src/runtime/lib-specifier.ts",
+    "matches the legacy alias in imports and components.json `aliases`",
+  ],
+  ["src/runtime/lib-specifier.test.ts", "tests that legacy matching"],
+]);
+
+/**
+ * Files that handle `$env/*` on purpose, each with why. Kit 2-shaped
+ * fixtures are already skipped by {@link LEGACY_FIXTURE}.
+ */
+const ENV_ALLOWED = new Map([
+  [
+    "src/patterns/disable/backend/modifies/hooks.server.ts",
+    "prunes the `env` import a hooks.server.ts written before SvelteKit 3 still has",
+  ],
 ]);
 
 const HOOK_TYPES = [
@@ -119,7 +133,8 @@ describe("SvelteKit 3 guard", () => {
                 !spec.endsWith("/*") &&
                 !KEPT_EXTENSION.test(spec),
             ),
-        (f) => f.startsWith("src/runtime/lib-specifier"),
+        // Its tables list extensionless specifiers to show what they resolve to.
+        (f) => LIB_ALLOWED.has(f),
       ),
     ).toEqual([]);
   });
@@ -145,7 +160,25 @@ describe("SvelteKit 3 guard", () => {
     ).toEqual([]);
   });
 
-  // Enabled by the groups that make these changes.
-  it.todo("reads env vars from $app/env/{private,public}, not $env/*");
-  it.todo("has no svelte.config.* in preview-modifies (P1: vite.config.ts)");
+  it("reads env vars from $app/env/{private,public}, not $env/*", () => {
+    expect(scan(lineHits(/\$env\//), (f) => ENV_ALLOWED.has(f))).toEqual([]);
+  });
+
+  it("has no svelte.config.* in preview-modifies", () => {
+    // Every file, not just the text extensions `files` keeps.
+    const all = (dir: string): string[] =>
+      fs
+        .readdirSync(dir, { withFileTypes: true })
+        .flatMap((entry) =>
+          entry.isDirectory()
+            ? all(path.join(dir, entry.name))
+            : [path.join(dir, entry.name)],
+        );
+    const hits = all(path.join(ROOT, "src"))
+      .map((file) => path.relative(ROOT, file).split(path.sep).join("/"))
+      .filter((file) =>
+        /\/preview-modifies\/(.+\/)?svelte\.config\.[^/]*$/.test(file),
+      );
+    expect(hits).toEqual([]);
+  });
 });

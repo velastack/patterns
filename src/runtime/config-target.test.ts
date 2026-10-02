@@ -5,8 +5,7 @@ import path from "node:path";
 
 import { resolveConfigTarget, SVELTE_CONFIG_MESSAGE } from "./config-target";
 import { modifySvelteConfigRemote } from "./modify-svelte-config-remote";
-import { modifySvelteConfig as modifyI18nAlias } from "../patterns/enable/i18n/modifies/svelte-config";
-import { modifySvelteConfigMdsvex } from "../patterns/enable/blog/modifies/svelte.config";
+import { modifyViteConfigMdsvex } from "../patterns/enable/blog/modifies/vite-config";
 import {
   modifySvelteConfig as modifyBackendAdapter,
   unmodifySvelteConfig,
@@ -231,16 +230,9 @@ describe("modifiers target the resolved config", () => {
     expect(read(root, "vite.config.ts")).toBe(first);
   });
 
-  it("i18n alias lands in the vite-inline arg", () => {
-    const root = makeRoot({ "vite.config.ts": VITE_INLINE });
-    const { outcome } = modifyI18nAlias(root);
-    expect(outcome).toEqual({ status: "success", changed: true });
-    expect(read(root, "vite.config.ts")).toMatch(/\$locales:\s*'src\/locales'/);
-  });
-
   it("mdsvex extensions/preprocess/import land in the vite-inline arg", () => {
     const root = makeRoot({ "vite.config.ts": VITE_INLINE });
-    const { outcome } = modifySvelteConfigMdsvex(root);
+    const { outcome } = modifyViteConfigMdsvex(root);
     expect(outcome.status).toBe("success");
     const vite = read(root, "vite.config.ts");
     expect(vite).toMatch(/extensions/);

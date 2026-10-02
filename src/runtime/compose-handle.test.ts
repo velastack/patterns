@@ -54,14 +54,18 @@ const STATIC = dedent`
 
 const MINIMAL = dedent`
   import type { ServerInit } from '@sveltejs/kit/hooks';
-  import { env } from '$env/dynamic/private';
+  import {
+    POCKETBASE_URL,
+    POCKETBASE_SUPERUSER_EMAIL,
+    POCKETBASE_SUPERUSER_PASSWORD
+  } from '$app/env/private';
   import { handlePocketbase } from '@velastack/pocketbase';
   import { startWorker } from '#lib/server/workflows.js';
 
   export const handle = handlePocketbase({
-    pocketbaseUrl: env.POCKETBASE_URL,
-    superuserEmail: env.POCKETBASE_SUPERUSER_EMAIL,
-    superuserPassword: env.POCKETBASE_SUPERUSER_PASSWORD
+    pocketbaseUrl: POCKETBASE_URL,
+    superuserEmail: POCKETBASE_SUPERUSER_EMAIL,
+    superuserPassword: POCKETBASE_SUPERUSER_PASSWORD
   });
 
   // Runs once when the server starts: executes the workflows in src/lib/workflows.
@@ -148,16 +152,20 @@ const SUPPORTED: { name: string; source: string; added: string }[] = [
     source: MINIMAL,
     added: dedent`
       import { sequence, type ServerInit } from '@sveltejs/kit/hooks';
-      import { env } from '$env/dynamic/private';
+      import {
+        POCKETBASE_URL,
+        POCKETBASE_SUPERUSER_EMAIL,
+        POCKETBASE_SUPERUSER_PASSWORD
+      } from '$app/env/private';
       import { handlePocketbase } from '@velastack/pocketbase';
       import { startWorker } from '#lib/server/workflows.js';
 
       export const handle = sequence(
         handleNew,
         handlePocketbase({
-          pocketbaseUrl: env.POCKETBASE_URL,
-          superuserEmail: env.POCKETBASE_SUPERUSER_EMAIL,
-          superuserPassword: env.POCKETBASE_SUPERUSER_PASSWORD
+          pocketbaseUrl: POCKETBASE_URL,
+          superuserEmail: POCKETBASE_SUPERUSER_EMAIL,
+          superuserPassword: POCKETBASE_SUPERUSER_PASSWORD
         })
       );
 
@@ -475,8 +483,7 @@ describe("addHandle", () => {
   });
 
   it("adds a call expression, matched by its callee", () => {
-    const pocketbase =
-      "handlePocketbase({ pocketbaseUrl: env.POCKETBASE_URL })";
+    const pocketbase = "handlePocketbase({ pocketbaseUrl: POCKETBASE_URL })";
     const spec = { expression: pocketbase, name: "handlePocketbase" };
     const { handles, results } = run(STATIC, [
       (sf) => addHandle(sf, spec),
@@ -575,7 +582,11 @@ describe("removeHandle", () => {
     await expect(text).toMatchFormatted(
       dedent`
         import type { ServerInit } from '@sveltejs/kit/hooks';
-        import { env } from '$env/dynamic/private';
+        import {
+          POCKETBASE_URL,
+          POCKETBASE_SUPERUSER_EMAIL,
+          POCKETBASE_SUPERUSER_PASSWORD
+        } from '$app/env/private';
         import { handlePocketbase } from '@velastack/pocketbase';
         import { startWorker } from '#lib/server/workflows.js';
 
@@ -608,23 +619,23 @@ describe("removeHandle", () => {
   it("unwraps a sequence of two and prunes the sequence import", async () => {
     const { text } = run(
       dedent`
-        import { env } from '$env/dynamic/private';
+        import { POCKETBASE_URL } from '$app/env/private';
         import { sequence } from '@sveltejs/kit/hooks';
         import { handlePocketbase } from '@velastack/pocketbase';
 
         export const handle = sequence(
           handleNegotiate,
-          handlePocketbase({ pocketbaseUrl: env.POCKETBASE_URL }),
+          handlePocketbase({ pocketbaseUrl: POCKETBASE_URL }),
         );
       `,
       [remove("handleNegotiate")],
     );
     await expect(text).toMatchFormatted(
       dedent`
-        import { env } from '$env/dynamic/private';
+        import { POCKETBASE_URL } from '$app/env/private';
         import { handlePocketbase } from '@velastack/pocketbase';
 
-        export const handle = handlePocketbase({ pocketbaseUrl: env.POCKETBASE_URL });
+        export const handle = handlePocketbase({ pocketbaseUrl: POCKETBASE_URL });
       `,
       "hooks.server.ts",
     );
@@ -872,7 +883,7 @@ describe("removeHandle", () => {
 
 describe("replaceHandle", () => {
   const pocketbase = {
-    expression: "handlePocketbase({ pocketbaseUrl: env.POCKETBASE_URL })",
+    expression: "handlePocketbase({ pocketbaseUrl: POCKETBASE_URL })",
     name: "handlePocketbase",
     position: "last" as const,
   };
@@ -886,7 +897,7 @@ describe("replaceHandle", () => {
       dedent`
         import { handleStatic } from '@velastack/kit';
 
-        export const handle = handlePocketbase({ pocketbaseUrl: env.POCKETBASE_URL });
+        export const handle = handlePocketbase({ pocketbaseUrl: POCKETBASE_URL });
       `,
       "hooks.server.ts",
     );
@@ -911,7 +922,7 @@ describe("replaceHandle", () => {
 
         export const handle = sequence(
           handleWuchale,
-          handlePocketbase({ pocketbaseUrl: env.POCKETBASE_URL }), // dev-only 404 hints
+          handlePocketbase({ pocketbaseUrl: POCKETBASE_URL }), // dev-only 404 hints
           handleNegotiate,
         );
       `,

@@ -102,18 +102,15 @@ describe("pruneUnusedImports", () => {
   it("drops only the unused bindings of a shared declaration", () => {
     const { source, result } = withInMemoryScript(
       dedent`
-        import { env } from '$env/dynamic/private';
+        import { POCKETBASE_URL } from '$app/env/private';
         import { handlePocketbase, getPocketbase } from '@velastack/pocketbase';
 
         export const pb = getPocketbase();
       `,
       (sf) =>
-        pruneUnusedImports(sf, [
-          "$env/dynamic/private",
-          "@velastack/pocketbase",
-        ]),
+        pruneUnusedImports(sf, ["$app/env/private", "@velastack/pocketbase"]),
     );
-    expect(result.removed).toEqual(["env", "handlePocketbase"]);
+    expect(result.removed).toEqual(["POCKETBASE_URL", "handlePocketbase"]);
     expect(source).toBe(dedent`
       import { getPocketbase } from '@velastack/pocketbase';
 
@@ -175,9 +172,11 @@ describe("pruneUnusedImports", () => {
 describe("ensureNamedImport", () => {
   it("adds a declaration for a new module", () => {
     const { source } = withInMemoryScript(`export const x = 1;\n`, (sf) =>
-      ensureNamedImport(sf, "$env/dynamic/private", "env"),
+      ensureNamedImport(sf, "$app/env/private", "POCKETBASE_URL"),
     );
-    expect(source).toContain("import { env } from '$env/dynamic/private';");
+    expect(source).toContain(
+      "import { POCKETBASE_URL } from '$app/env/private';",
+    );
   });
 
   it("joins an existing import of the module once", () => {

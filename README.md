@@ -10,7 +10,7 @@ SvelteKit 3. A project with a `svelte.config.*`, or with options still nested un
 
 - Imports from `src/lib` use `#lib` (the `"imports"` entries in `package.json`) with sv's extension rules:
   `#lib/server/db.js`, `#lib/components/ui/button/index.js`, `#lib/x.svelte.js` for `x.svelte.ts`, while `.svelte` files
-  keep their extension. `$lib` is only read, as legacy input.
+  keep their extension. The SvelteKit 2 alias is still recognised when reading existing imports, never written.
 - Environment variables are read as named imports from `$app/env/private` / `$app/env/public`. A pattern that
   reads one declares it in `src/env.ts` (`modifyEnvVars` in `src/runtime/env-vars.ts`, creating the file when there
   is none) as optional, `schema: (value) => value ?? ''`, so a build with an empty `.env` still passes. Existing
