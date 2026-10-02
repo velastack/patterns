@@ -58,3 +58,7 @@ export const VELASTACK_POCKETBASE = "@velastack/pocketbase@^0.4.0";
 export const VELASTACK_CMS = "@velastack/cms@^0.6.0";
 export const NEGOTIATE = "sveltekit-negotiate@^0.3.0";
 export const ZOD = "zod@^4.1.11";
+
+/** What `vela enable i18n` installs: wuchale and its Svelte adapter. */
+export const WUCHALE = "wuchale@^0.26.3";
+export const WUCHALE_SVELTE = "@wuchale/svelte@^0.21.1";

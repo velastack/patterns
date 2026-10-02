@@ -1,4 +1,5 @@
 import type { Options, Result } from "../../../core/types";
+import { WUCHALE, WUCHALE_SVELTE } from "../../../core/constants";
 import { composeCreates } from "../../../core/util";
 import { resolveUi } from "../../../core/field/ui";
 
@@ -32,7 +33,7 @@ export async function generate(options: Options) {
     modifies: [],
     deletes: [],
     components: ui === "plain" ? [] : ["select"],
-    packages: ["wuchale@^0.26.3", "@wuchale/svelte@^0.21.1"],
+    packages: [WUCHALE, WUCHALE_SVELTE],
     collections: [],
     collectionPatches: [],
     collectionDrops: [],
