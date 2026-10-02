@@ -9,7 +9,7 @@ import {
   VITE_CONFIG_CANDIDATES,
 } from "../../../runtime/config-target";
 import { modifyViteConfig } from "./modifies/vite-config";
-import { modifySvelteConfig } from "./modifies/svelte-config";
+import { modifyPackageImportsI18n } from "./modifies/package-imports";
 import { modifyHooksServerI18n } from "./modifies/hooks.server";
 import { modifyHooksI18n } from "./modifies/hooks";
 import { modifyAppHtml } from "./modifies/app-html";
@@ -34,9 +34,9 @@ export async function generate(options: Options) {
     modifyOutcomeToFile(viteConfigPath, modifyViteConfig(viteConfigPath)),
   );
 
-  logger.info("Modifying config for i18n alias");
-  const alias = modifySvelteConfig(options.root);
-  pushResult(modifyOutcomeToFile(alias.filePath, alias.outcome));
+  logger.info("Adding #locales to package.json imports");
+  const imports = modifyPackageImportsI18n(options.root);
+  pushResult(modifyOutcomeToFile(imports.filePath, imports.outcome));
 
   logger.info("Modifying hooks.server.ts");
   const hooksServerPath = path.join(options.root, "src", "hooks.server.ts");

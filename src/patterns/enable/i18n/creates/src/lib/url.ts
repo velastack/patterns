@@ -1,7 +1,7 @@
 import { deLocalizeDefault, stringifyPattern } from "wuchale/url";
-import type { Locale } from "../locales/data";
-import { matchUrl } from "../locales/main.url";
-import { locales } from "../locales/data";
+import type { Locale } from "#locales/data.js";
+import { matchUrl } from "#locales/main.url.js";
+import { locales } from "#locales/data.js";
 
 // wuchale treats locales[0] as the source locale, so it is the one served unprefixed
 export const defaultLocale: Locale = locales[0];

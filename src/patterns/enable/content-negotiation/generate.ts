@@ -1,4 +1,4 @@
-import { PUBLIC_DIR } from "../../../core/constants";
+import { NEGOTIATE, PUBLIC_DIR } from "../../../core/constants";
 import type { File, Options, Result } from "../../../core/types";
 import { appRelativePath, languageFromPath } from "../../../core/util";
 
@@ -82,7 +82,7 @@ export async function generate(options: Options) {
     modifies: [],
     deletes: [],
     components: [],
-    packages: ["sveltekit-negotiate"],
+    packages: [NEGOTIATE],
     collections: [],
     collectionPatches: [],
     collectionDrops: [],

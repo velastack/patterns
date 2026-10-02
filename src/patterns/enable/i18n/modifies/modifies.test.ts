@@ -4,8 +4,7 @@ import path from "node:path";
 import fs from "node:fs";
 
 import { modifyViteConfig } from "./vite-config";
-import { modifySvelteConfig } from "./svelte-config";
-import { SVELTE_CONFIG_MESSAGE } from "../../../../runtime/config-target";
+import { modifyPackageImportsI18n } from "./package-imports";
 import { modifyHooksServerI18n } from "./hooks.server";
 import { modifyHooksI18n } from "./hooks";
 import { modifyAppHtml } from "./app-html";
@@ -42,21 +41,33 @@ describe("enable i18n modifiers", () => {
     await expect(modified).toMatchFormatted(expected, "vite.config.ts");
   });
 
-  it("refuses a svelte.config.js (SvelteKit 2) with the migrate message", () => {
-    // TODO(P-D): this modifier goes away with the move to #locales.
-    const before = fs.readFileSync(
-      path.join(tempDir, "svelte.config.js"),
-      "utf8",
+  it("maps #locales/* to src/locales in package.json imports", () => {
+    const pkgPath = path.join(tempDir, "package.json");
+    fs.writeFileSync(
+      pkgPath,
+      JSON.stringify(
+        {
+          name: "app",
+          type: "module",
+          imports: { "#lib": "./src/lib/index.js", "#lib/*": "./src/lib/*" },
+        },
+        null,
+        "\t",
+      ) + "\n",
     );
-    const { outcome } = modifySvelteConfig(tempDir);
 
-    expect(outcome).toEqual({
-      status: "failed",
-      message: SVELTE_CONFIG_MESSAGE,
+    const { outcome } = modifyPackageImportsI18n(tempDir);
+    expect(outcome).toEqual({ status: "success", changed: true });
+    expect(JSON.parse(fs.readFileSync(pkgPath, "utf8")).imports).toEqual({
+      "#lib": "./src/lib/index.js",
+      "#lib/*": "./src/lib/*",
+      "#locales/*": "./src/locales/*",
     });
-    expect(
-      fs.readFileSync(path.join(tempDir, "svelte.config.js"), "utf8"),
-    ).toBe(before);
+
+    expect(modifyPackageImportsI18n(tempDir).outcome).toEqual({
+      status: "success",
+      changed: false,
+    });
   });
 
   it("modifies hooks.server.ts", async () => {

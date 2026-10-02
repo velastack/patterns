@@ -9,15 +9,20 @@ import {
   removeTopLevelStatementByIdentifier,
   formatLikeSource,
 } from "../../../../runtime/ts-morph-helpers";
+import { localesModule } from "./locales-module";
 
 const DELOCALIZE_HELPER = "rerouteDeLocalize";
 
 const FAILURE_HINT = dedent`
   Take rerouteDeLocalize out of the exported reroute in src/hooks.ts, then
-  remove its declaration and the wuchale and $locales imports.
+  remove its declaration and the wuchale and #locales imports.
 `;
 
-const I18N_MODULES = ["wuchale/url", "$locales/main.url", "$locales/data"];
+const I18N_MODULES = [
+  "wuchale/url",
+  localesModule("main.url"),
+  localesModule("data"),
+];
 
 /** The two reroutes `modifyHooksI18n` writes: on its own, and composed. */
 const I18N_ONLY_REROUTE =

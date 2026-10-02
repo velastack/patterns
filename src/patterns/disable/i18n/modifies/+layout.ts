@@ -12,28 +12,29 @@ import {
   formatLikeSource,
   type ModuleMatch,
 } from "../../../../runtime/ts-morph-helpers";
+import { localesModule } from "./locales-module";
 
 const FAILURE_HINT = dedent`
   src/routes/+layout.ts still loads wuchale locales. Remove these from it:
 
   import { browser } from '$app/env';
   import { loadLocale } from 'wuchale/load-utils';
-  import { getLocale } from '$locales/main.url';
-  import '$locales/main.loader.svelte';
-  import '$locales/js.loader';
+  import { getLocale } from '#locales/main.url.js';
+  import '#locales/main.loader.svelte.js';
+  import '#locales/js.loader.js';
 
   and the loadLocale(...) call inside load().
 `;
 
 const SIDE_EFFECT_MODULES = [
-  "$locales/main.loader.svelte",
-  "$locales/js.loader",
+  localesModule("main.loader.svelte"),
+  localesModule("js.loader"),
 ];
 const BINDING_MODULES: ModuleMatch[] = [
   // `$app/env`, or the module it replaced before SvelteKit 3.
   (specifier) => /^\$app\/env(ironment)?$/.test(specifier),
   "wuchale/load-utils",
-  "$locales/main.url",
+  localesModule("main.url"),
 ];
 
 function normalize(source: string): string {
@@ -51,7 +52,7 @@ export function unmodifyRootLayoutI18n(layoutPath: string): ModifyOutcome {
   }
 
   const original = fs.readFileSync(layoutPath, "utf8");
-  if (!original.includes("loadLocale") && !original.includes("$locales")) {
+  if (!original.includes("loadLocale") && !/[$#]locales\//.test(original)) {
     return { status: "success", changed: false };
   }
 

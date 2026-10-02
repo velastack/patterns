@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { locales, type Locale } from "$locales/data.js";
+  import { locales, type Locale } from "#locales/data.js";
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
   import { deLocalizeDefault } from "wuchale/url";
@@ -33,7 +33,7 @@
       locale,
       event.currentTarget.value as Locale,
     );
-    goto(translatedUrl, { invalidateAll: true });
+    goto(translatedUrl, { refreshAll: true });
   };
 
   let { class: className }: { class?: string } = $props();

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Options } from "../../../core/types";
+import { VELASTACK_CMS, VELASTACK_KIT } from "../../../core/constants";
 import { InvalidArgumentError } from "../../../core/errors";
 import { generate, resolveMode } from "./generate";
 
@@ -53,6 +54,8 @@ describe("enable cms generate", () => {
     for (const file of BACKEND_FILES) expect(paths).toContain(file);
     expect(libSource(result)).toContain("endpoint: '/api/cms'");
     expect(result.packages).toContain("better-sqlite3");
+    // The SvelteKit 3 line of the package.
+    expect(result.packages).toContain(VELASTACK_CMS);
   });
 
   it("reads from a hosted CMS when --endpoint is given", async () => {
@@ -65,6 +68,7 @@ describe("enable cms generate", () => {
     expect(libSource(result)).toContain(`endpoint: '${HOSTED}'`);
     expect(result.packages).not.toContain("better-sqlite3");
     expect(result.packages).toContain("marked");
+    expect(result.packages).toContain(VELASTACK_CMS);
   });
 
   it("takes --endpoint from argv when it was not parsed for it", () => {
@@ -92,7 +96,7 @@ describe("enable cms generate", () => {
       resolveMode(makeOptions({ backend: false, input: { server: true } })),
     ).toEqual({ endpoint: "/api/cms", local: true });
     // `dataPath` comes from @velastack/kit, which only a backend template has.
-    expect(result.packages).toContain("@velastack/kit");
+    expect(result.packages).toContain(VELASTACK_KIT);
     expect(result.packages).toContain("better-sqlite3");
   });
 
@@ -115,7 +119,7 @@ describe("enable cms generate", () => {
     const result = await generate(makeOptions({ i18n: true }));
     const source = libSource(result);
 
-    expect(source).toContain("import { locales } from '$locales/data';");
+    expect(source).toContain("import { locales } from '#locales/data.js';");
     expect(source).toContain("locales: [...locales]");
   });
 });

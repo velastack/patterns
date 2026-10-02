@@ -35,7 +35,7 @@ export const DEFAULT_LOCALE: LayoutServerLocale = {
 export const WUCHALE_LOCALE: LayoutServerLocale = {
   expression: (eventName) => `getLocale(${eventName}.url)`,
   imports: [
-    { namedImports: ["getLocale"], moduleSpecifier: "$locales/main.url" },
+    { namedImports: ["getLocale"], moduleSpecifier: "#locales/main.url.js" },
   ],
 };
 

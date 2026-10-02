@@ -1,14 +1,12 @@
-// [!code highlight:1]
-import { wuchale } from "wuchale/vite";
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { sveltekit } from "@sveltejs/kit/vite";
 import adapter from "@sveltejs/adapter-node";
+// [!code highlight:1]
+import { mdsvex } from "mdsvex";
 
 export default defineConfig({
   plugins: [
-    // [!code highlight:1]
-    wuchale(),
     tailwindcss(),
     sveltekit({
       compilerOptions: {
@@ -23,6 +21,9 @@ export default defineConfig({
       ...(process.env.VELA_ORIGIN
         ? { paths: { origin: process.env.VELA_ORIGIN } }
         : {}),
+      // [!code highlight:2]
+      extensions: [".svelte", ".svx"],
+      preprocess: [mdsvex()],
     }),
   ],
 });

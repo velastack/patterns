@@ -13,9 +13,9 @@ const IMPORT_SNIPPET = dedent`
   import { browser } from '$app/env';
   import { loadLocale } from 'wuchale/load-utils';
 
-  import { getLocale } from '$locales/main.url';
-  import '$locales/main.loader.svelte';
-  import '$locales/js.loader';
+  import { getLocale } from '#locales/main.url.js';
+  import '#locales/main.loader.svelte.js';
+  import '#locales/js.loader.js';
 `;
 
 /** The load `disable-i18n` looks for to take it out again. */
@@ -67,10 +67,10 @@ export function ensureRootLayoutI18n(layoutPath: string): ModifyOutcome {
 
   ensureNamedImport(sourceFile, "$app/env", "browser");
   ensureNamedImport(sourceFile, "wuchale/load-utils", "loadLocale");
-  ensureNamedImport(sourceFile, "$locales/main.url", "getLocale");
+  ensureNamedImport(sourceFile, "#locales/main.url.js", "getLocale");
   ensureImports(sourceFile, [
-    { moduleSpecifier: "$locales/main.loader.svelte" },
-    { moduleSpecifier: "$locales/js.loader" },
+    { moduleSpecifier: "#locales/main.loader.svelte.js" },
+    { moduleSpecifier: "#locales/js.loader.js" },
   ]);
 
   sourceFile.addStatements(`\n${LOAD_STATEMENT}\n`);

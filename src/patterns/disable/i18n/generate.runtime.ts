@@ -12,7 +12,9 @@ import {
 } from "../../../runtime/config-target";
 import { unmodifyGitignore } from "./modifies/gitignore";
 import { unmodifyViteConfig } from "./modifies/vite-config";
-import { unmodifySvelteConfig } from "./modifies/svelte-config";
+import { unmodifyLocalesAlias } from "./modifies/locales-alias";
+import { removePackageImports } from "../../../runtime/package-imports";
+import { LOCALES_IMPORTS } from "../../enable/i18n/modifies/package-imports";
 import { unmodifyHooksServerI18n } from "./modifies/hooks.server";
 import { unmodifyHooksI18n } from "./modifies/hooks";
 import { unmodifyAppHtml } from "./modifies/app-html";
@@ -35,8 +37,19 @@ export async function generate(options: Options) {
     modifyOutcomeToFile(viteConfigPath, unmodifyViteConfig(viteConfigPath)),
   );
 
-  logger.info("Reverting the $locales alias");
-  const alias = unmodifySvelteConfig(options.root);
+  logger.info("Removing #locales from package.json imports");
+  // Only while it still maps where enable-i18n pointed it.
+  const imports = removePackageImports(
+    options.root,
+    Object.keys(LOCALES_IMPORTS),
+    LOCALES_IMPORTS,
+  );
+  pushResult(modifyOutcomeToFile(imports.filePath, imports.outcome));
+
+  // A project enabled before SvelteKit 3 has the `$locales` alias instead,
+  // moved into the sveltekit() arg by `vela migrate sveltekit-3`.
+  logger.info("Reverting the legacy $locales alias");
+  const alias = unmodifyLocalesAlias(options.root);
   pushResult(modifyOutcomeToFile(alias.filePath, alias.outcome));
 
   logger.info("Reverting hooks.server.ts");

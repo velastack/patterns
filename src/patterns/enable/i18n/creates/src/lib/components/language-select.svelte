@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as Select from "#lib/components/ui/select/index.js";
-  import { locales, type Locale } from "$locales/data.js";
+  import { locales, type Locale } from "#locales/data.js";
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
   import { deLocalizeDefault } from "wuchale/url";
@@ -32,7 +32,7 @@
       locale,
       value as Locale,
     );
-    goto(translatedUrl, { invalidateAll: true });
+    goto(translatedUrl, { refreshAll: true });
   };
 
   let { class: className }: { class?: string } = $props();

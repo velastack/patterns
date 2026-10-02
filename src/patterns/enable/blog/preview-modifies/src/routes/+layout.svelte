@@ -1,8 +1,10 @@
 <script lang="ts">
-	import { site } from '#lib/site.js';
 	import '../app.css';
 	// [!code highlight:1]
 	import '../css/prism-vsc-dark-plus.css';
+
+	import favicon from '#lib/assets/favicon.svg';
+	import { site } from '#lib/site.js';
 
 	import { ModeWatcher } from 'mode-watcher';
 	import { getFlash } from 'sveltekit-flash-message';
@@ -10,8 +12,9 @@
 	import { page } from '$app/state';
 	import { Toaster } from '#lib/components/ui/sonner/index.js';
 	import { MetaTags, deepMerge } from 'svelte-meta-tags';
+	import type { LayoutProps } from './$types';
 
-	let { data, children } = $props();
+	let { data, children }: LayoutProps = $props();
 	const flash = getFlash(page);
 
 	$effect(() => {
@@ -29,6 +32,7 @@
 
 <svelte:head>
 	<title>{site.name}</title>
+	<link rel="icon" href={favicon} />
 </svelte:head>
 
 <MetaTags {...metaTags} />

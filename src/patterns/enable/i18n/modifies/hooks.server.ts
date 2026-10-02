@@ -16,10 +16,10 @@ const FAILURE_HINT = dedent`
 
   import { sequence } from '@sveltejs/kit/hooks';
   import { runWithLocale, loadLocales } from 'wuchale/load-utils/server';
-  import { getLocale } from '$locales/main.url';
-  import { locales } from '$locales/data';
-  import * as main from '$locales/main.loader.server.svelte.js';
-  import * as js from '$locales/js.loader.server.js';
+  import { getLocale } from '#locales/main.url.js';
+  import { locales } from '#locales/data.js';
+  import * as main from '#locales/main.loader.server.svelte.js';
+  import * as js from '#locales/js.loader.server.js';
 
   loadLocales(main.key, main.loadCount, main.loadCatalog, locales);
   loadLocales(js.key, js.loadCount, js.loadCatalog, locales);
@@ -45,10 +45,10 @@ const FAILURE_HINT = dedent`
 export const HOOKS_SERVER_SNIPPET = dedent`
   import type { Handle } from '@sveltejs/kit/hooks';
   import { runWithLocale, loadLocales } from 'wuchale/load-utils/server';
-  import { getLocale } from '$locales/main.url';
-  import { locales } from '$locales/data';
-  import * as main from '$locales/main.loader.server.svelte.js';
-  import * as js from '$locales/js.loader.server.js';
+  import { getLocale } from '#locales/main.url.js';
+  import { locales } from '#locales/data.js';
+  import * as main from '#locales/main.loader.server.svelte.js';
+  import * as js from '#locales/js.loader.server.js';
 
   loadLocales(main.key, main.loadCount, main.loadCatalog, locales);
   loadLocales(js.key, js.loadCount, js.loadCatalog, locales);
@@ -109,14 +109,14 @@ export function modifyHooksServerI18n(hooksServerPath: string): ModifyOutcome {
 
   ensureNamedImport(sourceFile, "wuchale/load-utils/server", "runWithLocale");
   ensureNamedImport(sourceFile, "wuchale/load-utils/server", "loadLocales");
-  ensureNamedImport(sourceFile, "$locales/main.url", "getLocale");
-  ensureNamedImport(sourceFile, "$locales/data", "locales");
+  ensureNamedImport(sourceFile, "#locales/main.url.js", "getLocale");
+  ensureNamedImport(sourceFile, "#locales/data.js", "locales");
   ensureNamespaceImport(
     sourceFile,
-    "$locales/main.loader.server.svelte.js",
+    "#locales/main.loader.server.svelte.js",
     "main",
   );
-  ensureNamespaceImport(sourceFile, "$locales/js.loader.server.js", "js");
+  ensureNamespaceImport(sourceFile, "#locales/js.loader.server.js", "js");
 
   const startupSnippet = dedent`
     loadLocales(main.key, main.loadCount, main.loadCatalog, locales);

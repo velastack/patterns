@@ -106,7 +106,7 @@ function ensurePreprocessMdsvex(obj: ObjectLiteralExpression): boolean {
  * `mdsvex()`, and the `mdsvex` import is present, at the top level of the
  * inline sveltekit() arg in vite.config.
  */
-export function modifySvelteConfigMdsvex(root: string): ConfigModifyResult {
+export function modifyViteConfigMdsvex(root: string): ConfigModifyResult {
   return modifyConfig(
     root,
     { notFound: NOT_FOUND_HINT, failed: FAILURE_HINT },

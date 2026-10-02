@@ -10,7 +10,9 @@ import {
   modifyHooksServerI18n,
 } from "../../../enable/i18n/modifies/hooks.server";
 import { unmodifyViteConfig } from "./vite-config";
-import { unmodifySvelteConfig } from "./svelte-config";
+import { unmodifyLocalesAlias } from "./locales-alias";
+import { removePackageImports } from "../../../../runtime/package-imports";
+import { LOCALES_IMPORTS } from "../../../enable/i18n/modifies/package-imports";
 import { SVELTE_CONFIG_MESSAGE } from "../../../../runtime/config-target";
 import { unmodifyHooksServerI18n } from "./hooks.server";
 import { unmodifyAppHtml } from "./app-html";
@@ -51,19 +53,98 @@ describe("disable i18n modifiers", () => {
     );
   });
 
-  it("refuses a svelte.config.js (SvelteKit 2) with the migrate message", () => {
-    // TODO(P-D): remove the legacy alias from the sveltekit() arg instead.
-    const before = fs.readFileSync(
-      path.join(tempDir, "svelte.config.js"),
-      "utf8",
+  it("removes the legacy $locales alias from the sveltekit() arg", async () => {
+    // What `vela migrate sveltekit-3` leaves of a project enabled on Kit 2.
+    const root = path.join(tempDir, "alias-root");
+    fs.mkdirSync(root);
+    fs.copyFileSync(
+      path.join(tempDir, "legacy-alias.vite.config.ts"),
+      path.join(root, "vite.config.ts"),
     );
-    const result = unmodifySvelteConfig(tempDir);
+
+    const result = unmodifyLocalesAlias(root);
+
+    expect(result.outcome).toEqual({ status: "success", changed: true });
+    await expect(fs.readFileSync(result.filePath, "utf8")).toMatchFormatted(
+      expected("legacy-alias.vite.config.ts"),
+      "vite.config.ts",
+    );
+    expect(unmodifyLocalesAlias(root).outcome).toEqual({
+      status: "success",
+      changed: false,
+    });
+  });
+
+  it("leaves a sveltekit() arg without the alias alone", () => {
+    const root = path.join(tempDir, "alias-root");
+    fs.mkdirSync(root);
+    fs.copyFileSync(
+      path.join(tempDir, "vite.config.ts"),
+      path.join(root, "vite.config.ts"),
+    );
+
+    expect(unmodifyLocalesAlias(root).outcome).toEqual({
+      status: "success",
+      changed: false,
+    });
+  });
+
+  it("refuses a svelte.config.js (SvelteKit 2) with the migrate message", () => {
+    const root = path.join(tempDir, "svelte-root");
+    fs.mkdirSync(root);
+    const configPath = path.join(root, "svelte.config.js");
+    fs.copyFileSync(path.join(tempDir, "legacy-svelte.config.js"), configPath);
+    const before = fs.readFileSync(configPath, "utf8");
+
+    const result = unmodifyLocalesAlias(root);
 
     expect(result.outcome).toEqual({
       status: "failed",
       message: SVELTE_CONFIG_MESSAGE,
     });
-    expect(fs.readFileSync(result.filePath, "utf8")).toBe(before);
+    expect(fs.readFileSync(configPath, "utf8")).toBe(before);
+  });
+
+  describe("package.json #locales import", () => {
+    const writePkg = (imports: Record<string, string>) => {
+      const pkgPath = path.join(tempDir, "package.json");
+      fs.writeFileSync(
+        pkgPath,
+        JSON.stringify({ name: "app", type: "module", imports }, null, "\t") +
+          "\n",
+      );
+      return pkgPath;
+    };
+    const remove = () =>
+      removePackageImports(
+        tempDir,
+        Object.keys(LOCALES_IMPORTS),
+        LOCALES_IMPORTS,
+      );
+
+    it("removes the entry enable-i18n added", () => {
+      const pkgPath = writePkg({
+        "#lib": "./src/lib/index.js",
+        "#lib/*": "./src/lib/*",
+        "#locales/*": "./src/locales/*",
+      });
+
+      expect(remove().outcome).toEqual({ status: "success", changed: true });
+      expect(JSON.parse(fs.readFileSync(pkgPath, "utf8")).imports).toEqual({
+        "#lib": "./src/lib/index.js",
+        "#lib/*": "./src/lib/*",
+      });
+      expect(remove().outcome).toEqual({ status: "success", changed: false });
+    });
+
+    it("keeps an entry the developer repointed", () => {
+      const pkgPath = writePkg({ "#locales/*": "./src/i18n/*" });
+
+      expect(remove().outcome).toEqual({ status: "success", changed: false });
+      expect(JSON.parse(fs.readFileSync(pkgPath, "utf8")).imports).toEqual({
+        "#locales/*": "./src/i18n/*",
+      });
+    });
   });
 
   it("unwraps the wuchale handle out of hooks.server.ts", async () => {
@@ -241,6 +322,16 @@ describe("disable i18n modifiers", () => {
   it("empties hooks.ts when the de-localizing reroute was all it held", () => {
     const filePath = path.join(tempDir, "src", "hooks.ts");
     modifyHooksI18n(filePath);
+
+    expect(unmodifyHooksI18n(filePath)).toEqual({
+      status: "success",
+      changed: true,
+    });
+    expect(fs.readFileSync(filePath, "utf8")).toBe("");
+  });
+
+  it("empties a legacy hooks.ts ($locales alias imports)", () => {
+    const filePath = path.join(tempDir, "legacy-hooks.ts");
 
     expect(unmodifyHooksI18n(filePath)).toEqual({
       status: "success",

@@ -7,6 +7,8 @@
 	import * as Navbar from '#lib/components/ui/navbar/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 
+	// Layout data is passed through for navbar items a feature adds; enable auth
+	// reads the signed-in user from it.
 	let { children }: { children?: Snippet; data?: any } = $props();
 </script>
 
@@ -47,6 +49,7 @@
 				<Button onclick={toggleMode} variant="ghost" size="icon">
 					<Navbar.Mode />
 				</Button>
+				<!-- Neither route exists yet: `vela legal privacy` and `vela legal terms` generate them. -->
 				<a href="/privacy" class="underline-offset-4 hover:underline">Privacy</a>
 				<a href="/terms" class="underline-offset-4 hover:underline">Terms</a>
 			</nav>

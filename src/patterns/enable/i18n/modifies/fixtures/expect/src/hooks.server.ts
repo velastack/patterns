@@ -1,9 +1,9 @@
 import type { Handle } from '@sveltejs/kit/hooks';
 import { runWithLocale, loadLocales } from 'wuchale/load-utils/server';
-import { getLocale } from '$locales/main.url';
-import { locales } from '$locales/data';
-import * as main from '$locales/main.loader.server.svelte.js';
-import * as js from '$locales/js.loader.server.js';
+import { getLocale } from '#locales/main.url.js';
+import { locales } from '#locales/data.js';
+import * as main from '#locales/main.loader.server.svelte.js';
+import * as js from '#locales/js.loader.server.js';
 
 loadLocales(main.key, main.loadCount, main.loadCatalog, locales);
 loadLocales(js.key, js.loadCount, js.loadCatalog, locales);

@@ -1,12 +1,18 @@
-import { env } from "$env/dynamic/private";
+// [!code highlight:1]
+import { sequence, type ServerInit } from "@sveltejs/kit/hooks";
+import {
+  POCKETBASE_URL,
+  POCKETBASE_SUPERUSER_EMAIL,
+  POCKETBASE_SUPERUSER_PASSWORD,
+} from "$app/env/private";
 import { handlePocketbase } from "@velastack/pocketbase";
-// [!code highlight:6]
-import { sequence } from "@sveltejs/kit/hooks";
+import { startWorker } from "#lib/server/workflows.js";
+// [!code highlight:5]
 import { runWithLocale, loadLocales } from "wuchale/load-utils/server";
-import { getLocale } from "$locales/main.url";
-import { locales } from "$locales/data";
-import * as main from "$locales/main.loader.server.svelte.js";
-import * as js from "$locales/js.loader.server.js";
+import { getLocale } from "#locales/main.url.js";
+import { locales } from "#locales/data.js";
+import * as main from "#locales/main.loader.server.svelte.js";
+import * as js from "#locales/js.loader.server.js";
 
 // [!code highlight:2]
 loadLocales(main.key, main.loadCount, main.loadCatalog, locales);
@@ -23,12 +29,16 @@ const handleWuchale = async ({ event, resolve }: any) => {
   );
 };
 
+// [!code highlight:2]
 export const handle = sequence(
-  // [!code highlight:1]
   handleWuchale,
   handlePocketbase({
-    pocketbaseUrl: env.POCKETBASE_URL,
-    superuserEmail: env.POCKETBASE_SUPERUSER_EMAIL,
-    superuserPassword: env.POCKETBASE_SUPERUSER_PASSWORD,
+    pocketbaseUrl: POCKETBASE_URL,
+    superuserEmail: POCKETBASE_SUPERUSER_EMAIL,
+    superuserPassword: POCKETBASE_SUPERUSER_PASSWORD,
   }),
+  // [!code highlight:1]
 );
+
+// Runs once when the server starts: executes the workflows in src/lib/workflows.
+export const init: ServerInit = () => startWorker();

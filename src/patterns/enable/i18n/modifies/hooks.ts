@@ -22,8 +22,8 @@ const DELOCALIZE_HELPER = dedent`
  */
 export const HOOKS_SNIPPET = dedent`
   import { deLocalizeDefault } from 'wuchale/url';
-  import { matchUrl } from '$locales/main.url';
-  import { locales } from '$locales/data';
+  import { matchUrl } from '#locales/main.url.js';
+  import { locales } from '#locales/data.js';
 
   const rerouteDeLocalize = (url: string) => {
     const [upath, locale] = deLocalizeDefault(url, locales);
@@ -38,8 +38,8 @@ const FAILURE_HINT = dedent`
   Compose your existing reroute in src/hooks.ts with the wuchale de-localizer:
 
   import { deLocalizeDefault } from 'wuchale/url';
-  import { matchUrl } from '$locales/main.url';
-  import { locales } from '$locales/data';
+  import { matchUrl } from '#locales/main.url.js';
+  import { locales } from '#locales/data.js';
 
   const rerouteDeLocalize = (url: string) => {
     const [upath, locale] = deLocalizeDefault(url, locales);
@@ -70,8 +70,8 @@ function hasOtherReroute(sourceFile: SourceFile): boolean {
 
 function ensureDeLocalizeImports(sourceFile: SourceFile) {
   ensureNamedImport(sourceFile, "wuchale/url", "deLocalizeDefault");
-  ensureNamedImport(sourceFile, "$locales/main.url", "matchUrl");
-  ensureNamedImport(sourceFile, "$locales/data", "locales");
+  ensureNamedImport(sourceFile, "#locales/main.url.js", "matchUrl");
+  ensureNamedImport(sourceFile, "#locales/data.js", "locales");
 }
 
 /**

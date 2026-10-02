@@ -1,4 +1,5 @@
 import type { File, Options, Result } from "../../../core/types";
+import { VELASTACK_CMS, VELASTACK_KIT } from "../../../core/constants";
 import { InvalidArgumentError } from "../../../core/errors";
 import { filesFromGlob } from "../../../core/util";
 
@@ -77,7 +78,7 @@ function cmsLibSource(mode: CmsMode, i18n: boolean): string {
   const imports = [
     "import { apiAdapter, createCms } from '@velastack/cms/server';",
   ];
-  if (i18n) imports.push("import { locales } from '$locales/data';");
+  if (i18n) imports.push("import { locales } from '#locales/data.js';");
 
   const where = mode.local
     ? [
@@ -143,16 +144,13 @@ export async function generate(options: Options) {
   // skips on install precisely because they are optional — so they have to be
   // named here. The backend needs the first; the root entry imports the
   // second statically, so <AdminBar /> cannot render without it.
-  // 0.2.2 is the first release whose Vite plugin imports from the package
-  // name rather than its own source tree; 0.2.1 breaks every consumer route.
-  // 0.2.3 is the first whose shipped admin-bar.css declares its tokens on the
-  // @scope root; before it the bar renders unstyled in every consumer.
+  // @velastack/cms 0.6 is the SvelteKit 3 line; 0.5 and older peer on Kit 2.
   // The backend's cms.ts resolves its database with `dataPath` from
   // @velastack/kit, which a backend template has and a project on adapter-node
   // alone does not.
   const packages = mode.local
-    ? ["@velastack/cms@^0.2.3", "@velastack/kit", "better-sqlite3", "marked"]
-    : ["@velastack/cms@^0.2.3", "marked"];
+    ? [VELASTACK_CMS, VELASTACK_KIT, "better-sqlite3", "marked"]
+    : [VELASTACK_CMS, "marked"];
 
   return {
     creates: sortedCreates,

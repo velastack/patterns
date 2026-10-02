@@ -1,13 +1,12 @@
-import { cms } from '@velastack/cms/vite';
 import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import adapter from '@sveltejs/adapter-node';
+import { mdsvex } from 'mdsvex';
 
 export default defineConfig({
 	plugins: [
 		tailwindcss(),
-		cms(),
 		sveltekit({
 			compilerOptions: {
 				runes: ({ filename }) =>
@@ -18,7 +17,9 @@ export default defineConfig({
 			// for prerendered pages. `vela deploy` sets VELA_ORIGIN, and the value is
 			// baked in at build time. It is left unset for a deploy that serves more
 			// than one host, where each request's own origin is used instead.
-			...(process.env.VELA_ORIGIN ? { paths: { origin: process.env.VELA_ORIGIN } } : {})
+			...(process.env.VELA_ORIGIN ? { paths: { origin: process.env.VELA_ORIGIN } } : {}),
+			extensions: ['.svelte', '.svx'],
+			preprocess: [mdsvex()]
 		})
 	]
 });

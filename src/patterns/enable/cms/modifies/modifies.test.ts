@@ -137,7 +137,7 @@ describe("enable cms modifiers", () => {
 
     expect(outcome).toEqual({ status: "success", changed: true });
     expect(modified).toContain(
-      "import { getLocale } from '$locales/main.url';",
+      "import { getLocale } from '#locales/main.url.js';",
     );
     expect(modified).toContain(
       "await loadCms(event, { locale: getLocale(event.url) })",
@@ -363,7 +363,9 @@ describe("enable cms modifiers on the static template", () => {
     modifyLayoutServer(filePath, WUCHALE_LOCALE);
     const created = read(path.join(STATIC, LAYOUT_SERVER));
 
-    expect(created).toContain("import { getLocale } from '$locales/main.url';");
+    expect(created).toContain(
+      "import { getLocale } from '#locales/main.url.js';",
+    );
     expect(created).toContain("locale: getLocale(event.url)");
   });
 

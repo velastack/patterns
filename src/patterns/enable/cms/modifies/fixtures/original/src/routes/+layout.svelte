@@ -10,8 +10,9 @@
 	import { page } from '$app/state';
 	import { Toaster } from '#lib/components/ui/sonner/index.js';
 	import { MetaTags, deepMerge } from 'svelte-meta-tags';
+	import type { LayoutProps } from './$types';
 
-	let { data, children } = $props();
+	let { data, children }: LayoutProps = $props();
 	const flash = getFlash(page);
 
 	$effect(() => {

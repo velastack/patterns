@@ -10,20 +10,21 @@ import {
   removeTopLevelStatementByIdentifier,
   formatLikeSource,
 } from "../../../../runtime/ts-morph-helpers";
+import { localesModule } from "./locales-module";
 
 const I18N_HANDLE = "handleWuchale";
 const FAILURE_HINT = dedent`
   Take handleWuchale out of the exported handle in src/hooks.server.ts, then
   remove its declaration, the loadLocales(...) calls and the wuchale and
-  $locales imports.
+  #locales imports.
 `;
 
 const I18N_MODULES = [
   "wuchale/load-utils/server",
-  "$locales/main.url",
-  "$locales/data",
-  "$locales/main.loader.server.svelte.js",
-  "$locales/js.loader.server.js",
+  localesModule("main.url"),
+  localesModule("data"),
+  localesModule("main.loader.server.svelte"),
+  localesModule("js.loader.server"),
 ];
 
 /**
