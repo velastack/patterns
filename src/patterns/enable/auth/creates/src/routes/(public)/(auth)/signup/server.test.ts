@@ -18,6 +18,7 @@ describe("POST /signup", () => {
       .post("/signup" satisfies Match<RouteId>)
       .type("form")
       .send({
+        type: "password",
         email: `test-${Math.random().toString(36).slice(2)}@example.com`,
         password: "password",
         passwordConfirm: "password",
@@ -31,6 +32,7 @@ describe("POST /signup", () => {
       .post("/signup" satisfies Match<RouteId>)
       .type("form")
       .send({
+        type: "password",
         email: `test-${Math.random().toString(36).slice(2)}@example.com`,
         password: "password",
         passwordConfirm: "password2",
@@ -46,6 +48,7 @@ describe("POST /signup", () => {
       .post("/signup" satisfies Match<RouteId>)
       .type("form")
       .send({
+        type: "password",
         email: context.user.email,
         password: "password",
         passwordConfirm: "password",
@@ -54,5 +57,15 @@ describe("POST /signup", () => {
     const data = devalue.parse(response.body.data);
     expect(data.form.errors.email).toBeDefined();
     expect(data.form.errors.email[0]).toBe("Value must be unique.");
+  });
+
+  it("should error if the email is invalid for a one-time code", async (context) => {
+    const response = await context.agent
+      .post("/signup" satisfies Match<RouteId>)
+      .type("form")
+      .send({ type: "otp", email: "not-an-email" });
+    expect(response.body.status).toBe(400);
+    const data = devalue.parse(response.body.data);
+    expect(data.form.errors.email).toBeDefined();
   });
 });

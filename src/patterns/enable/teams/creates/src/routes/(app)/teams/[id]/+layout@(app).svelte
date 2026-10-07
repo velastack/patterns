@@ -9,6 +9,7 @@
 	import CopyIcon from '@lucide/svelte/icons/copy';
 	import MailIcon from '@lucide/svelte/icons/mail';
 	import ClockIcon from '@lucide/svelte/icons/clock';
+	import UserRoundIcon from '@lucide/svelte/icons/user-round';
 	import * as Avatar from '#lib/components/ui/avatar/index.js';
 	import { Badge } from '#lib/components/ui/badge/index.js';
 	import * as Table from '#lib/components/ui/table/index.js';
@@ -140,6 +141,8 @@
 									role: data.role,
 									member
 								})}
+								<!-- Accounts made with a WhatsApp code may have neither -->
+								{@const initial = (member.name || member.email || '').charAt(0).toUpperCase()}
 								<Table.Row>
 									<Table.Cell>
 										<div class="flex items-center space-x-3">
@@ -147,13 +150,16 @@
 												<Avatar.Fallback
 													class="rounded-lg bg-primary text-primary-foreground font-medium"
 												>
-													{member.name?.charAt(0).toUpperCase() ||
-														member.email.charAt(0).toUpperCase()}
+													{#if initial}
+														{initial}
+													{:else}
+														<UserRoundIcon class="size-1/2" />
+													{/if}
 												</Avatar.Fallback>
 											</Avatar.Root>
 											<div class="flex flex-col">
 												<div class="font-medium text-foreground">
-													{member.name || member.email}
+													{member.name || member.email || 'Unnamed member'}
 												</div>
 												<div class="text-sm text-muted-foreground">
 													{member.email}

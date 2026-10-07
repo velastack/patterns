@@ -7,7 +7,7 @@
 	import * as Card from '#lib/components/ui/card/index.js';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import { resetSchema } from '#lib/schemas/reset.js';
+	import { welcomeSchema } from '#lib/schemas/welcome.js';
 	import * as Form from '#lib/components/ui/form/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 
@@ -16,7 +16,7 @@
 	const form = superForm(
 		untrack(() => data.form),
 		{
-			validators: zod4Client(resetSchema)
+			validators: zod4Client(welcomeSchema)
 		}
 	);
 
@@ -37,23 +37,23 @@
 		<div class="flex flex-col gap-6">
 			<Card.Root>
 				<Card.Header class="text-center">
-					<Card.Title class="text-xl">Reset your password</Card.Title>
-					<Card.Description>Enter your email to reset your password</Card.Description>
+					<Card.Title class="text-xl">Welcome!</Card.Title>
+					<Card.Description>What should we call you?</Card.Description>
 				</Card.Header>
 				<Card.Content>
 					<form method="POST">
 						<div class="grid gap-6">
 							<div class="grid gap-2">
-								<Form.Field {form} name="email" class="col-span-1">
+								<Form.Field {form} name="name" class="col-span-1">
 									<Form.Control>
 										{#snippet children({ props })}
-											<Form.Label>Email</Form.Label>
+											<Form.Label>Name</Form.Label>
 											<Input
 												{...props}
-												type="email"
-												bind:value={$formData.email}
+												type="text"
+												autocomplete="name"
+												bind:value={$formData.name}
 												required
-												autocomplete="username"
 												autofocus
 											/>
 										{/snippet}
@@ -61,12 +61,8 @@
 									<Form.FieldErrors class="contents text-destructive" />
 								</Form.Field>
 
-								<Button type="submit" class="w-full">Send reset link</Button>
-							</div>
-
-							<div class="text-center text-sm">
-								Remembered your password?
-								<a href="/login" class="underline underline-offset-4">Log in</a>
+								<Button type="submit" class="w-full">Continue</Button>
+								<Button href={data.next} variant="ghost" class="w-full">Skip for now</Button>
 							</div>
 						</div>
 					</form>

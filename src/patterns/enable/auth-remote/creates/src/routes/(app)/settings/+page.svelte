@@ -5,7 +5,7 @@
   import { Badge } from "#lib/components/ui/badge/index.js";
   import * as Dialog from "#lib/components/ui/dialog/index.js";
   import { Checkbox } from "#lib/components/ui/checkbox/index.js";
-  import * as Avatar from "#lib/components/ui/avatar/index.js";
+  import UserAvatar from "#lib/components/user-avatar.svelte";
   import {
     updateProfileForm,
     changeEmailForm,
@@ -44,11 +44,7 @@
         <Card.Content class="flex flex-col gap-6">
           <div class="flex items-center gap-3 justify-between">
             <div class="flex items-center gap-3">
-              <Avatar.Root class="size-16">
-                <Avatar.Fallback>
-                  {data.user.email.charAt(0).toUpperCase()}
-                </Avatar.Fallback>
-              </Avatar.Root>
+              <UserAvatar user={data.user} class="size-16" />
               <div>
                 <span class="text-sm font-medium leading-none">Avatar</span>
                 <p class="text-muted-foreground text-sm">

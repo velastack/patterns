@@ -5,7 +5,7 @@ import { generate as generateBase } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
 
 const SLUG = "enable-auth-remote" as const;
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 const SOURCE = "src/patterns/enable/auth-remote";
 const DOCS = "/enable/auth-remote";
 
@@ -80,7 +80,7 @@ export default {
 
   examples: [],
 
-  tests: 18,
+  tests: 20,
 
   baseline: "velastack",
 

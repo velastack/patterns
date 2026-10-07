@@ -8,7 +8,7 @@
   import { Button } from "#lib/components/ui/button/index.js";
   // [!code highlight:2]
   import * as AuthMenu from "#lib/components/ui/auth-menu/index.js";
-  import * as Avatar from "#lib/components/ui/avatar/index.js";
+  import UserAvatar from "#lib/components/user-avatar.svelte";
 
   let { children, data }: { children?: Snippet; data?: any } = $props();
 </script>
@@ -39,17 +39,7 @@
         <AuthMenu.Root>
           {#snippet user()}
             <AuthMenu.Trigger>
-              <Avatar.Root>
-                {#if data.user?.avatar}
-                  <Avatar.Image
-                    src="/api/files/users/{data.user?.id}/{data.user?.avatar}"
-                    alt={data.user?.email}
-                  />
-                {/if}
-                <Avatar.Fallback>
-                  {data.user?.email?.charAt(0).toUpperCase()}
-                </Avatar.Fallback>
-              </Avatar.Root>
+              <UserAvatar user={data.user} />
             </AuthMenu.Trigger>
             <AuthMenu.Content align="end">
               <AuthMenu.Item href="/dashboard">Dashboard</AuthMenu.Item>

@@ -15,17 +15,7 @@ const AUTH_MENU_NAVBAR_ITEM = `
 			<AuthMenu.Root>
 				{#snippet user()}
 					<AuthMenu.Trigger>
-						<Avatar.Root>
-							{#if data.user?.avatar}
-								<Avatar.Image
-									src="/api/files/users/{data.user?.id}/{data.user?.avatar}"
-									alt={data.user?.email}
-								/>
-							{/if}
-							<Avatar.Fallback>
-								{data.user?.email?.charAt(0).toUpperCase()}
-							</Avatar.Fallback>
-						</Avatar.Root>
+						<UserAvatar user={data.user} />
 					</AuthMenu.Trigger>
 
 					<AuthMenu.Content align="end">
@@ -59,7 +49,7 @@ const AUTH_MENU_NAVBAR_ITEM = `
 
 const IMPORT_SNIPPET = dedent`
   import * as AuthMenu from '#lib/components/ui/auth-menu/index.js';
-  import * as Avatar from '#lib/components/ui/avatar/index.js';
+  import UserAvatar from '#lib/components/user-avatar.svelte';
 `;
 
 const FAILURE_HINT = [
@@ -105,8 +95,8 @@ export function modifyRootLayoutSvelte(layoutPath: string): ModifyOutcome {
           moduleSpecifier: "#lib/components/ui/auth-menu/index.js",
         },
         {
-          namespaceImport: "Avatar",
-          moduleSpecifier: "#lib/components/ui/avatar/index.js",
+          defaultImport: "UserAvatar",
+          moduleSpecifier: "#lib/components/user-avatar.svelte",
         },
       ]);
       // The menu reads `data.user`; the template's layout takes no props.

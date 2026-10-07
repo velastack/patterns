@@ -17,9 +17,21 @@
   const hasOAuth2 = $derived(
     authMethods.oauth2.enabled && authMethods.oauth2.providers.length > 0,
   );
-  const hasAuthMethods = $derived(
-    authMethods.password.enabled || authMethods.otp.enabled || hasOAuth2,
+  const hasEmail = $derived(
+    authMethods.password.enabled || authMethods.otp.enabled,
   );
+  const hasAuthMethods = $derived(hasEmail || hasOAuth2);
+
+  type Mode = "password" | "otp";
+  const initialType: Mode = $derived(
+    !authMethods.password.enabled && authMethods.otp.enabled
+      ? "otp"
+      : "password",
+  );
+  let mode = $state<Mode>("password");
+  $effect(() => {
+    mode = initialType;
+  });
 
   const handleOAuth2 = (provider: string) => {
     const pb = new PocketBase("/");
@@ -82,7 +94,7 @@
                 </div>
               {/if}
 
-              {#if authMethods.password.enabled}
+              {#if hasEmail}
                 {#if hasOAuth2}
                   <div
                     class="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t"
@@ -97,7 +109,9 @@
 
                 <div class="grid gap-2">
                   <div class="space-y-2 col-span-1">
-                    <label for="email" class="text-sm font-medium">Email</label>
+                    <label for="email" class="text-sm font-medium"
+                      >Email</label
+                    >
                     <Input
                       id="email"
                       {...signupForm.fields.email.as("text")}
@@ -111,48 +125,85 @@
                     {/each}
                   </div>
 
-                  <div class="space-y-2 col-span-1">
-                    <label for="password" class="text-sm font-medium"
-                      >Password</label
-                    >
-                    <Input
-                      id="password"
-                      {...signupForm.fields.password.as("text")}
-                      type="password"
-                      required
-                      autocomplete="new-password"
-                      minlength={8}
-                    />
-                    {#each signupForm.fields.password.issues() as issue}
-                      <p class="text-destructive text-sm">{issue.message}</p>
-                    {/each}
-                  </div>
-
-                  <div class="space-y-2 col-span-1">
-                    <label for="passwordConfirm" class="text-sm font-medium"
-                      >Confirm Password</label
-                    >
-                    <Input
-                      id="passwordConfirm"
-                      {...signupForm.fields.passwordConfirm.as("text")}
-                      type="password"
-                      required
-                      autocomplete="new-password"
-                      minlength={8}
-                    />
-                    {#each signupForm.fields.passwordConfirm.issues() as issue}
-                      <p class="text-destructive text-sm">{issue.message}</p>
-                    {/each}
-                  </div>
-
-                  {#if signupForm.result?.message}
-                    <div class="text-destructive text-sm font-medium -mt-2">
-                      {signupForm.result.message}
+                  {#if mode === "password" && authMethods.password.enabled}
+                    <div class="space-y-2 col-span-1">
+                      <label for="password" class="text-sm font-medium"
+                        >Password</label
+                      >
+                      <Input
+                        id="password"
+                        {...signupForm.fields.password.as("text")}
+                        type="password"
+                        required
+                        autocomplete="new-password"
+                        minlength={8}
+                      />
+                      {#each signupForm.fields.password.issues() as issue}
+                        <p class="text-destructive text-sm">
+                          {issue.message}
+                        </p>
+                      {/each}
                     </div>
-                  {/if}
 
-                  <Button type="submit" class="w-full">Create account</Button>
+                    <div class="space-y-2 col-span-1">
+                      <label for="passwordConfirm" class="text-sm font-medium"
+                        >Confirm Password</label
+                      >
+                      <Input
+                        id="passwordConfirm"
+                        {...signupForm.fields.passwordConfirm.as("text")}
+                        type="password"
+                        required
+                        autocomplete="new-password"
+                        minlength={8}
+                      />
+                      {#each signupForm.fields.passwordConfirm.issues() as issue}
+                        <p class="text-destructive text-sm">
+                          {issue.message}
+                        </p>
+                      {/each}
+                    </div>
+
+                    {#if signupForm.result?.message}
+                      <div class="text-destructive text-sm font-medium -mt-2">
+                        {signupForm.result.message}
+                      </div>
+                    {/if}
+
+                    <Button type="submit" class="w-full">Create account</Button
+                    >
+                    {#if authMethods.otp.enabled}
+                      <Button
+                        variant="outline"
+                        class="w-full"
+                        onclick={() => (mode = "otp")}
+                        type="button"
+                        >Use one-time code instead</Button
+                      >
+                    {/if}
+                  {:else if mode === "otp" && authMethods.otp.enabled}
+                    {#if signupForm.result?.message}
+                      <div class="text-destructive text-sm font-medium -mt-2">
+                        {signupForm.result.message}
+                      </div>
+                    {/if}
+
+                    <Button type="submit" class="w-full"
+                      >Send one-time code</Button
+                    >
+                    {#if authMethods.password.enabled}
+                      <Button
+                        variant="outline"
+                        class="w-full"
+                        onclick={() => (mode = "password")}
+                        type="button"
+                        >Continue with password</Button
+                      >
+                    {/if}
+                  {/if}
                 </div>
+
+                <input {...signupForm.fields.type.as("hidden", mode)} />
               {/if}
 
               <div class="text-center text-sm">

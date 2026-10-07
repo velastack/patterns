@@ -21,9 +21,10 @@
   const hasOAuth2 = $derived(
     authMethods.oauth2.enabled && authMethods.oauth2.providers.length > 0,
   );
-  const hasAuthMethods = $derived(
-    authMethods.password.enabled || authMethods.otp.enabled || hasOAuth2,
+  const hasEmail = $derived(
+    authMethods.password.enabled || authMethods.otp.enabled,
   );
+  const hasAuthMethods = $derived(hasEmail || hasOAuth2);
 
   const form = superForm(
     untrack(() => data.form),
@@ -40,7 +41,7 @@
       .then(() => goto("/dashboard"));
   };
 
-  const { form: formData } = form;
+  const { form: formData, message } = form;
 </script>
 
 <div class="h-full flex flex-col items-center justify-center gap-6 p-6 md:p-10">
@@ -95,7 +96,7 @@
                 </div>
               {/if}
 
-              {#if authMethods.password.enabled}
+              {#if hasEmail}
                 {#if hasOAuth2}
                   <div
                     class="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t"
@@ -126,41 +127,76 @@
                     <Form.FieldErrors class="contents text-destructive" />
                   </Form.Field>
 
-                  <Form.Field {form} name="password" class="col-span-1">
-                    <Form.Control>
-                      {#snippet children({ props })}
-                        <Form.Label>Password</Form.Label>
-                        <Input
-                          {...props}
-                          type="password"
-                          bind:value={$formData.password}
-                          required
-                          autocomplete="new-password"
-                          minlength={8}
-                        />
-                      {/snippet}
-                    </Form.Control>
-                    <Form.FieldErrors class="contents text-destructive" />
-                  </Form.Field>
+                  {#if $formData.type === "password" && authMethods.password.enabled}
+                    <Form.Field {form} name="password" class="col-span-1">
+                      <Form.Control>
+                        {#snippet children({ props })}
+                          <Form.Label>Password</Form.Label>
+                          <Input
+                            {...props}
+                            type="password"
+                            bind:value={$formData.password}
+                            required
+                            autocomplete="new-password"
+                            minlength={8}
+                          />
+                        {/snippet}
+                      </Form.Control>
+                      <Form.FieldErrors class="contents text-destructive" />
+                    </Form.Field>
 
-                  <Form.Field {form} name="passwordConfirm" class="col-span-1">
-                    <Form.Control>
-                      {#snippet children({ props })}
-                        <Form.Label>Confirm Password</Form.Label>
-                        <Input
-                          {...props}
-                          type="password"
-                          bind:value={$formData.passwordConfirm}
-                          required
-                          autocomplete="new-password"
-                          minlength={8}
-                        />
-                      {/snippet}
-                    </Form.Control>
-                    <Form.FieldErrors class="contents text-destructive" />
-                  </Form.Field>
-                  <Button type="submit" class="w-full">Create account</Button>
+                    <Form.Field
+                      {form}
+                      name="passwordConfirm"
+                      class="col-span-1"
+                    >
+                      <Form.Control>
+                        {#snippet children({ props })}
+                          <Form.Label>Confirm Password</Form.Label>
+                          <Input
+                            {...props}
+                            type="password"
+                            bind:value={$formData.passwordConfirm}
+                            required
+                            autocomplete="new-password"
+                            minlength={8}
+                          />
+                        {/snippet}
+                      </Form.Control>
+                      <Form.FieldErrors class="contents text-destructive" />
+                    </Form.Field>
+                    <Button type="submit" class="w-full">Create account</Button
+                    >
+                    {#if authMethods.otp.enabled}
+                      <Button
+                        variant="outline"
+                        class="w-full"
+                        onclick={() => ($formData.type = "otp" as "password")}
+                        >Use one-time code instead</Button
+                      >
+                    {/if}
+                  {:else if $formData.type === "otp" && authMethods.otp.enabled}
+                    {#if $message && $message.type === "error"}
+                      <div class="text-destructive text-sm font-medium -mt-2">
+                        {$message.text}
+                      </div>
+                    {/if}
+
+                    <Button type="submit" class="w-full"
+                      >Send one-time code</Button
+                    >
+                    {#if authMethods.password.enabled}
+                      <Button
+                        variant="outline"
+                        class="w-full"
+                        onclick={() => ($formData.type = "password" as "otp")}
+                        >Continue with password</Button
+                      >
+                    {/if}
+                  {/if}
                 </div>
+
+                <input type="hidden" name="type" bind:value={$formData.type} />
               {/if}
 
               <div class="text-center text-sm">

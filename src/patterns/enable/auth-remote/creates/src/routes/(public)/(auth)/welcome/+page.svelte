@@ -5,7 +5,9 @@
   import { Button } from "#lib/components/ui/button/index.js";
   import * as Card from "#lib/components/ui/card/index.js";
   import { Input } from "#lib/components/ui/input/index.js";
-  import { otpForm } from "./form.remote";
+  import { welcomeForm } from "./form.remote";
+
+  let { data } = $props();
 </script>
 
 <div class="h-full flex flex-col items-center justify-center gap-6 p-6 md:p-10">
@@ -22,38 +24,31 @@
     <div class="flex flex-col gap-6">
       <Card.Root>
         <Card.Header class="text-center">
-          <Card.Title class="text-xl">Enter your OTP code</Card.Title>
-          <Card.Description
-            >Enter the code sent to your email</Card.Description
-          >
+          <Card.Title class="text-xl">Welcome!</Card.Title>
+          <Card.Description>What should we call you?</Card.Description>
         </Card.Header>
         <Card.Content>
-          <form {...otpForm}>
+          <form {...welcomeForm}>
             <div class="grid gap-6">
               <div class="grid gap-2">
                 <div class="space-y-2 col-span-1">
-                  <label for="otp" class="text-sm font-medium">OTP code</label>
+                  <label for="name" class="text-sm font-medium">Name</label>
                   <Input
-                    id="otp"
-                    {...otpForm.fields.otp.as("text")}
-                    type="text"
-                    inputmode="numeric"
-                    autocomplete="one-time-code"
+                    id="name"
+                    {...welcomeForm.fields.name.as("text")}
+                    autocomplete="name"
                     required
                     autofocus
                   />
-                  {#each otpForm.fields.otp.issues() as issue}
+                  {#each welcomeForm.fields.name.issues() as issue}
                     <p class="text-destructive text-sm">{issue.message}</p>
                   {/each}
                 </div>
 
-                {#if otpForm.result?.message}
-                  <div class="text-destructive text-sm font-medium -mt-2">
-                    {otpForm.result.message}
-                  </div>
-                {/if}
-
-                <Button type="submit" class="w-full">Verify code</Button>
+                <Button type="submit" class="w-full">Continue</Button>
+                <Button href={data.next} variant="ghost" class="w-full"
+                  >Skip for now</Button
+                >
               </div>
             </div>
           </form>

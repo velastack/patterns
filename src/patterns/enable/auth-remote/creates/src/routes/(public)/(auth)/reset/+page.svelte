@@ -8,7 +8,7 @@
   import { resetForm } from "./form.remote";
 </script>
 
-<div class="flex flex-col flex-1 items-center justify-center gap-6 p-6 md:p-10">
+<div class="h-full flex flex-col items-center justify-center gap-6 p-6 md:p-10">
   <div class="flex w-full max-w-sm flex-col gap-6">
     <a href="/" class="flex items-center gap-2 self-center font-medium">
       <div
