@@ -1,6 +1,6 @@
 /**
- * The fields that say who a user is. Accounts made with WhatsApp may have no
- * email, and nobody has a name until they add one.
+ * The fields that say who a user is. Accounts made with a phone number may
+ * have no email, and nobody has a name until they add one.
  */
 export type UserIdentity = {
   name?: string;
@@ -8,7 +8,7 @@ export type UserIdentity = {
   phone?: string;
 };
 
-/** The name, else the email, else the WhatsApp number. */
+/** The name, else the email, else the phone number. */
 export function displayName(user: UserIdentity): string | undefined {
   return user.name?.trim() || user.email || user.phone || undefined;
 }

@@ -104,7 +104,7 @@ export const actions = {
       return fail(400, { form });
     }
 
-    await locals.pb.collection("users").requestVerification(user.email);
+    await locals.pb.collection("users").requestVerification(user.email!);
     await locals.pb
       .collection("users")
       .authWithPassword(form.data.email, form.data.password);

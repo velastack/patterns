@@ -1,4 +1,5 @@
 import { form, getRequestEvent } from "$app/server";
+import { error } from "@sveltejs/kit";
 import { setFlash } from "sveltekit-flash-message/server";
 import { profileSchema } from "#lib/schemas/profile.js";
 import { changeEmailSchema } from "#lib/schemas/changeEmail.js";
@@ -53,9 +54,13 @@ export const changePasswordForm = form(changePasswordSchema, async (data) => {
 
 export const resendVerificationForm = form(async () => {
   const { locals, cookies } = getRequestEvent();
-  await locals.pb
-    .collection("users")
-    .requestVerification(locals.pb.authStore.record!.email);
+  // Accounts made with a phone number may have no email to verify.
+  const email = locals.pb.authStore.record?.email;
+  if (!email) {
+    error(400, "Your account has no email.");
+  }
+
+  await locals.pb.collection("users").requestVerification(email);
   setFlash(
     { type: "toast", message: "We sent a verification email to your email." },
     cookies,

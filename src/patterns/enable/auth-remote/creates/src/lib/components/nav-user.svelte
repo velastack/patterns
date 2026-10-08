@@ -6,7 +6,7 @@
 	import MoonIcon from '@lucide/svelte/icons/moon';
 	import SunIcon from '@lucide/svelte/icons/sun';
 	import UserAvatar from '#lib/components/user-avatar.svelte';
-	import { displayName } from '#lib/user.js';
+	import { displayName, type UserIdentity } from '#lib/user.js';
 	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
 	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
 	
@@ -23,12 +23,8 @@
 	let {
 		user
 	}: {
-		user: {
+		user: UserIdentity & {
 			id: string;
-			name: string;
-			email: string;
-			/** Set for accounts made with WhatsApp, which may have no email. */
-			phone?: string;
 			avatar: string;
 		};
 	} = $props();

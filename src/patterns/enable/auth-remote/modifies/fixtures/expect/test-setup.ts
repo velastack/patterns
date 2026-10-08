@@ -10,7 +10,12 @@ const testUserPassword = 'password';
 
 // Login is a remote function, so there is no form action to post to: carry
 // the session the way the browser does, in the `pb_auth` cookie.
-async function authenticateUser(agent: Agent, user: { email: string }) {
+async function authenticateUser(agent: Agent, user: { email?: string }) {
+	// Logs in with the password, so it needs the email (made optional by
+	// enable-whatsapp, for accounts that sign in with a phone number).
+	if (!user.email) {
+		throw new Error('authenticateUser needs a user with an email');
+	}
 	const client = new PocketBase(process.env.POCKETBASE_URL!);
 	await client.collection("users").authWithPassword(user.email, testUserPassword);
 	agent.set('Cookie', client.authStore.exportToCookie().split(';')[0]);

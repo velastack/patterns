@@ -77,10 +77,14 @@ export const actions = {
     );
     return { passwordForm: form };
   },
-  resendVerificationEmail: async ({ locals, request, cookies }) => {
-    await locals.pb
-      .collection("users")
-      .requestVerification(locals.pb.authStore.record!.email);
+  resendVerificationEmail: async ({ locals, cookies }) => {
+    // Accounts made with a phone number may have no email to verify.
+    const email = locals.pb.authStore.record?.email;
+    if (!email) {
+      return fail(400, { message: "Your account has no email." });
+    }
+
+    await locals.pb.collection("users").requestVerification(email);
     setFlash(
       { type: "toast", message: "We sent a verification email to your email." },
       cookies,
