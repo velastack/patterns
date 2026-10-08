@@ -13,6 +13,7 @@ const createsAppModeRaw = import.meta.glob<string>(
 
 const CREATES_PREFIX = "../../enable/payments/creates/";
 const CREATES_APP_MODE_PREFIX = "../../enable/payments/creates-app-mode/";
+const DEMO_PAGE = "src/routes/(public)/payment/+page.svelte";
 
 function filesFromGlob(
   raw: Record<string, string>,
@@ -36,6 +37,16 @@ export async function generate(options: Options) {
 
   const base = filesFromGlob(createsRaw, CREATES_PREFIX);
   const deletes: Record<string, File> = { ...base };
+
+  // The demo page enable-payments writes at runtime (it carries the price
+  // id), so it is not in creates/: without the payment components it would
+  // no longer build.
+  deletes[DEMO_PAGE] = {
+    path: DEMO_PAGE,
+    language: languageFromPath(DEMO_PAGE),
+    content: "",
+    status: "success",
+  };
 
   if (isAppMode) {
     const appMode = filesFromGlob(createsAppModeRaw, CREATES_APP_MODE_PREFIX);
