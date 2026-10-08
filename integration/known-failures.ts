@@ -22,15 +22,6 @@ export interface KnownFailure {
 
 export const KNOWN_FAILURES: KnownFailure[] = [
   {
-    id: "subscriptions-overwrites-teams-layout-server",
-    reason:
-      "enable-subscriptions writes (app)/+layout.server.ts from a template whenever it lacks `loadActiveSubscription`, so a project that enabled teams first loses the `team`/`teams` its (app) layout reads. The modifier has to add the subscription load to the existing file instead.",
-    kind: "check",
-    step: "enable-subscriptions",
-    case: /^teams-then-subscriptions$/,
-    match: /\(app\)\/\+layout\.svelte.*Property '(team|teams)' does not exist/,
-  },
-  {
     id: "team-scoped-scaffold-server-tests",
     reason:
       "server.test.ts for a scaffold under a dynamic route is a placeholder (it carries a TODO to customize the params): the create action takes `owner` from `locals.team`, which the test never sets (no `team` cookie, `test_team_id` is not a team), and the records it leaves behind block the team fixture's cleanup. The generator has to learn current_team before these can pass. The record is the whole `vela test:server` run, so this also hides any other server-test failure in that step.",

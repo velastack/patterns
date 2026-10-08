@@ -10,6 +10,17 @@ import { unmodifyAppLayoutServer } from "./modify-app-layout-server";
 import { unmodifyNavUser } from "./modify-nav-user";
 import { unmodifyBillingPageServer } from "./modify-billing-page-server";
 import { unmodifyBillingPageSvelte } from "./modify-billing-page-svelte";
+import { modifyAppLayoutServer } from "../../../enable/subscriptions/modifies/modify-app-layout-server";
+import { modifyNavUser } from "../../../enable/subscriptions/modifies/modify-nav-user";
+
+/** The (app) layout load the velastack-auth baseline ships. */
+const STOCK_LAYOUT_SERVER = `export const load = ({ locals }) => {
+\tconst user = locals.pb.authStore.record!;
+\tconst breadcrumbs = [{ title: 'Home', url: '/dashboard' }];
+
+\treturn { user, breadcrumbs };
+};
+`;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -111,19 +122,6 @@ const astCases = [
 ] as const;
 
 const templateCases = [
-  {
-    name: "nav-user.svelte",
-    enabledContent: subsNavUser,
-    marker: "planLabel",
-    modify: (target: string) =>
-      unmodifyNavUser(target, paymentsNavUserTemplate),
-  },
-  {
-    name: "+layout.server.ts",
-    enabledContent: subsAppLayoutServer,
-    marker: "loadActiveSubscription",
-    modify: (target: string) => unmodifyAppLayoutServer(target),
-  },
   {
     name: "billing/+page.server.ts",
     enabledContent: subsBillingPageServer,
@@ -267,5 +265,88 @@ describe("disable subscriptions modifies (template revert)", () => {
     for (const { modify } of templateCases) {
       expect(modify(missing)).toEqual({ status: "success", changed: false });
     }
+  });
+});
+
+describe("disable subscriptions modifies (files other patterns edit too)", () => {
+  const strip = (source: string) =>
+    source
+      .replace(/^[ \t]*\/\/[ \t]*\[!code highlight:\d+\][ \t]*\r?\n/gm, "")
+      .replace(
+        /^[ \t]*<!--[ \t]*\[!code highlight:\d+\][ \t]*-->[ \t]*\r?\n/gm,
+        "",
+      );
+  const teamsDir = path.join(
+    __dirname,
+    "../../../enable/teams/modifies/fixtures/expect",
+  );
+  const write = (file: string, content: string) => {
+    const target = path.join(tempDir, file);
+    fs.writeFileSync(target, content, "utf8");
+    return target;
+  };
+
+  beforeEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+    fs.mkdirSync(tempDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it("takes the subscription out of the layout load the preview shows", async () => {
+    const target = write("+layout.server.ts", strip(subsAppLayoutServer));
+    expect(unmodifyAppLayoutServer(target)).toEqual({
+      status: "success",
+      changed: true,
+    });
+    await expect(fs.readFileSync(target, "utf8")).toMatchFormatted(
+      STOCK_LAYOUT_SERVER,
+      "+layout.server.ts",
+    );
+  });
+
+  it("takes the plan label out of the nav-user the preview shows", async () => {
+    const target = write("nav-user.svelte", strip(subsNavUser));
+    expect(unmodifyNavUser(target)).toEqual({
+      status: "success",
+      changed: true,
+    });
+    await expect(fs.readFileSync(target, "utf8")).toMatchFormatted(
+      strip(paymentsNavUserTemplate),
+      "nav-user.svelte",
+    );
+  });
+
+  it("round-trips the teams layout load and nav-user", async () => {
+    for (const file of ["+layout.server.ts", "nav-user.svelte"]) {
+      const original = fs.readFileSync(path.join(teamsDir, file), "utf8");
+      const target = write(file, original);
+      if (file === "nav-user.svelte") {
+        modifyNavUser(target);
+        unmodifyNavUser(target);
+      } else {
+        modifyAppLayoutServer(target, subsAppLayoutServer);
+        unmodifyAppLayoutServer(target);
+      }
+      await expect(fs.readFileSync(target, "utf8")).toMatchFormatted(
+        original,
+        file,
+      );
+    }
+  });
+
+  it("leaves files without the subscription alone", () => {
+    const target = write("+layout.server.ts", STOCK_LAYOUT_SERVER);
+    expect(unmodifyAppLayoutServer(target)).toEqual({
+      status: "success",
+      changed: false,
+    });
+    const navUser = write("nav-user.svelte", strip(paymentsNavUserTemplate));
+    expect(unmodifyNavUser(navUser)).toEqual({
+      status: "success",
+      changed: false,
+    });
   });
 });

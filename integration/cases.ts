@@ -439,12 +439,25 @@ export const stackCases: CaseSpec[] = [
     step("enable-payments"),
     step("enable-whatsapp", { check: true }),
   ]),
-  // enable-subscriptions rewrites (app)/+layout.server.ts from a template,
-  // dropping what enable-teams added to it (see KNOWN_FAILURES).
+  // Subscriptions and teams both add to the (app) layout load and nav-user;
+  // neither may drop what the other put there, on the way in or out.
   makeCase("teams-then-subscriptions", "auth", [
     step("enable-teams"),
     step("enable-payments"),
-    step("enable-subscriptions", { check: true }),
+    step("enable-subscriptions", {
+      check: true,
+      expectContains: {
+        "src/routes/(app)/+layout.server.ts": ["teams", "subscription"],
+        "src/lib/components/nav-user.svelte": ["/teams", "planLabel"],
+      },
+    }),
+    step("disable-subscriptions", {
+      check: true,
+      expectContains: {
+        "src/routes/(app)/+layout.server.ts": ["teams"],
+        "src/lib/components/nav-user.svelte": ["/teams"],
+      },
+    }),
   ]),
   makeCase("nav-user-stacking", "auth", [
     step("enable-api"),

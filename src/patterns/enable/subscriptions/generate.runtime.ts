@@ -111,15 +111,7 @@ export async function generate(options: Options) {
     "components",
     "nav-user.svelte",
   );
-  pushResult(
-    modifyOutcomeToFile(
-      navUserPath,
-      modifyNavUser(
-        navUserPath,
-        template("src/lib/components/nav-user.svelte"),
-      ),
-    ),
-  );
+  pushResult(modifyOutcomeToFile(navUserPath, modifyNavUser(navUserPath)));
 
   logger.info("Modifying billing/+page.server.ts");
   const billingPageServerPath = path.join(

@@ -25,6 +25,43 @@ const appLayoutServerTemplate = fs.readFileSync(
   path.join(previewDir, "src/routes/(app)/+layout.server.ts"),
   "utf8",
 );
+const strip = (source: string) =>
+  source
+    .replace(/^[ \t]*\/\/[ \t]*\[!code highlight:\d+\][ \t]*\r?\n/gm, "")
+    .replace(
+      /^[ \t]*<!--[ \t]*\[!code highlight:\d+\][ \t]*-->[ \t]*\r?\n/gm,
+      "",
+    );
+
+/** The (app) layout load the velastack-auth baseline ships. */
+const STOCK_LAYOUT_SERVER = `export const load = ({ locals }) => {
+\tconst user = locals.pb.authStore.record!;
+\tconst breadcrumbs = [{ title: 'Home', url: '/dashboard' }];
+
+\treturn { user, breadcrumbs };
+};
+`;
+const paymentsNavUser = strip(
+  fs.readFileSync(
+    path.join(
+      __dirname,
+      "../../payments/preview-modifies/src/lib/components/nav-user.svelte",
+    ),
+    "utf8",
+  ),
+);
+const teamsLayoutServer = fs.readFileSync(
+  path.join(
+    __dirname,
+    "../../teams/modifies/fixtures/expect/+layout.server.ts",
+  ),
+  "utf8",
+);
+const teamsNavUser = fs.readFileSync(
+  path.join(__dirname, "../../teams/modifies/fixtures/expect/nav-user.svelte"),
+  "utf8",
+);
+
 const billingPageServerTemplate = fs.readFileSync(
   path.join(previewDir, "src/routes/(app)/billing/+page.server.ts"),
   "utf8",
@@ -50,17 +87,6 @@ const astCases = [
 ] as const;
 
 const templateCases = [
-  {
-    file: "nav-user.svelte",
-    modify: (target: string) => modifyNavUser(target, navUserTemplate),
-    marker: "planLabel",
-  },
-  {
-    file: "+layout.server.ts",
-    modify: (target: string) =>
-      modifyAppLayoutServer(target, appLayoutServerTemplate),
-    marker: "loadActiveSubscription",
-  },
   {
     file: "+page.server.ts",
     modify: (target: string) =>
@@ -165,5 +191,101 @@ describe("subscriptions modifies (template replacement)", () => {
     for (const { modify } of templateCases) {
       expect(modify(missing).status).toBe("not-found");
     }
+  });
+});
+
+describe("subscriptions modifies (files other patterns edit too)", () => {
+  beforeEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+    fs.mkdirSync(tempDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  const write = (file: string, content: string) => {
+    const target = path.join(tempDir, file);
+    fs.writeFileSync(target, content, "utf8");
+    return target;
+  };
+
+  it("adds the subscription to the stock layout load, as the preview shows", async () => {
+    const target = write("+layout.server.ts", STOCK_LAYOUT_SERVER);
+    expect(modifyAppLayoutServer(target, appLayoutServerTemplate)).toEqual({
+      status: "success",
+      changed: true,
+    });
+    await expect(fs.readFileSync(target, "utf8")).toMatchFormatted(
+      strip(appLayoutServerTemplate),
+      "+layout.server.ts",
+    );
+  });
+
+  it("keeps the team data enable-teams put in the layout load", () => {
+    const target = write("+layout.server.ts", teamsLayoutServer);
+    expect(modifyAppLayoutServer(target, appLayoutServerTemplate).status).toBe(
+      "success",
+    );
+    const content = fs.readFileSync(target, "utf8");
+    expect(content).toContain("const teams = await");
+    expect(content).toMatch(/team,\s*teams,\s*subscription/);
+    expect(content).toContain(
+      "const subscription = await loadActiveSubscription(locals, user.id);",
+    );
+    expect(content).toContain("async function loadActiveSubscription");
+  });
+
+  it("adds the plan label to the stock nav-user, as the preview shows", async () => {
+    const target = write("nav-user.svelte", paymentsNavUser);
+    expect(modifyNavUser(target)).toEqual({ status: "success", changed: true });
+    await expect(fs.readFileSync(target, "utf8")).toMatchFormatted(
+      strip(navUserTemplate),
+      "nav-user.svelte",
+    );
+  });
+
+  it("keeps the menu items other patterns added to nav-user", () => {
+    const target = write("nav-user.svelte", teamsNavUser);
+    expect(modifyNavUser(target).status).toBe("success");
+    const content = fs.readFileSync(target, "utf8");
+    expect(content).toContain("title: 'Teams'");
+    expect(content.match(/\{planLabel\}/g)).toHaveLength(2);
+  });
+
+  it("is idempotent", () => {
+    const layout = write("+layout.server.ts", teamsLayoutServer);
+    const navUser = write("nav-user.svelte", teamsNavUser);
+    modifyAppLayoutServer(layout, appLayoutServerTemplate);
+    modifyNavUser(navUser);
+    const before = [layout, navUser].map((f) => fs.readFileSync(f, "utf8"));
+    expect(modifyAppLayoutServer(layout, appLayoutServerTemplate)).toEqual({
+      status: "success",
+      changed: false,
+    });
+    expect(modifyNavUser(navUser)).toEqual({
+      status: "success",
+      changed: false,
+    });
+    expect([layout, navUser].map((f) => fs.readFileSync(f, "utf8"))).toEqual(
+      before,
+    );
+  });
+
+  it("leaves a load it does not recognise alone", () => {
+    const content = "export const load = () => ({ title: 'x' });\n";
+    const target = write("+layout.server.ts", content);
+    expect(modifyAppLayoutServer(target, appLayoutServerTemplate).status).toBe(
+      "failed",
+    );
+    expect(fs.readFileSync(target, "utf8")).toBe(content);
+  });
+
+  it("reports not-found when targets are missing", () => {
+    const missing = path.join(tempDir, "does-not-exist");
+    expect(modifyAppLayoutServer(missing, appLayoutServerTemplate).status).toBe(
+      "not-found",
+    );
+    expect(modifyNavUser(missing).status).toBe("not-found");
   });
 });
