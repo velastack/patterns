@@ -8,7 +8,7 @@
 
 	interface Props {
 		priceId: string;
-		user?: { email: string; name: string } | null;
+		user?: { email?: string; name?: string } | null;
 		disabled?: boolean;
 		isProcessing?: boolean;
 		label?: string;

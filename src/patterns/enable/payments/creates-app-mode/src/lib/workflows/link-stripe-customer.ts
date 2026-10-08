@@ -4,18 +4,32 @@ import { getAdmin, ow } from '#lib/server/workflows.js';
 
 /**
  * Gives a user a Stripe customer, reusing one that already carries the email
- * and copying over its saved cards. Signup starts it with the user's id as
- * the idempotency key, so however many times it is started or retried there
- * is one run and one customer per user.
+ * and copying over its saved cards. A user without an email (one made with a
+ * phone number) gets a new customer under their name and number. Signup starts
+ * it with the user's id as the idempotency key, so however many times it is
+ * started or retried there is one run and one customer per user.
  */
 export const linkStripeCustomer = ow.defineWorkflow(
 	{
 		name: 'link-stripe-customer',
-		schema: z.object({ userId: z.string(), email: z.string() }),
+		schema: z.object({ userId: z.string(), email: z.string().optional() }),
 		retryPolicy: { maximumAttempts: 5 }
 	},
 	async ({ input, step }) => {
 		const customer = await step.run({ name: 'find-or-create-customer' }, async () => {
+			if (!input.email) {
+				const admin = await getAdmin();
+				// `phone` is there once enable-whatsapp has added it.
+				const user: { name?: string; phone?: string } = await admin
+					.collection('users')
+					.getOne(input.userId);
+				const created = await stripe.customers.create({
+					name: user.name || undefined,
+					phone: user.phone || undefined
+				});
+				return { id: created.id, existing: false, defaultPaymentMethod: null };
+			}
+
 			const matching = await stripe.customers.list({
 				email: input.email,
 				limit: 1,

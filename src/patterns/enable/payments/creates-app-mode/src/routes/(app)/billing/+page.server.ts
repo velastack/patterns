@@ -1,5 +1,6 @@
 import { error } from "@sveltejs/kit";
 import stripe from "#lib/stripe.js";
+import { getStripeCustomerId } from "#lib/server/stripe-customer.js";
 
 export const load = async ({ locals, depends, parent }) => {
   const { user } = await parent();
@@ -7,13 +8,12 @@ export const load = async ({ locals, depends, parent }) => {
 
   let customer;
   try {
+    const customerId = await getStripeCustomerId(locals.admin, user);
     customer = await locals.admin
       .collection("stripe_customers")
-      .getFirstListItem(
-        locals.admin.filter("user = {:user}", { user: user.id }),
-      );
+      .getOne(customerId);
   } catch {
-    // The link-stripe-customer workflow started at signup has not finished.
+    // The link-stripe-customer run has not finished yet.
     return { paymentMethods: [], user, billingReady: false };
   }
 

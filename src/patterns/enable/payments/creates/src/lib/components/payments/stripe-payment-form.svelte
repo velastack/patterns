@@ -15,7 +15,7 @@
 		amount?: number;
 		currency?: string;
 		savePaymentMethod?: boolean;
-		user?: { email: string; name: string } | null;
+		user?: { email?: string; name?: string } | null;
 		onchange: (complete: boolean) => void;
 	}
 
@@ -66,8 +66,8 @@
 			layout: 'tabs',
 			defaultValues: {
 				billingDetails: {
-					email: user?.email,
-					name: user?.name
+					email: user?.email || undefined,
+					name: user?.name || undefined
 				}
 			},
 			terms: savePaymentMethod ? TERMS_AUTO : TERMS_NEVER

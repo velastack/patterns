@@ -1,7 +1,7 @@
 import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
-import { modifyOutcomeToFile } from "../../../runtime/modify-file";
+import { keepMissing, modifyOutcomeToFile } from "../../../runtime/modify-file";
 import { modifyWebhookServer } from "./modifies/modify-webhook-server";
 import { modifyAppLayoutServer } from "./modifies/modify-app-layout-server";
 import { modifyAppLayoutSvelte } from "./modifies/modify-app-layout-svelte";
@@ -9,6 +9,11 @@ import { modifyAppSidebar } from "./modifies/modify-app-sidebar";
 import { modifyNavUser } from "./modifies/modify-nav-user";
 import { modifyBillingPageServer } from "./modifies/modify-billing-page-server";
 import { modifyBillingPageSvelte } from "./modifies/modify-billing-page-svelte";
+import stripeCustomerHelper from "../payments/creates-app-mode/src/lib/server/stripe-customer.ts?raw";
+
+// The billing page imports this payments helper, which apps that enabled
+// payments before it existed do not have yet.
+const STRIPE_CUSTOMER_HELPER = "src/lib/server/stripe-customer.ts";
 
 // Share the final-state files between preview (rendered as-is) and runtime
 // (used as overwrite templates for modifies that amount to full rewrites).
@@ -154,8 +159,20 @@ export async function generate(options: Options) {
     ),
   );
 
+  const creates = keepMissing(
+    [
+      {
+        path: STRIPE_CUSTOMER_HELPER,
+        language: "ts",
+        content: stripeCustomerHelper,
+        status: "success",
+      },
+    ],
+    options.root,
+  );
+
   return {
-    creates: [],
+    creates,
     modifies,
     deletes: [],
     components: [],

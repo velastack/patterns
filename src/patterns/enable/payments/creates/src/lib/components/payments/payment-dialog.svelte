@@ -15,7 +15,7 @@
 		amount: number;
 		currency: string;
 		clientSecret?: string;
-		user?: { email: string; name: string } | null;
+		user?: { email?: string; name?: string } | null;
 		onopenchange: (open: boolean) => void;
 		onsuccess: () => void;
 	}
@@ -83,7 +83,8 @@
 					return_url: page.url.toString(),
 					payment_method_data: {
 						billing_details: {
-							email: email || user?.email
+							// Stripe rejects an empty string.
+							email: email || user?.email || undefined
 						},
 						allow_redisplay: savePaymentMethod ? 'always' : 'unspecified'
 					}
@@ -115,7 +116,8 @@
 			<Dialog.Title>{amountFormatted}</Dialog.Title>
 			<Dialog.Description>Enter your card details to pay for your purchase.</Dialog.Description>
 		</Dialog.Header>
-		{#if !user}
+		<!-- For the receipt: guests, and accounts made with a phone number -->
+		{#if !user?.email}
 			<div class="space-y-2">
 				<Label for="email">Email</Label>
 				<Input type="email" bind:value={email} />
