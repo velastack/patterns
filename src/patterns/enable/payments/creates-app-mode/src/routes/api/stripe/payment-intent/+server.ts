@@ -1,5 +1,6 @@
 import stripe from "#lib/stripe.js";
 import type { Stripe } from "stripe";
+import { getStripeCustomerId } from "#lib/server/stripe-customer.js";
 
 const createPaymentIntent = async (
   price: Stripe.Price,
@@ -31,6 +32,7 @@ const createPaymentIntent = async (
       clientSecret: intent.client_secret,
       amount: price.unit_amount,
       currency: price.currency,
+      setupFutureUsage: null,
     };
   }
 
@@ -55,6 +57,7 @@ const createPaymentIntent = async (
     return {
       type: "confirm",
       clientSecret: intent.client_secret,
+      setupFutureUsage: null,
       amount: price.unit_amount,
       currency: price.currency,
       brand: paymentMethod.card?.brand,
@@ -84,11 +87,14 @@ const createPaymentIntent = async (
     clientSecret: intent.client_secret,
     amount: price.unit_amount,
     currency: price.currency,
+    // The card form must set the same `setupFutureUsage` as the intent, or
+    // Stripe refuses to confirm it.
+    setupFutureUsage: "off_session",
   };
 };
 
 export const POST = async ({ request, locals }) => {
-  const user = locals.pb.authStore.record?.id;
+  const user = locals.pb.authStore.record;
 
   let body;
   try {
@@ -131,14 +137,15 @@ export const POST = async ({ request, locals }) => {
 
   if (user) {
     try {
+      // Links the user to a Stripe customer first if they have none yet (a
+      // signup whose link run has not finished, a one-time-code signup).
+      const customerId = await getStripeCustomerId(locals.admin, user);
       customer = await locals.admin
         .collection("stripe_customers")
-        .getFirstListItem(
-          locals.admin.filter("user = {:user}", { user: user }),
-        );
+        .getOne(customerId);
     } catch (error) {
-      // Customer not found is expected for new users, log for debugging only
-      console.log("No Stripe customer found for user:", user);
+      // Not linked in time: pay as a guest rather than not at all.
+      console.log("No Stripe customer for user, paying as a guest:", user.id);
     }
   }
 

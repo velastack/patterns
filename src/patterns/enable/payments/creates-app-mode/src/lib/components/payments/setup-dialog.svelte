@@ -86,7 +86,8 @@
 </script>
 
 <Dialog.Root bind:open onOpenChangeComplete={handleOpenChangeComplete}>
-	<Dialog.Content class="sm:max-w-[500px]">
+	<!-- Stripe's card form is tall: scroll within the screen so the buttons stay reachable -->
+	<Dialog.Content class="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-[500px]">
 		<Dialog.Header>
 			<Dialog.Title>Add payment method</Dialog.Title>
 			<Dialog.Description>Enter your card details to add a new payment method.</Dialog.Description>

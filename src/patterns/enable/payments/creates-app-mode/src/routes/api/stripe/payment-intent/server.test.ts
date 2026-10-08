@@ -181,6 +181,7 @@ describe("POST /api/stripe/payment-intent", () => {
       expect(response.body.currency).toBe("usd");
       expect(response.body.brand).toBeUndefined();
       expect(response.body.last4).toBeUndefined();
+      expect(response.body.setupFutureUsage).toBeNull();
 
       // Verify the payment intent was created in Stripe
       const intentId = response.body.clientSecret.split("_secret_")[0];
@@ -195,7 +196,7 @@ describe("POST /api/stripe/payment-intent", () => {
   });
 
   describe("Authenticated user without Stripe customer", () => {
-    it("should create payment intent for user without Stripe customer", async (context) => {
+    it("should link a Stripe customer and keep the card for them", async (context) => {
       await context.agent.authenticateUser();
 
       const response = await context.agent
@@ -207,15 +208,25 @@ describe("POST /api/stripe/payment-intent", () => {
       expect(response.body.clientSecret).toBeDefined();
       expect(response.body.amount).toBe(1000);
       expect(response.body.currency).toBe("usd");
+      expect(response.body.setupFutureUsage).toBe("off_session");
 
-      // Verify the payment intent
+      // The link-stripe-customer run linked one on the spot, reusing the
+      // Stripe customer that already has the user's email.
+      const linked = await context.admin
+        .collection("stripe_customers")
+        .getFirstListItem(
+          context.admin.filter("user = {:user}", { user: context.user.id }),
+        );
+      expect(linked.id).toBe(stripeCustomer.id);
       const intentId = response.body.clientSecret.split("_secret_")[0];
       const intent = await stripe.paymentIntents.retrieve(intentId);
       expect(intent.amount).toBe(1000);
-      expect(intent.setup_future_usage).toBeNull();
+      expect(intent.customer).toBe(linked.id);
+      expect(intent.setup_future_usage).toBe("off_session");
 
       // Clean up
       await stripe.paymentIntents.cancel(intent.id);
+      await context.admin.collection("stripe_customers").delete(linked.id);
     });
   });
 
@@ -254,6 +265,7 @@ describe("POST /api/stripe/payment-intent", () => {
       expect(response.body.currency).toBe("usd");
       expect(response.body.brand).toBeUndefined();
       expect(response.body.last4).toBeUndefined();
+      expect(response.body.setupFutureUsage).toBe("off_session");
 
       // Verify the payment intent has setup_future_usage
       const intentId = response.body.clientSecret.split("_secret_")[0];
@@ -308,6 +320,7 @@ describe("POST /api/stripe/payment-intent", () => {
       expect(response.body.brand).toBe("visa");
       expect(response.body.last4).toBeDefined();
       expect(response.body.last4).toMatch(/^\d{4}$/);
+      expect(response.body.setupFutureUsage).toBeNull();
 
       // Verify the payment intent has the payment method attached
       const intentId = response.body.clientSecret.split("_secret_")[0];

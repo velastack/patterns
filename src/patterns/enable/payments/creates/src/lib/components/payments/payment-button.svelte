@@ -37,6 +37,7 @@
 	let clientSecret = $state<string>();
 	let brand = $state<string>();
 	let last4 = $state<string>();
+	let setupFutureUsage = $state<'off_session' | null>(null);
 
 	async function handleBuyClick() {
 		const result = await paymentIntentManager.fetchPaymentIntent({
@@ -56,6 +57,7 @@
 		amount = result.amount || 0;
 		currency = result.currency || 'usd';
 		clientSecret = result.clientSecret;
+		setupFutureUsage = result.setupFutureUsage ?? null;
 		showDialog = true;
 	}
 
@@ -95,6 +97,7 @@
 		{amount}
 		{currency}
 		{clientSecret}
+		{setupFutureUsage}
 		{user}
 		onopenchange={handleDialogOpenChange}
 		onsuccess={handlePaymentSuccess}

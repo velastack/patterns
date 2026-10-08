@@ -15,6 +15,8 @@
 		amount: number;
 		currency: string;
 		clientSecret?: string;
+		/** From the intent: `off_session` when the card is kept for the customer. */
+		setupFutureUsage?: 'off_session' | null;
 		user?: { email?: string; name?: string } | null;
 		onopenchange: (open: boolean) => void;
 		onsuccess: () => void;
@@ -26,6 +28,7 @@
 		amount,
 		currency,
 		clientSecret,
+		setupFutureUsage = null,
 		user = null,
 		onopenchange,
 		onsuccess
@@ -111,7 +114,8 @@
 </script>
 
 <Dialog.Root bind:open onOpenChangeComplete={handleOpenChangeComplete}>
-	<Dialog.Content class="sm:max-w-[500px]">
+	<!-- Stripe's card form is tall: scroll within the screen so the buttons stay reachable -->
+	<Dialog.Content class="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-[500px]">
 		<Dialog.Header>
 			<Dialog.Title>{amountFormatted}</Dialog.Title>
 			<Dialog.Description>Enter your card details to pay for your purchase.</Dialog.Description>
@@ -132,12 +136,14 @@
 					{amount}
 					{currency}
 					{savePaymentMethod}
+					{setupFutureUsage}
 					{user}
 					onchange={handleCardChange}
 				/>
 			{/if}
 		</div>
-		{#if user}
+		<!-- Only a signed-in customer's card is kept, and so can be shown again -->
+		{#if setupFutureUsage}
 			<div class="flex items-center gap-2">
 				<input type="checkbox" id="savePaymentMethod" bind:checked={savePaymentMethod} />
 				<label for="savePaymentMethod" class="text-sm text-muted-foreground">
