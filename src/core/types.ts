@@ -19,6 +19,11 @@ export interface Features {
    */
   workflows?: boolean;
   /**
+   * WhatsApp sign-in on the auth pages (`enable-whatsapp`). Optional so the
+   * `requires` of patterns need not mention it.
+   */
+  whatsapp?: boolean;
+  /**
    * The component kit the project has: `shadcn` is shadcn-svelte (a
    * `components.json` plus the package), `plain` is neither. Detected by the
    * caller; optional so the `requires` of patterns need not mention it, and

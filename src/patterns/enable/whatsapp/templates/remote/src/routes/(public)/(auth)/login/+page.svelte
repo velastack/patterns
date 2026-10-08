@@ -1,0 +1,271 @@
+<script lang="ts">
+  import favicon from "#lib/assets/favicon.svg";
+  import { site } from "#lib/site.js";
+
+  import { Button } from "#lib/components/ui/button/index.js";
+  import * as Card from "#lib/components/ui/card/index.js";
+  import { Input } from "#lib/components/ui/input/index.js";
+  import PocketBase from "pocketbase-sveltekit";
+  import { goto } from "$app/navigation";
+  import { page } from "$app/state";
+  import { loginForm } from "./form.remote";
+
+  let { data } = $props();
+  let authMethods = $derived(data.authMethods);
+  let whatsapp = $derived(data.whatsapp);
+
+  const redirect = page.url.searchParams.get("redirect");
+  const hasOAuth2 = $derived(
+    authMethods.oauth2.enabled && authMethods.oauth2.providers.length > 0,
+  );
+  const hasEmail = $derived(
+    authMethods.password.enabled || authMethods.otp.enabled,
+  );
+  const hasAuthMethods = $derived(hasEmail || whatsapp.enabled || hasOAuth2);
+  // Where "Continue with email" goes back to from WhatsApp.
+  const emailType = $derived(authMethods.otp.enabled ? "otp" : "password");
+
+  type Mode = "password" | "otp" | "oauth2" | "whatsapp";
+  const initialType: Mode = $derived(
+    authMethods.otp.enabled
+      ? "otp"
+      : authMethods.password.enabled
+        ? "password"
+        : whatsapp.enabled
+          ? "whatsapp"
+          : "oauth2",
+  );
+  let mode = $state<Mode>("password");
+  $effect(() => {
+    mode = initialType;
+  });
+
+  const handleOAuth2 = (provider: string) => {
+    const pb = new PocketBase("/");
+
+    pb.collection("users")
+      .authWithOAuth2({ provider, createData: {} })
+      .then(() => goto("/dashboard"));
+  };
+</script>
+
+<div class="h-full flex flex-col items-center justify-center gap-6 p-6 md:p-10">
+  <div class="flex w-full max-w-sm flex-col gap-6">
+    <a href="/" class="flex items-center gap-2 self-center font-medium">
+      <div
+        class="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md"
+      >
+        <img src={favicon} alt="logo" class="size-4" />
+      </div>
+      {site.name}
+    </a>
+
+    <div class="flex flex-col gap-6">
+      <Card.Root>
+        {#if hasAuthMethods}
+          <Card.Header class="text-center">
+            <Card.Title class="text-xl">Welcome back</Card.Title>
+            {#if hasOAuth2 || (hasEmail && whatsapp.enabled)}
+              <Card.Description>Choose a login method</Card.Description>
+            {:else if whatsapp.enabled}
+              <Card.Description
+                >Use your WhatsApp number to login</Card.Description
+              >
+            {:else}
+              <Card.Description>Use your email to login</Card.Description>
+            {/if}
+          </Card.Header>
+        {:else}
+          <Card.Header class="text-center">
+            <Card.Title class="text-xl">Login is disabled</Card.Title>
+            <Card.Description
+              >Check back later for login options</Card.Description
+            >
+          </Card.Header>
+        {/if}
+        <Card.Content>
+          <form {...loginForm}>
+            <div class="grid gap-6">
+              {#if hasOAuth2}
+                <div class="flex flex-col gap-4">
+                  {#each authMethods.oauth2.providers as provider}
+                    <Button
+                      variant="outline"
+                      class="w-full"
+                      onclick={() => handleOAuth2(provider.name)}
+                    >
+                      <img
+                        src="/admin/_/images/oauth2/{provider.name}.svg"
+                        class="size-5 bg-white p-0.5 rounded-sm"
+                        alt=""
+                      />
+                      Login with {provider.displayName}
+                    </Button>
+                  {/each}
+                </div>
+              {/if}
+
+              {#if hasEmail || whatsapp.enabled}
+                {#if hasOAuth2}
+                  <div
+                    class="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t"
+                  >
+                    <span
+                      class="bg-card text-muted-foreground relative z-10 px-2"
+                    >
+                      Or continue with
+                    </span>
+                  </div>
+                {/if}
+
+                <div class="grid gap-2">
+                  {#if mode === "whatsapp" && whatsapp.enabled}
+                    <div class="space-y-2 col-span-1">
+                      <label for="phone" class="text-sm font-medium"
+                        >WhatsApp number</label
+                      >
+                      <Input
+                        id="phone"
+                        {...loginForm.fields.phone.as("text")}
+                        type="tel"
+                        required
+                        autocomplete="tel"
+                        placeholder="+1 616 555 0123"
+                        autofocus
+                      />
+                      {#each loginForm.fields.phone.issues() as issue}
+                        <p class="text-destructive text-sm">{issue.message}</p>
+                      {/each}
+                    </div>
+
+                    {#if loginForm.result?.message}
+                      <div class="text-destructive text-sm font-medium -mt-2">
+                        {loginForm.result.message}
+                      </div>
+                    {/if}
+
+                    <Button type="submit" class="w-full"
+                      >Send code on WhatsApp</Button
+                    >
+                    {#if hasEmail}
+                      <Button
+                        variant="outline"
+                        class="w-full"
+                        onclick={() => (mode = emailType)}
+                        type="button">Continue with email</Button
+                      >
+                    {/if}
+                  {:else if hasEmail}
+                    <div class="space-y-2 col-span-1">
+                      <label for="email" class="text-sm font-medium"
+                        >Email</label
+                      >
+                      <Input
+                        id="email"
+                        {...loginForm.fields.email.as("text")}
+                        type="email"
+                        required
+                        autocomplete="username"
+                        autofocus
+                      />
+                      {#each loginForm.fields.email.issues() as issue}
+                        <p class="text-destructive text-sm">{issue.message}</p>
+                      {/each}
+                    </div>
+
+                    {#if mode === "password" && authMethods.password.enabled}
+                      <div class="space-y-2 col-span-1">
+                        <div class="grid grid-cols-[1fr_auto] gap-2">
+                          <label for="password" class="text-sm font-medium"
+                            >Password</label
+                          >
+                          <Input
+                            id="password"
+                            {...loginForm.fields.password.as("text")}
+                            type="password"
+                            required
+                            autocomplete="current-password"
+                            class="col-span-2"
+                          />
+                          <a
+                            href="/reset"
+                            class="col-start-2 row-start-1 text-sm underline-offset-4 hover:underline"
+                            >Forgot your password?</a
+                          >
+                        </div>
+                        {#each loginForm.fields.password.issues() as issue}
+                          <p class="text-destructive text-sm">
+                            {issue.message}
+                          </p>
+                        {/each}
+                      </div>
+
+                      {#if loginForm.result?.message}
+                        <div class="text-destructive text-sm font-medium -mt-2">
+                          {loginForm.result.message}
+                        </div>
+                      {/if}
+
+                      <Button type="submit" class="w-full">Login</Button>
+                      {#if authMethods.otp.enabled}
+                        <Button
+                          variant="outline"
+                          class="w-full"
+                          onclick={() => (mode = "otp")}
+                          type="button"
+                          >Use one-time code instead</Button
+                        >
+                      {/if}
+                    {:else if mode === "otp" && authMethods.otp.enabled}
+                      <Button type="submit" class="w-full"
+                        >Send one-time code</Button
+                      >
+                      {#if authMethods.password.enabled}
+                        <Button
+                          variant="outline"
+                          class="w-full"
+                          onclick={() => (mode = "password")}
+                          type="button"
+                          >Continue with password</Button
+                        >
+                      {/if}
+                    {/if}
+
+                    {#if whatsapp.enabled}
+                      <Button
+                        variant="outline"
+                        class="w-full"
+                        onclick={() => (mode = "whatsapp")}
+                        type="button">Continue with WhatsApp</Button
+                      >
+                    {/if}
+                  {/if}
+                </div>
+
+                <input {...loginForm.fields.type.as("hidden", mode)} />
+              {/if}
+
+              <div class="text-center text-sm">
+                Don&apos;t have an account?
+                <a
+                  href="/signup{redirect
+                    ? `?redirect=${encodeURIComponent(redirect)}`
+                    : ''}"
+                  class="underline underline-offset-4">Sign up</a
+                >
+              </div>
+            </div>
+          </form>
+        </Card.Content>
+      </Card.Root>
+      <div
+        class="text-muted-foreground *:[a]:hover:text-primary *:[a]:underline *:[a]:underline-offset-4 text-balance text-center text-xs"
+      >
+        By clicking continue, you agree to our <a href="/terms"
+          >Terms of Service</a
+        >
+        and <a href="/privacy">Privacy Policy</a>.
+      </div>
+    </div>
+  </div>
+</div>
