@@ -437,8 +437,14 @@ export const stackCases: CaseSpec[] = [
   makeCase("whatsapp-payments", "auth", [
     step("enable-teams"),
     step("enable-payments"),
-    step("enable-subscriptions"),
     step("enable-whatsapp", { check: true }),
+  ]),
+  // enable-subscriptions rewrites (app)/+layout.server.ts from a template,
+  // dropping what enable-teams added to it (see KNOWN_FAILURES).
+  makeCase("teams-then-subscriptions", "auth", [
+    step("enable-teams"),
+    step("enable-payments"),
+    step("enable-subscriptions", { check: true }),
   ]),
   makeCase("nav-user-stacking", "auth", [
     step("enable-api"),
