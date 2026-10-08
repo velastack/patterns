@@ -174,7 +174,8 @@ export async function generate(options: Options) {
           name: "email",
           exceptDomains: null,
           onlyDomains: null,
-          required: true,
+          // Accounts made with a phone number may have no email.
+          required: false,
           type: "email",
         },
         {

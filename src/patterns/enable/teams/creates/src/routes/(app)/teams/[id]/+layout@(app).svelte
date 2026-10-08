@@ -141,7 +141,7 @@
 									role: data.role,
 									member
 								})}
-								<!-- Accounts made with a WhatsApp code may have neither -->
+								<!-- Accounts made with a phone number may have neither -->
 								{@const initial = (member.name || member.email || '').charAt(0).toUpperCase()}
 								<Table.Row>
 									<Table.Cell>
@@ -161,9 +161,11 @@
 												<div class="font-medium text-foreground">
 													{member.name || member.email || 'Unnamed member'}
 												</div>
-												<div class="text-sm text-muted-foreground">
-													{member.email}
-												</div>
+												{#if member.name && member.email}
+													<div class="text-sm text-muted-foreground">
+														{member.email}
+													</div>
+												{/if}
 											</div>
 										</div>
 									</Table.Cell>
