@@ -34,6 +34,9 @@ export function detectFeatures(root: string): Features {
     contentNegotiation: hasDep("sveltekit-negotiate"),
     cms: hasDep("@velastack/cms"),
     workflows: has("src/lib/server/workflows.ts"),
+    // The code page, not src/lib/server/whatsapp.ts, which goes once the
+    // PocketBase SDK has WhatsApp.
+    whatsapp: has("src/routes/(public)/(auth)/whatsapp"),
     ui:
       hasComponentsJson(root) && (hasDep("shadcn-svelte") || hasDep("bits-ui"))
         ? "shadcn"
@@ -95,6 +98,7 @@ export const SLUG_TO_FEATURE: Partial<Record<string, keyof Features>> = {
   "enable-content-negotiation": "contentNegotiation",
   "enable-cms": "cms",
   "enable-workflows": "workflows",
+  "enable-whatsapp": "whatsapp",
 };
 
 /**
@@ -130,4 +134,5 @@ export const ALL_FEATURES_OFF: Features = {
   contentNegotiation: false,
   cms: false,
   workflows: false,
+  whatsapp: false,
 };

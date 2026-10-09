@@ -176,6 +176,9 @@ export function inverseCase(slug: Slug): CaseSpec {
   if (slug === "disable-subscriptions") {
     setup.push(step("enable-subscriptions", { check: false }));
   }
+  if (slug === "disable-whatsapp") {
+    setup.push(step("enable-whatsapp", { check: false }));
+  }
   return makeCase(slug, baseline, [
     ...prereqChain(pattern.requires, baseline),
     ...setup,
@@ -262,6 +265,16 @@ export const enableCases: CaseSpec[] = [
   singleCase("enable-workflows"),
   singleCase("enable-payments"),
   singleCase("enable-subscriptions"),
+  singleCase("enable-whatsapp"),
+  // The login and signup pages it swaps come in three shapes.
+  makeCase("enable-whatsapp-split", "minimal", [
+    step("enable-auth", { input: { variant: "split" } }),
+    step("enable-whatsapp", { check: true }),
+  ]),
+  makeCase("enable-whatsapp-remote", "minimal", [
+    step("enable-auth-remote"),
+    step("enable-whatsapp", { check: true }),
+  ]),
 ];
 
 export const generateCases: CaseSpec[] = [
@@ -331,6 +344,12 @@ export const disableCases: CaseSpec[] = [
   inverseCase("destroy-resource"),
   inverseCase("destroy-scaffold"),
   inverseCase("disable-auth"),
+  // Its code page goes with the auth pages.
+  makeCase("disable-auth-whatsapp", "auth", [
+    step("enable-whatsapp"),
+    step("disable-auth", { check: true }),
+  ]),
+  inverseCase("disable-whatsapp"),
   inverseCase("disable-api"),
   inverseCase("disable-api-keys"),
   inverseCase("disable-backend"),
@@ -408,6 +427,36 @@ export const stackCases: CaseSpec[] = [
       argv: ["project"],
       input: { route: TEAM_ROUTE },
       check: true,
+    }),
+  ]),
+  // An optional email reaches every page that shows or bills a user.
+  makeCase("whatsapp-teams", "auth", [
+    step("enable-teams"),
+    step("enable-whatsapp", { check: true }),
+  ]),
+  makeCase("whatsapp-payments", "auth", [
+    step("enable-teams"),
+    step("enable-payments"),
+    step("enable-whatsapp", { check: true }),
+  ]),
+  // Subscriptions and teams both add to the (app) layout load and nav-user;
+  // neither may drop what the other put there, on the way in or out.
+  makeCase("teams-then-subscriptions", "auth", [
+    step("enable-teams"),
+    step("enable-payments"),
+    step("enable-subscriptions", {
+      check: true,
+      expectContains: {
+        "src/routes/(app)/+layout.server.ts": ["teams", "subscription"],
+        "src/lib/components/nav-user.svelte": ["/teams", "planLabel"],
+      },
+    }),
+    step("disable-subscriptions", {
+      check: true,
+      expectContains: {
+        "src/routes/(app)/+layout.server.ts": ["teams"],
+        "src/lib/components/nav-user.svelte": ["/teams"],
+      },
     }),
   ]),
   makeCase("nav-user-stacking", "auth", [

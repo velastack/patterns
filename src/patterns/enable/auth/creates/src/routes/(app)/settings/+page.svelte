@@ -12,7 +12,7 @@
 	import { Badge } from '#lib/components/ui/badge/index.js';
 	import * as Dialog from '#lib/components/ui/dialog/index.js';
 	import { Checkbox } from '#lib/components/ui/checkbox/index.js';
-	import * as Avatar from '#lib/components/ui/avatar/index.js';
+	import UserAvatar from '#lib/components/user-avatar.svelte';
 	import * as FileForm from '#lib/components/ui/file-form/index.js';
 
 	let { data } = $props();
@@ -67,11 +67,8 @@
 								<div class="flex items-center gap-3 justify-between">
 									{#if !$profileFormData.avatar}
 										<div class="flex items-center gap-3">
-											<Avatar.Root class="size-16">
-												<Avatar.Fallback>
-													{data.user.email.charAt(0).toUpperCase()}
-												</Avatar.Fallback>
-											</Avatar.Root>
+											<!-- An uploaded picture shows in the file field instead -->
+											<UserAvatar user={{ ...data.user, avatar: undefined }} class="size-16" />
 											<div>
 												<span class="text-sm font-medium leading-none">Avatar</span>
 												<p class="text-muted-foreground text-sm">
@@ -138,24 +135,26 @@
 							</Form.Field>
 						</div>
 					</div>
-					<div class="grid gap-6">
-						<div class="grid gap-3">
-							<Form.Field form={profileForm} name="emailVisibility" class="flex items-start gap-2">
-								<Form.Control>
-									{#snippet children({ props })}
-										<Checkbox {...props} bind:checked={$profileFormData.emailVisibility} />
-										<div class="grid gap-2">
-											<Form.Label>Display email publicly</Form.Label>
-											<p class="text-muted-foreground text-sm">
-												By clicking this checkbox, your email will be displayed publicly.
-											</p>
-										</div>
-									{/snippet}
-								</Form.Control>
-								<Form.FieldErrors class="contents text-destructive" />
-							</Form.Field>
+					{#if data.user.email}
+						<div class="grid gap-6">
+							<div class="grid gap-3">
+								<Form.Field form={profileForm} name="emailVisibility" class="flex items-start gap-2">
+									<Form.Control>
+										{#snippet children({ props })}
+											<Checkbox {...props} bind:checked={$profileFormData.emailVisibility} />
+											<div class="grid gap-2">
+												<Form.Label>Display email publicly</Form.Label>
+												<p class="text-muted-foreground text-sm">
+													By clicking this checkbox, your email will be displayed publicly.
+												</p>
+											</div>
+										{/snippet}
+									</Form.Control>
+									<Form.FieldErrors class="contents text-destructive" />
+								</Form.Field>
+							</div>
 						</div>
-					</div>
+					{/if}
 				</Card.Content>
 				<Card.Footer class="border-t justify-end">
 					<Button type="submit" class="w-fit">Save changes</Button>
@@ -164,136 +163,140 @@
 		</form>
 	</div>
 
-	<div class="grid grid-cols-1 gap-x-8 gap-y-8 py-10 md:grid-cols-3">
-		<div class="px-4 sm:px-0">
-			<h2 class="text-base/7 font-semibold text-gray-900 dark:text-white">Email</h2>
-			<p class="mt-1 text-sm/6 text-gray-600 dark:text-gray-400">
-				The email address associated with your account.
-			</p>
-		</div>
+	<!-- Accounts without an email (made with a phone number) have no
+	     email to verify or change, and no password to log in with. -->
+	{#if data.user.email}
+		<div class="grid grid-cols-1 gap-x-8 gap-y-8 py-10 md:grid-cols-3">
+			<div class="px-4 sm:px-0">
+				<h2 class="text-base/7 font-semibold text-gray-900 dark:text-white">Email</h2>
+				<p class="mt-1 text-sm/6 text-gray-600 dark:text-gray-400">
+					The email address associated with your account.
+				</p>
+			</div>
 
-		<Card.Root class="md:col-span-2">
-			<Card.Content class="flex flex-col gap-6">
-				<div class="flex justify-between items-center">
-					<span class="text-sm flex items-center gap-2">
-						{data.user.email}
-						<Badge variant="secondary">{data.user.verified ? 'Verified' : 'Unverified'}</Badge>
-					</span>
-					<div class="flex items-center gap-3">
-						{#if !data.user.verified}
-							<form method="POST" action="?/resendVerificationEmail">
-								<Button type="submit" variant="outline" class="w-fit"
-									>Resend verification email</Button
-								>
-							</form>
-						{/if}
-
-						<Dialog.Root>
-							<Dialog.Trigger class={buttonVariants({ variant: 'outline' })}>
-								Change email
-							</Dialog.Trigger>
-							<Dialog.Content>
-								<Dialog.Header>
-									<Dialog.Title>Change email</Dialog.Title>
-									<Dialog.Description>
-										Enter your new email address. You will receive a verification email.
-									</Dialog.Description>
-								</Dialog.Header>
-								<form method="POST" action="?/changeEmail" class="grid gap-4">
-									<div class="grid gap-6">
-										<div class="grid gap-3">
-											<Form.Field form={emailForm} name="email">
-												<Form.Control>
-													{#snippet children({ props })}
-														<Form.Label>Email</Form.Label>
-														<Input
-															{...props}
-															type="email"
-															bind:value={$emailFormData.email}
-															required
-															autocomplete="email"
-														/>
-													{/snippet}
-												</Form.Control>
-												<Form.FieldErrors class="contents text-destructive" />
-											</Form.Field>
-										</div>
-									</div>
-									<Dialog.Footer>
-										<Button type="submit" class="w-fit">Change email</Button>
-									</Dialog.Footer>
-								</form>
-							</Dialog.Content>
-						</Dialog.Root>
-					</div>
-				</div>
-			</Card.Content>
-		</Card.Root>
-	</div>
-
-	<div class="grid grid-cols-1 gap-x-8 gap-y-8 py-10 md:grid-cols-3">
-		<div class="px-4 sm:px-0">
-			<h2 class="text-base/7 font-semibold text-gray-900 dark:text-white">Password</h2>
-			<p class="mt-1 text-sm/6 text-gray-600 dark:text-gray-400">
-				Your password is used to log in to your account.
-			</p>
-		</div>
-
-		<form method="POST" action="?/changePassword" class="md:col-span-2">
-			<Card.Root>
+			<Card.Root class="md:col-span-2">
 				<Card.Content class="flex flex-col gap-6">
-					<input
-						type="email"
-						value={data.user.email}
-						autocomplete="username"
-						readonly
-						tabindex="-1"
-						aria-hidden="true"
-						class="sr-only"
-					/>
-					<div class="grid gap-6">
-						<div class="grid gap-3">
-							<Form.Field form={passwordForm} name="password">
-								<Form.Control>
-									{#snippet children({ props })}
-										<Form.Label>New password</Form.Label>
-										<Input
-											{...props}
-											type="password"
-											bind:value={$passwordFormData.password}
-											autocomplete="new-password"
-											required
-											minlength={8}
-										/>
-									{/snippet}
-								</Form.Control>
-								<Form.FieldErrors class="contents text-destructive" />
-							</Form.Field>
-						</div>
-						<div class="grid gap-3">
-							<Form.Field form={passwordForm} name="passwordConfirm">
-								<Form.Control>
-									{#snippet children({ props })}
-										<Form.Label>Confirm new password</Form.Label>
-										<Input
-											{...props}
-											type="password"
-											bind:value={$passwordFormData.passwordConfirm}
-											autocomplete="new-password"
-											required
-											minlength={8}
-										/>
-									{/snippet}
-								</Form.Control>
-								<Form.FieldErrors class="contents text-destructive" />
-							</Form.Field>
+					<div class="flex justify-between items-center">
+						<span class="text-sm flex items-center gap-2">
+							{data.user.email}
+							<Badge variant="secondary">{data.user.verified ? 'Verified' : 'Unverified'}</Badge>
+						</span>
+						<div class="flex items-center gap-3">
+							{#if !data.user.verified}
+								<form method="POST" action="?/resendVerificationEmail">
+									<Button type="submit" variant="outline" class="w-fit"
+										>Resend verification email</Button
+									>
+								</form>
+							{/if}
+
+							<Dialog.Root>
+								<Dialog.Trigger class={buttonVariants({ variant: 'outline' })}>
+									Change email
+								</Dialog.Trigger>
+								<Dialog.Content>
+									<Dialog.Header>
+										<Dialog.Title>Change email</Dialog.Title>
+										<Dialog.Description>
+											Enter your new email address. You will receive a verification email.
+										</Dialog.Description>
+									</Dialog.Header>
+									<form method="POST" action="?/changeEmail" class="grid gap-4">
+										<div class="grid gap-6">
+											<div class="grid gap-3">
+												<Form.Field form={emailForm} name="email">
+													<Form.Control>
+														{#snippet children({ props })}
+															<Form.Label>Email</Form.Label>
+															<Input
+																{...props}
+																type="email"
+																bind:value={$emailFormData.email}
+																required
+																autocomplete="email"
+															/>
+														{/snippet}
+													</Form.Control>
+													<Form.FieldErrors class="contents text-destructive" />
+												</Form.Field>
+											</div>
+										</div>
+										<Dialog.Footer>
+											<Button type="submit" class="w-fit">Change email</Button>
+										</Dialog.Footer>
+									</form>
+								</Dialog.Content>
+							</Dialog.Root>
 						</div>
 					</div>
 				</Card.Content>
-				<Card.Footer class="border-t justify-end">
-					<Button type="submit" class="w-fit">Update password</Button>
-				</Card.Footer>
 			</Card.Root>
-		</form>
-	</div>
+		</div>
+
+		<div class="grid grid-cols-1 gap-x-8 gap-y-8 py-10 md:grid-cols-3">
+			<div class="px-4 sm:px-0">
+				<h2 class="text-base/7 font-semibold text-gray-900 dark:text-white">Password</h2>
+				<p class="mt-1 text-sm/6 text-gray-600 dark:text-gray-400">
+					Your password is used to log in to your account.
+				</p>
+			</div>
+
+			<form method="POST" action="?/changePassword" class="md:col-span-2">
+				<Card.Root>
+					<Card.Content class="flex flex-col gap-6">
+						<input
+							type="email"
+							value={data.user.email}
+							autocomplete="username"
+							readonly
+							tabindex="-1"
+							aria-hidden="true"
+							class="sr-only"
+						/>
+						<div class="grid gap-6">
+							<div class="grid gap-3">
+								<Form.Field form={passwordForm} name="password">
+									<Form.Control>
+										{#snippet children({ props })}
+											<Form.Label>New password</Form.Label>
+											<Input
+												{...props}
+												type="password"
+												bind:value={$passwordFormData.password}
+												autocomplete="new-password"
+												required
+												minlength={8}
+											/>
+										{/snippet}
+									</Form.Control>
+									<Form.FieldErrors class="contents text-destructive" />
+								</Form.Field>
+							</div>
+							<div class="grid gap-3">
+								<Form.Field form={passwordForm} name="passwordConfirm">
+									<Form.Control>
+										{#snippet children({ props })}
+											<Form.Label>Confirm new password</Form.Label>
+											<Input
+												{...props}
+												type="password"
+												bind:value={$passwordFormData.passwordConfirm}
+												autocomplete="new-password"
+												required
+												minlength={8}
+											/>
+										{/snippet}
+									</Form.Control>
+									<Form.FieldErrors class="contents text-destructive" />
+								</Form.Field>
+							</div>
+						</div>
+					</Card.Content>
+					<Card.Footer class="border-t justify-end">
+						<Button type="submit" class="w-fit">Update password</Button>
+					</Card.Footer>
+				</Card.Root>
+			</form>
+		</div>
+	{/if}
 </div>

@@ -104,6 +104,7 @@ import enableNotifications from "./patterns/enable/notifications";
 import enablePayments from "./patterns/enable/payments";
 import enableSubscriptions from "./patterns/enable/subscriptions";
 import enableTeams from "./patterns/enable/teams";
+import enableWhatsapp from "./patterns/enable/whatsapp";
 import enableWorkflows from "./patterns/enable/workflows";
 import destroySchema from "./patterns/destroy/schema";
 import destroyForm from "./patterns/destroy/form";
@@ -121,6 +122,7 @@ import disableNotifications from "./patterns/disable/notifications";
 import disableTeams from "./patterns/disable/teams";
 import disablePayments from "./patterns/disable/payments";
 import disableSubscriptions from "./patterns/disable/subscriptions";
+import disableWhatsapp from "./patterns/disable/whatsapp";
 
 export const version = packageJson.version;
 
@@ -148,6 +150,7 @@ export const patterns = [
   enablePayments,
   enableSubscriptions,
   enableTeams,
+  enableWhatsapp,
   enableWorkflows,
   destroySchema,
   destroyForm,
@@ -165,6 +168,7 @@ export const patterns = [
   disableTeams,
   disablePayments,
   disableSubscriptions,
+  disableWhatsapp,
 ];
 
 type PatternEntry = (typeof patterns)[number];

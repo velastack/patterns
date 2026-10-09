@@ -13,7 +13,12 @@ const pb = new PocketBase(process.env.POCKETBASE_URL!) as App.Locals['pb'];
 
 const testUserPassword = 'password';
 
-async function authenticateUser(agent: Agent, user: { email: string }) {
+async function authenticateUser(agent: Agent, user: { email?: string }) {
+\t// Logs in with the password, so it needs the email (made optional by
+\t// enable-whatsapp, for accounts that sign in with a phone number).
+\tif (!user.email) {
+\t\tthrow new Error('authenticateUser needs a user with an email');
+\t}
 \tawait agent.post('/login').type('form').send({
 \t\ttype: 'password',
 \t\temail: user.email,
@@ -36,13 +41,14 @@ beforeEach(async (context: TestContext) => {
 \tcontext.agent = supertest.agent(process.env.VITE_TEST_URL!) as TestContext['agent'];
 \tcontext.admin = admin;
 \tcontext.pb = pb;
+\tconst email = \`test-\${Math.random().toString(36).slice(2)}@example.com\`;
 \tcontext.user = await context.admin.collection('users').create({
-\t\temail: \`test-\${Math.random().toString(36).slice(2)}@example.com\`,
+\t\temail,
 \t\tpassword: testUserPassword,
 \t\tpasswordConfirm: testUserPassword
 \t});
 \tcontext.agent.authenticateUser = () => authenticateUser(context.agent, context.user);
-\tawait context.pb.collection('users').authWithPassword(context.user.email, testUserPassword);
+\tawait context.pb.collection('users').authWithPassword(email, testUserPassword);
 });
 
 afterEach(async (context: TestContext) => {

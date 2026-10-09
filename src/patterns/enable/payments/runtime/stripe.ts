@@ -22,9 +22,12 @@ export async function syncUsersToStripeCustomers(
   logger: Logger,
 ): Promise<SyncUsersResult> {
   const stripe = new Stripe(stripeSecretKey);
-  const users = await pb
-    .collection("users")
-    .getFullList<{ id: string; email: string }>();
+  const users = await pb.collection("users").getFullList<{
+    id: string;
+    email?: string;
+    name?: string;
+    phone?: string;
+  }>();
 
   const existing = await pb
     .collection("stripe_customers")
@@ -45,17 +48,15 @@ export async function syncUsersToStripeCustomers(
       continue;
     }
 
-    if (!user.email) {
-      logger.info(`Skipping user ${user.id} with no email`);
-      result.skipped += 1;
-      continue;
-    }
-
-    const matching = await stripe.customers.list({
-      email: user.email,
-      limit: 1,
-      expand: ["data.invoice_settings"],
-    });
+    // A user made with a phone number may have no email to match on.
+    const matching = user.email
+      ? await stripe.customers.list({
+          email: user.email,
+          limit: 1,
+          expand: ["data.invoice_settings"],
+        })
+      : { data: [] };
+    const label = user.email || user.id;
 
     let customer: Stripe.Customer;
     let isExistingCustomer = false;
@@ -64,11 +65,15 @@ export async function syncUsersToStripeCustomers(
       customer = matching.data[0];
       isExistingCustomer = true;
       result.reused += 1;
-      logger.info(`Reusing Stripe customer ${customer.id} for ${user.email}`);
+      logger.info(`Reusing Stripe customer ${customer.id} for ${label}`);
     } else {
-      customer = await stripe.customers.create({ email: user.email });
+      customer = await stripe.customers.create(
+        user.email
+          ? { email: user.email }
+          : { name: user.name || undefined, phone: user.phone || undefined },
+      );
       result.created += 1;
-      logger.info(`Created Stripe customer ${customer.id} for ${user.email}`);
+      logger.info(`Created Stripe customer ${customer.id} for ${label}`);
     }
 
     try {
@@ -78,7 +83,7 @@ export async function syncUsersToStripeCustomers(
       });
     } catch (error) {
       logger.info(
-        `Failed to create stripe_customers row for ${user.email}: ${(error as Error).message}`,
+        `Failed to create stripe_customers row for ${label}: ${(error as Error).message}`,
       );
       continue;
     }

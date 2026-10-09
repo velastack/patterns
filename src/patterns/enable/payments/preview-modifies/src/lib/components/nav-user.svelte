@@ -7,7 +7,8 @@
 	import LogOutIcon from '@lucide/svelte/icons/log-out';
 	import MoonIcon from '@lucide/svelte/icons/moon';
 	import SunIcon from '@lucide/svelte/icons/sun';
-	import * as Avatar from '#lib/components/ui/avatar/index.js';
+	import UserAvatar from '#lib/components/user-avatar.svelte';
+	import { displayName, type UserIdentity } from '#lib/user.js';
 	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
 	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
 
@@ -30,10 +31,8 @@
 	let {
 		user
 	}: {
-		user: {
+		user: UserIdentity & {
 			id: string;
-			name: string;
-			email: string;
 			avatar: string;
 		};
 	} = $props();
@@ -51,16 +50,9 @@
 						class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 						{...props}
 					>
-						<Avatar.Root class="size-8 rounded-lg">
-							{#if user.avatar}
-								<Avatar.Image src="/api/files/users/{user.id}/{user.avatar}" alt={user.name} />
-							{/if}
-							<Avatar.Fallback class="rounded-lg">
-								{user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
-							</Avatar.Fallback>
-						</Avatar.Root>
+						<UserAvatar {user} class="size-8 rounded-lg" fallbackClass="rounded-lg" />
 						<div class="grid flex-1 text-left text-sm leading-tight">
-							<span class="truncate font-medium">{user.name || user.email}</span>
+							<span class="truncate font-medium">{displayName(user)}</span>
 						</div>
 						<ChevronsUpDownIcon class="ml-auto size-4" />
 					</Sidebar.MenuButton>
@@ -74,16 +66,9 @@
 			>
 				<DropdownMenu.Label class="p-0 font-normal">
 					<div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-						<Avatar.Root class="size-8 rounded-lg">
-							{#if user.avatar}
-								<Avatar.Image src="/api/files/users/{user.id}/{user.avatar}" alt={user.name} />
-							{/if}
-							<Avatar.Fallback class="rounded-lg">
-								{user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
-							</Avatar.Fallback>
-						</Avatar.Root>
+						<UserAvatar {user} class="size-8 rounded-lg" fallbackClass="rounded-lg" />
 						<div class="grid flex-1 text-left text-sm leading-tight">
-							<span class="truncate font-medium">{user.name || user.email}</span>
+							<span class="truncate font-medium">{displayName(user)}</span>
 						</div>
 					</div>
 				</DropdownMenu.Label>

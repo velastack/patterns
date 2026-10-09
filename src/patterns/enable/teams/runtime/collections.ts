@@ -142,7 +142,8 @@ export const TEAMS_PREVIEW_COLLECTIONS: CollectionSpec[] = [
         name: "email",
         exceptDomains: null,
         onlyDomains: null,
-        required: true,
+        // Accounts made with a phone number may have no email.
+        required: false,
         type: "email",
       },
       {

@@ -147,6 +147,7 @@ describe("POST /api/stripe/payment-intent", () => {
       expect(response.body.currency).toBe("usd");
       expect(response.body.brand).toBeUndefined();
       expect(response.body.last4).toBeUndefined();
+      expect(response.body.setupFutureUsage).toBeNull();
 
       // Verify the payment intent was created in Stripe
       const intentId = response.body.clientSecret.split("_secret_")[0];

@@ -13,12 +13,13 @@ export const load = async ({ locals, parent }) => {
       expand: "team",
     });
 
-  const pendingInvites = await locals.pb
-    .collection("team_invites")
-    .getFullList({
-      filter: locals.pb.filter("email = {:email}", { email: user.email }),
-      expand: "team",
-    });
+  // Invites go to an email; accounts made with a phone number may have none.
+  const pendingInvites = user.email
+    ? await locals.pb.collection("team_invites").getFullList({
+        filter: locals.pb.filter("email = {:email}", { email: user.email }),
+        expand: "team",
+      })
+    : [];
 
   const teams = [
     ...ownedTeams.map((team) => ({

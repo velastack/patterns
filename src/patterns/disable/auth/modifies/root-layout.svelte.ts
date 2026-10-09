@@ -26,6 +26,11 @@ export function unmodifyRootLayoutSvelte(layoutPath: string): ModifyOutcome {
   file.modifyScript((content) => {
     const { source: out } = withInMemoryScript(content, (sf) => {
       removeImportByModuleSpecifier(sf, libModule("components/ui/auth-menu"));
+      removeImportByModuleSpecifier(
+        sf,
+        libModule("components/user-avatar.svelte"),
+      );
+      // Layouts from before UserAvatar import the avatar parts directly.
       removeImportByModuleSpecifier(sf, libModule("components/ui/avatar"));
       // enable-auth added `data` for the menu's `data.user`.
       removePropsBindingIfUnused(sf, "data", markup);

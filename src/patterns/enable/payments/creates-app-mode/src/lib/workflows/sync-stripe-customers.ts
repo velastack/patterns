@@ -15,7 +15,7 @@ export const syncStripeCustomers = ow.defineWorkflow(
 			const rows = await admin
 				.collection('users')
 				.getFullList({ filter: 'stripe_customers_via_user.id = null' });
-			return rows.filter((user) => user.email).map((user) => ({ id: user.id, email: user.email }));
+			return rows.map((user) => ({ id: user.id, email: user.email || undefined }));
 		});
 
 		await step.run({ name: 'start-links' }, async () => {

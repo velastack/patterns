@@ -1,5 +1,6 @@
 import { error } from "@sveltejs/kit";
 import stripe from "#lib/stripe.js";
+import { getStripeCustomerId } from "#lib/server/stripe-customer.js";
 
 type RecurringInfo = {
   interval: string;
@@ -30,13 +31,12 @@ export const load = async ({ locals, depends, parent }) => {
 
   let customer;
   try {
+    const customerId = await getStripeCustomerId(locals.admin, user);
     customer = await locals.admin
       .collection("stripe_customers")
-      .getFirstListItem(
-        locals.admin.filter("user = {:user}", { user: user.id }),
-      );
+      .getOne(customerId);
   } catch {
-    // The link-stripe-customer workflow started at signup has not finished.
+    // The link-stripe-customer run has not finished yet.
     return {
       paymentMethods: [],
       user,
@@ -164,17 +164,17 @@ export const load = async ({ locals, depends, parent }) => {
 };
 
 async function getUserCustomer(locals: App.Locals) {
-  const userId = locals.pb.authStore.record?.id;
-  if (!userId) {
+  const user = locals.pb.authStore.record;
+  if (!user) {
     return error(401, "Unauthorized");
   }
-  const customer = await locals.admin
-    .collection("stripe_customers")
-    .getFirstListItem(`user.id = "${userId}"`);
-  if (!customer || !customer.id) {
-    return error(400, "Customer not found");
+  let customerId: string;
+  try {
+    customerId = await getStripeCustomerId(locals.admin, user);
+  } catch {
+    return error(503, "Billing is still being set up. Try again shortly.");
   }
-  return customer;
+  return locals.admin.collection("stripe_customers").getOne(customerId);
 }
 
 // A subscription can be updated in-place unless it has fully terminated.

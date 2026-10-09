@@ -27,6 +27,10 @@
     "**/creates-with-negotiation/**",
     "**/creates-with-blog/**",
     "**/creates-backend/**",
+    "**/creates-superforms/**",
+    "**/creates-remote/**",
+    "src/patterns/enable/whatsapp/templates/**",
+    "src/patterns/enable/whatsapp/originals/**",
     "**/providers/**"
   ]
 }

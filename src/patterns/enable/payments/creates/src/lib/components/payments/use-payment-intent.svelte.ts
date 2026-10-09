@@ -7,6 +7,11 @@ export interface PaymentIntentResult {
   clientSecret?: string;
   brand?: string;
   last4?: string;
+  /**
+   * What the intent was created with: `off_session` when the card is kept
+   * for the signed-in customer. The card form has to match it.
+   */
+  setupFutureUsage?: "off_session" | null;
 }
 
 export function usePaymentIntent() {

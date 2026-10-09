@@ -15,7 +15,12 @@
 		amount?: number;
 		currency?: string;
 		savePaymentMethod?: boolean;
-		user?: { email: string; name: string } | null;
+		/**
+		 * The intent's `setup_future_usage`, which Elements must match. A setup
+		 * (adding a card) always keeps the card.
+		 */
+		setupFutureUsage?: 'off_session' | null;
+		user?: { email?: string; name?: string } | null;
 		onchange: (complete: boolean) => void;
 	}
 
@@ -25,6 +30,7 @@
 		amount = 0,
 		currency = 'usd',
 		savePaymentMethod = false,
+		setupFutureUsage = null,
 		user,
 		onchange
 	}: Props = $props();
@@ -55,7 +61,7 @@
 			...(mode === 'payment' && {
 				amount: amount
 			}),
-			...(user || mode === 'setup'
+			...(mode === 'setup' || setupFutureUsage
 				? {
 						setupFutureUsage: 'off_session' as const
 					}
@@ -66,8 +72,8 @@
 			layout: 'tabs',
 			defaultValues: {
 				billingDetails: {
-					email: user?.email,
-					name: user?.name
+					email: user?.email || undefined,
+					name: user?.name || undefined
 				}
 			},
 			terms: savePaymentMethod ? TERMS_AUTO : TERMS_NEVER

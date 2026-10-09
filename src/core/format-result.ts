@@ -12,7 +12,9 @@ function canFormatFile(file: File): boolean {
     file.language === "ts" ||
     file.language === "js" ||
     file.language === "svelte" ||
-    file.path.endsWith(".json")
+    file.path.endsWith(".json") ||
+    // A README's code blocks are checked by `prettier --check` like the code.
+    file.path.endsWith(".md")
   );
 }
 

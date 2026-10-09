@@ -1,0 +1,64 @@
+<script lang="ts">
+  import favicon from "#lib/assets/favicon.svg";
+  import { site } from "#lib/site.js";
+
+  import { Button } from "#lib/components/ui/button/index.js";
+  import * as Card from "#lib/components/ui/card/index.js";
+  import { Input } from "#lib/components/ui/input/index.js";
+  import { otpForm } from "./form.remote";
+</script>
+
+<div class="h-full flex flex-col items-center justify-center gap-6 p-6 md:p-10">
+  <div class="flex w-full max-w-sm flex-col gap-6">
+    <a href="/" class="flex items-center gap-2 self-center font-medium">
+      <div
+        class="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md"
+      >
+        <img src={favicon} alt="logo" class="size-4" />
+      </div>
+      {site.name}
+    </a>
+
+    <div class="flex flex-col gap-6">
+      <Card.Root>
+        <Card.Header class="text-center">
+          <Card.Title class="text-xl">Check your WhatsApp</Card.Title>
+          <Card.Description
+            >Enter the code we sent to your WhatsApp</Card.Description
+          >
+        </Card.Header>
+        <Card.Content>
+          <form {...otpForm}>
+            <div class="grid gap-6">
+              <div class="grid gap-2">
+                <div class="space-y-2 col-span-1">
+                  <label for="otp" class="text-sm font-medium">Code</label>
+                  <Input
+                    id="otp"
+                    {...otpForm.fields.otp.as("text")}
+                    type="text"
+                    inputmode="numeric"
+                    autocomplete="one-time-code"
+                    required
+                    autofocus
+                  />
+                  {#each otpForm.fields.otp.issues() as issue}
+                    <p class="text-destructive text-sm">{issue.message}</p>
+                  {/each}
+                </div>
+
+                {#if otpForm.result?.message}
+                  <div class="text-destructive text-sm font-medium -mt-2">
+                    {otpForm.result.message}
+                  </div>
+                {/if}
+
+                <Button type="submit" class="w-full">Verify code</Button>
+              </div>
+            </div>
+          </form>
+        </Card.Content>
+      </Card.Root>
+    </div>
+  </div>
+</div>

@@ -26,6 +26,8 @@ const createPaymentIntent = async (price: Stripe.Price) => {
     clientSecret: intent.client_secret,
     amount: price.unit_amount,
     currency: price.currency,
+    // A guest's card is not kept, so the card form must not ask to keep it.
+    setupFutureUsage: null,
   };
 };
 
