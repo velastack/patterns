@@ -101,7 +101,9 @@
 											</div>
 										{/snippet}
 										{#snippet input()}
-											<FileForm.Input class="peer sr-only" {...props} />
+											<!-- Input brings w-full, h-8, padding and a border, which win over
+											     sr-only and leave a card-wide invisible box off the page -->
+											<FileForm.Input class="peer sr-only size-px border-0 p-0" {...props} />
 											<Form.Label
 												class="{buttonVariants({
 													variant: 'outline'
@@ -176,7 +178,7 @@
 
 			<Card.Root class="md:col-span-2">
 				<Card.Content class="flex flex-col gap-6">
-					<div class="flex justify-between items-center">
+					<div class="flex flex-wrap justify-between items-center gap-3">
 						<span class="text-sm flex items-center gap-2">
 							{data.user.email}
 							<Badge variant="secondary">{data.user.verified ? 'Verified' : 'Unverified'}</Badge>

@@ -129,7 +129,7 @@
 
       <Card.Root class="md:col-span-2">
         <Card.Content class="flex flex-col gap-6">
-          <div class="flex justify-between items-center">
+          <div class="flex flex-wrap justify-between items-center gap-3">
             <span class="text-sm flex items-center gap-2">
               {data.user.email}
               <Badge variant="secondary"
