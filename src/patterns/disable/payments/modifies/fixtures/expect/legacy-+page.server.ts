@@ -5,6 +5,7 @@ import { setFlash } from "sveltekit-flash-message/server";
 import { setPocketbaseErrors } from "@velastack/pocketbase/form";
 import { dev } from "$app/environment";
 import { signupSchema } from "$lib/schemas/signup";
+
 export const load = async ({ locals }) => {
   const authMethods = await locals.admin.collection("users").listAuthMethods();
 
@@ -36,8 +37,6 @@ export const actions = {
       return fail(400, { form });
     }
 
-    // Queued here, done in the background: the Stripe calls retry on their own,
-    // and the key means a retry never makes a second customer for this user.
     await locals.pb.collection("users").requestVerification(user.email);
     await locals.pb
       .collection("users")

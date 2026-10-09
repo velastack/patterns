@@ -300,12 +300,21 @@ function newlines(text: string): number {
 }
 
 /**
- * The comment lines directly above a top-level statement, up to the first
- * blank line. ts-morph parses them as statements of their own; the JSDoc is
- * not among them, it belongs to the statement.
+ * The statements and comment lines beside `statement`: the file's for a
+ * top-level one, the block's for one inside a function body.
+ */
+function siblingsOf(statement: Statement): Statement[] {
+  const parent = statement.getParent();
+  return Node.isStatemented(parent) ? parent.getStatementsWithComments() : [];
+}
+
+/**
+ * The comment lines directly above a statement, up to the first blank line.
+ * ts-morph parses them as statements of their own; the JSDoc is not among
+ * them, it belongs to the statement.
  */
 function commentsAbove(sf: SourceFile, statement: Statement): Statement[] {
-  const siblings = sf.getStatementsWithComments();
+  const siblings = siblingsOf(statement);
   const text = sf.getFullText();
   const comments: Statement[] = [];
   let cursor = statement.getStart(true);
@@ -320,9 +329,9 @@ function commentsAbove(sf: SourceFile, statement: Statement): Statement[] {
 }
 
 /**
- * Remove the JSDoc and comment lines directly above a top-level statement,
- * leaving the statement. For a statement whose comment describes something
- * that has just been swapped out.
+ * Remove the JSDoc and comment lines directly above a statement, leaving the
+ * statement. For a statement whose comment describes something that has just
+ * been swapped out.
  */
 export function removeAttachedComments(
   sf: SourceFile,
@@ -338,16 +347,16 @@ export function removeAttachedComments(
 }
 
 /**
- * Remove a top-level statement together with its JSDoc, the comment lines
- * directly above it and a comment trailing its last line. ts-morph's own
- * `remove()` leaves the comment lines behind as orphans.
+ * Remove a statement, top-level or in a function body, together with its
+ * JSDoc, the comment lines directly above it and a comment trailing its last
+ * line. ts-morph's own `remove()` leaves the comment lines behind as orphans.
  */
 export function removeStatementWithComments(
   sf: SourceFile,
   statement: Statement,
 ): void {
   const comments = commentsAbove(sf, statement);
-  const siblings = sf.getStatementsWithComments();
+  const siblings = siblingsOf(statement);
   const next = siblings[siblings.indexOf(statement) + 1];
   const spacing = spacingAround(sf, comments[0] ?? statement);
   statement.remove();
@@ -361,7 +370,7 @@ export function removeStatementWithComments(
  * one, so `restore` can put it back before whatever follows.
  */
 function spacingAround(sf: SourceFile, first: Statement) {
-  const siblings = sf.getStatementsWithComments();
+  const siblings = siblingsOf(first);
   const prev = siblings[siblings.indexOf(first) - 1];
   const setOff =
     prev !== undefined &&

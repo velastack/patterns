@@ -1,7 +1,11 @@
 import fs from "node:fs";
 import { Project, QuoteKind, SyntaxKind } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
-import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
+import {
+  ensureBlankLineAfterImports,
+  formatLikeSource,
+  removeStatementWithComments,
+} from "../../../../runtime/ts-morph-helpers";
 import { isLibSpecifier } from "../../../../runtime/lib-specifier";
 
 const CALL_EXPRESSIONS = new Set([
@@ -42,10 +46,14 @@ export function unmodifyUserSignup(userSignupPath: string): ModifyOutcome {
     .filter((ce) => CALL_EXPRESSIONS.has(ce.getExpression().getText()));
   for (const call of callStatements) {
     const stmt = call.getFirstAncestorByKind(SyntaxKind.ExpressionStatement);
-    if (stmt) stmt.remove();
+    // With the two comment lines enable-payments put above it: left behind,
+    // they keep the file from matching the stock signup, and enable-whatsapp
+    // then refuses to swap it.
+    if (stmt) removeStatementWithComments(sourceFile, stmt);
   }
 
   formatLikeSource(sourceFile);
+  ensureBlankLineAfterImports(sourceFile);
   sourceFile.saveSync();
 
   return {
