@@ -277,6 +277,39 @@ describe("removeStatementWithComments", () => {
       remove(`const a = 1;\nconst init = 2;\nconst b = 3;\n`, "init"),
     ).toBe(`const a = 1;\nconst b = 3;\n`);
   });
+
+  it("takes the comment lines above a statement in a function body", () => {
+    const { source } = withInMemoryScript(
+      dedent`
+        async function signup() {
+          const user = await create();
+
+          // Queued here, done in the background.
+          // A retry never makes a second customer.
+          await link.run(user);
+
+          await verify(user);
+        }
+      ` + "\n",
+      (sf) =>
+        removeStatementWithComments(
+          sf,
+          sf
+            .getFunctionOrThrow("signup")
+            .getStatements()
+            .find((s) => s.getText().startsWith("await link"))!,
+        ),
+    );
+    expect(source).toBe(
+      dedent`
+        async function signup() {
+          const user = await create();
+
+          await verify(user);
+        }
+      ` + "\n",
+    );
+  });
 });
 
 describe("removeAttachedComments", () => {

@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { unmodifyUserSignup } from "./modify-user-signup";
+import { modifyUserSignup } from "../../../enable/payments/modifies/modify-user-signup";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixturesPath = path.join(__dirname, "fixtures");
@@ -10,6 +11,11 @@ const fixturesPath = path.join(__dirname, "fixtures");
 const enabled = path.join(
   __dirname,
   "../../../enable/payments/modifies/fixtures/expect/+page.server.ts",
+);
+// The stock signup action, as enable-auth writes it.
+const stock = path.join(
+  __dirname,
+  "../../../enable/auth/creates/src/routes/(public)/(auth)/signup/+page.server.ts",
 );
 const tempDir = path.join(__dirname, "temp");
 
@@ -36,6 +42,23 @@ describe("disable payments: signup action", () => {
     const reverted = fs.readFileSync(filePath, "utf8");
     expect(reverted).not.toContain("linkStripeCustomer");
     expect(reverted).not.toContain("#lib/workflows/link-stripe-customer.js");
+  });
+
+  it("puts the stock signup action back, byte for byte", () => {
+    // enable-whatsapp swaps the signup form only while it matches a known
+    // original: the comment lines above the hook must go with it, and the
+    // blank line after the imports must stay.
+    const filePath = path.join(tempDir, "+page.server.ts");
+    fs.copyFileSync(stock, filePath);
+    expect(modifyUserSignup(filePath).status).toBe("success");
+
+    expect(unmodifyUserSignup(filePath)).toEqual({
+      status: "success",
+      changed: true,
+    });
+    expect(fs.readFileSync(filePath, "utf8")).toBe(
+      fs.readFileSync(stock, "utf8"),
+    );
   });
 
   it("takes it out of a legacy signup action (pre-Kit 3 imports)", async () => {

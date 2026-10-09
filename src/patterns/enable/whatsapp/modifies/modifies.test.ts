@@ -8,6 +8,7 @@ import sveltePlugin from "prettier-plugin-svelte";
 import { pageGroups, swapAuthPages, type Mode } from "./auth-pages";
 import { modifyTestSetup } from "./modify-test-setup";
 import { modifyUserSignup } from "../../payments/modifies/modify-user-signup";
+import { unmodifyUserSignup } from "../../../disable/payments/modifies/modify-user-signup";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const patterns = path.resolve(__dirname, "../../..");
@@ -195,6 +196,22 @@ describe("swapAuthPages", () => {
     const reverted = fs.readFileSync(server, "utf8");
     expect(reverted).not.toContain("WhatsApp");
     expect(reverted).toContain("linkStripeCustomer.run(");
+  });
+
+  it("swaps a signup action that had payments enabled, then disabled", async () => {
+    writeProject("base");
+    const server = path.join(
+      tempDir,
+      "src/routes/(public)/(auth)/signup/+page.server.ts",
+    );
+    expect(modifyUserSignup(server).status).toBe("success");
+    expect(unmodifyUserSignup(server).status).toBe("success");
+
+    const outcomes = await swapAuthPages(tempDir, "enable", hint);
+    expect(outcomes.get(server)).toEqual({ status: "success", changed: true });
+    expect(fs.readFileSync(server, "utf8")).toBe(
+      read(TEMPLATES.base, "src/routes/(public)/(auth)/signup/+page.server.ts"),
+    );
   });
 
   it("reports a missing page", async () => {
