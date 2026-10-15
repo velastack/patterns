@@ -98,7 +98,7 @@
     "@types/node": "^26.5.1",
     "@types/pluralize": "^0.0.33",
     "@velastack/kit": "^0.4.0",
-    "@velastack/pocketbase": "^0.4.0",
+    "@velastack/pocketbase": "^0.4.2",
     "@velastack/pocketbase-codegen": "^0.1.0",
     "change-case": "^5.4.4",
     "cross-spawn": "^7.0.6",
