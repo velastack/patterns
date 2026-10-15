@@ -45,7 +45,7 @@ describe("enable backend", () => {
     const result = await generate(makeOptions("/tmp/project"));
     expect(result.packages).toEqual(
       expect.arrayContaining([
-        "@velastack/pocketbase@^0.4.0",
+        "@velastack/pocketbase@^0.4.2",
         "@velastack/kit@^0.4.0",
         "@sveltejs/adapter-node@^6.0.0",
       ]),
