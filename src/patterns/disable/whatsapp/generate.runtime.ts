@@ -11,7 +11,7 @@ import {
 } from "../../enable/whatsapp/runtime/whatsapp";
 import { swapAuthPages } from "../../enable/whatsapp/modifies/auth-pages";
 
-const DOCS_URL = "https://docs.velastack.dev/disable/whatsapp";
+const DOCS_URL = "https://velastack.dev/docs/disable/whatsapp";
 
 export async function generate(options: Options) {
   const logger = getLogger(options);

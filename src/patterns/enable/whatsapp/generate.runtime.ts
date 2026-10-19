@@ -18,7 +18,7 @@ import {
 import { swapAuthPages } from "./modifies/auth-pages";
 import { modifyTestSetup } from "./modifies/modify-test-setup";
 
-export const DOCS_URL = "https://docs.velastack.dev/enable/whatsapp";
+export const DOCS_URL = "https://velastack.dev/docs/enable/whatsapp";
 
 function migrationCreate(file: string): File {
   return {
