@@ -363,6 +363,7 @@ export interface Pattern {
   source: string;
   plan: "open" | "pro" | "agency";
   title: string;
+  /** The pattern's docs page as a path under velastack.dev/docs, e.g. `/enable/auth`. */
   docs: string;
   summary: string;
 
