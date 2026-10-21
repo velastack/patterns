@@ -121,6 +121,80 @@ export class SvelteFile {
     return this.replaceElement(name, "");
   }
 
+  /**
+   * The first <outer> element with an <inner> element somewhere inside it:
+   * the `Navbar.Item` that holds `AuthMenu.Root`, among several items.
+   */
+  findElementContaining(outer: string, inner: string): SvelteNode | null {
+    return findNode(
+      (this.ast as any).fragment,
+      (node) =>
+        isElement(node, outer) &&
+        findNode(node.fragment, (child) => isElement(child, inner)) !== null,
+    );
+  }
+
+  /** The <child> elements directly inside the first <name> element, in order. */
+  childElements(name: string, child: string): SvelteNode[] {
+    const node = this.findElement(name);
+    const nodes: SvelteNode[] = node?.fragment?.nodes ?? [];
+    return nodes.filter((candidate) => isElement(candidate, child));
+  }
+
+  /**
+   * Put `content` on its own line directly before `node`, at `node`'s
+   * indentation. Lines after the first are indented to match too, with their
+   * leading tabs turned into the file's indent unit.
+   */
+  insertBeforeElement(node: SvelteNode, content: string): void {
+    const indent = this.indentOf(node.start as number);
+    this.s.appendLeft(
+      node.start as number,
+      `${this.reindent(content, indent)}\n${indent}`,
+    );
+  }
+
+  /** Like `insertBeforeElement`, on the line after `node`. */
+  insertAfterElement(node: SvelteNode, content: string): void {
+    const indent = this.indentOf(node.start as number);
+    this.s.appendLeft(
+      node.end as number,
+      `\n${indent}${this.reindent(content, indent)}`,
+    );
+  }
+
+  /**
+   * Remove the first <outer> containing <inner>, and the line it stood on
+   * when nothing else shared it. Returns false when there is none.
+   */
+  removeElementContaining(outer: string, inner: string): boolean {
+    const node = this.findElementContaining(outer, inner);
+    if (!node) return false;
+    let start = node.start as number;
+    while (start > 0 && /[ \t]/.test(this.source[start - 1]!)) start--;
+    if (start > 0 && this.source[start - 1] === "\n") start--;
+    this.s.remove(start, node.end as number);
+    return true;
+  }
+
+  /** The whitespace between the start of `pos`'s line and `pos`. */
+  private indentOf(pos: number): string {
+    const lineStart = this.source.lastIndexOf("\n", pos - 1) + 1;
+    const lead = this.source.slice(lineStart, pos);
+    return /^[ \t]*$/.test(lead) ? lead : "";
+  }
+
+  private reindent(content: string, indent: string): string {
+    const unit = indent.includes(" ") ? "  " : "\t";
+    return content
+      .split("\n")
+      .map((line, i) => {
+        const nested = line.replace(/^\t+/, (tabs) => unit.repeat(tabs.length));
+        return i === 0 ? nested : `${indent}${nested}`;
+      })
+      .join("\n");
+  }
+
   /** Append raw markup to the end of the source file. */
   appendMarkup(content: string): void {
     this.s.append(content);
@@ -207,6 +281,13 @@ export class SvelteFile {
       fs.writeFileSync(filePath, this.toString(), "utf8");
     }
   }
+}
+
+function isElement(node: any, name: string): boolean {
+  return (
+    (node?.type === "Component" || node?.type === "RegularElement") &&
+    node.name === name
+  );
 }
 
 function findNode(
