@@ -64,6 +64,8 @@ export default {
     workflows: true,
     // The pages are shadcn-svelte markup; there is no plain variant.
     ui: "shadcn",
+    // Stripe Billing: Shopify sells subscriptions through its own apps.
+    providers: { payments: ["stripe"] },
   },
   category: "payments" as const,
   tags: [

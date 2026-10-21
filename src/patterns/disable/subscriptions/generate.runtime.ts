@@ -15,8 +15,8 @@ import { unmodifyBillingPageSvelte } from "./modifies/modify-billing-page-svelte
 // overwrote. For the billing pages, that's exactly what enable-payments
 // writes in creates-app-mode; for nav-user it's the payments preview-modifies
 // snapshot (with highlight annotations stripped by the revert helper).
-import paymentsBillingPageServerTemplate from "../../enable/payments/creates-app-mode/src/routes/(app)/billing/+page.server.ts?raw";
-import paymentsBillingPageSvelteTemplate from "../../enable/payments/creates-app-mode/src/routes/(app)/billing/+page.svelte?raw";
+import paymentsBillingPageServerTemplate from "../../enable/payments/providers-app-mode/stripe/src/routes/(app)/billing/+page.server.ts?raw";
+import paymentsBillingPageSvelteTemplate from "../../enable/payments/providers-app-mode/stripe/src/routes/(app)/billing/+page.svelte?raw";
 
 export async function generate(options: Options) {
   const logger = getLogger(options);

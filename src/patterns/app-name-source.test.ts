@@ -9,7 +9,7 @@ const patternsDir = path.dirname(fileURLToPath(import.meta.url));
  * Directories whose files end up in a project or on the website preview.
  * Fixtures are test inputs and may model a project from before `#lib/site.js`.
  */
-const SHIPPED = /^(creates[^/]*|variants|providers|preview-modifies)$/;
+const SHIPPED = /^(creates[^/]*|variants|providers[^/]*|preview-modifies)$/;
 
 /** PocketBase meta as the app's name and URL, which `#lib/site.js` replaced. */
 const META_READ = /\b(?:locals|data)\??\.meta\b|\bmeta\??\.app(?:Name|URL)\b/;

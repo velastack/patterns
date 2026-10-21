@@ -1,5 +1,5 @@
 import { bySlug, type Slug } from "../src/index";
-import type { Features } from "../src/core/types";
+import type { Features, Pattern } from "../src/core/types";
 
 /**
  * Starting points for a case:
@@ -85,19 +85,41 @@ const SCAFFOLD_FIELDS = [
 const HOOKS = "src/hooks.ts";
 const COMPOSED_REROUTE = "rerouteDeLocalize(negotiateReroute(url.pathname))";
 
+/** Steps that call Stripe whatever their input says. */
 const STRIPE_SLUGS = new Set<Slug>([
-  "enable-payments",
   "enable-subscriptions",
-  "disable-payments",
   "disable-subscriptions",
 ]);
 
-/** A step with the harness follow-ups a user would perform after the command. */
+/**
+ * A step with the harness follow-ups a user would perform after the command.
+ * A payments step is Stripe unless it says otherwise, so a chain that needs
+ * payments gets the provider most patterns built on it support.
+ */
 export function step(slug: Slug, extra: Omit<StepSpec, "slug"> = {}): StepSpec {
   const spec: StepSpec = { slug, ...extra };
   if (slug === "enable-i18n") spec.after ??= "i18nExtract";
   if (slug === "enable-backend") spec.after ??= "bootstrapSuperuser";
+  if (slug === "enable-payments") {
+    spec.input = { provider: "stripe", ...spec.input };
+  }
   return spec;
+}
+
+/**
+ * A pattern's requirements with its provider's on top: `provider`, else the
+ * first declared one, which is what `step` defaults a payments step to.
+ */
+function requiresOf(slug: Slug, provider?: unknown): Features {
+  const pattern: Pattern = bySlug[slug];
+  const chosen =
+    pattern.providers?.find((candidate) => candidate.id === provider) ??
+    pattern.providers?.[0];
+  const requires: Features = { ...pattern.requires };
+  for (const key of Object.keys(chosen?.requires ?? {}) as (keyof Features)[]) {
+    if (key !== "ui" && chosen?.requires?.[key] === true) requires[key] = true;
+  }
+  return requires;
 }
 
 /**
@@ -116,7 +138,7 @@ export function prereqChain(
       const slug = FEATURE_ENABLER[feature as keyof Features];
       if (!slug || needed.has(slug)) continue;
       needed.add(slug);
-      visit(bySlug[slug].requires);
+      visit(requiresOf(slug));
     }
   };
   visit(requires);
@@ -127,7 +149,13 @@ export function prereqChain(
 }
 
 function needsStripe(steps: StepSpec[]): "stripe" | undefined {
-  return steps.some((s) => STRIPE_SLUGS.has(s.slug)) ? "stripe" : undefined;
+  return steps.some(
+    (s) =>
+      STRIPE_SLUGS.has(s.slug) ||
+      (s.slug === "enable-payments" && s.input?.provider === "stripe"),
+  )
+    ? "stripe"
+    : undefined;
 }
 
 function defaultBaseline(slug: Slug): BaselineName {
@@ -186,7 +214,10 @@ export function singleCase(
   overrides: Omit<StepSpec, "slug"> = {},
   name: string = slug,
 ): CaseSpec {
-  const { baseline, chain } = prerequisites(slug, bySlug[slug].requires);
+  const { baseline, chain } = prerequisites(
+    slug,
+    requiresOf(slug, overrides.input?.provider),
+  );
   return makeCase(name, baseline, [
     ...chain,
     step(slug, { check: true, ...overrides }),
@@ -215,8 +246,8 @@ export function inverseCase(slug: Slug): CaseSpec {
   const { baseline, chain } = prerequisites(
     slug,
     combinedRequires([
-      bySlug[slug].requires,
-      ...setup.map((s) => bySlug[s.slug].requires),
+      requiresOf(slug),
+      ...setup.map((s) => requiresOf(s.slug, s.input?.provider)),
     ]),
   );
   return makeCase(slug, baseline, [
@@ -304,6 +335,15 @@ export const enableCases: CaseSpec[] = [
   singleCase("enable-teams"),
   singleCase("enable-workflows"),
   singleCase("enable-payments"),
+  // Shopify needs no backend, so it runs on the static template too.
+  makeCase("enable-payments-shopify-static", "static", [
+    step("enable-payments", { input: { provider: "shopify" }, check: true }),
+  ]),
+  singleCase(
+    "enable-payments",
+    { input: { provider: "shopify" } },
+    "enable-payments-shopify",
+  ),
   singleCase("enable-subscriptions"),
   singleCase("enable-whatsapp"),
   // The login and signup pages it swaps come in three shapes.
@@ -591,6 +631,11 @@ export const stackCases: CaseSpec[] = [
     step("enable-subscriptions", { check: true }),
     step("disable-subscriptions"),
     step("disable-payments", { check: true }),
+  ]),
+  makeCase("payments-shopify-lifecycle", "static", [
+    step("enable-payments", { input: { provider: "shopify" } }),
+    step("disable-payments", { check: true }),
+    step("enable-payments", { input: { provider: "shopify" }, check: true }),
   ]),
 ];
 

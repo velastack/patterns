@@ -35,7 +35,8 @@ export function detectFeatures(root: string): Features {
       (hasDep("pocketbase-sveltekit") || hasDep("@velastack/pocketbase")),
     i18n: has("wuchale.config.js") || hasDep("wuchale"),
     teams: has("src/routes/(app)/teams") || has("src/lib/teams"),
-    payments: has("src/routes/webhooks/stripe"),
+    // Any payments provider; which one is `detectProviders`' job.
+    payments: detectProviders(root).providers.payments !== undefined,
     blog: hasDep("mdsvex"),
     contentNegotiation: hasDep("sveltekit-negotiate"),
     cms: hasDep("@velastack/cms"),

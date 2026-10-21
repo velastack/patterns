@@ -11,7 +11,7 @@ import { modifyAppSidebar } from "./modifies/modify-app-sidebar";
 import { modifyNavUser } from "./modifies/modify-nav-user";
 import { modifyBillingPageServer } from "./modifies/modify-billing-page-server";
 import { modifyBillingPageSvelte } from "./modifies/modify-billing-page-svelte";
-import stripeCustomerHelper from "../payments/creates-app-mode/src/lib/server/stripe-customer.ts?raw";
+import stripeCustomerHelper from "../payments/providers-app-mode/stripe/src/lib/server/stripe-customer.ts?raw";
 
 // The billing page imports this payments helper, which apps that enabled
 // payments before it existed do not have yet.

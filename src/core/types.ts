@@ -335,6 +335,8 @@ export interface ProviderEnvVar {
   key: string;
   /** Prompt label shown by the CLI. */
   label: string;
+  /** What `src/env.ts` says the variable is for; the label when absent. */
+  description?: string;
   /** Prompt hint only; never written to `.env`. */
   placeholder?: string;
   /** Written to `.env` when the user supplies nothing. */

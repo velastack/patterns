@@ -2,10 +2,10 @@ import type { File, Options, Pattern } from "../../../core/types";
 import { formatResult } from "../../../core/format-result";
 import { getLogger } from "../../../core/logger";
 import { mergeResults } from "../../../core/util";
-import { generate as generateBase } from "./generate";
+import { generate as generateBase, providersToRemove } from "./generate";
 
 const SLUG = "disable-payments" as const;
-const VERSION = "1.1.0";
+const VERSION = "2.0.0";
 const SOURCE = "src/patterns/disable/payments";
 const DOCS = "/disable/payments";
 
@@ -27,7 +27,13 @@ export async function generate(options: Options) {
     return merged;
   }
 
-  const patchCreates = await unlinkStripePaymentMethodsCustomer(options);
+  // Stripe's collections live in PocketBase; a Shopify project may have none.
+  const isStripe = providersToRemove(options).some(
+    (provider) => provider.id === "stripe",
+  );
+  const patchCreates = isStripe
+    ? await unlinkStripePaymentMethodsCustomer(options)
+    : [];
   const finalResult = {
     ...merged,
     creates: [...merged.creates, ...patchCreates],
@@ -84,12 +90,14 @@ export default {
   plan: "pro",
   title: "Disable payments",
   summary:
-    "Drops Stripe collections, strips Stripe env credentials, reverts nav/signup edits, and deletes generated payment files. Does NOT delete Stripe products/prices in the Stripe dashboard, or uninstall stripe/@stripe/stripe-js packages.",
+    "Removes the detected payment provider's files and env credentials. For Stripe it also drops the Stripe collections and reverts the nav/signup edits. Does NOT touch products in the Stripe dashboard or Shopify admin, or uninstall the provider's packages.",
+  // Stripe's collections need the backend, which enable-payments already
+  // required for Stripe; Shopify has none to drop.
   requires: {
     auth: false,
     api: false,
     apiKeys: false,
-    backend: true,
+    backend: false,
     i18n: false,
     teams: false,
     payments: true,
@@ -102,6 +110,7 @@ export default {
     "sveltekit",
     "payments",
     "stripe",
+    "shopify",
     "pocketbase",
     "velastack",
     "checkout",

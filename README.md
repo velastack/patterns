@@ -222,7 +222,8 @@ npm run test:integration -- integration/stacks.test.ts -t "teams" # one case
   the build under test.
 - `INTEGRATION_KEEP=1` keeps generated projects; failed cases are always kept.
 - `vela test:server` runs after each checked step in projects that have it; `INTEGRATION_SERVER_TESTS=0` skips it for a faster local loop.
-- `STRIPE_SECRET_KEY` + `STRIPE_PUBLISHABLE_KEY` enable the payments cases; they skip otherwise.
+- `STRIPE_SECRET_KEY` + `STRIPE_PUBLISHABLE_KEY` enable the Stripe payments cases; they skip otherwise. The Shopify
+  cases need no credentials, because nothing calls Shopify at apply time.
 - `node_modules` is installed once per dependency set and hard-linked into every project from
   `.integration-tests/.cache`, except `node_modules/$app`, which SvelteKit's sync rewrites in place.
 - Failures point at `.integration-tests/<suite>/<case>/.integration/` (`commands.log`, `steps.json`,

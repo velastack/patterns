@@ -181,7 +181,7 @@ export function providerEnvVars(provider: Provider): EnvVarSpec[] {
   return (provider.env ?? []).map((variable) => ({
     name: variable.key,
     ...(variable.public ? { public: true } : {}),
-    description: variable.label,
+    description: variable.description ?? variable.label,
   }));
 }
 
@@ -199,30 +199,35 @@ export function suppliedProviderEnv(
 }
 
 /**
- * Every app-relative path any provider creates, sorted, for a disable pattern
+ * Every app-relative path the providers create, sorted, for a disable pattern
  * that removes the files whichever provider was chosen. Works on a glob taken
  * from anywhere (`../../enable/<x>/providers/**`): only the part after
- * `providers/<id>/` counts.
+ * `providers/<id>/` (or `providers-<variant>/<id>/`) counts. `id` limits it to
+ * one provider's files.
  */
 export function allProviderPaths(
   providersRaw: Record<string, string>,
+  id?: string,
 ): string[] {
   const paths = new Set<string>();
   for (const key of Object.keys(providersRaw)) {
-    const match = key.match(/\/providers\/[^/]+\/(.+)$/);
-    if (match) paths.add(match[1]);
+    const match = key.match(/\/providers(?:-[^/]+)?\/([^/]+)\/(.+)$/);
+    if (match && (id === undefined || match[1] === id)) paths.add(match[2]);
   }
   return [...paths].sort();
 }
 
 /**
  * The files under `providers/<id>/**` of a pattern, as creates. The glob map
- * is one `import.meta.glob("./providers/**")` covering every provider.
+ * is one `import.meta.glob("./providers/**")` covering every provider. `root`
+ * names a sibling tree for a variant of the provider's files, such as
+ * `./providers-app-mode/`.
  */
 export function providerCreates(
   providersRaw: Record<string, string>,
   id: string,
+  root = "./providers/",
 ): File[] {
-  const files = filesUnderPrefix(providersRaw, `./providers/${id}/`);
+  const files = filesUnderPrefix(providersRaw, `${root}${id}/`);
   return Object.values(files).sort((a, b) => a.path.localeCompare(b.path));
 }

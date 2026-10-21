@@ -73,19 +73,30 @@ export function makeGetCollections(root: string): () => Promise<Collection[]> {
  * Inputs a user would supply through the CLI's flags and prompts. Destructive
  * patterns only write when told to, and the payments pattern needs Stripe keys.
  */
-function defaultInput(slug: Slug): Record<string, unknown> {
+function defaultInput(slug: Slug, provider: unknown): Record<string, unknown> {
   const input: Record<string, unknown> = {};
   if (slug.startsWith("disable-") || slug.startsWith("destroy-")) {
     input.destructive = true;
   }
-  if (slug === "enable-payments") {
-    input.stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-    input.stripePublishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
-    input.stripeWebhookSecret =
-      process.env.STRIPE_WEBHOOK_SECRET ?? "whsec_integration";
+  if (slug === "enable-payments" && provider === "stripe") {
+    input.providerEnv = {
+      STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ?? "",
+      PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY ?? "",
+      STRIPE_WEBHOOK_SECRET:
+        process.env.STRIPE_WEBHOOK_SECRET ?? "whsec_integration",
+    };
     if (process.env.STRIPE_PRICE_ID) {
-      input.stripePriceId = process.env.STRIPE_PRICE_ID;
+      input.demoId = process.env.STRIPE_PRICE_ID;
     }
+  }
+  // Nothing calls Shopify at apply time, so placeholder credentials do; the
+  // demo variant makes the Buy page part of what gets type-checked.
+  if (slug === "enable-payments" && provider === "shopify") {
+    input.providerEnv = {
+      PUBLIC_SHOPIFY_STORE_DOMAIN: "integration.myshopify.com",
+      PUBLIC_SHOPIFY_STOREFRONT_TOKEN: "integration",
+    };
+    input.demoId = "gid://shopify/ProductVariant/1";
   }
   return input;
 }
@@ -156,7 +167,10 @@ export async function applyPattern(
   ensurePocketbaseEnv();
   const root = project.root;
   const argv = step.argv ?? pattern.command.argv;
-  const input = { ...defaultInput(step.slug), ...step.input };
+  const input = {
+    ...defaultInput(step.slug, step.input?.provider),
+    ...step.input,
+  };
   const featuresBefore = detectFeatures(root);
   const detected = detectProviders(root);
   const providersBefore = detected.providers;

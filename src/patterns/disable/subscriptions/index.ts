@@ -50,6 +50,8 @@ export default {
     blog: false,
     contentNegotiation: false,
     cms: false,
+    // Stripe Billing: Shopify sells subscriptions through its own apps.
+    providers: { payments: ["stripe"] },
   },
   category: "payments" as const,
   tags: [

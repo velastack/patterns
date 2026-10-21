@@ -45,7 +45,7 @@ const paymentsNavUser = strip(
   fs.readFileSync(
     path.join(
       __dirname,
-      "../../payments/preview-modifies/src/lib/components/nav-user.svelte",
+      "../../payments/preview-modifies/stripe/src/lib/components/nav-user.svelte",
     ),
     "utf8",
   ),
