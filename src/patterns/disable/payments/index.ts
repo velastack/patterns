@@ -31,9 +31,10 @@ export async function generate(options: Options) {
   const isStripe = providersToRemove(options).some(
     (provider) => provider.id === "stripe",
   );
-  const patchCreates = isStripe
-    ? await unlinkStripePaymentMethodsCustomer(options)
-    : [];
+  const patchCreates =
+    isStripe && options.features.backend
+      ? await unlinkStripePaymentMethodsCustomer(options)
+      : [];
   const finalResult = {
     ...merged,
     creates: [...merged.creates, ...patchCreates],

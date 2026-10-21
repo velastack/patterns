@@ -80,10 +80,12 @@ export async function generate(options: Options) {
   }
 
   // Every Stripe collection is planned, whatever auth is now; one that was
-  // never created is planned as missing and left alone.
-  const collectionDrops = isStripe
-    ? await planDropsForCollections(STRIPE_COLLECTIONS, options)
-    : [];
+  // never created is planned as missing and left alone. Without a backend
+  // (no provider detected, on a Shopify project) there is nothing to drop.
+  const collectionDrops =
+    isStripe && options.features.backend
+      ? await planDropsForCollections(STRIPE_COLLECTIONS, options)
+      : [];
 
   return {
     creates: [],
