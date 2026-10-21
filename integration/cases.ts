@@ -139,6 +139,39 @@ function defaultBaseline(slug: Slug): BaselineName {
   return "minimal";
 }
 
+/**
+ * Every flag any of `list` requires. A disable case's setup steps bring their
+ * own prerequisites: disable-subscriptions requires payments, but the
+ * enable-subscriptions it undoes needs auth too.
+ */
+function combinedRequires(list: Features[]): Features {
+  const combined: Features = { ...list[0] };
+  for (const requires of list) {
+    for (const key of Object.keys(requires) as (keyof Features)[]) {
+      if (key !== "ui" && requires[key] === true) combined[key] = true;
+    }
+  }
+  return combined;
+}
+
+/**
+ * The baseline and prerequisite chain for `slug`. A chain that would enable
+ * auth on `minimal` starts from the `auth` baseline instead, which is the
+ * same project with auth already applied.
+ */
+function prerequisites(
+  slug: Slug,
+  requires: Features,
+): { baseline: BaselineName; chain: StepSpec[] } {
+  let baseline = defaultBaseline(slug);
+  let chain = prereqChain(requires, baseline);
+  if (baseline === "minimal" && chain.some((s) => s.slug === "enable-auth")) {
+    baseline = "auth";
+    chain = prereqChain(requires, baseline);
+  }
+  return { baseline, chain };
+}
+
 export function makeCase(
   name: string,
   baseline: BaselineName,
@@ -153,10 +186,9 @@ export function singleCase(
   overrides: Omit<StepSpec, "slug"> = {},
   name: string = slug,
 ): CaseSpec {
-  const baseline = defaultBaseline(slug);
-  const pattern = bySlug[slug];
+  const { baseline, chain } = prerequisites(slug, bySlug[slug].requires);
   return makeCase(name, baseline, [
-    ...prereqChain(pattern.requires, baseline),
+    ...chain,
     step(slug, { check: true, ...overrides }),
   ]);
 }
@@ -166,8 +198,6 @@ export function singleCase(
  * `generate-X` with its example arguments.
  */
 export function inverseCase(slug: Slug): CaseSpec {
-  const baseline = defaultBaseline(slug);
-  const pattern = bySlug[slug];
   const setup: StepSpec[] = [];
   if (slug.startsWith("destroy-")) {
     const generator = `generate-${slug.slice("destroy-".length)}` as Slug;
@@ -179,8 +209,18 @@ export function inverseCase(slug: Slug): CaseSpec {
   if (slug === "disable-whatsapp") {
     setup.push(step("enable-whatsapp", { check: false }));
   }
+  if (slug === "disable-notifications") {
+    setup.push(step("enable-notifications", { check: false }));
+  }
+  const { baseline, chain } = prerequisites(
+    slug,
+    combinedRequires([
+      bySlug[slug].requires,
+      ...setup.map((s) => bySlug[s.slug].requires),
+    ]),
+  );
   return makeCase(slug, baseline, [
-    ...prereqChain(pattern.requires, baseline),
+    ...chain,
     ...setup,
     step(slug, { check: true }),
   ]);

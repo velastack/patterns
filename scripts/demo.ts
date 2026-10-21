@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import path from "node:path";
 import { bySlug, patterns } from "../src/index";
-import type { Features } from "../src/core/types";
+import { unmetRequirements } from "../src/core/requires";
 import { ensurePocketbaseEnv, makeGetCollections } from "../integration/apply";
 import { INTEGRATION_ROOT, createVelaProject } from "../integration/baseline";
 import { detectFeatures, detectProviders } from "../integration/features";
@@ -100,15 +100,17 @@ const prev = process.cwd();
 process.chdir(tempRoot);
 
 for (const [index, { slug, argv, pattern }] of commands.entries()) {
-  // Detect features the way the CLI does, but also merge in pattern.requires
-  // so prerequisites are satisfied even if the user didn't chain them.
-  const detected = detectFeatures(tempRoot);
-  const features = Object.fromEntries(
-    Object.entries(detected).map(([key, value]) => [
-      key,
-      value || (pattern.requires as Features)[key as keyof Features],
-    ]),
-  ) as Features;
+  // Detect features the way the CLI does. Missing prerequisites are reported
+  // rather than switched on: pretending a feature is there hides what the CLI
+  // would refuse. Chain the enable-* commands they name to satisfy them.
+  const features = detectFeatures(tempRoot);
+  const detected = detectProviders(tempRoot);
+  const unmet = unmetRequirements(pattern, { features, detected });
+  if (unmet.length > 0) {
+    console.warn(
+      `  ! ${slug} is missing prerequisites the CLI would refuse it for: ${JSON.stringify(unmet)}`,
+    );
+  }
 
   console.log(
     `\n[${index + 1}/${commands.length}] Applying ${slug}${argv.length ? ` ${argv.join(" ")}` : ""}\n`,
@@ -119,7 +121,7 @@ for (const [index, { slug, argv, pattern }] of commands.entries()) {
     env: "runtime",
     root: tempRoot,
     features,
-    providers: detectProviders(tempRoot).providers,
+    providers: detected.providers,
     input: {},
     getCollections,
     logger: { info: (message) => console.log(`  ${message}`) },

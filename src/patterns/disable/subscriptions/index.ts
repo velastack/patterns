@@ -4,7 +4,7 @@ import { mergeResults } from "../../../core/util";
 import { generate as generateBase } from "./generate";
 
 const SLUG = "disable-subscriptions" as const;
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
 const SOURCE = "src/patterns/disable/subscriptions";
 const DOCS = "/disable/subscriptions";
 
@@ -40,7 +40,7 @@ export default {
   summary:
     "Drops the stripe_subscriptions collection, reverts billing / layout / nav edits, and removes subscription webhook handlers and sync endpoint. Leaves the payments pattern intact.",
   requires: {
-    auth: true,
+    auth: false,
     api: false,
     apiKeys: false,
     backend: true,

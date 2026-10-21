@@ -4,7 +4,7 @@ import { mergeResults } from "../../../core/util";
 import { generate as generateBase } from "./generate";
 
 const SLUG = "disable-notifications" as const;
-const VERSION = "1.1.0";
+const VERSION = "1.1.1";
 const SOURCE = "src/patterns/disable/notifications";
 const DOCS = "/disable/notifications";
 
@@ -40,7 +40,7 @@ export default {
   summary:
     "Drops the notifications collection, deletes the bell component, server helpers and /notifications page, and takes the bell and its loader out of the (app) layout.",
   requires: {
-    auth: true,
+    auth: false,
     api: false,
     apiKeys: false,
     backend: true,

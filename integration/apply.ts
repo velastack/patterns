@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { bySlug, type Slug } from "../src/index";
+import { unmetRequirements, type Unmet } from "../src/core/requires";
 import type { Features, Options, Result } from "../src/core/types";
 import type { Collection } from "../src/parse/types";
 import { withPocketbase } from "../src/runtime/pocketbase";
@@ -11,6 +12,7 @@ import type { Project } from "./project";
 
 export type ErrorKind =
   | "apply"
+  | "requires"
   | "collections"
   | "features"
   | "contents"
@@ -156,7 +158,8 @@ export async function applyPattern(
   const argv = step.argv ?? pattern.command.argv;
   const input = { ...defaultInput(step.slug), ...step.input };
   const featuresBefore = detectFeatures(root);
-  const providersBefore = detectProviders(root).providers;
+  const detected = detectProviders(root);
+  const providersBefore = detected.providers;
   const getCollections = makeGetCollections(root);
   const errors: ErrorRecord[] = [];
   const startedAt = Date.now();
@@ -181,13 +184,30 @@ export async function applyPattern(
     },
   };
 
+  // The CLI refuses a pattern whose prerequisites are missing before it
+  // writes anything; a case that would be refused there fails here too.
+  const unmet = unmetRequirements(pattern, {
+    features: featuresBefore,
+    detected,
+    provider: typeof input.provider === "string" ? input.provider : undefined,
+  });
+
   let result: Result | null = null;
-  try {
-    result = await withProjectCwd(root, () => pattern.generate(options));
-  } catch (error) {
-    const message =
-      error instanceof Error ? (error.stack ?? error.message) : String(error);
-    errors.push({ kind: "apply", step: step.slug, message, fatal: true });
+  if (unmet.length > 0) {
+    errors.push({
+      kind: "requires",
+      step: step.slug,
+      message: `${step.slug} needs ${unmet.map(describeUnmet).join(", ")}`,
+      fatal: true,
+    });
+  } else {
+    try {
+      result = await withProjectCwd(root, () => pattern.generate(options));
+    } catch (error) {
+      const message =
+        error instanceof Error ? (error.stack ?? error.message) : String(error);
+      errors.push({ kind: "apply", step: step.slug, message, fatal: true });
+    }
   }
 
   const changedFiles: string[] = [];
@@ -243,4 +263,15 @@ export async function applyPattern(
   };
   recordStep(project, outcome);
   return outcome;
+}
+
+function describeUnmet(unmet: Unmet): string {
+  switch (unmet.kind) {
+    case "feature":
+      return unmet.feature;
+    case "provider":
+      return `${unmet.capability} on ${unmet.want.join(" or ")} (has ${unmet.have ?? "none"})`;
+    case "ambiguous":
+      return `one ${unmet.capability} provider (found ${unmet.ids.join(" and ")})`;
+  }
 }
