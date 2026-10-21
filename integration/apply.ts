@@ -98,6 +98,14 @@ function defaultInput(slug: Slug, provider: unknown): Record<string, unknown> {
     };
     input.demoId = "gid://shopify/ProductVariant/1";
   }
+  // The demo shop page is written either way; Stripe's loads its price at
+  // request time, so any id type-checks.
+  if (slug === "enable-ecommerce" && provider === "stripe") {
+    input.demoId = process.env.STRIPE_PRICE_ID ?? "price_integration";
+  }
+  if (slug === "enable-ecommerce" && provider === "shopify") {
+    input.demoId = "gid://shopify/ProductVariant/1";
+  }
   return input;
 }
 

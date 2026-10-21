@@ -2,18 +2,18 @@ import dedent from "dedent";
 import type { File, Options, Result } from "../../../core/types";
 import { resolveProvider } from "../../../core/providers";
 import { filesUnderPrefix } from "../../../core/util";
-import { META } from "./generate";
+import { envEditsFor, META } from "./generate";
 import { buyPageSnippet } from "./shopify-page";
 import {
   PAYMENTS_APP_MODE_COLLECTIONS,
   PAYMENTS_BASE_COLLECTIONS,
 } from "./runtime/collections";
 
-// `**` skips dotfiles, so `.env` is named on its own.
-const previewRaw = import.meta.glob<string>(
-  ["./preview-modifies/**", "./preview-modifies/*/.env"],
-  { query: "?raw", import: "default", eager: true },
-);
+const previewRaw = import.meta.glob<string>("./preview-modifies/**", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
 
 const PREVIEW_PRICE_ID = "price_preview_placeholder";
 const PREVIEW_VARIANT_ID = "gid://shopify/ProductVariant/preview";
@@ -37,7 +37,23 @@ export async function generate(options: Options) {
 
   const modifies = Object.values(
     filesUnderPrefix(previewRaw, `./preview-modifies/${provider.id}/`),
-  ).sort((a, b) => a.path.localeCompare(b.path));
+  );
+  // Built, not stored: Vite will not serve a file named `.env`, and these are
+  // the lines the runtime writes.
+  modifies.push({
+    path: ".env",
+    language: "text",
+    content:
+      envEditsFor(provider)
+        .map((edit) =>
+          edit.type === "comment"
+            ? `# ${edit.key}`
+            : `${edit.key}=${edit.value}`,
+        )
+        .join("\n") + "\n",
+    status: "success",
+  });
+  modifies.sort((a, b) => a.path.localeCompare(b.path));
 
   const paymentPage: File = {
     path: "src/routes/(public)/payment/+page.svelte",

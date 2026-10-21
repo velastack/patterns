@@ -113,6 +113,7 @@ import enableContentNegotiation from "./patterns/enable/content-negotiation";
 import enableI18n from "./patterns/enable/i18n";
 import enableNotifications from "./patterns/enable/notifications";
 import enablePayments from "./patterns/enable/payments";
+import enableEcommerce from "./patterns/enable/ecommerce";
 import enableSubscriptions from "./patterns/enable/subscriptions";
 import enableTeams from "./patterns/enable/teams";
 import enableWhatsapp from "./patterns/enable/whatsapp";
@@ -132,6 +133,7 @@ import disableI18n from "./patterns/disable/i18n";
 import disableNotifications from "./patterns/disable/notifications";
 import disableTeams from "./patterns/disable/teams";
 import disablePayments from "./patterns/disable/payments";
+import disableEcommerce from "./patterns/disable/ecommerce";
 import disableSubscriptions from "./patterns/disable/subscriptions";
 import disableWhatsapp from "./patterns/disable/whatsapp";
 
@@ -159,6 +161,7 @@ export const patterns = [
   enableI18n,
   enableNotifications,
   enablePayments,
+  enableEcommerce,
   enableSubscriptions,
   enableTeams,
   enableWhatsapp,
@@ -178,6 +181,7 @@ export const patterns = [
   disableNotifications,
   disableTeams,
   disablePayments,
+  disableEcommerce,
   disableSubscriptions,
   disableWhatsapp,
 ];

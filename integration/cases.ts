@@ -243,6 +243,11 @@ export function inverseCase(slug: Slug): CaseSpec {
   if (slug === "disable-notifications") {
     setup.push(step("enable-notifications", { check: false }));
   }
+  if (slug === "disable-ecommerce") {
+    setup.push(
+      step("enable-ecommerce", { input: { provider: "stripe" }, check: false }),
+    );
+  }
   const { baseline, chain } = prerequisites(
     slug,
     combinedRequires([
@@ -344,6 +349,21 @@ export const enableCases: CaseSpec[] = [
     { input: { provider: "shopify" } },
     "enable-payments-shopify",
   ),
+  // The cart follows the payments provider, which the steps before it set.
+  singleCase("enable-ecommerce", { input: { provider: "stripe" } }),
+  makeCase("enable-ecommerce-auth", "auth", [
+    step("enable-workflows", { check: false }),
+    step("enable-payments", { check: false }),
+    step("enable-ecommerce", { input: { provider: "stripe" }, check: true }),
+  ]),
+  makeCase("enable-ecommerce-shopify-static", "static", [
+    step("enable-payments", { input: { provider: "shopify" }, check: false }),
+    step("enable-ecommerce", { input: { provider: "shopify" }, check: true }),
+  ]),
+  makeCase("enable-ecommerce-shopify", "minimal", [
+    step("enable-payments", { input: { provider: "shopify" }, check: false }),
+    step("enable-ecommerce", { input: { provider: "shopify" }, check: true }),
+  ]),
   singleCase("enable-subscriptions"),
   singleCase("enable-whatsapp"),
   // The login and signup pages it swaps come in three shapes.
@@ -446,6 +466,7 @@ export const disableCases: CaseSpec[] = [
   inverseCase("disable-notifications"),
   inverseCase("disable-teams"),
   inverseCase("disable-payments"),
+  inverseCase("disable-ecommerce"),
   inverseCase("disable-subscriptions"),
 ];
 
@@ -630,6 +651,14 @@ export const stackCases: CaseSpec[] = [
     step("enable-payments"),
     step("enable-subscriptions", { check: true }),
     step("disable-subscriptions"),
+    step("disable-payments", { check: true }),
+  ]),
+  makeCase("ecommerce-shopify-lifecycle", "static", [
+    step("enable-payments", { input: { provider: "shopify" } }),
+    step("enable-ecommerce", { input: { provider: "shopify" } }),
+    step("disable-ecommerce", { check: true }),
+    step("enable-ecommerce", { input: { provider: "shopify" }, check: true }),
+    step("disable-ecommerce"),
     step("disable-payments", { check: true }),
   ]),
   makeCase("payments-shopify-lifecycle", "static", [
