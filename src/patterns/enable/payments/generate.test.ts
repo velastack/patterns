@@ -47,6 +47,15 @@ describe("enable-payments generate", () => {
     }
   });
 
+  it("refuses a second provider, and re-runs the current one", async () => {
+    const onStripe = (provider: string) =>
+      generate({ ...options(provider), providers: { payments: "stripe" } });
+    await expect(onStripe("shopify")).rejects.toThrow(
+      "This project already uses Stripe payments. To switch to Shopify, run `vela disable payments` first",
+    );
+    await expect(onStripe("stripe")).resolves.toBeDefined();
+  });
+
   it("previews Stripe by default and Shopify without collections", async () => {
     const preview = (input: Record<string, unknown>) =>
       generatePreview({ ...options("stripe"), env: "preview", input });

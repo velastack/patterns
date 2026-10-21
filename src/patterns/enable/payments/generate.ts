@@ -11,6 +11,7 @@ import {
   providerEnvEdits,
   resolveProvider,
 } from "../../../core/providers";
+import { InvalidArgumentError } from "../../../core/errors";
 
 /**
  * The providers in prompt order. Each one's `env` keys are what the CLI asks
@@ -118,6 +119,18 @@ const providersAppModeRaw = import.meta.glob<string>(
 
 export async function generate(options: Options) {
   const provider = resolveProvider(META, options);
+
+  // A second provider would leave the project with both, and the patterns
+  // built on payments could no longer tell which one it uses.
+  const current = options.providers?.payments;
+  if (current !== undefined && current !== provider.id) {
+    const label =
+      PROVIDERS.find((candidate) => candidate.id === current)?.label ?? current;
+    throw new InvalidArgumentError(
+      `This project already uses ${label} payments. To switch to ${provider.label}, ` +
+        "run `vela disable payments` first, then enable payments again.",
+    );
+  }
   // Stripe keeps cards and customers for signed-in users; Shopify's checkout
   // owns its customers, so it has no app-mode files.
   const isAppMode = options.features.auth;
