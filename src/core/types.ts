@@ -94,6 +94,12 @@ export interface Options {
    *   the chosen provider's `env` keys, written to `.env` by the pattern.
    */
   input: Record<string, any>;
+  /**
+   * The provider in use per capability (`{ payments: "stripe" }`), as
+   * `detectProviders` reads it from the project. Detected by the caller;
+   * absent in preview and in callers that predate it.
+   */
+  providers?: Partial<Record<string, string>>;
   logger?: Logger;
 }
 
@@ -344,7 +350,20 @@ export interface ProviderEnvVar {
    * not by a `PUBLIC_` prefix.
    */
   public?: boolean;
+  /**
+   * The CLI refuses a blank value for it. The pattern still writes whatever
+   * it is handed.
+   */
+  required?: boolean;
 }
+
+/**
+ * Something only one provider leaves in a project, so the provider in use can
+ * be read back from disk instead of being recorded anywhere: a name declared
+ * in `src/env.ts`, an app-relative path, or a `package.json` dependency.
+ */
+export type ProviderMarker =
+  { env: string } | { path: string } | { dependency: string };
 
 /**
  * One implementation of a capability the user picks with `--provider <id>`:
@@ -355,6 +374,30 @@ export interface Provider {
   id: string;
   label: string;
   env?: ProviderEnvVar[];
+  /**
+   * Any one present means this provider is in use. Defaults to the first
+   * `env` key's declaration in `src/env.ts`.
+   */
+  markers?: ProviderMarker[];
+  /** Prerequisites when this provider is chosen, on top of the pattern's own. */
+  requires?: Partial<Requires>;
+}
+
+/** The providers `detectProviders` found in a project, by capability. */
+export interface DetectedProviders {
+  /** `{ payments: "stripe", analytics: "plausible" }` */
+  providers: Record<string, string>;
+  /** Capabilities where more than one provider's markers are present. */
+  ambiguous: { capability: string; ids: string[] }[];
+}
+
+/**
+ * What a pattern needs before it can run. A `true` feature is required;
+ * `false` only means "not required". `providers` narrows a capability to the
+ * providers the pattern supports: `{ payments: ["stripe"] }`.
+ */
+export interface Requires extends Features {
+  providers?: Partial<Record<string, string[]>>;
 }
 
 export interface Pattern {
@@ -367,7 +410,7 @@ export interface Pattern {
   docs: string;
   summary: string;
 
-  requires: Features;
+  requires: Requires;
 
   // Categories and tags for browsing patterns on the website.
   category: string;
@@ -393,6 +436,10 @@ export interface Pattern {
   // Optional provider implementations the user picks one of, in prompt order.
   // Selected via options.input.provider; see core/providers.ts.
   providers?: Provider[];
+
+  // The capability whose detected provider this pattern takes instead of
+  // asking for one: `"payments"` for a pattern built on enable-payments.
+  inheritsProvider?: string;
 
   // The main generator function for the pattern.
   generate: (options: Options) => Promise<Result>;

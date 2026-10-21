@@ -3,6 +3,7 @@ import type {
   ApplyBaseColorOptions,
   ApplyColorsResult,
   ApplyThemeOptions,
+  DetectedProviders,
   InstallComponentsOptions,
   InstallComponentsResult,
   ListComponentsOptions,
@@ -30,6 +31,7 @@ export type {
   ApplyColorsResult,
   ApplyThemeOptions,
   Component,
+  DetectedProviders,
   ExecuteCommand,
   ExecuteCommandOptions,
   File,
@@ -43,7 +45,9 @@ export type {
   Pattern,
   Provider,
   ProviderEnvVar,
+  ProviderMarker,
   RegistryItem,
+  Requires,
   SwitchStyleOptions,
   SwitchStyleResult,
   WriteResultRuntime,
@@ -76,11 +80,18 @@ export {
   VELASTACK_POCKETBASE,
 } from "./core/constants";
 export {
+  capabilityName,
   providerEnvVars,
   providerFromArgv,
+  providerMarkers,
   resolveProvider,
   unknownProviderMessage,
 } from "./core/providers";
+export {
+  unmetRequirements,
+  type RequirementsContext,
+  type Unmet,
+} from "./core/requires";
 import generateForm from "./patterns/generate/form";
 import generateFormRemote from "./patterns/generate/form-remote";
 import generateMigration from "./patterns/generate/migration";
@@ -242,6 +253,18 @@ export async function applyTheme(
 ): Promise<ApplyColorsResult> {
   const { applyTheme: run } = await import("./runtime/ui");
   return run(options, runtime);
+}
+
+/**
+ * The provider in use for each capability (`{ payments: "stripe" }`), read
+ * from what each registered provider leaves in the project. Node-only, loaded
+ * on first call like `installComponents`.
+ */
+export async function detectProviders(
+  root: string,
+): Promise<DetectedProviders> {
+  const { detectProviders: run } = await import("./runtime/providers");
+  return run(root, patterns);
 }
 
 /*

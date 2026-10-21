@@ -4,7 +4,7 @@ import { bySlug, patterns } from "../src/index";
 import type { Features } from "../src/core/types";
 import { ensurePocketbaseEnv, makeGetCollections } from "../integration/apply";
 import { INTEGRATION_ROOT, createVelaProject } from "../integration/baseline";
-import { detectFeatures } from "../integration/features";
+import { detectFeatures, detectProviders } from "../integration/features";
 
 function usage(): never {
   console.error(
@@ -119,6 +119,7 @@ for (const [index, { slug, argv, pattern }] of commands.entries()) {
     env: "runtime",
     root: tempRoot,
     features,
+    providers: detectProviders(tempRoot).providers,
     input: {},
     getCollections,
     logger: { info: (message) => console.log(`  ${message}`) },

@@ -101,6 +101,25 @@ ones, a missing one is an error at runtime and the first provider in preview (th
 argv only). Shared behaviour (the layout modifier, writing the env keys to `.env` with `providerEnvEdits` +
 `suppliedProviderEnv`) stays in the pattern's `generate.runtime.ts`. Providers are a separate dimension from `variants`.
 
+Nothing records which provider a project chose. `detectProviders(root)` (exported, node-only) reads it back
+from the project, one id per capability (`{ payments: "stripe" }`). A caller passes the result to the pattern
+as `options.providers`; the integration harness does, and so does a CLI that knows about it. Each provider is found by its `markers` (a name declared in `src/env.ts`, an
+app-relative path, or a dependency), which default to its first `env` key; `provider-markers.test.ts` checks
+that every registered provider can be told apart. When two providers of one capability both look present,
+the capability is reported as `ambiguous` instead.
+
+A pattern built on another capability sets `inheritsProvider` (enable-ecommerce: `"payments"`). It takes the
+detected provider instead of asking for one: `resolveProvider` accepts a `--provider` that repeats it and rejects
+one that differs.
+
+`requires` is a `Requires`: the `Features` flags plus an optional `providers` map naming the providers a
+pattern supports per capability (`{ payments: ["stripe"] }`). A provider can carry its own `requires`, merged
+over the pattern's. `unmetRequirements(pattern, { features, detected, provider })` lists what a project is
+missing. Only `true` flags count, and `false` means "not required". `ui` is checked separately.
+
+The generated code never sees any of this. Each provider's files are what a developer would write for that
+provider alone, with no adapter layer or shared types for swapping providers.
+
 ### Plain forms
 
 `generate-form`, `generate-form-remote` and `generate-scaffold` take `input.ui: "shadcn" | "plain"` (default: the detected `features.ui`, then `shadcn`). `plain` is for

@@ -8,6 +8,7 @@ import {
   envVarsFile,
   modifyEnvVars,
   modifyEnvVarsFiles,
+  readEnvVarNames,
   unmodifyEnvVars,
   unmodifyEnvVarsFiles,
   type EnvVarSpec,
@@ -129,6 +130,50 @@ describe("envVarsFile", () => {
     expect(envVarsFile([])).toContain(
       "export const variables = defineEnvVars({});",
     );
+  });
+});
+
+describe("readEnvVarNames", () => {
+  it("reads the names `defineEnvVars` declares", () => {
+    const root = makeRoot({ "src/env.ts": TEMPLATE });
+    expect(readEnvVarNames(root)).toEqual(new Set(["POCKETBASE_URL"]));
+  });
+
+  it("reads a plain object, quoted keys and src/env.js", () => {
+    const root = makeRoot({
+      "src/env.js": dedent`
+        export const variables = {
+          'STRIPE_SECRET_KEY': { schema: (value) => value ?? '' },
+          PUBLIC_X: { public: true, schema: (value) => value ?? '' },
+        };
+      `,
+    });
+    expect(readEnvVarNames(root)).toEqual(
+      new Set(["STRIPE_SECRET_KEY", "PUBLIC_X"]),
+    );
+  });
+
+  it("skips a spread instead of giving up on the rest", () => {
+    const root = makeRoot({
+      "src/env.ts": dedent`
+        import { defineEnvVars } from '@sveltejs/kit/env';
+        import { shared } from './shared-env';
+
+        export const variables = defineEnvVars({
+          ...shared,
+          STRIPE_SECRET_KEY: { schema: (value) => value ?? '' },
+        });
+      `,
+    });
+    expect(readEnvVarNames(root)).toEqual(new Set(["STRIPE_SECRET_KEY"]));
+  });
+
+  it("is empty without a declaration file or a readable `variables`", () => {
+    expect(readEnvVarNames(makeRoot())).toEqual(new Set());
+    const root = makeRoot({
+      "src/env.ts": "export function variables() { return {}; }\n",
+    });
+    expect(readEnvVarNames(root)).toEqual(new Set());
   });
 });
 

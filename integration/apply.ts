@@ -6,7 +6,7 @@ import type { Collection } from "../src/parse/types";
 import { withPocketbase } from "../src/runtime/pocketbase";
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./baseline";
 import { appendLog } from "./exec";
-import { detectFeatures, detectRouteGroups } from "./features";
+import { detectFeatures, detectProviders, detectRouteGroups } from "./features";
 import type { Project } from "./project";
 
 export type ErrorKind =
@@ -156,13 +156,14 @@ export async function applyPattern(
   const argv = step.argv ?? pattern.command.argv;
   const input = { ...defaultInput(step.slug), ...step.input };
   const featuresBefore = detectFeatures(root);
+  const providersBefore = detectProviders(root).providers;
   const getCollections = makeGetCollections(root);
   const errors: ErrorRecord[] = [];
   const startedAt = Date.now();
 
   appendLog(
     project.logFile,
-    `\n### apply ${step.slug} ${argv.join(" ")}\n  features: ${JSON.stringify(featuresBefore)}\n  input: ${JSON.stringify(input)}\n`,
+    `\n### apply ${step.slug} ${argv.join(" ")}\n  features: ${JSON.stringify(featuresBefore)}\n  providers: ${JSON.stringify(providersBefore)}\n  input: ${JSON.stringify(input)}\n`,
   );
 
   const options: Options = {
@@ -170,6 +171,7 @@ export async function applyPattern(
     env: "runtime",
     root,
     features: featuresBefore,
+    providers: providersBefore,
     routeGroups: detectRouteGroups(root),
     input,
     getCollections,
