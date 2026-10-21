@@ -155,7 +155,7 @@ template has:
   The self-hosted install also brings `@velastack/kit`, which only a backend template already has.
 
 A pattern whose pages exist only as shadcn-svelte markup sets `requires.ui: "shadcn"`: `enable-api-keys`,
-`enable-auth`, `enable-auth-remote`, `enable-blog`, `enable-notifications`, `enable-payments`,
+`enable-auth`, `enable-auth-remote`, `enable-blog`, `enable-ecommerce`, `enable-notifications`, `enable-payments`,
 `enable-subscriptions`, `enable-teams` and `generate-scaffold-remote`. Patterns with a plain variant (the form
 generators, `generate-scaffold`, `enable-i18n`, `enable-ai`) leave it unset and follow `features.ui`. The CLI refuses
 a `requires.ui: "shadcn"` pattern in a `plain` project before calling `generate`, so nothing is half-applied.
