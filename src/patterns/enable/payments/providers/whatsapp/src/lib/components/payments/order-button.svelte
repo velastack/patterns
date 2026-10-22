@@ -29,12 +29,12 @@
 
 	let open = $state(false);
 	let placed = $state<{ ref: string; href: string } | null>(null);
-	// Fetched when the dialog opens: the hosted form refuses a token younger
-	// than two seconds, and filling the form in takes longer than that.
+	// Fetched once, the first time the dialog opens: the hosted form refuses
+	// a token younger than two seconds, and filling the form in takes longer.
 	let token: string | null = null;
 
 	$effect(() => {
-		if (!open || !ORDER_FORM) return;
+		if (!open || !ORDER_FORM || token) return;
 		formToken(ORDER_FORM).then((value) => (token = value));
 	});
 

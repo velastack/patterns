@@ -11,12 +11,12 @@
 	import { cart } from '#lib/cart.svelte.js';
 	import { ORDER_FORM, placeOrder } from '#lib/order.js';
 
-	// Fetched when the cart opens: the hosted form refuses a token younger
-	// than two seconds, and filling the form in takes longer than that.
+	// Fetched once, the first time the cart opens: the hosted form refuses a
+	// token younger than two seconds, and filling the form in takes longer.
 	let token: string | null = null;
 
 	$effect(() => {
-		if (!cart.open || !ORDER_FORM || cart.items.length === 0) return;
+		if (!cart.open || !ORDER_FORM || token) return;
 		formToken(ORDER_FORM).then((value) => (token = value));
 	});
 
