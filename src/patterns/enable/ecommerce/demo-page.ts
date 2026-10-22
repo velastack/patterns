@@ -40,13 +40,13 @@ export function demoPage(provider: string, id: string): File[] {
         export const load = async ({ locals }) => {
           try {
             const price = await locals.admin.collection('stripe_prices').getOne('${id}');
-            const product = await locals.admin.collection('stripe_products').getOne(price.product);
+            const product = await locals.admin.collection('stripe_products').getOne(price.product ?? '');
             return {
               price: {
                 price: price.id,
-                name: product.name,
+                name: product.name ?? price.id,
                 unitAmount: price.unit_amount ?? 0,
-                currency: price.currency
+                currency: price.currency ?? 'usd'
               }
             };
           } catch {

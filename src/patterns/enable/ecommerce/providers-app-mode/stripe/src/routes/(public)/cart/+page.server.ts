@@ -52,6 +52,7 @@ export const actions = {
 			throw error;
 		}
 
-		redirect(303, session.url!);
+		// SvelteKit 3 redirects off-site only when told to.
+		redirect(303, session.url!, { external: true });
 	}
 };
