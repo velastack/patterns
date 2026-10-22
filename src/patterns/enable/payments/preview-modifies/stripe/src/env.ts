@@ -38,13 +38,13 @@ export const variables = defineEnvVars({
 		schema: (value) => value ?? '',
 		description: 'Stripe secret key (`sk_...`) the server calls the Stripe API with.'
 	},
-	STRIPE_WEBHOOK_SECRET: {
-		schema: (value) => value ?? '',
-		description: 'Signing secret (`whsec_...`) that `/webhooks/stripe` verifies events with.'
-	},
 	PUBLIC_STRIPE_PUBLISHABLE_KEY: {
 		public: true,
 		schema: (value) => value ?? '',
 		description: 'Stripe publishable key (`pk_...`) that Stripe.js loads in the browser.'
+	},
+	STRIPE_WEBHOOK_SECRET: {
+		schema: (value) => value ?? '',
+		description: 'Signing secret (`whsec_...`) that `/webhooks/stripe` verifies events with.'
 	}
 });

@@ -24,12 +24,6 @@
 					Home
 				</Button>
 			</Navbar.Item>
-
-			<Navbar.Item
-				class="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4"
-			>
-				
-			</Navbar.Item>
 		</Navbar.List>
 	</Navbar.Root>
 

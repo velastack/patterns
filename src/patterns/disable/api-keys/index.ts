@@ -4,7 +4,7 @@ import { mergeResults } from "../../../core/util";
 import { generate as generateBase } from "./generate";
 
 const SLUG = "disable-api-keys" as const;
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
 const SOURCE = "src/patterns/disable/api-keys";
 const DOCS = "/disable/api-keys";
 
@@ -40,8 +40,8 @@ export default {
   summary:
     "Removes API key management: drops the api_keys collection, reverts hooks.server and nav-user, deletes generated API key routes.",
   requires: {
-    auth: true,
-    api: true,
+    auth: false,
+    api: false,
     apiKeys: true,
     backend: true,
     i18n: false,

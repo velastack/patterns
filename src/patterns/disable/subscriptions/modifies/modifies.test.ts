@@ -46,21 +46,21 @@ const subscriptionsPatternDir = path.join(
 const paymentsNavUserTemplate = fs.readFileSync(
   path.join(
     paymentsPatternDir,
-    "preview-modifies/src/lib/components/nav-user.svelte",
+    "preview-modifies/stripe/src/lib/components/nav-user.svelte",
   ),
   "utf8",
 );
 const paymentsBillingPageServerTemplate = fs.readFileSync(
   path.join(
     paymentsPatternDir,
-    "creates-app-mode/src/routes/(app)/billing/+page.server.ts",
+    "providers-app-mode/stripe/src/routes/(app)/billing/+page.server.ts",
   ),
   "utf8",
 );
 const paymentsBillingPageSvelteTemplate = fs.readFileSync(
   path.join(
     paymentsPatternDir,
-    "creates-app-mode/src/routes/(app)/billing/+page.svelte",
+    "providers-app-mode/stripe/src/routes/(app)/billing/+page.svelte",
   ),
   "utf8",
 );

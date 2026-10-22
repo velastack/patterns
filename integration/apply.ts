@@ -1,16 +1,18 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { bySlug, type Slug } from "../src/index";
+import { unmetRequirements, type Unmet } from "../src/core/requires";
 import type { Features, Options, Result } from "../src/core/types";
 import type { Collection } from "../src/parse/types";
 import { withPocketbase } from "../src/runtime/pocketbase";
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./baseline";
 import { appendLog } from "./exec";
-import { detectFeatures, detectRouteGroups } from "./features";
+import { detectFeatures, detectProviders, detectRouteGroups } from "./features";
 import type { Project } from "./project";
 
 export type ErrorKind =
   | "apply"
+  | "requires"
   | "collections"
   | "features"
   | "contents"
@@ -71,19 +73,38 @@ export function makeGetCollections(root: string): () => Promise<Collection[]> {
  * Inputs a user would supply through the CLI's flags and prompts. Destructive
  * patterns only write when told to, and the payments pattern needs Stripe keys.
  */
-function defaultInput(slug: Slug): Record<string, unknown> {
+function defaultInput(slug: Slug, provider: unknown): Record<string, unknown> {
   const input: Record<string, unknown> = {};
   if (slug.startsWith("disable-") || slug.startsWith("destroy-")) {
     input.destructive = true;
   }
-  if (slug === "enable-payments") {
-    input.stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-    input.stripePublishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
-    input.stripeWebhookSecret =
-      process.env.STRIPE_WEBHOOK_SECRET ?? "whsec_integration";
+  if (slug === "enable-payments" && provider === "stripe") {
+    input.providerEnv = {
+      STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ?? "",
+      PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY ?? "",
+      STRIPE_WEBHOOK_SECRET:
+        process.env.STRIPE_WEBHOOK_SECRET ?? "whsec_integration",
+    };
     if (process.env.STRIPE_PRICE_ID) {
-      input.stripePriceId = process.env.STRIPE_PRICE_ID;
+      input.demoId = process.env.STRIPE_PRICE_ID;
     }
+  }
+  // Nothing calls Shopify at apply time, so placeholder credentials do; the
+  // demo variant makes the Buy page part of what gets type-checked.
+  if (slug === "enable-payments" && provider === "shopify") {
+    input.providerEnv = {
+      PUBLIC_SHOPIFY_STORE_DOMAIN: "integration.myshopify.com",
+      PUBLIC_SHOPIFY_STOREFRONT_TOKEN: "integration",
+    };
+    input.demoId = "gid://shopify/ProductVariant/1";
+  }
+  // The demo shop page is written either way; Stripe's loads its price at
+  // request time, so any id type-checks.
+  if (slug === "enable-ecommerce" && provider === "stripe") {
+    input.demoId = process.env.STRIPE_PRICE_ID ?? "price_integration";
+  }
+  if (slug === "enable-ecommerce" && provider === "shopify") {
+    input.demoId = "gid://shopify/ProductVariant/1";
   }
   return input;
 }
@@ -154,15 +175,20 @@ export async function applyPattern(
   ensurePocketbaseEnv();
   const root = project.root;
   const argv = step.argv ?? pattern.command.argv;
-  const input = { ...defaultInput(step.slug), ...step.input };
+  const input = {
+    ...defaultInput(step.slug, step.input?.provider),
+    ...step.input,
+  };
   const featuresBefore = detectFeatures(root);
+  const detected = detectProviders(root);
+  const providersBefore = detected.providers;
   const getCollections = makeGetCollections(root);
   const errors: ErrorRecord[] = [];
   const startedAt = Date.now();
 
   appendLog(
     project.logFile,
-    `\n### apply ${step.slug} ${argv.join(" ")}\n  features: ${JSON.stringify(featuresBefore)}\n  input: ${JSON.stringify(input)}\n`,
+    `\n### apply ${step.slug} ${argv.join(" ")}\n  features: ${JSON.stringify(featuresBefore)}\n  providers: ${JSON.stringify(providersBefore)}\n  input: ${JSON.stringify(input)}\n`,
   );
 
   const options: Options = {
@@ -170,6 +196,7 @@ export async function applyPattern(
     env: "runtime",
     root,
     features: featuresBefore,
+    providers: providersBefore,
     routeGroups: detectRouteGroups(root),
     input,
     getCollections,
@@ -179,13 +206,30 @@ export async function applyPattern(
     },
   };
 
+  // The CLI refuses a pattern whose prerequisites are missing before it
+  // writes anything; a case that would be refused there fails here too.
+  const unmet = unmetRequirements(pattern, {
+    features: featuresBefore,
+    detected,
+    provider: typeof input.provider === "string" ? input.provider : undefined,
+  });
+
   let result: Result | null = null;
-  try {
-    result = await withProjectCwd(root, () => pattern.generate(options));
-  } catch (error) {
-    const message =
-      error instanceof Error ? (error.stack ?? error.message) : String(error);
-    errors.push({ kind: "apply", step: step.slug, message, fatal: true });
+  if (unmet.length > 0) {
+    errors.push({
+      kind: "requires",
+      step: step.slug,
+      message: `${step.slug} needs ${unmet.map(describeUnmet).join(", ")}`,
+      fatal: true,
+    });
+  } else {
+    try {
+      result = await withProjectCwd(root, () => pattern.generate(options));
+    } catch (error) {
+      const message =
+        error instanceof Error ? (error.stack ?? error.message) : String(error);
+      errors.push({ kind: "apply", step: step.slug, message, fatal: true });
+    }
   }
 
   const changedFiles: string[] = [];
@@ -241,4 +285,15 @@ export async function applyPattern(
   };
   recordStep(project, outcome);
   return outcome;
+}
+
+function describeUnmet(unmet: Unmet): string {
+  switch (unmet.kind) {
+    case "feature":
+      return unmet.feature;
+    case "provider":
+      return `${unmet.capability} on ${unmet.want.join(" or ")} (has ${unmet.have ?? "none"})`;
+    case "ambiguous":
+      return `one ${unmet.capability} provider (found ${unmet.ids.join(" and ")})`;
+  }
 }

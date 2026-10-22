@@ -5,7 +5,7 @@ import { generate as generateBase } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
 
 const SLUG = "enable-subscriptions" as const;
-const VERSION = "1.1.1";
+const VERSION = "1.1.2";
 const SOURCE = "src/patterns/enable/subscriptions";
 const DOCS = "/enable/subscriptions";
 
@@ -17,13 +17,16 @@ export async function generate(options: Options) {
     return formatResult(mergeResults([baseRes, previewRes]), options);
   }
 
+  const { assertPaymentsAppMode, generate: generateRuntime } =
+    await import("./generate.runtime");
+  assertPaymentsAppMode(options.root);
+
   const { createCollections } = await import("../../../runtime/collections");
   const migrationCreates = await createCollections(
     baseRes.collections,
     options,
   );
 
-  const { generate: generateRuntime } = await import("./generate.runtime");
   const runtimeRes = await generateRuntime(options);
   const { writeResult } = await import("../../../runtime/write-result");
   return writeResult(
@@ -61,6 +64,8 @@ export default {
     workflows: true,
     // The pages are shadcn-svelte markup; there is no plain variant.
     ui: "shadcn",
+    // Stripe Billing: Shopify sells subscriptions through its own apps.
+    providers: { payments: ["stripe"] },
   },
   category: "payments" as const,
   tags: [

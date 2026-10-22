@@ -9,13 +9,21 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { modifyEnvVars, unmodifyEnvVars } from "../../../../runtime/env-vars";
-import { STRIPE_ENV_VARS, STRIPE_ENV_VAR_NAMES } from "../runtime/env-vars";
+import {
+  envVarsFile,
+  modifyEnvVars,
+  unmodifyEnvVars,
+} from "../../../../runtime/env-vars";
+import { providerEnvVars } from "../../../../core/providers";
+import { envEditsFor, PROVIDERS } from "../generate";
 import {
   applyEnvEdits,
   removeEnvEdits,
   type EnvEdit,
 } from "../../../../runtime/env";
+
+const STRIPE = PROVIDERS.find((provider) => provider.id === "stripe")!;
+const SHOPIFY = PROVIDERS.find((provider) => provider.id === "shopify")!;
 
 describe("env edits", () => {
   const stripeEdits: EnvEdit[] = [
@@ -28,6 +36,16 @@ describe("env edits", () => {
     },
     { type: "var", key: "STRIPE_WEBHOOK_SECRET", value: "whsec_123" },
   ];
+
+  it("is what the Stripe provider writes, in the same order", () => {
+    expect(
+      envEditsFor(STRIPE, {
+        STRIPE_SECRET_KEY: "sk_test_abc",
+        PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_xyz",
+        STRIPE_WEBHOOK_SECRET: "whsec_123",
+      }),
+    ).toEqual(stripeEdits);
+  });
 
   it("round-trips apply + remove on empty source", () => {
     const applied = applyEnvEdits("", stripeEdits);
@@ -80,12 +98,16 @@ describe("env edits", () => {
   });
 });
 
-describe("src/env.ts declarations", () => {
-  const preview = readFileSync(
-    fileURLToPath(new URL("../preview-modifies/src/env.ts", import.meta.url)),
+function readPreview(id: string): string {
+  return readFileSync(
+    fileURLToPath(
+      new URL(`../preview-modifies/${id}/src/env.ts`, import.meta.url),
+    ),
     "utf8",
   ).replace(/^[ \t]*\/\/ \[!code highlight:\d+\]\n/m, "");
+}
 
+describe("src/env.ts declarations", () => {
   function project(content: string) {
     const root = mkdtempSync(path.join(tmpdir(), "payments-env-"));
     mkdirSync(path.join(root, "src"));
@@ -93,18 +115,23 @@ describe("src/env.ts declarations", () => {
     return root;
   }
 
-  it("the preview shows what enable writes, and disable takes it back out", () => {
+  // Stripe runs on a backend template, whose src/env.ts already declares the
+  // PocketBase variables.
+  it("the Stripe preview shows what enable writes, and disable takes it back out", () => {
+    const preview = readPreview("stripe");
+    const specs = providerEnvVars(STRIPE);
+    const names = specs.map((spec) => spec.name);
     const root = project(preview);
     try {
-      const removed = unmodifyEnvVars(root, STRIPE_ENV_VAR_NAMES);
+      const removed = unmodifyEnvVars(root, names);
       expect(removed.outcome).toEqual({ status: "success", changed: true });
       const without = readFileSync(path.join(root, "src", "env.ts"), "utf8");
-      for (const name of STRIPE_ENV_VAR_NAMES) {
+      for (const name of names) {
         expect(without).not.toContain(name);
       }
       expect(without).toContain("POCKETBASE_URL");
 
-      const added = modifyEnvVars(root, STRIPE_ENV_VARS);
+      const added = modifyEnvVars(root, specs);
       expect(added.modify?.outcome).toEqual({
         status: "success",
         changed: true,
@@ -117,9 +144,22 @@ describe("src/env.ts declarations", () => {
     }
   });
 
-  it("declares the publishable key public and the others private", () => {
+  // Shopify's usual home is the static template, which has no src/env.ts.
+  it("the Shopify preview is the file enable creates", () => {
+    expect(readPreview("shopify")).toBe(envVarsFile(providerEnvVars(SHOPIFY)));
+  });
+});
+
+describe("provider env", () => {
+  it("declares only the publishable key public for Stripe", () => {
     expect(
-      STRIPE_ENV_VARS.filter((spec) => spec.public).map((spec) => spec.name),
+      providerEnvVars(STRIPE)
+        .filter((spec) => spec.public)
+        .map((spec) => spec.name),
     ).toEqual(["PUBLIC_STRIPE_PUBLISHABLE_KEY"]);
+  });
+
+  it("declares every Shopify key public: the Storefront token is a public one", () => {
+    expect(providerEnvVars(SHOPIFY).every((spec) => spec.public)).toBe(true);
   });
 });

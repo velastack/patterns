@@ -4,7 +4,7 @@ import { mergeResults } from "../../../core/util";
 import { generate as generateBase } from "./generate";
 
 const SLUG = "disable-teams" as const;
-const VERSION = "1.1.0";
+const VERSION = "1.1.1";
 const SOURCE = "src/patterns/disable/teams";
 const DOCS = "/disable/teams";
 
@@ -40,7 +40,7 @@ export default {
   summary:
     "Removes the teams collections and routes, and reverts the Teams nav item, the team switcher in app-sidebar, the team props in the (app) layout, and the team loader in its +layout.server.ts.",
   requires: {
-    auth: true,
+    auth: false,
     api: false,
     apiKeys: false,
     backend: true,

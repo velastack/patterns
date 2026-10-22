@@ -1,4 +1,6 @@
+import fs from "node:fs";
 import path from "node:path";
+import { InvalidArgumentError } from "../../../core/errors";
 import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
 import { keepMissing, modifyOutcomeToFile } from "../../../runtime/modify-file";
@@ -9,11 +11,34 @@ import { modifyAppSidebar } from "./modifies/modify-app-sidebar";
 import { modifyNavUser } from "./modifies/modify-nav-user";
 import { modifyBillingPageServer } from "./modifies/modify-billing-page-server";
 import { modifyBillingPageSvelte } from "./modifies/modify-billing-page-svelte";
-import stripeCustomerHelper from "../payments/creates-app-mode/src/lib/server/stripe-customer.ts?raw";
+import stripeCustomerHelper from "../payments/providers-app-mode/stripe/src/lib/server/stripe-customer.ts?raw";
 
 // The billing page imports this payments helper, which apps that enabled
 // payments before it existed do not have yet.
 const STRIPE_CUSTOMER_HELPER = "src/lib/server/stripe-customer.ts";
+
+// enable-payments writes the billing page (and the stripe_customers collection
+// subscriptions relate to) only when auth is already on.
+const BILLING_PAGE = "src/routes/(app)/billing/+page.server.ts";
+
+/**
+ * Refuses a project whose payments were enabled before auth. Every `requires`
+ * flag passes there (auth and payments are both on), yet the billing page and
+ * `stripe_customers` don't exist, so this runs before any collection is made.
+ */
+export function assertPaymentsAppMode(root: string): void {
+  if (fs.existsSync(path.join(root, BILLING_PAGE))) return;
+  throw new InvalidArgumentError(
+    [
+      "Subscriptions need payments set up with auth on: they add plans to the billing page",
+      `(${BILLING_PAGE}) and link to the stripe_customers collection, which enable-payments`,
+      "creates only when auth is already enabled. This project enabled payments before auth.",
+      "",
+      "Re-enable payments now that auth is on: `vela disable payments`, then `vela enable payments`.",
+      "disable-payments drops the catalog collections, which the sync workflow refills from Stripe.",
+    ].join("\n"),
+  );
+}
 
 // Share the final-state files between preview (rendered as-is) and runtime
 // (used as overwrite templates for modifies that amount to full rewrites).

@@ -1,6 +1,12 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import type { Features, RouteGroups } from "../src/core/types";
+import type {
+  DetectedProviders,
+  Features,
+  RouteGroups,
+} from "../src/core/types";
+import { patterns } from "../src/index";
+import { detectProviders as detectProvidersIn } from "../src/runtime/providers";
 
 /**
  * Mirror of the CLI's feature detection.
@@ -29,7 +35,8 @@ export function detectFeatures(root: string): Features {
       (hasDep("pocketbase-sveltekit") || hasDep("@velastack/pocketbase")),
     i18n: has("wuchale.config.js") || hasDep("wuchale"),
     teams: has("src/routes/(app)/teams") || has("src/lib/teams"),
-    payments: has("src/routes/webhooks/stripe"),
+    // Any payments provider; which one is `detectProviders`' job.
+    payments: detectProviders(root).providers.payments !== undefined,
     blog: hasDep("mdsvex"),
     contentNegotiation: hasDep("sveltekit-negotiate"),
     cms: hasDep("@velastack/cms"),
@@ -57,6 +64,14 @@ function hasComponentsJson(root: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * The providers in use, by capability. Not a mirror: the CLI calls the same
+ * function through the package's `detectProviders`, so the two can't drift.
+ */
+export function detectProviders(root: string): DetectedProviders {
+  return detectProvidersIn(root, patterns);
 }
 
 /** Mirror of the `routeGroups` the CLI's `getWorkspace` detects. */

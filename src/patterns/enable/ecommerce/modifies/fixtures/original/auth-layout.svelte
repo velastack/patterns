@@ -1,0 +1,99 @@
+<script lang="ts">
+	import type { Snippet } from 'svelte';
+	import favicon from '#lib/assets/favicon.svg';
+	import { site } from '#lib/site.js';
+
+	import { toggleMode } from 'mode-watcher';
+	import * as Navbar from '#lib/components/ui/navbar/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as AuthMenu from '#lib/components/ui/auth-menu/index.js';
+	import UserAvatar from '#lib/components/user-avatar.svelte';
+
+	// Layout data is passed through for navbar items a feature adds; enable auth
+	// reads the signed-in user from it.
+	let { children, data }: { children?: Snippet; data?: any } = $props();
+</script>
+
+<div class="min-h-dvh grid grid-rows-[max-content_1fr_max-content] root-layout">
+	<Navbar.Root>
+		<Navbar.Brand href="/">
+			<Navbar.Logo src={favicon} alt="Logo" />
+		</Navbar.Brand>
+
+		<Navbar.MobileToggle />
+
+		<Navbar.List>
+			<Navbar.Item>
+				<Button class="w-full justify-start md:justify-center md:w-auto" href="/" variant="ghost">
+					Home
+				</Button>
+			</Navbar.Item>
+		
+		<Navbar.Item
+			class="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4"
+		>
+			<AuthMenu.Root>
+				{#snippet user()}
+					<AuthMenu.Trigger>
+						<UserAvatar user={data.user} />
+					</AuthMenu.Trigger>
+
+					<AuthMenu.Content align="end">
+						<AuthMenu.Item href="/dashboard">Dashboard</AuthMenu.Item>
+						<AuthMenu.Group>
+							<AuthMenu.Item href="/settings">Settings</AuthMenu.Item>
+							<AuthMenu.Item>
+								<form action="/logout" method="post">
+									<button type="submit" class="contents">Logout</button>
+								</form>
+							</AuthMenu.Item>
+						</AuthMenu.Group>
+					</AuthMenu.Content>
+				{/snippet}
+
+				{#snippet guest()}
+					<Button
+						class="w-full justify-start md:justify-center md:w-auto"
+						variant="ghost"
+						href="/login">Login</Button
+					>
+					<Button
+						class="w-full justify-start md:justify-center md:w-auto"
+						variant="outline"
+						href="/signup">Sign up</Button
+					>
+				{/snippet}
+			</AuthMenu.Root>
+		</Navbar.Item>
+	</Navbar.List>
+	</Navbar.Root>
+
+	{@render children?.()}
+
+	<footer class="border-t border-border py-4">
+		<div
+			class="mx-auto flex max-w-7xl px-4 flex-col items-center justify-between gap-3 sm:flex-row"
+		>
+			<p class="text-muted-foreground text-sm">
+				&copy; {new Date().getFullYear()}
+				{site.name}. All rights reserved.
+			</p>
+			<nav class="flex items-center gap-4 text-sm">
+				<Button onclick={toggleMode} variant="ghost" size="icon">
+					<Navbar.Mode />
+				</Button>
+				<!-- Neither route exists yet: `vela legal privacy` and `vela legal terms` generate them. -->
+				<a href="/privacy" class="underline-offset-4 hover:underline">Privacy</a>
+				<a href="/terms" class="underline-offset-4 hover:underline">Terms</a>
+			</nav>
+		</div>
+	</footer>
+</div>
+
+<style lang="postcss">
+	@reference "tailwindcss";
+
+	.root-layout :global(section[data-role='content']) {
+		@apply container mx-auto max-w-7xl px-4 py-8 w-full;
+	}
+</style>

@@ -302,6 +302,28 @@ export function findEnvDecl(root: string): string | null {
   return null;
 }
 
+/**
+ * The names `src/env.ts` (or `src/env.js`) declares. Spreads and computed
+ * keys it can't read are skipped rather than failing the whole read, so a
+ * declaration file this module couldn't edit still reports what it can. No
+ * file, or no `variables` this can read, is an empty set.
+ */
+export function readEnvVarNames(root: string): Set<string> {
+  const filePath = findEnvDecl(root);
+  if (!filePath) return new Set();
+
+  const sf = newProject().addSourceFileAtPath(filePath);
+  const located = locateVariables(sf);
+  if (located.kind !== "object") return new Set();
+
+  const names = new Set<string>();
+  for (const prop of located.object.getProperties()) {
+    const name = propertyName(prop);
+    if (name !== null) names.add(name);
+  }
+  return names;
+}
+
 function relative(root: string, filePath: string): string {
   return path.relative(root, filePath).split(path.sep).join("/");
 }
