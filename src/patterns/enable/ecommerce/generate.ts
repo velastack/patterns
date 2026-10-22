@@ -11,6 +11,8 @@ export const PROVIDERS: Provider[] = [
   // The cart page's checkout action and the demo page run on the server.
   { id: "stripe", label: "Stripe", requires: { backend: true } },
   { id: "shopify", label: "Shopify" },
+  // Checkout opens a WhatsApp chat in the browser; nothing runs on a server.
+  { id: "whatsapp", label: "WhatsApp" },
 ];
 
 export const META = {
@@ -67,8 +69,14 @@ export async function generate(
     );
   }
 
+  // A WhatsApp item is whatever the page says it is, so there is no id to
+  // demo; the docs show an `<AddToCart>` instead.
   const demoId = options.input.demoId;
-  if (typeof demoId === "string" && demoId.trim() !== "") {
+  if (
+    provider.id !== "whatsapp" &&
+    typeof demoId === "string" &&
+    demoId.trim() !== ""
+  ) {
     add(demoPage(provider.id, demoId.trim()));
   }
 

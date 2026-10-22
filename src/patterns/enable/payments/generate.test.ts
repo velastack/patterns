@@ -47,6 +47,25 @@ describe("enable-payments generate", () => {
     }
   });
 
+  it("creates WhatsApp's files and its core package, auth or not", async () => {
+    for (const auth of [false, true]) {
+      const result = await generate(options("whatsapp", auth));
+      expect(paths(result.creates)).toEqual([
+        "src/lib/components/payments/customer-fields.svelte",
+        "src/lib/components/payments/order-button.svelte",
+        "src/lib/order.ts",
+      ]);
+      expect(result.packages).toEqual(["@velastack/whatsapp@^0.1.0"]);
+      expect(result.components).toEqual([
+        "button",
+        "dialog",
+        "input",
+        "label",
+        "textarea",
+      ]);
+    }
+  });
+
   it("refuses a second provider, and re-runs the current one", async () => {
     const onStripe = (provider: string) =>
       generate({ ...options(provider), providers: { payments: "stripe" } });
@@ -54,9 +73,12 @@ describe("enable-payments generate", () => {
       "This project already uses Stripe payments. To switch to Shopify, run `vela disable payments` first",
     );
     await expect(onStripe("stripe")).resolves.toBeDefined();
+    await expect(onStripe("whatsapp")).rejects.toThrow(
+      "This project already uses Stripe payments. To switch to WhatsApp",
+    );
   });
 
-  it("previews Stripe by default and Shopify without collections", async () => {
+  it("previews Stripe by default, and Shopify and WhatsApp without collections", async () => {
     const preview = (input: Record<string, unknown>) =>
       generatePreview({ ...options("stripe"), env: "preview", input });
 
@@ -68,5 +90,10 @@ describe("enable-payments generate", () => {
     expect(shopify.collections).toEqual([]);
     expect(shopify.creates[0].content).toContain("BuyButton");
     expect(paths(shopify.modifies)).toEqual([".env", "src/env.ts"]);
+
+    const whatsapp = await preview({ provider: "whatsapp" });
+    expect(whatsapp.collections).toEqual([]);
+    expect(whatsapp.creates[0].content).toContain("OrderButton");
+    expect(paths(whatsapp.modifies)).toEqual([".env", "src/env.ts"]);
   });
 });

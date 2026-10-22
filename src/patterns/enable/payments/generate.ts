@@ -12,6 +12,7 @@ import {
   resolveProvider,
 } from "../../../core/providers";
 import { InvalidArgumentError } from "../../../core/errors";
+import { VELASTACK_WHATSAPP } from "../../../core/constants";
 
 /**
  * The providers in prompt order. Each one's `env` keys are what the CLI asks
@@ -83,6 +84,29 @@ export const PROVIDERS: Provider[] = [
       },
     ],
   },
+  {
+    id: "whatsapp",
+    label: "WhatsApp",
+    env: [
+      {
+        key: "PUBLIC_WHATSAPP_NUMBER",
+        label: "WhatsApp number orders are sent to",
+        placeholder: "+353 1 555 0100",
+        public: true,
+        required: true,
+        description:
+          "The business's WhatsApp number, with country code, that orders open a chat with.",
+      },
+      {
+        key: "PUBLIC_WHATSAPP_ORDER_FORM",
+        label: "Hosted VelaStack form orders are recorded to",
+        placeholder: "https://velastack.dev/v1/projects/<project>/forms/order",
+        public: true,
+        description:
+          "The hosted VelaStack form each order is recorded to, so it is kept even if the chat is never sent. Empty records nothing.",
+      },
+    ],
+  },
 ];
 
 /** What `resolveProvider` needs; `index.ts` spreads the rest of the metadata. */
@@ -99,11 +123,13 @@ export function envEditsFor(
 const COMPONENTS: Record<string, Component[]> = {
   stripe: ["dialog", "input", "label"],
   shopify: ["button"],
+  whatsapp: ["button", "dialog", "input", "label", "textarea"],
 };
 
 const PACKAGES: Record<string, Package[]> = {
   stripe: ["stripe", "@stripe/stripe-js"],
   shopify: ["@shopify/storefront-api-client"],
+  whatsapp: [VELASTACK_WHATSAPP],
 };
 
 const providersRaw = import.meta.glob<string>("./providers/**", {
@@ -132,7 +158,7 @@ export async function generate(options: Options) {
     );
   }
   // Stripe keeps cards and customers for signed-in users; Shopify's checkout
-  // owns its customers, so it has no app-mode files.
+  // owns its customers and WhatsApp has none, so neither has app-mode files.
   const isAppMode = options.features.auth;
 
   const creates = new Map(

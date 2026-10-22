@@ -349,6 +349,15 @@ export const enableCases: CaseSpec[] = [
     { input: { provider: "shopify" } },
     "enable-payments-shopify",
   ),
+  // WhatsApp needs no backend either.
+  makeCase("enable-payments-whatsapp-static", "static", [
+    step("enable-payments", { input: { provider: "whatsapp" }, check: true }),
+  ]),
+  singleCase(
+    "enable-payments",
+    { input: { provider: "whatsapp" } },
+    "enable-payments-whatsapp",
+  ),
   // The cart follows the payments provider, which the steps before it set.
   singleCase("enable-ecommerce", { input: { provider: "stripe" } }),
   makeCase("enable-ecommerce-auth", "auth", [
@@ -363,6 +372,14 @@ export const enableCases: CaseSpec[] = [
   makeCase("enable-ecommerce-shopify", "minimal", [
     step("enable-payments", { input: { provider: "shopify" }, check: false }),
     step("enable-ecommerce", { input: { provider: "shopify" }, check: true }),
+  ]),
+  makeCase("enable-ecommerce-whatsapp-static", "static", [
+    step("enable-payments", { input: { provider: "whatsapp" }, check: false }),
+    step("enable-ecommerce", { input: { provider: "whatsapp" }, check: true }),
+  ]),
+  makeCase("enable-ecommerce-whatsapp", "minimal", [
+    step("enable-payments", { input: { provider: "whatsapp" }, check: false }),
+    step("enable-ecommerce", { input: { provider: "whatsapp" }, check: true }),
   ]),
   singleCase("enable-subscriptions"),
   singleCase("enable-whatsapp"),
@@ -665,6 +682,19 @@ export const stackCases: CaseSpec[] = [
     step("enable-payments", { input: { provider: "shopify" } }),
     step("disable-payments", { check: true }),
     step("enable-payments", { input: { provider: "shopify" }, check: true }),
+  ]),
+  makeCase("ecommerce-whatsapp-lifecycle", "static", [
+    step("enable-payments", { input: { provider: "whatsapp" } }),
+    step("enable-ecommerce", { input: { provider: "whatsapp" } }),
+    step("disable-ecommerce", { check: true }),
+    step("enable-ecommerce", { input: { provider: "whatsapp" }, check: true }),
+    step("disable-ecommerce"),
+    step("disable-payments", { check: true }),
+  ]),
+  makeCase("payments-whatsapp-lifecycle", "static", [
+    step("enable-payments", { input: { provider: "whatsapp" } }),
+    step("disable-payments", { check: true }),
+    step("enable-payments", { input: { provider: "whatsapp" }, check: true }),
   ]),
 ];
 

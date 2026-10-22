@@ -18,6 +18,18 @@ const previewRaw = import.meta.glob<string>("./preview-modifies/**", {
 const PREVIEW_PRICE_ID = "price_preview_placeholder";
 const PREVIEW_VARIANT_ID = "gid://shopify/ProductVariant/preview";
 
+function orderPageSnippet(): string {
+  return dedent`
+    <script lang="ts">
+      import OrderButton from '#lib/components/payments/order-button.svelte';
+    </script>
+
+    <section data-role="content">
+      <OrderButton name="Sourdough loaf" price={4.5} currency="EUR" />
+    </section>
+  `;
+}
+
 function paymentPageSnippet(priceId: string): string {
   return dedent`
     <script lang="ts">
@@ -58,9 +70,12 @@ export async function generate(options: Options) {
   const paymentPage: File = {
     path: "src/routes/(public)/payment/+page.svelte",
     language: "svelte",
-    content: isStripe
-      ? paymentPageSnippet(PREVIEW_PRICE_ID)
-      : buyPageSnippet(PREVIEW_VARIANT_ID),
+    content:
+      provider.id === "stripe"
+        ? paymentPageSnippet(PREVIEW_PRICE_ID)
+        : provider.id === "shopify"
+          ? buyPageSnippet(PREVIEW_VARIANT_ID)
+          : orderPageSnippet(),
     status: "success",
   };
 

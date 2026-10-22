@@ -51,6 +51,10 @@ export async function generate(options: Options) {
     collectionDrops: [],
   };
 
+  // WhatsApp has nothing past the env: orders go to the business's chat, and
+  // the hosted form they are recorded to is created by the CLI.
+  if (provider.id === "whatsapp") return env;
+
   const setup =
     provider.id === "stripe"
       ? await setupStripe(options)

@@ -5,7 +5,7 @@ import { generate as generateBase, PROVIDERS } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
 
 const SLUG = "enable-payments" as const;
-const VERSION = "2.0.0";
+const VERSION = "2.1.0";
 const SOURCE = "src/patterns/enable/payments";
 const DOCS = "/enable/payments";
 
@@ -34,7 +34,7 @@ export default {
   plan: "pro",
   title: "Enable payments",
   summary:
-    "Adds payments with Stripe (product/price sync, a checkout dialog, and saved payment methods when auth is enabled) or Shopify (a Storefront client and a Buy button that hands off to Shopify's checkout).",
+    "Adds payments with Stripe (product/price sync, a checkout dialog, and saved payment methods when auth is enabled) Shopify (a Storefront client and a Buy button that hands off to Shopify's checkout), or WhatsApp (an Order button that opens a prefilled chat with the business and records the order to a hosted VelaStack form).",
   // Stripe adds backend and workflows; see its provider entry.
   requires: {
     auth: false,
@@ -56,6 +56,7 @@ export default {
     "payments",
     "stripe",
     "shopify",
+    "whatsapp",
     "pocketbase",
     "velastack",
     "checkout",
@@ -77,6 +78,11 @@ export default {
       command: "--provider shopify",
       description:
         "A Storefront API client and a Buy button that sends the buyer to Shopify's checkout. No backend needed.",
+    },
+    {
+      command: "--provider whatsapp",
+      description:
+        "An Order on WhatsApp button: the customer's name, phone and order open a chat with the business, and the order is recorded to a hosted VelaStack form. No backend needed.",
     },
   ],
 
