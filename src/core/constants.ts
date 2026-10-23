@@ -17,15 +17,20 @@ export const TANSTACK_TABLE_CORE = "@tanstack/table-core@^9.2.4";
 /** The major `TANSTACK_TABLE_CORE` pins. */
 export const TANSTACK_TABLE_CORE_MAJOR = 9;
 
-/** `file-form` and `multiselect` build on formsnap's field context. */
-export const FORMSNAP = "formsnap@^2.0.1";
+/**
+ * `file-form` and `multiselect` build on formsnap's field context. 2.1.0 is
+ * the first release whose superforms peer admits 3.x; 2.0 needed an npm
+ * override, which `writeResult` now removes (`reconcileFormsnap`).
+ */
+export const FORMSNAP = "formsnap@^2.1.0";
 
 /**
- * The superforms release that supports SvelteKit 3 (its `latest` accepts
- * only Kit 1 and 2). Installed exactly, not with a caret: a caret on a
- * prerelease would follow later `next` builds.
+ * The superforms release that supports SvelteKit 3. Installed exactly, as the
+ * `next` builds before it were (`FLASH` too): `vela migrate` and `vela bless`
+ * move projects from those prerelease pins onto the releases, and formsnap's
+ * `^3.0.0` peer admits the release only.
  */
-export const SUPERFORMS_VERSION = "3.0.0-next.1";
+export const SUPERFORMS_VERSION = "3.0.0";
 
 /**
  * What a generated superforms page needs. Vela's templates already carry
@@ -33,18 +38,8 @@ export const SUPERFORMS_VERSION = "3.0.0-next.1";
  */
 export const SUPERFORMS = `sveltekit-superforms@${SUPERFORMS_VERSION}`;
 
-/**
- * formsnap 2 peers `sveltekit-superforms ^2`, so every project that installs
- * it needs this npm override, or `npm install` fails with ERESOLVE. The value
- * is the literal version: `$sveltekit-superforms` breaks on npm 10.
- * `writeResult` adds it before any install that brings formsnap in.
- */
-export const FORMSNAP_OVERRIDES = {
-  formsnap: { "sveltekit-superforms": SUPERFORMS_VERSION },
-};
-
 /** The flash-message release that supports SvelteKit 3; installed exactly, like superforms. */
-export const FLASH = "sveltekit-flash-message@3.0.0-next.0";
+export const FLASH = "sveltekit-flash-message@3.0.0";
 
 /** The adapter `vela enable backend` moves a project to. */
 export const ADAPTER_NODE = "@sveltejs/adapter-node@^6.0.0";

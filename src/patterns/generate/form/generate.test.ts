@@ -395,7 +395,7 @@ describe("generate form pattern", () => {
     ]);
     expect(result.components).toEqual([]);
     expect(result.packages).toEqual([
-      "sveltekit-superforms@3.0.0-next.1",
+      "sveltekit-superforms@3.0.0",
       "zod@^4.1.11",
     ]);
 
