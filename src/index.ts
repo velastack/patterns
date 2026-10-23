@@ -101,6 +101,7 @@ import generateResource from "./patterns/generate/resource";
 import generateScaffold from "./patterns/generate/scaffold";
 import generateScaffoldRemote from "./patterns/generate/scaffold-remote";
 import generateSchema from "./patterns/generate/schema";
+import generateShop from "./patterns/generate/shop";
 import generateWorkflow from "./patterns/generate/workflow";
 import enableAi from "./patterns/enable/ai";
 import enableAnalytics from "./patterns/enable/analytics";
@@ -124,6 +125,7 @@ import destroySchema from "./patterns/destroy/schema";
 import destroyForm from "./patterns/destroy/form";
 import destroyResource from "./patterns/destroy/resource";
 import destroyScaffold from "./patterns/destroy/scaffold";
+import destroyShop from "./patterns/destroy/shop";
 import disableAi from "./patterns/disable/ai";
 import disableAnalytics from "./patterns/disable/analytics";
 import disableApi from "./patterns/disable/api";
@@ -150,6 +152,7 @@ export const patterns = [
   generateResource,
   generateScaffold,
   generateScaffoldRemote,
+  generateShop,
   enableAi,
   enableAnalytics,
   enableAuth,
@@ -172,6 +175,7 @@ export const patterns = [
   destroyForm,
   destroyResource,
   destroyScaffold,
+  destroyShop,
   disableAi,
   disableAnalytics,
   disableApi,

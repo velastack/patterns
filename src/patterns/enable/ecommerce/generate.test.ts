@@ -79,36 +79,14 @@ describe("enable-ecommerce generate", () => {
     ]);
   });
 
-  it("writes the WhatsApp cart for a WhatsApp project, with no demo page", async () => {
-    const result = await generate(
-      options("whatsapp", { demoId: "ignored on WhatsApp" }),
-    );
+  it("writes the WhatsApp cart for a WhatsApp project", async () => {
+    const result = await generate(options("whatsapp"));
     expect(paths(result.creates)).toEqual([
       "src/lib/cart.svelte.ts",
       "src/lib/components/cart/add-to-cart.svelte",
       "src/lib/components/cart/cart-button.svelte",
       "src/lib/components/cart/cart-sheet.svelte",
     ]);
-  });
-
-  it("adds a demo shop page for the given item", async () => {
-    const stripe = await generate(options("stripe", { demoId: "price_123" }));
-    const load = stripe.creates.find(
-      (file) => file.path === "src/routes/(public)/shop/+page.server.ts",
-    );
-    expect(load?.content).toContain("getOne('price_123')");
-    // A price always has a currency; there is no default to fall back to.
-    expect(load?.content).not.toContain("'usd'");
-
-    const shopify = await generate(
-      options("shopify", { demoId: "gid://shopify/ProductVariant/9" }),
-    );
-    expect(paths(shopify.creates)).toContain(
-      "src/routes/(public)/shop/+page.svelte",
-    );
-    expect(paths(shopify.creates)).not.toContain(
-      "src/routes/(public)/shop/+page.server.ts",
-    );
   });
 
   it("follows the payments provider, and refuses without one", async () => {
@@ -120,7 +98,7 @@ describe("enable-ecommerce generate", () => {
     ).rejects.toThrow(InvalidArgumentError);
   });
 
-  it("previews the Stripe cart with the navbar change", async () => {
+  it("previews the navbar change, and the cart of the provider asked for", async () => {
     const preview = await generatePreview({
       ...options(undefined),
       env: "preview",
@@ -128,20 +106,11 @@ describe("enable-ecommerce generate", () => {
     expect(paths(preview.modifies)).toEqual([
       "src/routes/(public)/root-layout.svelte",
     ]);
-    expect(preview.creates[0].content).toContain("price_preview_placeholder");
-  });
-
-  it("previews the WhatsApp cart with a priced and a quoted item", async () => {
-    const preview = await generatePreview({
+    expect(preview.creates).toEqual([]);
+    const whatsapp = await generate({
       ...options(undefined, { provider: "whatsapp" }),
       env: "preview",
     });
-    expect(paths(preview.creates)).toEqual([
-      "src/routes/(public)/shop/+page.svelte",
-    ]);
-    expect(preview.creates[0].content).toContain(
-      'name="Sourdough loaf" price={4.5}',
-    );
-    expect(preview.creates[0].content).toContain('name="Birthday cake" />');
+    expect(whatsapp.creates[0].content).toContain("orderSubtotal");
   });
 });

@@ -2,6 +2,7 @@ import type { File, Options, Result } from "../../../core/types";
 import { allProviderPaths } from "../../../core/providers";
 import { filesFromGlob, languageFromPath } from "../../../core/util";
 import { PROVIDERS } from "../../enable/ecommerce/generate";
+import { SHOP_PATHS } from "../../destroy/shop";
 
 const createsRaw = import.meta.glob<string>(
   "../../enable/ecommerce/creates/**",
@@ -17,12 +18,6 @@ const providersRaw = import.meta.glob<string>(
   { query: "?raw", import: "default", eager: true },
 );
 
-// The demo shop page carries the item's id, so it is in no template tree.
-const DEMO_PAGES = [
-  "src/routes/(public)/shop/+page.server.ts",
-  "src/routes/(public)/shop/+page.svelte",
-];
-
 export async function generate(options: Options) {
   // The cart follows the payments provider; with payments already gone,
   // every provider's files are removed, and the missing ones skipped.
@@ -36,7 +31,10 @@ export async function generate(options: Options) {
       filesFromGlob(createsRaw, "../../enable/ecommerce/creates/"),
     ),
     ...providers.flatMap((id) => allProviderPaths(providersRaw, id)),
-    ...DEMO_PAGES,
+    // The shop pages import the cart, so they go with it (the demo page an
+    // older enable-ecommerce wrote shares the listing's paths). The catalog
+    // module is the developer's product list and stays; destroy-shop takes it.
+    ...SHOP_PATHS.filter((path) => path !== "src/lib/catalog.ts"),
   ]);
 
   const deletes: File[] = [...paths].sort().map((path) => ({

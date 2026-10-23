@@ -33,6 +33,7 @@
     "src/patterns/enable/whatsapp/originals/**",
     "**/providers/**",
     "**/providers-app-mode/**",
-    "**/providers-i18n/**"
+    "**/providers-i18n/**",
+    "**/providers-cms/**"
   ]
 }

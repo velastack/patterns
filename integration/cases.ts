@@ -426,6 +426,28 @@ export const generateCases: CaseSpec[] = [
   ]),
   singleCase("generate-scaffold-remote"),
   singleCase("generate-schema"),
+  // The shop, in each provider's terms: Stripe's on the backend (gated on
+  // Stripe), Shopify's and WhatsApp's on a static site, and WhatsApp's CMS
+  // pages on a static site that reads a hosted CMS.
+  singleCase("generate-shop", { input: { provider: "stripe" } }),
+  makeCase("generate-shop-shopify", "static", [
+    step("enable-payments", { input: { provider: "shopify" } }),
+    step("enable-ecommerce", { input: { provider: "shopify" } }),
+    step("generate-shop", { input: { provider: "shopify" }, check: true }),
+  ]),
+  makeCase("generate-shop-whatsapp", "static", [
+    step("enable-payments", { input: { provider: "whatsapp" } }),
+    step("enable-ecommerce", { input: { provider: "whatsapp" } }),
+    step("generate-shop", { input: { provider: "whatsapp" }, check: true }),
+  ]),
+  makeCase("generate-shop-whatsapp-cms", "static", [
+    step("enable-cms", {
+      input: { endpoint: "https://velastack.dev/v1/projects/demo/cms" },
+    }),
+    step("enable-payments", { input: { provider: "whatsapp" } }),
+    step("enable-ecommerce", { input: { provider: "whatsapp" } }),
+    step("generate-shop", { input: { provider: "whatsapp" }, check: true }),
+  ]),
   // zod is not part of `sv create`; the schema has to bring it.
   makeCase("generate-schema-plain", "bare", [
     step("generate-schema", { check: true }),
@@ -461,6 +483,7 @@ export const disableCases: CaseSpec[] = [
   inverseCase("destroy-schema"),
   inverseCase("destroy-resource"),
   inverseCase("destroy-scaffold"),
+  inverseCase("destroy-shop"),
   inverseCase("disable-auth"),
   // Its code page goes with the auth pages.
   makeCase("disable-auth-whatsapp", "auth", [
@@ -717,6 +740,17 @@ export const stackCases: CaseSpec[] = [
     step("enable-ecommerce", { input: { provider: "whatsapp" }, check: true }),
     step("disable-ecommerce"),
     step("disable-payments", { check: true }),
+  ]),
+  // Disabling the cart takes the shop pages with it (they import the cart)
+  // and leaves the developer's catalog module alone.
+  makeCase("shop-then-disable-ecommerce", "static", [
+    step("enable-payments", { input: { provider: "whatsapp" } }),
+    step("enable-ecommerce", { input: { provider: "whatsapp" } }),
+    step("generate-shop", { input: { provider: "whatsapp" } }),
+    step("disable-ecommerce", {
+      check: true,
+      expectContains: { "src/lib/catalog.ts": ["export const catalog"] },
+    }),
   ]),
   makeCase("payments-whatsapp-lifecycle", "static", [
     step("enable-payments", { input: { provider: "whatsapp" } }),
