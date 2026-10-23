@@ -41,6 +41,8 @@ export function demoPage(provider: string, id: string): File[] {
           try {
             const price = await locals.admin.collection('stripe_prices').getOne('${id}');
             const product = await locals.admin.collection('stripe_products').getOne(price.product ?? '');
+            // Every Stripe price has a currency; one without has not finished syncing.
+            if (!price.currency) throw new Error('unsynced');
             return {
               price: {
                 price: price.id,
