@@ -47,7 +47,9 @@ async function chargeCurrency(
 			(price.currency === wanted ||
 				priceOptions(price.currency_options)?.[wanted.toUpperCase()] !== undefined)
 	);
-	return priced ? wanted : undefined;
+	// Prices already in that currency are charged in it without being told.
+	const needed = prices.some((price) => price && price.currency !== wanted);
+	return priced && needed ? wanted : undefined;
 }
 
 export const actions = {
