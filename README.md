@@ -15,9 +15,10 @@ SvelteKit 3. A project with a `svelte.config.*`, or with options still nested un
   reads one declares it in `src/env.ts` (`modifyEnvVars` in `src/runtime/env-vars.ts`, creating the file when there
   is none) as optional, `schema: (value) => value ?? ''`, so a build with an empty `.env` still passes. Existing
   entries are never changed; `disable-*` removes the names its `enable-*` declares.
-- formsnap 2 peers superforms 2. Installing formsnap, or superforms into a project that has it, writes
-  `"overrides": { "formsnap": { "sveltekit-superforms": "<pinned version>" } }` to `package.json` first. superforms
-  and flash-message are on `next` releases and are installed with `--save-exact`.
+- formsnap 2.1 is the first release whose superforms peer admits 3.x. Installing formsnap, or superforms into a
+  project that has it, first moves a `3.0.0-next` superforms pin to the release, raises a formsnap range below 2.1
+  and drops the `"overrides": { "formsnap": … }` entry earlier releases wrote for formsnap 2.0; otherwise npm stops
+  with ERESOLVE or keeps the lockfile's formsnap 2.0. superforms and flash-message are installed with `--save-exact`.
 
 ## Runtime
 

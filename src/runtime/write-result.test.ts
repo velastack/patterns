@@ -502,6 +502,41 @@ describe("installComponents", () => {
     );
   });
 
+  it("moves a `next` superforms pin to the release when shadcn-svelte records formsnap", async () => {
+    const root = makeProject({ "sveltekit-superforms": "3.0.0-next.1" });
+    // shadcn-svelte's form item records formsnap itself (--no-deps-install).
+    const executeCommand = vi.fn<ExecuteCommand>(async (cwd, operation) => {
+      if (operation !== "execute") return;
+      const file = path.join(cwd, "package.json");
+      const pkg = JSON.parse(readFileSync(file, "utf8"));
+      pkg.devDependencies = { formsnap: "^2.0.1" };
+      writeFileSync(file, JSON.stringify(pkg, null, 2));
+    });
+    const messages: string[] = [];
+
+    await installComponents(
+      {
+        root,
+        components: ["badge"],
+        logger: { info: (m) => messages.push(m) },
+      },
+      { executeCommand, fetch: registryFetch() },
+    );
+
+    expect(executeCommand.mock.calls.map((c) => [c[1], c[2]])).toEqual([
+      ["execute", [...SHADCN_ADD, "badge"]],
+      ["install", []],
+    ]);
+    const pkg = JSON.parse(
+      readFileSync(path.join(root, "package.json"), "utf8"),
+    );
+    expect(pkg.dependencies).toEqual({ "sveltekit-superforms": "3.0.0" });
+    expect(pkg.devDependencies).toEqual({ formsnap: "^2.1.0" });
+    expect(messages).toContain(
+      "formsnap 2.1 peers superforms 3: sveltekit-superforms → 3.0.0, formsnap → ^2.1.0",
+    );
+  });
+
   it("re-syncs SvelteKit before shadcn-svelte when an install pruned node_modules/$app", async () => {
     const root = makeProject();
     mkdirSync(path.join(root, "node_modules", "@sveltejs", "kit"), {
@@ -700,7 +735,7 @@ describe("installComponents", () => {
     );
 
     expect(executeCommand).toHaveBeenNthCalledWith(1, root, "install", [
-      "formsnap@^2.0.1",
+      "formsnap@^2.1.0",
     ]);
     expect(executeCommand).toHaveBeenNthCalledWith(2, root, "execute", [
       ...SHADCN_ADD,
@@ -709,7 +744,7 @@ describe("installComponents", () => {
     expect(result).toEqual({
       installed: ["file-form", "input"],
       skipped: [],
-      packages: ["formsnap@^2.0.1"],
+      packages: ["formsnap@^2.1.0"],
     });
   });
 
@@ -878,11 +913,11 @@ describe("packageName", () => {
 
 describe("isExactSpec", () => {
   it.each([
-    ["sveltekit-superforms@3.0.0-next.1", true],
-    ["sveltekit-flash-message@3.0.0-next.0", true],
+    ["sveltekit-superforms@3.0.0", true],
+    ["sveltekit-flash-message@3.0.0", true],
     ["@scope/pkg@1.2.3", true],
     ["stripe@19.3.0", true],
-    ["formsnap@^2.0.1", false],
+    ["formsnap@^2.1.0", false],
     ["@sveltejs/adapter-node@^6.0.0", false],
     ["leaflet", false],
     ["@types/leaflet", false],
@@ -947,9 +982,9 @@ describe("writeResult package installs", () => {
       {
         ...emptyResult(),
         packages: [
-          "sveltekit-flash-message@3.0.0-next.0",
+          "sveltekit-flash-message@3.0.0",
           "zod@^4.1.11",
-          "sveltekit-superforms@3.0.0-next.1",
+          "sveltekit-superforms@3.0.0",
         ],
       },
       makeOptions(root),
@@ -957,42 +992,50 @@ describe("writeResult package installs", () => {
     );
     expect(calls.map(({ args, exact }) => ({ args, exact }))).toEqual([
       {
-        args: [
-          "sveltekit-flash-message@3.0.0-next.0",
-          "sveltekit-superforms@3.0.0-next.1",
-        ],
+        args: ["sveltekit-flash-message@3.0.0", "sveltekit-superforms@3.0.0"],
         exact: true,
       },
       { args: ["zod@^4.1.11"], exact: false },
     ]);
     expect(result.packages).toEqual([
-      "sveltekit-flash-message@3.0.0-next.0",
+      "sveltekit-flash-message@3.0.0",
       "zod@^4.1.11",
-      "sveltekit-superforms@3.0.0-next.1",
+      "sveltekit-superforms@3.0.0",
     ]);
   });
 
-  it("writes the formsnap override before installing formsnap", async () => {
-    const root = projectWith({ name: "tmp" });
+  // formsnap 2.1's superforms peer (`^3.0.0`) excludes the `next` builds, and
+  // npm keeps a lockfile's formsnap 2.0 next to superforms 3 rather than
+  // failing, so package.json is put right before the install.
+  it("moves a `next` superforms pin to the release before formsnap comes in", async () => {
+    const root = projectWith({
+      name: "tmp",
+      devDependencies: { "sveltekit-superforms": "3.0.0-next.1" },
+    });
     const { calls, executeCommand } = recordingInstall(root);
+    const messages: string[] = [];
     await writeResult(
       {
         ...emptyResult(),
-        packages: ["formsnap@^2.0.1", "sveltekit-superforms@3.0.0-next.1"],
+        packages: ["formsnap@^2.1.0", "sveltekit-superforms@3.0.0"],
       },
-      makeOptions(root),
+      { ...makeOptions(root), logger: { info: (m) => messages.push(m) } },
       { executeCommand, fetch: registryFetch() },
     );
-    expect(calls).toHaveLength(2);
-    for (const call of calls) {
-      expect(JSON.parse(call.pkg).overrides).toEqual({
-        formsnap: { "sveltekit-superforms": "3.0.0-next.1" },
-      });
-    }
+    expect(calls.map((call) => call.args)).toEqual([["formsnap@^2.1.0"]]);
+    expect(JSON.parse(calls[0]!.pkg).devDependencies).toEqual({
+      "sveltekit-superforms": "3.0.0",
+    });
+    expect(messages).toContain(
+      "formsnap 2.1 peers superforms 3: sveltekit-superforms → 3.0.0",
+    );
   });
 
-  it("writes the override when a component brings formsnap in", async () => {
-    const root = projectWith({ name: "tmp" });
+  it("does the same when a component brings formsnap in", async () => {
+    const root = projectWith({
+      name: "tmp",
+      devDependencies: { "sveltekit-superforms": "3.0.0-next.1" },
+    });
     writeFileSync(path.join(root, "components.json"), "{}", "utf8");
     const { calls, executeCommand } = recordingInstall(root);
     await writeResult(
@@ -1001,35 +1044,70 @@ describe("writeResult package installs", () => {
       { executeCommand, fetch: registryFetch(["input"]) },
     );
     const install = calls.find((call) => call.operation === "install");
-    expect(install?.args).toEqual(["formsnap@^2.0.1"]);
-    expect(JSON.parse(install!.pkg).overrides).toEqual({
-      formsnap: { "sveltekit-superforms": "3.0.0-next.1" },
-    });
+    expect(install?.args).toEqual(["formsnap@^2.1.0"]);
+    expect(
+      JSON.parse(install!.pkg).devDependencies["sveltekit-superforms"],
+    ).toBe("3.0.0");
   });
 
-  it("writes the override when superforms joins an existing formsnap", async () => {
+  it("raises formsnap 2.0 and drops its override when superforms joins it", async () => {
     const root = projectWith({
       name: "tmp",
       dependencies: { formsnap: "^2.0.1" },
+      overrides: { formsnap: { "sveltekit-superforms": "3.0.0-next.1" } },
     });
     const { calls, executeCommand } = recordingInstall(root);
     await writeResult(
-      { ...emptyResult(), packages: ["sveltekit-superforms@3.0.0-next.1"] },
+      { ...emptyResult(), packages: ["sveltekit-superforms@3.0.0"] },
       makeOptions(root),
       { executeCommand, fetch: registryFetch() },
     );
-    expect(JSON.parse(calls[0]!.pkg).overrides).toBeDefined();
+    const pkg = JSON.parse(calls[0]!.pkg);
+    expect(pkg.dependencies).toEqual({ formsnap: "^2.1.0" });
+    expect(pkg.overrides).toBeUndefined();
+  });
+
+  it("keeps the other overrides, formsnap's own included", async () => {
+    const root = projectWith({
+      name: "tmp",
+      dependencies: { formsnap: "^2.1.0" },
+      overrides: {
+        cookie: "1.0.0",
+        formsnap: {
+          "sveltekit-superforms": "3.0.0-next.1",
+          "bits-ui": "2.0.0",
+        },
+      },
+    });
+    const { calls, executeCommand } = recordingInstall(root);
+    await writeResult(
+      { ...emptyResult(), packages: ["sveltekit-superforms@3.0.0"] },
+      makeOptions(root),
+      { executeCommand, fetch: registryFetch() },
+    );
+    const pkg = JSON.parse(calls[0]!.pkg);
+    expect(pkg.dependencies).toEqual({ formsnap: "^2.1.0" });
+    expect(pkg.overrides).toEqual({
+      cookie: "1.0.0",
+      formsnap: { "bits-ui": "2.0.0" },
+    });
   });
 
   it("leaves package.json alone for installs without formsnap", async () => {
-    const root = projectWith({ name: "tmp" });
+    const root = projectWith({
+      name: "tmp",
+      devDependencies: { "sveltekit-flash-message": "3.0.0" },
+    });
     const { calls, executeCommand } = recordingInstall(root);
     await writeResult(
-      { ...emptyResult(), packages: ["sveltekit-superforms@3.0.0-next.1"] },
+      { ...emptyResult(), packages: ["sveltekit-superforms@3.0.0"] },
       makeOptions(root),
       { executeCommand, fetch: registryFetch() },
     );
-    expect(JSON.parse(calls[0]!.pkg).overrides).toBeUndefined();
+    expect(JSON.parse(calls[0]!.pkg)).toEqual({
+      name: "tmp",
+      devDependencies: { "sveltekit-flash-message": "3.0.0" },
+    });
   });
 
   it("writes a package.json modify before the install, which then keeps it", async () => {

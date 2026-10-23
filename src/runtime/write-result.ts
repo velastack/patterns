@@ -33,7 +33,7 @@ import { getLogger, NOOP_LOGGER, type Logger } from "../core/logger";
 import { formatSource } from "../core/format-result";
 import {
   FORMSNAP,
-  FORMSNAP_OVERRIDES,
+  SUPERFORMS_VERSION,
   TANSTACK_TABLE_CORE,
 } from "../core/constants";
 import {
@@ -42,7 +42,6 @@ import {
   resolveUiDir,
 } from "./registry";
 import { assertTableCorePackage } from "./table-core";
-import { ensurePackageOverrides } from "./package-imports";
 
 export { resolveUiDir };
 
@@ -274,7 +273,7 @@ export function packageName(spec: string): string {
 }
 
 /**
- * A spec naming one exact version (`sveltekit-superforms@3.0.0-next.1`),
+ * A spec naming one exact version (`sveltekit-superforms@3.0.0`),
  * which is saved as written. Package managers otherwise save a caret, and a
  * caret on a prerelease follows every later `next` build.
  */
@@ -286,11 +285,16 @@ export function isExactSpec(spec: string): boolean {
 }
 
 /**
- * formsnap 2 peers superforms ^2 and projects run superforms 3, so the
- * override has to be in package.json before an install that brings either in
- * next to formsnap, or npm stops with ERESOLVE.
+ * formsnap 2.1 is the first release whose superforms peer admits 3.x, and
+ * npm reads that `^3.0.0` peer as excluding `3.0.0-next.*`. Before an install
+ * brings formsnap or superforms in next to the other, package.json is moved
+ * to what resolves: a `3.0.0-next` superforms pin to the release, a formsnap
+ * range below 2.1 to `FORMSNAP`, and the `overrides` entry earlier releases
+ * wrote for formsnap 2.0 goes. Left as it is, `npm install` either stops with
+ * ERESOLVE or keeps the formsnap 2.0 its lockfile holds, whose peer
+ * superforms 3 does not meet.
  */
-function ensureFormsnapOverride(
+function reconcileFormsnap(
   root: string,
   installed: Set<string>,
   toInstall: string[],
@@ -302,12 +306,61 @@ function ensureFormsnapOverride(
   if (!formsnap || !touched) {
     return;
   }
-  const { outcome } = ensurePackageOverrides(root, FORMSNAP_OVERRIDES);
-  if (outcome.status === "failed") {
-    logger.info(outcome.message);
-  } else if (outcome.status === "success" && outcome.changed) {
-    logger.info("Added the formsnap override for sveltekit-superforms");
+  const file = path.join(root, "package.json");
+  if (!existsSync(file)) {
+    return;
   }
+  const text = readFileSync(file, "utf8");
+  const pkg = JSON.parse(text) as Record<string, unknown>;
+  const changed: string[] = [];
+
+  const formsnapRange = FORMSNAP.slice(packageName(FORMSNAP).length + 1);
+  const wantedFloor = rangeFloor(formsnapRange)!;
+  for (const block of DEPENDENCY_BLOCKS) {
+    const deps = pkg[block] as Record<string, string> | undefined;
+    if (!deps) {
+      continue;
+    }
+    if (deps["sveltekit-superforms"]?.startsWith("3.0.0-")) {
+      deps["sveltekit-superforms"] = SUPERFORMS_VERSION;
+      changed.push(`sveltekit-superforms → ${SUPERFORMS_VERSION}`);
+    }
+    const floor =
+      deps.formsnap === undefined ? null : rangeFloor(deps.formsnap);
+    if (floor && compareFloors(floor, wantedFloor) < 0) {
+      deps.formsnap = formsnapRange;
+      changed.push(`formsnap → ${formsnapRange}`);
+    }
+  }
+
+  const overrides = pkg.overrides as Record<string, unknown> | undefined;
+  const entry = overrides?.formsnap;
+  if (
+    typeof entry === "object" &&
+    entry !== null &&
+    "sveltekit-superforms" in entry
+  ) {
+    const { "sveltekit-superforms": _, ...rest } = entry as Record<
+      string,
+      unknown
+    >;
+    const { formsnap: __, ...others } = overrides!;
+    const next =
+      Object.keys(rest).length > 0 ? { ...others, formsnap: rest } : others;
+    if (Object.keys(next).length > 0) {
+      pkg.overrides = next;
+    } else {
+      delete pkg.overrides;
+    }
+    changed.push("dropped the overrides entry formsnap 2.0 needed");
+  }
+
+  if (changed.length === 0) {
+    return;
+  }
+  const indent = text.match(/^[{]\s*\n([\t ]+)/)?.[1] ?? "\t";
+  writeFileSync(file, `${JSON.stringify(pkg, null, indent)}\n`, "utf8");
+  logger.info(`formsnap 2.1 peers superforms 3: ${changed.join(", ")}`);
 }
 
 /**
@@ -472,7 +525,7 @@ async function installPackages(
     return [];
   }
 
-  ensureFormsnapOverride(root, installed, toInstall, logger);
+  reconcileFormsnap(root, installed, toInstall, logger);
 
   logger.info(`Installing packages: ${toInstall.join(", ")}`);
   // `--save-exact` applies to a whole command, so exact pins go in their own.
@@ -780,7 +833,7 @@ export async function installComponents(
         );
       const had = recorded(before);
       const added = [...recorded(after)].filter((name) => !had.has(name));
-      ensureFormsnapOverride(root, had, added, logger);
+      reconcileFormsnap(root, had, added, logger);
       await executeCommand(root, "install", [], runtime);
     }
   }
