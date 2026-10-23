@@ -1,7 +1,6 @@
 import type { File, Options, Provider, Result } from "../../../core/types";
 import { providerCreates, resolveProvider } from "../../../core/providers";
 import { filesFromGlob } from "../../../core/util";
-import { demoPage } from "./demo-page";
 
 /**
  * The payments providers ecommerce supports. It writes no env of its own:
@@ -78,17 +77,6 @@ export async function generate(
   }
   if (options.features.i18n) {
     add(providerCreates(providersI18nRaw, provider.id, "./providers-i18n/"));
-  }
-
-  // A WhatsApp item is whatever the page says it is, so there is no id to
-  // demo; the docs show an `<AddToCart>` instead.
-  const demoId = options.input.demoId;
-  if (
-    provider.id !== "whatsapp" &&
-    typeof demoId === "string" &&
-    demoId.trim() !== ""
-  ) {
-    add(demoPage(provider.id, demoId.trim()));
   }
 
   return {

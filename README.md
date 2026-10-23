@@ -123,7 +123,7 @@ imports what it removes (`disable-payments` is blocked by `ecommerce`, whose car
 is not empty. `ecommerce` itself is a feature flag detected from `src/lib/cart.svelte.ts`.
 
 A sibling root beside `providers/` holds a variant of one provider's files for a project state the base files
-can't assume: `providers-app-mode/<id>/` when auth is on, `providers-i18n/<id>/` when wuchale is (a server
+can't assume: `providers-app-mode/<id>/` when auth is on, `providers-cms/<id>/` when the CMS is, `providers-i18n/<id>/` when wuchale is (a server
 load then takes the page's language from the URL, as enable-cms's layout load does). `generate.ts` adds the
 sibling's files over the base ones; `allProviderPaths` and the `SHIPPED` directory test already cover
 `providers-*`, and the new root goes in the `tsconfig.json` / `vite.config.ts` excludes.

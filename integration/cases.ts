@@ -249,6 +249,9 @@ export function inverseCase(slug: Slug): CaseSpec {
   if (slug === "disable-notifications") {
     setup.push(step("enable-notifications", { check: false }));
   }
+  if (slug === "destroy-shop") {
+    setup.push(step("generate-shop", { check: false }));
+  }
   const { baseline, chain } = prerequisites(
     slug,
     combinedRequires([
@@ -426,6 +429,28 @@ export const generateCases: CaseSpec[] = [
   ]),
   singleCase("generate-scaffold-remote"),
   singleCase("generate-schema"),
+  // The shop, in each provider's terms: Stripe's on the backend (gated on
+  // Stripe), Shopify's and WhatsApp's on a static site, and WhatsApp's CMS
+  // pages on a static site that reads a hosted CMS.
+  singleCase("generate-shop"),
+  makeCase("generate-shop-shopify", "static", [
+    step("enable-payments", { input: { provider: "shopify" } }),
+    step("enable-ecommerce", { input: { provider: "shopify" } }),
+    step("generate-shop", { check: true }),
+  ]),
+  makeCase("generate-shop-whatsapp", "static", [
+    step("enable-payments", { input: { provider: "whatsapp" } }),
+    step("enable-ecommerce", { input: { provider: "whatsapp" } }),
+    step("generate-shop", { check: true }),
+  ]),
+  makeCase("generate-shop-whatsapp-cms", "static", [
+    step("enable-cms", {
+      input: { endpoint: "https://velastack.dev/v1/projects/demo/cms" },
+    }),
+    step("enable-payments", { input: { provider: "whatsapp" } }),
+    step("enable-ecommerce", { input: { provider: "whatsapp" } }),
+    step("generate-shop", { check: true }),
+  ]),
   // zod is not part of `sv create`; the schema has to bring it.
   makeCase("generate-schema-plain", "bare", [
     step("generate-schema", { check: true }),
@@ -461,6 +486,7 @@ export const disableCases: CaseSpec[] = [
   inverseCase("destroy-schema"),
   inverseCase("destroy-resource"),
   inverseCase("destroy-scaffold"),
+  inverseCase("destroy-shop"),
   inverseCase("disable-auth"),
   // Its code page goes with the auth pages.
   makeCase("disable-auth-whatsapp", "auth", [
