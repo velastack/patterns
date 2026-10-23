@@ -48,6 +48,7 @@ const FEATURE_ENABLER: Partial<Record<keyof Features, Slug>> = {
   contentNegotiation: "enable-content-negotiation",
   cms: "enable-cms",
   workflows: "enable-workflows",
+  ecommerce: "enable-ecommerce",
 };
 
 /** The order prerequisites are applied in; each entry's own `requires` precede it. */
@@ -57,6 +58,7 @@ export const PREREQ_ORDER: Slug[] = [
   "enable-api",
   "enable-api-keys",
   "enable-payments",
+  "enable-ecommerce",
   "enable-teams",
   "enable-i18n",
   "enable-blog",
@@ -84,6 +86,10 @@ const SCAFFOLD_FIELDS = [
 /** The reroute enable-i18n and enable-content-negotiation compose, whichever runs first. */
 const HOOKS = "src/hooks.ts";
 const COMPOSED_REROUTE = "rerouteDeLocalize(negotiateReroute(url.pathname))";
+
+/** wuchale's Spanish catalog, and the start of the WhatsApp order message as extracted. */
+const CATALOG = "src/locales/es.po";
+const ORDER_MESSAGE = "like to place an order";
 
 /** Steps that call Stripe whatever their input says. */
 const STRIPE_SLUGS = new Set<Slug>([
@@ -242,11 +248,6 @@ export function inverseCase(slug: Slug): CaseSpec {
   }
   if (slug === "disable-notifications") {
     setup.push(step("enable-notifications", { check: false }));
-  }
-  if (slug === "disable-ecommerce") {
-    setup.push(
-      step("enable-ecommerce", { input: { provider: "stripe" }, check: false }),
-    );
   }
   const { baseline, chain } = prerequisites(
     slug,
@@ -606,6 +607,32 @@ export const stackCases: CaseSpec[] = [
     step("enable-i18n", {
       check: true,
       expectContains: { [HOOKS]: [COMPOSED_REROUTE] },
+    }),
+  ]),
+  // The WhatsApp order message lives in src/lib/order.ts, which wuchale's js
+  // adapter only extracts from when told: whichever is enabled first, the
+  // catalog ends up with the message. On `minimal`: enable-i18n can't merge
+  // into the static template's root layout load.
+  makeCase("i18n-then-payments-whatsapp", "minimal", [
+    step("enable-i18n"),
+    step("enable-payments", {
+      input: { provider: "whatsapp" },
+      check: true,
+      after: "i18nExtract",
+      expectContains: {
+        "wuchale.config.js": ["src/lib/order.ts"],
+        [CATALOG]: [ORDER_MESSAGE],
+      },
+    }),
+  ]),
+  makeCase("payments-whatsapp-then-i18n", "minimal", [
+    step("enable-payments", { input: { provider: "whatsapp" } }),
+    step("enable-i18n", {
+      check: true,
+      expectContains: {
+        "wuchale.config.js": ["src/lib/order.ts"],
+        [CATALOG]: [ORDER_MESSAGE],
+      },
     }),
   ]),
   // With i18n on, the CMS takes its locales from wuchale instead of a literal.

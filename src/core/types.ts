@@ -24,6 +24,11 @@ export interface Features {
    */
   whatsapp?: boolean;
   /**
+   * A cart (`src/lib/cart.svelte.ts`, from `enable-ecommerce`). Optional so
+   * the `requires` of patterns need not mention it.
+   */
+  ecommerce?: boolean;
+  /**
    * The component kit the project has: `shadcn` is shadcn-svelte (a
    * `components.json` plus the package), `plain` is neither. Detected by the
    * caller; optional so the `requires` of patterns need not mention it, and
@@ -31,6 +36,9 @@ export interface Features {
    */
   ui?: "shadcn" | "plain";
 }
+
+/** A feature that is on or off; `ui` is a value, not a flag. */
+export type FeatureFlag = Exclude<keyof Features, "ui">;
 
 /**
  * The route groups a project has, as directory names under `src/routes`.
@@ -259,6 +267,8 @@ export interface CollectionFieldSpec {
   onCreate?: boolean;
   onUpdate?: boolean;
   primaryKey?: boolean;
+  /** PocketBase's own field, such as a collection's `id`. */
+  system?: boolean;
   cascadeDelete?: boolean;
   pattern?: string;
   min?: number;
@@ -442,6 +452,14 @@ export interface Pattern {
   // The capability whose detected provider this pattern takes instead of
   // asking for one: `"payments"` for a pattern built on enable-payments.
   inheritsProvider?: string;
+
+  /**
+   * Features that must be off before this pattern runs, because their code
+   * depends on what it removes: `disable-payments` is blocked by `ecommerce`,
+   * whose cart imports the payments client. `blockingFeatures` lists the
+   * ones a project has on; the CLI refuses and names the disable to run first.
+   */
+  blockedBy?: FeatureFlag[];
 
   // The main generator function for the pattern.
   generate: (options: Options) => Promise<Result>;

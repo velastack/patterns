@@ -117,6 +117,17 @@ pattern supports per capability (`{ payments: ["stripe"] }`). A provider can car
 over the pattern's. `unmetRequirements(pattern, { features, detected, provider })` lists what a project is
 missing. Only `true` flags count, and `false` means "not required". `ui` is checked separately.
 
+`blockedBy` is the other direction: the features that must be off before a pattern runs, because their code
+imports what it removes (`disable-payments` is blocked by `ecommerce`, whose cart imports the payments client).
+`blockingFeatures(pattern, features)` lists the ones a project has on; the CLI and the harness refuse while it
+is not empty. `ecommerce` itself is a feature flag detected from `src/lib/cart.svelte.ts`.
+
+A sibling root beside `providers/` holds a variant of one provider's files for a project state the base files
+can't assume: `providers-app-mode/<id>/` when auth is on, `providers-i18n/<id>/` when wuchale is (a server
+load then takes the page's language from the URL, as enable-cms's layout load does). `generate.ts` adds the
+sibling's files over the base ones; `allProviderPaths` and the `SHIPPED` directory test already cover
+`providers-*`, and the new root goes in the `tsconfig.json` / `vite.config.ts` excludes.
+
 The generated code never sees any of this. Each provider's files are what a developer would write for that
 provider alone, with no adapter layer or shared types for swapping providers.
 

@@ -64,10 +64,12 @@
 
 		<Separator />
 
-		<div class="flex justify-between text-sm font-medium">
-			<span>Subtotal</span>
-			<span>{formatAmount(cart.subtotal, cart.currency)}</span>
-		</div>
+		{#if cart.currency}
+			<div class="flex justify-between text-sm font-medium">
+				<span>Subtotal</span>
+				<span>{formatAmount(cart.subtotal, cart.currency)}</span>
+			</div>
+		{/if}
 
 		<!-- A plain form post: checkout works before the page has hydrated. -->
 		<form method="POST" action="/cart?/checkout">

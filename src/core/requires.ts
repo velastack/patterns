@@ -1,10 +1,24 @@
 import type {
   DetectedProviders,
+  FeatureFlag,
   Features,
   Pattern,
   Provider,
   Requires,
 } from "./types";
+
+/**
+ * The features in `pattern.blockedBy` that the project has on, in the
+ * pattern's order. Empty means nothing stands in the way. A disable pattern
+ * names the features whose code imports what it removes, so that
+ * `disable-payments` refuses while the cart still imports the Stripe client.
+ */
+export function blockingFeatures(
+  pattern: Pick<Pattern, "blockedBy">,
+  features: Features,
+): FeatureFlag[] {
+  return (pattern.blockedBy ?? []).filter((flag) => features[flag] === true);
+}
 
 /** One prerequisite a project is missing for a pattern. */
 export type Unmet =

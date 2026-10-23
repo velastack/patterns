@@ -9,6 +9,11 @@ import { providersToRemove } from "./generate";
 import { unmodifyNavUser } from "./modifies/modify-nav-user";
 import { unmodifyUserSignup } from "./modifies/modify-user-signup";
 import { planDropsForCollections } from "../../destroy/shared";
+import fs from "node:fs";
+import {
+  modifyWuchaleJsFiles,
+  TRANSLATED_LIB_FILES,
+} from "../../../runtime/wuchale-config";
 
 /** Everything enable-payments creates in PocketBase for Stripe. */
 const STRIPE_COLLECTIONS = [
@@ -50,6 +55,22 @@ export async function generate(options: Options) {
   );
   pushResult(envVars.modify);
   if (envVars.delete) deletes.push(envVars.delete);
+
+  // WhatsApp's order message was listed for wuchale; the module goes, so the
+  // entry does too.
+  const wuchaleConfig = path.join(options.root, "wuchale.config.js");
+  if (
+    providers.some((provider) => provider.id === "whatsapp") &&
+    fs.existsSync(wuchaleConfig)
+  ) {
+    logger.info("Removing src/lib/order.ts from wuchale's js adapter");
+    pushResult(
+      modifyOutcomeToFile(
+        wuchaleConfig,
+        modifyWuchaleJsFiles(wuchaleConfig, TRANSLATED_LIB_FILES, "remove"),
+      ),
+    );
+  }
 
   // The nav item and the signup link exist only in auth's files, which
   // enable-payments edits for Stripe alone.

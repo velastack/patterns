@@ -10,7 +10,11 @@ import {
   migrationDelay,
   withPocketbase,
 } from "../../../../runtime/pocketbase";
-import { createCollectionIdempotent } from "../../../../runtime/collections";
+import {
+  createCollectionIdempotent,
+  ensureCollectionFields,
+} from "../../../../runtime/collections";
+import { STRIPE_PRICES, STRIPE_PRODUCTS } from "./collections";
 import { modifyOutcomeToFile } from "../../../../runtime/modify-file";
 import { modifyNavUser } from "../modifies/modify-nav-user";
 import { modifyUserSignup } from "../modifies/modify-user-signup";
@@ -75,65 +79,24 @@ export async function setupStripe(options: Options) {
     const create = (spec: Parameters<typeof createCollectionIdempotent>[1]) =>
       createCollectionIdempotent(pb, spec, logger);
 
-    logger.info("Creating stripe_products collection");
-    const productsResult = await create({
-      name: "stripe_products",
-      type: "base",
-      fields: [
-        {
-          name: "id",
-          pattern: "^[a-zA-Z0-9_]+$",
-          primaryKey: true,
-          required: true,
-          system: true,
-          type: "text",
-        },
-        { name: "name", required: false, type: "text" },
-        { name: "active", required: false, type: "text" },
-        { name: "default_price", required: false, type: "text" },
-        { name: "created", onCreate: true, onUpdate: false, type: "autodate" },
-        { name: "updated", onCreate: true, onUpdate: true, type: "autodate" },
-      ],
-    });
-    await pushMigrationCreates(
-      creates,
-      "stripe_products",
-      "created",
-      options,
-      productsResult.created,
-    );
-
-    logger.info("Creating stripe_prices collection");
-    const pricesResult = await create({
-      name: "stripe_prices",
-      type: "base",
-      fields: [
-        {
-          name: "id",
-          pattern: "^[a-zA-Z0-9_]+$",
-          primaryKey: true,
-          required: true,
-          system: true,
-          type: "text",
-        },
-        { name: "billing_scheme", required: false, type: "text" },
-        { name: "currency", required: false, type: "text" },
-        { name: "product", required: false, type: "text" },
-        { name: "recurring", required: false, type: "json" },
-        { name: "type", required: false, type: "text" },
-        { name: "unit_amount", required: false, type: "number" },
-        { name: "active", required: false, type: "bool" },
-        { name: "created", onCreate: true, onUpdate: false, type: "autodate" },
-        { name: "updated", onCreate: true, onUpdate: true, type: "autodate" },
-      ],
-    });
-    await pushMigrationCreates(
-      creates,
-      "stripe_prices",
-      "created",
-      options,
-      pricesResult.created,
-    );
+    // The catalog: created, or, when a project enabled payments before a
+    // field existed, brought up to the spec (the next sync fills the field).
+    for (const spec of [STRIPE_PRODUCTS, STRIPE_PRICES]) {
+      logger.info(`Creating ${spec.name} collection`);
+      const result = await create(spec);
+      await pushMigrationCreates(
+        creates,
+        spec.name,
+        "created",
+        options,
+        result.created,
+      );
+      if (!result.created) {
+        creates.push(
+          ...(await ensureCollectionFields(pb, spec, options, logger)),
+        );
+      }
+    }
 
     if (isAppMode) {
       logger.info("Creating stripe_customers collection");

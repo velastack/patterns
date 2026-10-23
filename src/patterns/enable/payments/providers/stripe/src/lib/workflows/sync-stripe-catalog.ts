@@ -15,7 +15,11 @@ export const syncStripeProducts = ow.defineWorkflow(
 					default_price:
 						typeof product.default_price === 'string'
 							? product.default_price
-							: (product.default_price?.id ?? null)
+							: (product.default_price?.id ?? null),
+					description: product.description,
+					images: product.images,
+					metadata: product.metadata,
+					url: product.url
 				});
 			}
 			return rows;
@@ -51,7 +55,9 @@ export const syncStripePrices = ow.defineWorkflow(
 					recurring: price.recurring,
 					type: price.type,
 					unit_amount: price.unit_amount,
-					active: price.active
+					active: price.active,
+					nickname: price.nickname,
+					lookup_key: price.lookup_key
 				});
 			}
 			return rows;

@@ -5,19 +5,22 @@ import { generate as generateBase, PROVIDERS } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
 
 const SLUG = "enable-payments" as const;
-const VERSION = "2.1.0";
+const VERSION = "2.2.0";
 const SOURCE = "src/patterns/enable/payments";
 const DOCS = "/enable/payments";
 
 export async function generate(options: Options) {
-  const baseRes = await generateBase(options);
-
   if (options.env === "preview") {
+    const baseRes = await generateBase(options);
     const previewRes = await generatePreview(options);
     return formatResult(mergeResults([baseRes, previewRes]), options);
   }
 
-  const { generate: generateRuntime } = await import("./generate.runtime");
+  const { generate: generateRuntime, hasVitest } =
+    await import("./generate.runtime");
+  const baseRes = await generateBase(options, {
+    unitTests: hasVitest(options.root),
+  });
   const runtimeRes = await generateRuntime(options);
   const { writeResult } = await import("../../../runtime/write-result");
   return writeResult(
@@ -34,7 +37,7 @@ export default {
   plan: "pro",
   title: "Enable payments",
   summary:
-    "Adds payments with Stripe (product/price sync, a checkout dialog, and saved payment methods when auth is enabled) Shopify (a Storefront client and a Buy button that hands off to Shopify's checkout), or WhatsApp (an Order button that opens a prefilled chat with the business and records the order to a hosted VelaStack form).",
+    "Adds payments with Stripe (product/price sync, a checkout dialog, and saved payment methods when auth is enabled), Shopify (a Storefront client and a Buy button that hands off to Shopify's checkout), or WhatsApp (an Order button that opens a prefilled chat with the business and records the order to a hosted VelaStack form).",
   // Stripe adds backend and workflows; see its provider entry.
   requires: {
     auth: false,

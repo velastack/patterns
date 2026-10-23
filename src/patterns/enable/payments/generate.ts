@@ -143,7 +143,22 @@ const providersAppModeRaw = import.meta.glob<string>(
   { query: "?raw", import: "default", eager: true },
 );
 
-export async function generate(options: Options) {
+export interface GenerateContext {
+  /**
+   * The project can run unit tests (vitest is installed), so a provider's
+   * `*.test.ts` beside its code is written too. Server tests (`server.test.ts`)
+   * always are: they run under `vela test:server`, which brings its own runner.
+   */
+  unitTests?: boolean;
+}
+
+const isUnitTest = (path: string) =>
+  path.endsWith(".test.ts") && !path.endsWith("server.test.ts");
+
+export async function generate(
+  options: Options,
+  { unitTests = false }: GenerateContext = {},
+) {
   const provider = resolveProvider(META, options);
 
   // A second provider would leave the project with both, and the patterns
@@ -162,7 +177,9 @@ export async function generate(options: Options) {
   const isAppMode = options.features.auth;
 
   const creates = new Map(
-    providerCreates(providersRaw, provider.id).map((file) => [file.path, file]),
+    providerCreates(providersRaw, provider.id)
+      .filter((file) => unitTests || !isUnitTest(file.path))
+      .map((file) => [file.path, file]),
   );
   if (isAppMode) {
     for (const file of providerCreates(

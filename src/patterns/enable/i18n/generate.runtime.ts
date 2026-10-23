@@ -17,6 +17,28 @@ import { modifyGitignore } from "./modifies/gitignore";
 import { ensureRootLayoutI18n } from "./modifies/+layout";
 import { modifyRootLayoutLanguageSelect } from "./modifies/root-layout.svelte";
 import { welcomePageCatalog } from "./welcome-catalog";
+import {
+  TRANSLATED_LIB_FILES,
+  withWuchaleJsFiles,
+} from "../../../runtime/wuchale-config";
+
+/**
+ * The `wuchale.config.js` create, with the library modules that carry
+ * visitor-facing text and already exist in the project (the WhatsApp order
+ * message, say) listed for the js adapter. A pattern enabled later adds its
+ * own module to the written config.
+ */
+export function withLibraryTexts(root: string, creates: File[]): File[] {
+  const present = TRANSLATED_LIB_FILES.filter((file) =>
+    fs.existsSync(path.join(root, file)),
+  );
+  if (present.length === 0) return creates;
+  return creates.map((file) => {
+    if (!file.path.endsWith("wuchale.config.js")) return file;
+    const edited = withWuchaleJsFiles(file.content, present);
+    return edited?.changed ? { ...file, content: edited.source } : file;
+  });
+}
 
 export async function generate(options: Options) {
   const logger = getLogger(options);

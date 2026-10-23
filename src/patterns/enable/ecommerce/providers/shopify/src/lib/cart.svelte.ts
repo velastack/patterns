@@ -268,8 +268,17 @@ function readCartId(): string | null {
 
 export const cart = new Cart();
 
-export function formatMoney({ amount, currencyCode }: Money): string {
-	return new Intl.NumberFormat(undefined, { style: 'currency', currency: currencyCode }).format(
+/**
+ * The page's language, so a price reads the way the page does (an English
+ * page shows MXN as `MX$5.50`, a Mexican Spanish one as `$5.50`) rather than
+ * the way the visitor's browser is set.
+ */
+function pageLocale(): string | undefined {
+	return (browser && document.documentElement.lang) || undefined;
+}
+
+export function formatMoney({ amount, currencyCode }: Money, locale = pageLocale()): string {
+	return new Intl.NumberFormat(locale, { style: 'currency', currency: currencyCode }).format(
 		Number(amount)
 	);
 }

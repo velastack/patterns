@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
@@ -14,6 +15,21 @@ import { envEditsFor, META } from "./generate";
 import { setupShopify } from "./runtime/setup-shopify";
 import { setupStripe } from "./runtime/setup-stripe";
 import { setupWhatsApp } from "./runtime/setup-whatsapp";
+
+/** Whether the project can run a unit test (`vitest` in package.json). */
+export function hasVitest(root: string): boolean {
+  try {
+    const pkg = JSON.parse(
+      fs.readFileSync(path.join(root, "package.json"), "utf8"),
+    ) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+    return Boolean(pkg.devDependencies?.vitest || pkg.dependencies?.vitest);
+  } catch {
+    return false;
+  }
+}
 
 export async function generate(options: Options) {
   const logger = getLogger(options);

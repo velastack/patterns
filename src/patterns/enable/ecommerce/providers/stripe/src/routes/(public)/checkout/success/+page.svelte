@@ -15,7 +15,7 @@
 		<h1 class="mb-2 text-2xl font-semibold">Thank you</h1>
 		<p class="text-muted-foreground">
 			{#if data.amountTotal !== null && data.currency}
-				Your payment of {formatAmount(data.amountTotal, data.currency)} went through.
+				Your payment of {formatAmount(data.amountTotal, data.currency, data.locale)} went through.
 			{:else}
 				Your payment went through.
 			{/if}
