@@ -18,6 +18,7 @@ src/patterns/enable/whatsapp/originals/**
 **/variants/**
 **/providers/**
 **/providers-app-mode/**
+**/providers-i18n/**
 
 # Test fixtures must match input/expected output byte-for-byte.
 **/fixtures/**
