@@ -5,7 +5,7 @@ import { mergeResults } from "../../../core/util";
 import { generate as generateBase, providersToRemove } from "./generate";
 
 const SLUG = "disable-payments" as const;
-const VERSION = "2.0.0";
+const VERSION = "2.1.0";
 const SOURCE = "src/patterns/disable/payments";
 const DOCS = "/disable/payments";
 
@@ -91,9 +91,9 @@ export default {
   plan: "pro",
   title: "Disable payments",
   summary:
-    "Removes the detected payment provider's files and env credentials. For Stripe it also drops the Stripe collections and reverts the nav/signup edits. Does NOT touch products in the Stripe dashboard or Shopify admin, or uninstall the provider's packages.",
+    "Removes the detected payment provider's files and env credentials. For Stripe it also drops the Stripe collections and reverts the nav/signup edits. Does NOT touch products in the Stripe dashboard or Shopify admin, orders recorded to a hosted VelaStack form, or uninstall the provider's packages.",
   // Stripe's collections need the backend, which enable-payments already
-  // required for Stripe; Shopify has none to drop.
+  // required for Stripe; Shopify and WhatsApp have none to drop.
   requires: {
     auth: false,
     api: false,
@@ -112,6 +112,7 @@ export default {
     "payments",
     "stripe",
     "shopify",
+    "whatsapp",
     "pocketbase",
     "velastack",
     "checkout",

@@ -98,6 +98,12 @@ function defaultInput(slug: Slug, provider: unknown): Record<string, unknown> {
     };
     input.demoId = "gid://shopify/ProductVariant/1";
   }
+  // The chat opens in the browser, so any number does; with no hosted form
+  // configured, checkout records nothing, which is what CI exercises.
+  if (slug === "enable-payments" && provider === "whatsapp") {
+    input.providerEnv = { PUBLIC_WHATSAPP_NUMBER: "+52 55 1234 5678" };
+    input.currency = "MXN";
+  }
   // The demo shop page is written either way; Stripe's loads its price at
   // request time, so any id type-checks.
   if (slug === "enable-ecommerce" && provider === "stripe") {

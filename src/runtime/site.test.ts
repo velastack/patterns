@@ -3,7 +3,15 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Options } from "../core/types";
-import { ensureSiteFile, siteModule, sitePath } from "./site";
+import {
+  ensureSiteCurrency,
+  ensureSiteFile,
+  normalizeCurrency,
+  siteCurrency,
+  siteModule,
+  sitePath,
+  withSiteCurrency,
+} from "./site";
 
 let root: string;
 
@@ -71,5 +79,47 @@ describe("ensureSiteFile", () => {
     );
     const file = await ensureSiteFile(options(true));
     expect(file?.content).toContain("name: 'my-app',");
+  });
+});
+
+describe("currency", () => {
+  it("normalizes real ISO 4217 codes and refuses the rest", () => {
+    expect(normalizeCurrency(" mxn ")).toBe("MXN");
+    expect(normalizeCurrency("EUR")).toBe("EUR");
+    expect(normalizeCurrency("ABC")).toBeNull();
+    expect(normalizeCurrency("$")).toBeNull();
+    expect(normalizeCurrency(undefined)).toBeNull();
+  });
+
+  it("adds currency as the last property, once", () => {
+    const source = siteModule("Centeno", "https://centeno.mx");
+    const next = withSiteCurrency(source, "MXN");
+    expect(next).toContain("\turl: 'https://centeno.mx',\n");
+    expect(next).toContain("\tcurrency: 'MXN'\n};");
+    expect(withSiteCurrency(next!, "USD")).toBeNull();
+  });
+
+  it("handles a trailing comma and extra properties", () => {
+    const source =
+      "export const site = {\n\tname: 'A',\n\turl: 'https://a.test',\n\tcmsEndpoint: '',\n};\n";
+    expect(withSiteCurrency(source, "EUR")).toBe(
+      "export const site = {\n\tname: 'A',\n\turl: 'https://a.test',\n\tcmsEndpoint: '',\n" +
+        "\t/** ISO 4217: the currency the business prices in and is paid in. */\n" +
+        "\tcurrency: 'EUR'\n};\n",
+    );
+  });
+
+  it("creates site.ts with the currency, or keeps the one already there", async () => {
+    const created = await ensureSiteCurrency(options(), "MXN");
+    expect(created.currency).toBe("MXN");
+    expect(created.file?.content).toContain("currency: 'MXN'");
+
+    fs.mkdirSync(path.dirname(sitePath(root)), { recursive: true });
+    fs.writeFileSync(sitePath(root), siteModule("A", undefined, "EUR"));
+    expect(siteCurrency(root)).toBe("EUR");
+    expect(await ensureSiteCurrency(options(), "MXN")).toEqual({
+      file: null,
+      currency: "EUR",
+    });
   });
 });

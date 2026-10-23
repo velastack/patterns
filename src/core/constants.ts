@@ -57,6 +57,8 @@ export const VELASTACK_KIT = "@velastack/kit@^0.4.0";
 /** 0.4.2 proxies plugin webhooks (pocketbase-whatsapp) to PocketBase. */
 export const VELASTACK_POCKETBASE = "@velastack/pocketbase@^0.4.2";
 export const VELASTACK_CMS = "@velastack/cms@^0.6.0";
+/** wa.me links, order messages and hosted order recording, for payments on WhatsApp. */
+export const VELASTACK_WHATSAPP = "@velastack/whatsapp@^0.1.0";
 export const NEGOTIATE = "sveltekit-negotiate@^0.3.0";
 export const ZOD = "zod@^4.1.11";
 

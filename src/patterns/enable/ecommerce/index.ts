@@ -5,7 +5,7 @@ import { generate as generateBase, META, PROVIDERS } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
 
 const SLUG = "enable-ecommerce" as const;
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const SOURCE = "src/patterns/enable/ecommerce";
 const DOCS = "/enable/ecommerce";
 
@@ -37,7 +37,7 @@ export default {
   plan: "pro",
   title: "Enable ecommerce",
   summary:
-    "Adds a cart to the navbar and a checkout, on the project's payments provider: a browser cart that checks out through Stripe Checkout, or a Shopify Storefront cart that hands off to Shopify's checkout.",
+    "Adds a cart to the navbar and a checkout, on the project's payments provider: a browser cart that checks out through Stripe Checkout, a Shopify Storefront cart that hands off to Shopify's checkout, or a browser cart whose checkout opens a WhatsApp chat with the business and records the order to a hosted VelaStack form.",
   requires: {
     auth: false,
     api: false,
@@ -60,6 +60,7 @@ export default {
     "checkout",
     "stripe",
     "shopify",
+    "whatsapp",
     "velastack",
   ],
 
