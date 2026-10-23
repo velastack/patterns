@@ -715,7 +715,14 @@ export const stackCases: CaseSpec[] = [
     }),
   ]),
   makeCase("payments-lifecycle", "auth", [
-    step("enable-payments"),
+    // With a server, the visitor's currency is decided per request.
+    step("enable-payments", {
+      expectContains: {
+        "src/hooks.server.ts": ["handleCurrency"],
+        "src/routes/+layout.server.ts": ["displayRates"],
+        "src/routes/+layout.svelte": ["currency.hydrate"],
+      },
+    }),
     step("enable-subscriptions", { check: true }),
     step("disable-subscriptions"),
     step("disable-payments", { check: true }),
