@@ -6,14 +6,13 @@
 	import * as Dialog from '#lib/components/ui/dialog/index.js';
 	import CustomerFields from './customer-fields.svelte';
 	import { ORDER_FORM, placeOrder } from '#lib/order.js';
+	import { site } from '#lib/site.js';
 
 	interface Props {
 		/** What is being ordered, as the business will read it. */
 		name: string;
-		/** The unit price, written as you would (`4.5`). Leave it out to quote in the chat. */
+		/** The unit price in `site.currency`, written as you would (`4.5`). Leave it out to quote in the chat. */
 		price?: number;
-		/** ISO 4217, e.g. `EUR`; needed with `price`. */
-		currency?: string;
 		quantity?: number;
 		label?: string;
 	}
@@ -21,7 +20,6 @@
 	let {
 		name,
 		price,
-		currency,
 		quantity = 1,
 		label = 'Order on WhatsApp',
 		...rest
@@ -41,14 +39,15 @@
 	function submit(event: SubmitEvent) {
 		event.preventDefault();
 		const data = new FormData(event.currentTarget as HTMLFormElement);
-		const lines: OrderLine[] = [{ name, quantity, price, currency }];
+		const lines: OrderLine[] = [{ name, quantity, price }];
 		const order = {
 			ref: orderRef(),
 			name: String(data.get('name') ?? ''),
 			phone: String(data.get('phone') ?? ''),
 			note: String(data.get('note') ?? '') || undefined,
+			currency: site.currency,
 			lines,
-			subtotal: orderSubtotal(lines)
+			subtotal: orderSubtotal(lines, site.currency)
 		};
 		const href = placeOrder(order, { token, gotcha: String(data.get('_gotcha') ?? '') });
 		if (!href) {

@@ -29,7 +29,7 @@ const WHATSAPP_SHOP: File = {
       <section data-role="content">
         <h1 class="mb-6 text-2xl font-semibold">Shop</h1>
         <div class="flex gap-2">
-          <AddToCart id="sourdough" name="Sourdough loaf" price={4.5} currency="EUR" />
+          <AddToCart id="sourdough" name="Sourdough loaf" price={4.5} />
           <AddToCart id="birthday-cake" name="Birthday cake" />
         </div>
       </section>

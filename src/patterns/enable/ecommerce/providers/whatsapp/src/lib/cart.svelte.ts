@@ -1,5 +1,6 @@
 import { browser } from '$app/env';
 import { orderSubtotal, type OrderLine } from '@velastack/whatsapp';
+import { site } from '#lib/site.js';
 
 export interface CartItem extends OrderLine {
 	/** Your own id for the item (a slug or SKU); lines with the same id merge. */
@@ -26,8 +27,8 @@ class Cart {
 	open = $state(false);
 	placed = $state<PlacedOrder | null>(null);
 	count = $derived(this.items.reduce((total, item) => total + item.quantity, 0));
-	/** Only when every item has a price in one currency; otherwise the business quotes. */
-	subtotal = $derived(orderSubtotal(this.items));
+	/** In `site.currency`, only when every item has a price; otherwise the business quotes. */
+	subtotal = $derived(orderSubtotal(this.items, site.currency));
 
 	#loaded = false;
 

@@ -4,6 +4,7 @@ import { resolveProvider } from "../../../core/providers";
 import { filesUnderPrefix } from "../../../core/util";
 import { envEditsFor, META } from "./generate";
 import { buyPageSnippet } from "./shopify-page";
+import { siteModule } from "../../../runtime/site";
 import {
   PAYMENTS_APP_MODE_COLLECTIONS,
   PAYMENTS_BASE_COLLECTIONS,
@@ -25,7 +26,7 @@ function orderPageSnippet(): string {
     </script>
 
     <section data-role="content">
-      <OrderButton name="Sourdough loaf" price={4.5} currency="EUR" />
+      <OrderButton name="Sourdough loaf" price={4.5} />
     </section>
   `;
 }
@@ -65,6 +66,15 @@ export async function generate(options: Options) {
         .join("\n") + "\n",
     status: "success",
   });
+  // The business's currency, which every WhatsApp price is in.
+  if (provider.id === "whatsapp") {
+    modifies.push({
+      path: "src/lib/site.ts",
+      language: "typescript",
+      content: siteModule("My App", undefined, "EUR"),
+      status: "success",
+    });
+  }
   modifies.sort((a, b) => a.path.localeCompare(b.path));
 
   const paymentPage: File = {

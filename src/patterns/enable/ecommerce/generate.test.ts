@@ -122,7 +122,9 @@ describe("enable-ecommerce generate", () => {
     expect(paths(preview.creates)).toEqual([
       "src/routes/(public)/shop/+page.svelte",
     ]);
-    expect(preview.creates[0].content).toContain('price={4.5} currency="EUR"');
+    expect(preview.creates[0].content).toContain(
+      'name="Sourdough loaf" price={4.5}',
+    );
     expect(preview.creates[0].content).toContain('name="Birthday cake" />');
   });
 });

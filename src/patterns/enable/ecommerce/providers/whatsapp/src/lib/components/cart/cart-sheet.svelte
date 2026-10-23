@@ -3,13 +3,14 @@
 	import PlusIcon from '@lucide/svelte/icons/plus';
 	import XIcon from '@lucide/svelte/icons/x';
 	import { toast } from 'svelte-sonner';
-	import { formatMoney, formToken, lineTotal, orderRef } from '@velastack/whatsapp';
+	import { formToken, lineTotal, orderRef } from '@velastack/whatsapp';
 	import { Button, buttonVariants } from '#lib/components/ui/button/index.js';
 	import { Separator } from '#lib/components/ui/separator/index.js';
 	import * as Sheet from '#lib/components/ui/sheet/index.js';
 	import CustomerFields from '#lib/components/payments/customer-fields.svelte';
 	import { cart } from '#lib/cart.svelte.js';
-	import { ORDER_FORM, placeOrder } from '#lib/order.js';
+	import { formatPrice, ORDER_FORM, placeOrder } from '#lib/order.js';
+	import { site } from '#lib/site.js';
 
 	// Fetched once, the first time the cart opens: the hosted form refuses a
 	// token younger than two seconds, and filling the form in takes longer.
@@ -28,12 +29,8 @@
 			name: String(data.get('name') ?? ''),
 			phone: String(data.get('phone') ?? ''),
 			note: String(data.get('note') ?? '') || undefined,
-			lines: cart.items.map(({ name, quantity, price, currency }) => ({
-				name,
-				quantity,
-				price,
-				currency
-			})),
+			currency: site.currency,
+			lines: cart.items.map(({ name, quantity, price }) => ({ name, quantity, price })),
 			subtotal: cart.subtotal
 		};
 		const href = placeOrder(order, { token, gotcha: String(data.get('_gotcha') ?? '') });
@@ -77,14 +74,12 @@
 			{:else}
 				<ul class="divide-y">
 					{#each cart.items as item (item.id)}
-						{@const total = lineTotal(item)}
+						{@const total = lineTotal(item, site.currency)}
 						<li class="flex items-center gap-3 py-3">
 							<div class="min-w-0 flex-1">
 								<p class="truncate text-sm font-medium">{item.name}</p>
-								{#if total}
-									<p class="text-muted-foreground text-sm">
-										{formatMoney(total.amount, total.currency)}
-									</p>
+								{#if total !== undefined}
+									<p class="text-muted-foreground text-sm">{formatPrice(total)}</p>
 								{/if}
 							</div>
 							<div class="flex items-center gap-1">
@@ -123,10 +118,10 @@
 
 				<Separator />
 
-				{#if cart.subtotal}
+				{#if cart.subtotal !== undefined}
 					<div class="flex justify-between text-sm font-medium">
 						<span>Subtotal</span>
-						<span>{formatMoney(cart.subtotal.amount, cart.subtotal.currency)}</span>
+						<span>{formatPrice(cart.subtotal)}</span>
 					</div>
 				{:else}
 					<p class="text-muted-foreground text-sm">We'll confirm the total in WhatsApp.</p>

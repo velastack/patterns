@@ -13,6 +13,7 @@ import { modifyEnv } from "../../../runtime/env";
 import { envEditsFor, META } from "./generate";
 import { setupShopify } from "./runtime/setup-shopify";
 import { setupStripe } from "./runtime/setup-stripe";
+import { setupWhatsApp } from "./runtime/setup-whatsapp";
 
 export async function generate(options: Options) {
   const logger = getLogger(options);
@@ -51,14 +52,12 @@ export async function generate(options: Options) {
     collectionDrops: [],
   };
 
-  // WhatsApp has nothing past the env: orders go to the business's chat, and
-  // the hosted form they are recorded to is created by the CLI.
-  if (provider.id === "whatsapp") return env;
-
   const setup =
     provider.id === "stripe"
       ? await setupStripe(options)
-      : await setupShopify(options);
+      : provider.id === "shopify"
+        ? await setupShopify(options)
+        : await setupWhatsApp(options);
 
   return mergeResults([env, setup]) satisfies Result;
 }

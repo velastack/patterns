@@ -8,10 +8,8 @@
 		id: string;
 		/** What the business will read in the order. */
 		name: string;
-		/** The unit price, written as you would (`4.5`). Leave it out to quote in the chat. */
+		/** The unit price in `site.currency`, written as you would (`4.5`). Leave it out to quote in the chat. */
 		price?: number;
-		/** ISO 4217, e.g. `EUR`; needed with `price`. */
-		currency?: string;
 		quantity?: number;
 		label?: string;
 	}
@@ -20,7 +18,6 @@
 		id,
 		name,
 		price,
-		currency,
 		quantity = 1,
 		label = 'Add to cart',
 		...rest
@@ -29,7 +26,7 @@
 	let added = $state(false);
 
 	function add() {
-		cart.add({ id, name, price, currency }, quantity);
+		cart.add({ id, name, price }, quantity);
 		added = true;
 		cart.open = true;
 		setTimeout(() => (added = false), 1500);

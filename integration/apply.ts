@@ -101,7 +101,8 @@ function defaultInput(slug: Slug, provider: unknown): Record<string, unknown> {
   // The chat opens in the browser, so any number does; with no hosted form
   // configured, checkout records nothing, which is what CI exercises.
   if (slug === "enable-payments" && provider === "whatsapp") {
-    input.providerEnv = { PUBLIC_WHATSAPP_NUMBER: "+353 1 555 0100" };
+    input.providerEnv = { PUBLIC_WHATSAPP_NUMBER: "+52 55 1234 5678" };
+    input.currency = "MXN";
   }
   // The demo shop page is written either way; Stripe's loads its price at
   // request time, so any id type-checks.

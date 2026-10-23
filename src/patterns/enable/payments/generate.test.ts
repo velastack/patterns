@@ -94,6 +94,14 @@ describe("enable-payments generate", () => {
     const whatsapp = await preview({ provider: "whatsapp" });
     expect(whatsapp.collections).toEqual([]);
     expect(whatsapp.creates[0].content).toContain("OrderButton");
-    expect(paths(whatsapp.modifies)).toEqual([".env", "src/env.ts"]);
+    expect(paths(whatsapp.modifies)).toEqual([
+      ".env",
+      "src/env.ts",
+      "src/lib/site.ts",
+    ]);
+    expect(
+      whatsapp.modifies.find((file) => file.path === "src/lib/site.ts")
+        ?.content,
+    ).toContain("currency: 'EUR'");
   });
 });
