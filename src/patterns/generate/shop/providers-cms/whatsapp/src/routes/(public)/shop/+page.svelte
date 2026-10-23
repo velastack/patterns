@@ -4,8 +4,9 @@
 	import { formatPrice } from '#lib/order.js';
 
 	// The catalog is edited in place: open the page with `?edit` to add items.
-	// Prices are in `site.currency` (src/lib/site.ts); an item without one is
-	// quoted in the chat.
+	// It lives in the root layout scope, so the product pages read the same
+	// list. Prices are in `site.currency` (src/lib/site.ts); an item without
+	// one is quoted in the chat.
 	const sample: Partial<CollectionItem>[] = [
 		{
 			id: 'concha',
@@ -24,7 +25,7 @@
 <section data-role="content">
 	<h1 class="mb-6 text-2xl font-semibold"><CmsText name="title" fallback="Shop" /></h1>
 
-	<CmsCollection name="catalog" fallback={sample}>
+	<CmsCollection name="catalog" scope="root" fallback={sample}>
 		{#snippet children(items)}
 			<ul class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 				{#each items as item (item.id)}

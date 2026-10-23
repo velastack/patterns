@@ -5,8 +5,8 @@
 	import { formatPrice } from '#lib/order.js';
 </script>
 
-<!-- The same catalog the shop page edits, read from that page's scope. -->
-<CmsCollection name="catalog" scope="page:/(public)/shop">
+<!-- The same catalog the shop page edits, from the root layout scope. -->
+<CmsCollection name="catalog" scope="root">
 	{#snippet children(items)}
 		{@const item = items.find((candidate) => candidate.id === page.params.id)}
 		<section data-role="content" class="grid gap-8 md:grid-cols-2">

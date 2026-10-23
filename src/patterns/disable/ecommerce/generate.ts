@@ -31,9 +31,10 @@ export async function generate(options: Options) {
       filesFromGlob(createsRaw, "../../enable/ecommerce/creates/"),
     ),
     ...providers.flatMap((id) => allProviderPaths(providersRaw, id)),
-    // The shop pages import the cart, so they go with it. (The demo page an
-    // older enable-ecommerce wrote shares the listing's paths.)
-    ...SHOP_PATHS,
+    // The shop pages import the cart, so they go with it (the demo page an
+    // older enable-ecommerce wrote shares the listing's paths). The catalog
+    // module is the developer's product list and stays; destroy-shop takes it.
+    ...SHOP_PATHS.filter((path) => path !== "src/lib/catalog.ts"),
   ]);
 
   const deletes: File[] = [...paths].sort().map((path) => ({
