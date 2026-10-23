@@ -249,9 +249,6 @@ export function inverseCase(slug: Slug): CaseSpec {
   if (slug === "disable-notifications") {
     setup.push(step("enable-notifications", { check: false }));
   }
-  if (slug === "destroy-shop") {
-    setup.push(step("generate-shop", { check: false }));
-  }
   const { baseline, chain } = prerequisites(
     slug,
     combinedRequires([
