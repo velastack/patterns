@@ -1,6 +1,6 @@
 import type { File, Options, Provider, Result } from "../../../core/types";
 import { allProviderPaths } from "../../../core/providers";
-import { languageFromPath } from "../../../core/util";
+import { filesFromGlob, languageFromPath } from "../../../core/util";
 import { PROVIDERS } from "../../enable/payments/generate";
 
 const providersRaw = import.meta.glob<string>(
@@ -8,6 +8,12 @@ const providersRaw = import.meta.glob<string>(
     "../../enable/payments/providers/**",
     "../../enable/payments/providers-app-mode/**",
   ],
+  { query: "?raw", import: "default", eager: true },
+);
+
+// Shared by every provider: the currency store and its select.
+const createsRaw = import.meta.glob<string>(
+  "../../enable/payments/creates/**",
   { query: "?raw", import: "default", eager: true },
 );
 
@@ -31,7 +37,10 @@ export function providersToRemove(
 export async function generate(options: Options) {
   // Both the plain and the app-mode files go, whatever auth is now: auth may
   // have been turned on or off since payments was enabled.
-  const paths = new Set([DEMO_PAGE]);
+  const paths = new Set([
+    DEMO_PAGE,
+    ...Object.keys(filesFromGlob(createsRaw, "../../enable/payments/creates/")),
+  ]);
   for (const provider of providersToRemove(options)) {
     for (const path of allProviderPaths(providersRaw, provider.id)) {
       paths.add(path);

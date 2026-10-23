@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { CmsCollection, CmsText, type CollectionItem } from '@velastack/cms';
 	import AddToCart from '#lib/components/cart/add-to-cart.svelte';
-	import { formatPrice } from '#lib/order.js';
+	import { formatPrice } from '#lib/currency.svelte.js';
 
 	// The catalog is edited in place: open the page with `?edit` to add items.
 	// It lives in the root layout scope, so the product pages read the same

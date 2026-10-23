@@ -9,7 +9,8 @@
 	import * as Sheet from '#lib/components/ui/sheet/index.js';
 	import CustomerFields from '#lib/components/payments/customer-fields.svelte';
 	import { cart } from '#lib/cart.svelte.js';
-	import { formatPrice, ORDER_FORM, placeOrder } from '#lib/order.js';
+	import { formatPrice } from '#lib/currency.svelte.js';
+	import { ORDER_FORM, placeOrder } from '#lib/order.js';
 	import { site } from '#lib/site.js';
 
 	// Fetched once, the first time the cart opens: the hosted form refuses a

@@ -10,10 +10,7 @@ export const load = async ({ url }) => {
 		return {
 			amountTotal: session.amount_total,
 			currency: session.currency,
-			paid: session.payment_status === 'paid',
-			// The page's language (app.html's `lang`), so the amount is formatted
-			// the same on the server and in the browser.
-			locale: 'en'
+			paid: session.payment_status === 'paid'
 		};
 	} catch {
 		error(404, 'Not found');

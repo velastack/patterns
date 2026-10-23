@@ -81,7 +81,7 @@ describe("generate-shop", () => {
     );
     expect(cms.creates[0].content).toContain("CmsCollection");
     // Prices in the app's own currency, not a CMS option.
-    expect(cms.creates[0].content).toContain("#lib/order.js");
+    expect(cms.creates[0].content).toContain("#lib/currency.svelte.js");
   });
 
   it("follows the payments provider and refuses without one", async () => {

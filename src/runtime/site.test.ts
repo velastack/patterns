@@ -4,13 +4,18 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Options } from "../core/types";
 import {
+  ensureSiteBusiness,
   ensureSiteCurrency,
   ensureSiteFile,
+  normalizeCountry,
+  normalizeCurrencies,
   normalizeCurrency,
+  siteBusiness,
   siteCurrency,
   siteModule,
   sitePath,
   withSiteCurrency,
+  withSiteProperty,
 } from "./site";
 
 let root: string;
@@ -120,6 +125,69 @@ describe("currency", () => {
     expect(await ensureSiteCurrency(options(), "MXN")).toEqual({
       file: null,
       currency: "EUR",
+    });
+  });
+});
+
+describe("business", () => {
+  it("normalizes countries and currency lists, leaving the home currency out", () => {
+    expect(normalizeCountry(" mx ")).toBe("MX");
+    expect(normalizeCountry("XX")).toBeNull();
+    expect(normalizeCountry("Mexico")).toBeNull();
+    expect(normalizeCurrencies("usd, eur,MXN", "MXN")).toEqual(["USD", "EUR"]);
+    expect(normalizeCurrencies(["USD", "usd"])).toEqual(["USD"]);
+    expect(normalizeCurrencies("")).toEqual([]);
+    expect(normalizeCurrencies("USD, pesos")).toBeNull();
+    expect(normalizeCurrencies(undefined)).toBeNull();
+  });
+
+  it("writes the three properties into a new site.ts, each as the last one", () => {
+    const source = siteModule("Centeno", "https://centeno.mx", {
+      currency: "MXN",
+      country: "MX",
+      currencies: ["USD", "EUR"],
+    });
+    expect(source).toContain("\tcurrency: 'MXN',\n");
+    expect(source).toContain("\tcountry: 'MX',\n");
+    expect(source).toContain("\tcurrencies: ['USD', 'EUR']\n};");
+    expect(siteModule("A", undefined, "EUR")).toContain(
+      "\tcurrency: 'EUR'\n};",
+    );
+  });
+
+  it("adds a property to an existing site.ts and reads them all back", () => {
+    const base = siteModule("A", "https://a.test", "MXN");
+    const withCountry = withSiteProperty(base, "country", "MX")!;
+    const all = withSiteProperty(withCountry, "currencies", ["USD"])!;
+    expect(withSiteProperty(all, "country", "US")).toBeNull();
+    fs.mkdirSync(path.dirname(sitePath(root)), { recursive: true });
+    fs.writeFileSync(sitePath(root), all);
+    expect(siteBusiness(root)).toEqual({
+      currency: "MXN",
+      country: "MX",
+      currencies: ["USD"],
+    });
+  });
+
+  it("ensures only what is missing, and keeps what is declared", async () => {
+    fs.mkdirSync(path.dirname(sitePath(root)), { recursive: true });
+    fs.writeFileSync(sitePath(root), siteModule("A", undefined, "EUR"));
+    const result = await ensureSiteBusiness(options(), {
+      currency: "MXN",
+      country: "ES",
+      currencies: ["USD"],
+    });
+    expect(result.business).toEqual({
+      currency: "EUR",
+      country: "ES",
+      currencies: ["USD"],
+    });
+    expect(result.file?.content).toContain("country: 'ES'");
+    expect(result.file?.content).not.toContain("MXN");
+    fs.writeFileSync(sitePath(root), result.file!.content);
+    expect(await ensureSiteBusiness(options(), { currency: "MXN" })).toEqual({
+      file: null,
+      business: { currency: "EUR", country: "ES", currencies: ["USD"] },
     });
   });
 });

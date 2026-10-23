@@ -45,21 +45,6 @@ describe("enable-ecommerce generate", () => {
     expect(result.packages).toEqual([]);
   });
 
-  it("takes the success page's language from the URL only with i18n on", async () => {
-    const success = "src/routes/(public)/checkout/success/+page.server.ts";
-    const load = async (i18n: boolean) =>
-      (
-        await generate({
-          ...options("stripe"),
-          features: { ...options("stripe").features, i18n },
-        })
-      ).creates.find((file) => file.path === success)!.content;
-    expect(await load(false)).toContain("locale: 'en'");
-    expect(await load(false)).not.toContain("getLocale");
-    expect(await load(true)).toContain("locale: getLocale(url)");
-    expect(await load(true)).toContain("#locales/main.url.js");
-  });
-
   it("checks out as the Stripe customer only where payments has the helper", async () => {
     const action = async (stripeCustomer: boolean) =>
       (await generate(options("stripe"), { stripeCustomer })).creates.find(

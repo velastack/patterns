@@ -1,6 +1,6 @@
 <script lang="ts">
 	import AddToCart from '#lib/components/cart/add-to-cart.svelte';
-	import { formatPrice } from '#lib/order.js';
+	import { formatPrice } from '#lib/currency.svelte.js';
 
 	let { data } = $props();
 </script>

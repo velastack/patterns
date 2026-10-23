@@ -24,7 +24,7 @@ describe("enable-payments generate", () => {
       "src/lib/server/stripe-customer.ts",
     );
     expect(plain.packages).toEqual(["stripe", "@stripe/stripe-js"]);
-    expect(plain.components).toEqual(["dialog", "input", "label"]);
+    expect(plain.components).toEqual(["dialog", "input", "label", "select"]);
 
     const app = await generate(options("stripe", true));
     expect(paths(app.creates)).toContain("src/lib/server/stripe-customer.ts");
@@ -39,11 +39,13 @@ describe("enable-payments generate", () => {
     for (const auth of [false, true]) {
       const result = await generate(options("shopify", auth));
       expect(paths(result.creates)).toEqual([
+        "src/lib/components/currency-select.svelte",
         "src/lib/components/payments/buy-button.svelte",
+        "src/lib/currency.svelte.ts",
         "src/lib/shopify.ts",
       ]);
       expect(result.packages).toEqual(["@shopify/storefront-api-client"]);
-      expect(result.components).toEqual(["button"]);
+      expect(result.components).toEqual(["button", "select"]);
     }
   });
 
@@ -58,8 +60,10 @@ describe("enable-payments generate", () => {
     for (const auth of [false, true]) {
       const result = await generate(options("whatsapp", auth));
       expect(paths(result.creates)).toEqual([
+        "src/lib/components/currency-select.svelte",
         "src/lib/components/payments/customer-fields.svelte",
         "src/lib/components/payments/order-button.svelte",
+        "src/lib/currency.svelte.ts",
         "src/lib/order.ts",
       ]);
       expect(result.packages).toEqual(["@velastack/whatsapp@^0.1.0"]);
@@ -69,6 +73,7 @@ describe("enable-payments generate", () => {
         "input",
         "label",
         "textarea",
+        "select",
       ]);
     }
   });
@@ -96,7 +101,11 @@ describe("enable-payments generate", () => {
     const shopify = await preview({ provider: "shopify" });
     expect(shopify.collections).toEqual([]);
     expect(shopify.creates[0].content).toContain("BuyButton");
-    expect(paths(shopify.modifies)).toEqual([".env", "src/env.ts"]);
+    expect(paths(shopify.modifies)).toEqual([
+      ".env",
+      "src/env.ts",
+      "src/lib/site.ts",
+    ]);
 
     const whatsapp = await preview({ provider: "whatsapp" });
     expect(whatsapp.collections).toEqual([]);
@@ -109,6 +118,6 @@ describe("enable-payments generate", () => {
     expect(
       whatsapp.modifies.find((file) => file.path === "src/lib/site.ts")
         ?.content,
-    ).toContain("currency: 'EUR'");
+    ).toContain("currency: 'MXN'");
   });
 });

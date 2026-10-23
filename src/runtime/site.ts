@@ -11,14 +11,45 @@ export function sitePath(root: string): string {
 }
 
 /**
+ * What a business declares about itself in `src/lib/site.ts`, next to the
+ * app's name: the currency it prices in and is paid in, the country it is in
+ * (prices format for it: `es-MX`, not `es`) and the other currencies it shows
+ * prices in, as estimates. Every property is optional; a payments provider
+ * asks for what it needs.
+ */
+export interface SiteBusiness {
+  /** ISO 4217, e.g. `MXN`. */
+  currency?: string;
+  /** ISO 3166-1 alpha-2, e.g. `MX`. */
+  country?: string;
+  /** ISO 4217 codes the site also shows prices in; empty means the home currency only. */
+  currencies?: string[];
+}
+
+type BusinessKey = keyof SiteBusiness;
+
+const BUSINESS_KEYS: BusinessKey[] = ["currency", "country", "currencies"];
+
+/**
  * `src/lib/site.ts` as the CLI templates ship it (`site.template.ts`), with
- * the placeholders filled in, plus the business's currency when one is given.
+ * the placeholders filled in, plus whatever the business declares.
  */
 export function siteModule(
   name: string,
   url = "http://localhost:5173",
-  currency?: string,
+  business: SiteBusiness | string = {},
 ): string {
+  // The old third argument was the currency alone.
+  const declared: SiteBusiness =
+    typeof business === "string" ? { currency: business } : business;
+  const lines = BUSINESS_KEYS.filter((key) => declared[key] !== undefined).map(
+    (key) => propertyLines(key, declared[key]!),
+  );
+  const properties = [
+    `\tname: ${quote(name)},`,
+    `\turl: ${quote(url)}`,
+    ...lines.map((entry) => entry.join("\n")),
+  ];
   return [
     "/**",
     " * Site-wide metadata, and the one place the app's name and public URL live.",
@@ -29,22 +60,45 @@ export function siteModule(
     " * for the emails it sends, so change it here rather than in the admin panel.",
     " */",
     "export const site = {",
-    `\tname: ${quote(name)},`,
-    currency
-      ? [`\turl: ${quote(url)},`, ...currencyLines(currency)].join("\n")
-      : `\turl: ${quote(url)}`,
+    // Every property but the last ends in a comma.
+    ...properties.map((entry, i) =>
+      i < properties.length - 1 ? ensureComma(entry) : entry,
+    ),
     "};",
     "",
   ].join("\n");
 }
 
-/** The `currency` property, with what it means; no trailing comma, as the last property. */
-function currencyLines(currency: string): string[] {
-  return [
-    "\t/** ISO 4217: the currency the business prices in and is paid in. */",
-    `\tcurrency: ${quote(currency)}`,
-  ];
+function ensureComma(entry: string): string {
+  return entry.endsWith(",") ? entry : `${entry},`;
 }
+
+/** A property's lines: its doc comment, then `key: value` with no trailing comma. */
+function propertyLines(key: BusinessKey, value: string | string[]): string[] {
+  switch (key) {
+    case "currency":
+      return [
+        "\t/** ISO 4217: the currency the business prices in and is paid in. */",
+        `\tcurrency: ${quote(value as string)}`,
+      ];
+    case "country":
+      return [
+        "\t/** ISO 3166-1: the country the business is in; prices format for it. */",
+        `\tcountry: ${quote(value as string)}`,
+      ];
+    case "currencies":
+      return [
+        "\t/** Other currencies prices are shown in, as estimates at the day's rate. */",
+        `\tcurrencies: [${(value as string[]).map(quote).join(", ")}]`,
+      ];
+  }
+}
+
+const SUPPORTED_CURRENCIES = (
+  Intl as unknown as {
+    supportedValuesOf: (key: "currency") => string[];
+  }
+).supportedValuesOf("currency");
 
 /** A three-letter code `Intl` knows, upper-cased; anything else is refused. */
 export function normalizeCurrency(raw: unknown): string | null {
@@ -53,42 +107,100 @@ export function normalizeCurrency(raw: unknown): string | null {
   if (!/^[A-Z]{3}$/.test(code)) return null;
   // Any well-formed code formats, so ask for the list of real ones. Node has
   // had it since 18; the repo's ES2020 lib types just don't declare it.
-  const intl = Intl as unknown as {
-    supportedValuesOf: (key: "currency") => string[];
-  };
-  return intl.supportedValuesOf("currency").includes(code) ? code : null;
+  return SUPPORTED_CURRENCIES.includes(code) ? code : null;
+}
+
+/** A two-letter ISO 3166-1 code, upper-cased; anything else is refused. */
+export function normalizeCountry(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const code = raw.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code)) return null;
+  // `Intl.DisplayNames` knows every region; an unknown one comes back as is.
+  const names = new Intl.DisplayNames(["en"], { type: "region" });
+  return names.of(code) !== code ? code : null;
+}
+
+/**
+ * A list of currency codes, from an array or a comma-separated string,
+ * upper-cased and deduplicated; `null` when any entry is not a currency.
+ * `home` is left out: the business's own currency is never a display one.
+ */
+export function normalizeCurrencies(
+  raw: unknown,
+  home?: string,
+): string[] | null {
+  const entries = Array.isArray(raw)
+    ? raw
+    : typeof raw === "string"
+      ? raw.split(/[,\s]+/)
+      : null;
+  if (!entries) return null;
+  const codes: string[] = [];
+  for (const entry of entries) {
+    if (entry === "" || entry === undefined) continue;
+    const code = normalizeCurrency(entry);
+    if (!code) return null;
+    if (code !== home && !codes.includes(code)) codes.push(code);
+  }
+  return codes;
 }
 
 const SITE_OBJECT = /export const site = \{\n([\s\S]*?)\n\};/;
 
 /**
- * `src/lib/site.ts` with `currency` added as the object's last property,
- * or `null` when it already has one (a project's currency is never changed
+ * `src/lib/site.ts` with `key` added as the object's last property, or
+ * `null` when it already has one (a project's declaration is never changed
  * behind its back) or has no `export const site = { ... };` to add it to.
  */
+export function withSiteProperty(
+  source: string,
+  key: BusinessKey,
+  value: string | string[],
+): string | null {
+  const match = SITE_OBJECT.exec(source);
+  if (!match || new RegExp(`^\\s*${key}\\s*:`, "m").test(match[1])) return null;
+  const body = match[1].replace(/,?\s*$/, ",");
+  return source.replace(
+    match[0],
+    `export const site = {\n${body}\n${propertyLines(key, value).join("\n")}\n};`,
+  );
+}
+
+/** `withSiteProperty` for the currency, as the Phase 1.5 code called it. */
 export function withSiteCurrency(
   source: string,
   currency: string,
 ): string | null {
-  const match = SITE_OBJECT.exec(source);
-  if (!match || /^\s*currency\s*:/m.test(match[1])) return null;
-  const body = match[1].replace(/,?\s*$/, ",");
-  return source.replace(
-    match[0],
-    `export const site = {\n${body}\n${currencyLines(currency).join("\n")}\n};`,
-  );
+  return withSiteProperty(source, "currency", currency);
+}
+
+/** What `src/lib/site.ts` declares about the business, if anything. */
+export function siteBusiness(root: string): SiteBusiness {
+  let source: string;
+  try {
+    source = fs.readFileSync(sitePath(root), "utf8");
+  } catch {
+    return {};
+  }
+  const text = (key: string, shape: string) =>
+    new RegExp(`^\\s*${key}\\s*:\\s*['"](${shape})['"]`, "m").exec(source)?.[1];
+  const list = /^\s*currencies\s*:\s*\[([^\]]*)\]/m.exec(source)?.[1];
+  const business: SiteBusiness = {};
+  const currency = text("currency", "[A-Za-z]{3}");
+  if (currency) business.currency = currency;
+  const country = text("country", "[A-Za-z]{2}");
+  if (country) business.country = country;
+  if (list !== undefined) {
+    business.currencies = [...list.matchAll(/['"]([A-Za-z]{3})['"]/g)].map(
+      (m) => m[1],
+    );
+  }
+  return business;
 }
 
 /** The currency `src/lib/site.ts` declares, if any. */
 export function siteCurrency(root: string): string | null {
-  try {
-    const source = fs.readFileSync(sitePath(root), "utf8");
-    return (
-      /^\s*currency\s*:\s*['"]([A-Za-z]{3})['"]/m.exec(source)?.[1] ?? null
-    );
-  } catch {
-    return null;
-  }
+  return siteBusiness(root).currency ?? null;
 }
 
 /** Single-quoted, as the templates write their strings. */
@@ -151,39 +263,60 @@ export async function ensureSiteFile(options: Options): Promise<File | null> {
 }
 
 /**
- * Make `src/lib/site.ts` declare the business's currency: create the file
- * with it, or add it to an existing one that has none. An existing currency
- * is kept, whatever `currency` says; the result says which it was.
+ * Make `src/lib/site.ts` declare what the business says about itself: create
+ * the file with it, or add the properties an existing one lacks. A property
+ * already there is kept, whatever `business` says; the result says what the
+ * file declares after the call, and the file to write, if anything changed.
  */
-export async function ensureSiteCurrency(
+export async function ensureSiteBusiness(
   options: Options,
-  currency: string,
-): Promise<{ file: File | null; currency: string }> {
+  business: SiteBusiness,
+): Promise<{ file: File | null; business: SiteBusiness }> {
   const file = sitePath(options.root);
+  const wanted = BUSINESS_KEYS.filter((key) => business[key] !== undefined);
   if (!fs.existsSync(file)) {
+    if (wanted.length === 0) return { file: null, business: {} };
     getLogger(options).info("Creating src/lib/site.ts");
     return {
       file: {
         path: file,
         language: languageFromPath(file),
-        content: siteModule(await existingName(options), undefined, currency),
+        content: siteModule(await existingName(options), undefined, business),
         status: "success",
       },
-      currency,
+      business,
     };
   }
-  const existing = siteCurrency(options.root);
-  if (existing) return { file: null, currency: existing };
-  const next = withSiteCurrency(fs.readFileSync(file, "utf8"), currency);
-  if (next === null) return { file: null, currency };
-  getLogger(options).info(`Adding currency ${currency} to src/lib/site.ts`);
+
+  const existing = siteBusiness(options.root);
+  let source = fs.readFileSync(file, "utf8");
+  const added: string[] = [];
+  for (const key of wanted) {
+    if (existing[key] !== undefined) continue;
+    const next = withSiteProperty(source, key, business[key]!);
+    if (next === null) continue;
+    source = next;
+    added.push(key);
+    (existing as Record<string, unknown>)[key] = business[key];
+  }
+  if (added.length === 0) return { file: null, business: existing };
+  getLogger(options).info(`Adding ${added.join(", ")} to src/lib/site.ts`);
   return {
     file: {
       path: file,
       language: languageFromPath(file),
-      content: next,
+      content: source,
       status: "success",
     },
-    currency,
+    business: existing,
   };
+}
+
+/** `ensureSiteBusiness` for the currency alone, as the Phase 1.5 code called it. */
+export async function ensureSiteCurrency(
+  options: Options,
+  currency: string,
+): Promise<{ file: File | null; currency: string }> {
+  const { file, business } = await ensureSiteBusiness(options, { currency });
+  return { file, currency: business.currency ?? currency };
 }

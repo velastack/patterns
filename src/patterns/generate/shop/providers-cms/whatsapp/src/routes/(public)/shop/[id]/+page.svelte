@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import { CmsCollection } from '@velastack/cms';
 	import AddToCart from '#lib/components/cart/add-to-cart.svelte';
-	import { formatPrice } from '#lib/order.js';
+	import { formatPrice } from '#lib/currency.svelte.js';
 </script>
 
 <!-- The same catalog the shop page edits, from the root layout scope. -->

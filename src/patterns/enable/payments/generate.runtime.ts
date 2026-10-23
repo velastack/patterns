@@ -11,7 +11,15 @@ import { mergeResults } from "../../../core/util";
 import { modifyEnvVarsFiles } from "../../../runtime/env-vars";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
 import { modifyEnv } from "../../../runtime/env";
+import {
+  ensureSiteBusiness,
+  normalizeCountry,
+  normalizeCurrencies,
+  normalizeCurrency,
+  sitePath,
+} from "../../../runtime/site";
 import { envEditsFor, META } from "./generate";
+import { modifyRootLayoutCurrencySelect } from "./modifies/root-layout.svelte";
 import { setupShopify } from "./runtime/setup-shopify";
 import { setupStripe } from "./runtime/setup-stripe";
 import { setupWhatsApp } from "./runtime/setup-whatsapp";
@@ -57,6 +65,34 @@ export async function generate(options: Options) {
   if (envVars.create) creates.push(envVars.create);
   pushResult(envVars.modify);
 
+  // What the business declares in src/lib/site.ts: the currency it prices
+  // in, the country it is in, and the other currencies it shows prices in.
+  // Asked for by the CLI; a value already there is kept.
+  const { currency, country, currencies } = options.input;
+  const siteExisted = fs.existsSync(sitePath(options.root));
+  const { file: siteFile, business } = await ensureSiteBusiness(options, {
+    currency: normalizeCurrency(currency) ?? undefined,
+    country: normalizeCountry(country) ?? undefined,
+    currencies:
+      normalizeCurrencies(
+        currencies,
+        normalizeCurrency(currency) ?? undefined,
+      ) ?? undefined,
+  });
+  if (siteFile) (siteExisted ? modifies : creates).push(siteFile);
+
+  logger.info("Adding the currency select to the navbar");
+  const layoutPath = path.join(
+    options.root,
+    "src",
+    "routes",
+    "(public)",
+    "root-layout.svelte",
+  );
+  pushResult(
+    modifyOutcomeToFile(layoutPath, modifyRootLayoutCurrencySelect(layoutPath)),
+  );
+
   const env: Result = {
     creates,
     modifies,
@@ -73,7 +109,7 @@ export async function generate(options: Options) {
       ? await setupStripe(options)
       : provider.id === "shopify"
         ? await setupShopify(options)
-        : await setupWhatsApp(options);
+        : await setupWhatsApp(options, business);
 
   return mergeResults([env, setup]) satisfies Result;
 }

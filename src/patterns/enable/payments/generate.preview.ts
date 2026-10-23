@@ -66,15 +66,18 @@ export async function generate(options: Options) {
         .join("\n") + "\n",
     status: "success",
   });
-  // The business's currency, which every WhatsApp price is in.
-  if (provider.id === "whatsapp") {
-    modifies.push({
-      path: "src/lib/site.ts",
-      language: "typescript",
-      content: siteModule("My App", undefined, "EUR"),
-      status: "success",
-    });
-  }
+  // What the business declares: its currency and country, and the other
+  // currencies it shows prices in.
+  modifies.push({
+    path: "src/lib/site.ts",
+    language: "typescript",
+    content: siteModule("My App", undefined, {
+      currency: "MXN",
+      country: "MX",
+      currencies: ["USD"],
+    }),
+    status: "success",
+  });
   modifies.sort((a, b) => a.path.localeCompare(b.path));
 
   const paymentPage: File = {
