@@ -1,16 +1,17 @@
 <script lang="ts">
-	import { CmsCollection, CmsText } from '@velastack/cms';
+	import { CmsCollection, CmsText, type CollectionItem } from '@velastack/cms';
 	import AddToCart from '#lib/components/cart/add-to-cart.svelte';
 	import { formatPrice } from '#lib/order.js';
 
 	// The catalog is edited in place: open the page with `?edit` to add items.
-	// Prices are in `site.currency` (src/lib/site.ts).
-	const sample = [
+	// Prices are in `site.currency` (src/lib/site.ts); an item without one is
+	// quoted in the chat.
+	const sample: Partial<CollectionItem>[] = [
 		{
 			id: 'concha',
 			title: 'Concha',
 			summary: 'A sweet bun with a vanilla or cocoa shell.',
-			price: { amount: 12 }
+			price: { amount: 12, currency: '', period: '', prefix: '' }
 		},
 		{
 			id: 'birthday-cake',
