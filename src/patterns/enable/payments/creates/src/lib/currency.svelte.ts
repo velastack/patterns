@@ -26,13 +26,16 @@ interface Rates {
 	fetchedAt: number;
 }
 
-const business = site as { currency: string; country?: string; currencies?: string[] };
+// `site.ts` declares these once payments asked for them; a project that
+// enabled payments before that has none, and formats in each price's own
+// currency with nothing to convert to.
+const business = site as unknown as { currency?: string; country?: string; currencies?: string[] };
+const home = business.currency ?? '';
 
 /** The currencies the business shows prices in: its own, then the others it offers. */
-export const offered: string[] = [
-	business.currency,
-	...(business.currencies ?? []).filter((code) => code !== business.currency)
-];
+export const offered: string[] = home
+	? [home, ...(business.currencies ?? []).filter((code) => code !== home)]
+	: [];
 
 /**
  * The page's language in the business's country (`es-MX`, not `es`), so a
@@ -50,7 +53,7 @@ export function pageLocale(): string {
 
 class Currency {
 	/** The currency prices show in: the business's own until the visitor picks another. */
-	current = $state(business.currency);
+	current = $state(home);
 	rates = $state<Rates | null>(null);
 
 	#loaded = false;
@@ -69,12 +72,12 @@ class Currency {
 		if (!offered.includes(code)) return;
 		this.current = code;
 		document.cookie = `${COOKIE}=${code}; path=/; max-age=${365 * 24 * 60 * 60}; samesite=lax`;
-		if (code !== business.currency) this.#loadRates();
+		if (code !== home) this.#loadRates();
 	}
 
 	/** `amount` in `from` as the current currency, or `null` without a rate for either. */
-	convert(amount: number, from = business.currency): number | null {
-		if (from === this.current) return amount;
+	convert(amount: number, from = home): number | null {
+		if (from === this.current || !this.current) return amount;
 		const rates = this.rates?.rates;
 		const fromRate = rates?.[from];
 		const toRate = rates?.[this.current];
@@ -87,9 +90,9 @@ class Currency {
 	 * currency with `≈` when it was converted, else as it is. Formatted for
 	 * the page's language in the business's country.
 	 */
-	format(amount: number, from = business.currency): string {
+	format(amount: number, from = home): string {
 		const converted = this.convert(amount, from);
-		if (converted === null || from === this.current) return money(amount, from);
+		if (converted === null || from === this.current || !this.current) return money(amount, from);
 		return `≈ ${money(converted, this.current)}`;
 	}
 
@@ -125,6 +128,6 @@ export function money(amount: number, code: string): string {
 }
 
 /** A price in the business's currency, shown the way the visitor reads prices. */
-export function formatPrice(amount: number, from = business.currency): string {
+export function formatPrice(amount: number, from = home): string {
 	return currency.format(amount, from);
 }
