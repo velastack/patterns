@@ -620,7 +620,7 @@ export const stackCases: CaseSpec[] = [
       check: true,
       after: "i18nExtract",
       expectContains: {
-        "wuchale.config.js": ['"src/lib/order.ts"'],
+        "wuchale.config.js": ["src/lib/order.ts"],
         [CATALOG]: [ORDER_MESSAGE],
       },
     }),
@@ -630,7 +630,7 @@ export const stackCases: CaseSpec[] = [
     step("enable-i18n", {
       check: true,
       expectContains: {
-        "wuchale.config.js": ['"src/lib/order.ts"'],
+        "wuchale.config.js": ["src/lib/order.ts"],
         [CATALOG]: [ORDER_MESSAGE],
       },
     }),
