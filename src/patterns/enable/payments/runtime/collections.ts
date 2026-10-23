@@ -4,7 +4,14 @@ const users = "users";
 const stripeCustomers = "stripe_customers";
 const stripePaymentMethods = "stripe_payment_methods";
 
-const stripeProducts: CollectionSpec = {
+/**
+ * The Stripe catalog as `sync-stripe-catalog.ts` copies it: the fields the
+ * payment and billing pages read, plus what a store page shows (description,
+ * images, metadata, the product URL, a price's nickname and lookup key).
+ * `setupStripe` creates these and adds any field an older project's
+ * collection lacks.
+ */
+export const STRIPE_PRODUCTS: CollectionSpec = {
   name: "stripe_products",
   type: "base",
   fields: [
@@ -13,17 +20,23 @@ const stripeProducts: CollectionSpec = {
       pattern: "^[a-zA-Z0-9_]+$",
       primaryKey: true,
       required: true,
+      system: true,
       type: "text",
     },
     { name: "name", required: false, type: "text" },
     { name: "active", required: false, type: "text" },
     { name: "default_price", required: false, type: "text" },
+    { name: "description", required: false, type: "text" },
+    // Stripe's list of image URLs, and its free-form key/value metadata.
+    { name: "images", required: false, type: "json" },
+    { name: "metadata", required: false, type: "json" },
+    { name: "url", required: false, type: "text" },
     { name: "created", onCreate: true, onUpdate: false, type: "autodate" },
     { name: "updated", onCreate: true, onUpdate: true, type: "autodate" },
   ],
 };
 
-const stripePrices: CollectionSpec = {
+export const STRIPE_PRICES: CollectionSpec = {
   name: "stripe_prices",
   type: "base",
   fields: [
@@ -32,15 +45,18 @@ const stripePrices: CollectionSpec = {
       pattern: "^[a-zA-Z0-9_]+$",
       primaryKey: true,
       required: true,
+      system: true,
       type: "text",
     },
     { name: "billing_scheme", required: false, type: "text" },
     { name: "currency", required: false, type: "text" },
     { name: "product", required: false, type: "text" },
-    { name: "recurring", required: false, type: "text" },
+    { name: "recurring", required: false, type: "json" },
     { name: "type", required: false, type: "text" },
     { name: "unit_amount", required: false, type: "number" },
     { name: "active", required: false, type: "bool" },
+    { name: "nickname", required: false, type: "text" },
+    { name: "lookup_key", required: false, type: "text" },
     { name: "created", onCreate: true, onUpdate: false, type: "autodate" },
     { name: "updated", onCreate: true, onUpdate: true, type: "autodate" },
   ],
@@ -142,8 +158,8 @@ const transactions: CollectionSpec = {
 };
 
 export const PAYMENTS_BASE_COLLECTIONS: CollectionSpec[] = [
-  stripeProducts,
-  stripePrices,
+  STRIPE_PRODUCTS,
+  STRIPE_PRICES,
 ];
 
 export const PAYMENTS_APP_MODE_COLLECTIONS: CollectionSpec[] = [

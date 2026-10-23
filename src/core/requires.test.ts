@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { unmetRequirements } from "./requires";
+import { blockingFeatures, unmetRequirements } from "./requires";
 import type { DetectedProviders, Features, Requires } from "./types";
 
 const NONE: Features = {
@@ -215,5 +215,21 @@ describe("unmetRequirements", () => {
         },
       ),
     ).toEqual([]);
+  });
+});
+
+describe("blockingFeatures", () => {
+  it("lists the blocking features a project has on, in the pattern's order", () => {
+    expect(
+      blockingFeatures(
+        { blockedBy: ["ecommerce", "teams"] },
+        { ...NONE, teams: true, ecommerce: true },
+      ),
+    ).toEqual(["ecommerce", "teams"]);
+  });
+
+  it("is empty for a pattern with no blockers, or a project with them off", () => {
+    expect(blockingFeatures({}, { ...NONE, ecommerce: true })).toEqual([]);
+    expect(blockingFeatures({ blockedBy: ["ecommerce"] }, NONE)).toEqual([]);
   });
 });

@@ -47,6 +47,13 @@ describe("enable-payments generate", () => {
     }
   });
 
+  it("writes WhatsApp's unit test only where the project can run one", async () => {
+    const without = await generate(options("whatsapp"));
+    expect(paths(without.creates)).not.toContain("src/lib/order.test.ts");
+    const withVitest = await generate(options("whatsapp"), { unitTests: true });
+    expect(paths(withVitest.creates)).toContain("src/lib/order.test.ts");
+  });
+
   it("creates WhatsApp's files and its core package, auth or not", async () => {
     for (const auth of [false, true]) {
       const result = await generate(options("whatsapp", auth));

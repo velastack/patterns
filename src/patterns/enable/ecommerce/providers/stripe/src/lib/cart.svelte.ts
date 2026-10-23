@@ -25,7 +25,8 @@ class Cart {
 	subtotal = $derived(
 		this.items.reduce((total, item) => total + item.unitAmount * item.quantity, 0)
 	);
-	currency = $derived(this.items[0]?.currency ?? 'usd');
+	/** The cart's currency: Stripe refuses a mixed cart, so the first item's. `null` while empty. */
+	currency = $derived<string | null>(this.items[0]?.currency ?? null);
 
 	#loaded = false;
 
@@ -79,9 +80,22 @@ class Cart {
 
 export const cart = new Cart();
 
-/** Formats a Stripe amount: Intl knows how many decimals the currency has (none for JPY). */
-export function formatAmount(amount: number, currency: string): string {
-	const format = new Intl.NumberFormat(undefined, { style: 'currency', currency });
+/**
+ * The page's language, so a price reads the way the page does (an English
+ * page shows MXN as `MX$5.50`, a Mexican Spanish one as `$5.50`) rather than
+ * the way the visitor's browser is set.
+ */
+function pageLocale(): string | undefined {
+	return (browser && document.documentElement.lang) || undefined;
+}
+
+/**
+ * Formats a Stripe amount: Intl knows how many decimals the currency has
+ * (none for JPY). A server render passes the request's locale, so the server
+ * and the browser agree.
+ */
+export function formatAmount(amount: number, currency: string, locale = pageLocale()): string {
+	const format = new Intl.NumberFormat(locale, { style: 'currency', currency });
 	const digits = format.resolvedOptions().maximumFractionDigits ?? 2;
 	return format.format(amount / 10 ** digits);
 }

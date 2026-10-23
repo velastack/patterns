@@ -33,6 +33,7 @@ export type {
   Component,
   DetectedProviders,
   ExecuteCommand,
+  FeatureFlag,
   ExecuteCommandOptions,
   File,
   InstallComponentsOptions,
@@ -88,6 +89,7 @@ export {
   unknownProviderMessage,
 } from "./core/providers";
 export {
+  blockingFeatures,
   unmetRequirements,
   type RequirementsContext,
   type Unmet,

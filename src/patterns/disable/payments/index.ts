@@ -5,7 +5,7 @@ import { mergeResults } from "../../../core/util";
 import { generate as generateBase, providersToRemove } from "./generate";
 
 const SLUG = "disable-payments" as const;
-const VERSION = "2.1.0";
+const VERSION = "2.2.0";
 const SOURCE = "src/patterns/disable/payments";
 const DOCS = "/disable/payments";
 
@@ -106,6 +106,9 @@ export default {
     contentNegotiation: false,
     cms: false,
   },
+  // The cart imports the payments client, so it has to go first. (Subscriptions
+  // would belong here too, but there is no feature flag for it yet.)
+  blockedBy: ["ecommerce"],
   category: "payments" as const,
   tags: [
     "sveltekit",

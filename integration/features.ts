@@ -44,6 +44,8 @@ export function detectFeatures(root: string): Features {
     // The code page, not src/lib/server/whatsapp.ts, which goes once the
     // PocketBase SDK has WhatsApp.
     whatsapp: has("src/routes/(public)/(auth)/whatsapp"),
+    // The cart store every provider's ecommerce files share a path for.
+    ecommerce: has("src/lib/cart.svelte.ts"),
     ui:
       hasComponentsJson(root) && (hasDep("shadcn-svelte") || hasDep("bits-ui"))
         ? "shadcn"
@@ -150,4 +152,5 @@ export const ALL_FEATURES_OFF: Features = {
   cms: false,
   workflows: false,
   whatsapp: false,
+  ecommerce: false,
 };

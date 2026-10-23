@@ -46,7 +46,7 @@ export function demoPage(provider: string, id: string): File[] {
                 price: price.id,
                 name: product.name ?? price.id,
                 unitAmount: price.unit_amount ?? 0,
-                currency: price.currency ?? 'usd'
+                currency: price.currency
               }
             };
           } catch {

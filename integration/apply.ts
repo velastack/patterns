@@ -1,8 +1,12 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { bySlug, type Slug } from "../src/index";
-import { unmetRequirements, type Unmet } from "../src/core/requires";
-import type { Features, Options, Result } from "../src/core/types";
+import {
+  blockingFeatures,
+  unmetRequirements,
+  type Unmet,
+} from "../src/core/requires";
+import type { Features, Options, Pattern, Result } from "../src/core/types";
 import type { Collection } from "../src/parse/types";
 import { withPocketbase } from "../src/runtime/pocketbase";
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./baseline";
@@ -13,6 +17,7 @@ import type { Project } from "./project";
 export type ErrorKind =
   | "apply"
   | "requires"
+  | "blocked"
   | "collections"
   | "features"
   | "contents"
@@ -175,7 +180,7 @@ export async function applyPattern(
   project: Project,
   step: StepInput,
 ): Promise<StepOutcome> {
-  const pattern = bySlug[step.slug];
+  const pattern: Pattern = bySlug[step.slug];
   if (!pattern) throw new Error(`Unknown pattern: ${step.slug}`);
 
   ensurePocketbaseEnv();
@@ -220,12 +225,22 @@ export async function applyPattern(
     provider: typeof input.provider === "string" ? input.provider : undefined,
   });
 
+  // And it refuses a disable whose dependants are still on.
+  const blocking = blockingFeatures(pattern, featuresBefore);
+
   let result: Result | null = null;
   if (unmet.length > 0) {
     errors.push({
       kind: "requires",
       step: step.slug,
       message: `${step.slug} needs ${unmet.map(describeUnmet).join(", ")}`,
+      fatal: true,
+    });
+  } else if (blocking.length > 0) {
+    errors.push({
+      kind: "blocked",
+      step: step.slug,
+      message: `${step.slug} is blocked while ${blocking.join(", ")} is enabled`,
       fatal: true,
     });
   } else {

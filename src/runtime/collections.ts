@@ -257,6 +257,39 @@ export async function applyCollectionFieldsPatches(
   return migrations;
 }
 
+/**
+ * Adds to an existing collection every field of `spec` it lacks, by name, so a
+ * project that created it under an older spec gets the new fields. Fields are
+ * only added, never changed or removed. Returns the migration files written.
+ */
+export async function ensureCollectionFields(
+  pb: PocketBase,
+  spec: CollectionSpec,
+  options: Options,
+  logger: Logger = NOOP_LOGGER,
+): Promise<File[]> {
+  const existing = await pb.collections.getOne(spec.name);
+  const have = new Set(
+    (existing.fields as { name: string }[]).map((field) => field.name),
+  );
+  const missing = spec.fields.filter((field) => !have.has(field.name));
+  if (missing.length === 0) return [];
+  logger.info(
+    `Adding ${missing.map((field) => field.name).join(", ")} to collection "${spec.name}"`,
+  );
+  return applyCollectionFieldsPatches(
+    pb,
+    [
+      {
+        collectionName: spec.name,
+        changes: missing.map((field) => ({ op: "add" as const, field })),
+      },
+    ],
+    options,
+    logger,
+  );
+}
+
 export interface DropCollectionResult {
   dropped: boolean;
   existed: boolean;

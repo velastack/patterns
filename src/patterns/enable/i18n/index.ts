@@ -5,7 +5,7 @@ import { generate as generateBase } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
 
 const SLUG = "enable-i18n" as const;
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 const SOURCE = "src/patterns/enable/i18n";
 const DOCS = "/enable/i18n";
 
@@ -17,7 +17,9 @@ export async function generate(options: Options) {
     return formatResult(mergeResults([baseRes, previewRes]), options);
   }
 
-  const { generate: generateRuntime } = await import("./generate.runtime");
+  const { generate: generateRuntime, withLibraryTexts } =
+    await import("./generate.runtime");
+  baseRes.creates = withLibraryTexts(options.root, baseRes.creates);
   const runtimeRes = await generateRuntime(options);
   const { writeResult } = await import("../../../runtime/write-result");
   return writeResult(
