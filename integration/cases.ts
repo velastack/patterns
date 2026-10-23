@@ -744,6 +744,17 @@ export const stackCases: CaseSpec[] = [
     step("disable-ecommerce"),
     step("disable-payments", { check: true }),
   ]),
+  // Disabling the cart takes the shop pages with it (they import the cart)
+  // and leaves the developer's catalog module alone.
+  makeCase("shop-then-disable-ecommerce", "static", [
+    step("enable-payments", { input: { provider: "whatsapp" } }),
+    step("enable-ecommerce", { input: { provider: "whatsapp" } }),
+    step("generate-shop", { input: { provider: "whatsapp" } }),
+    step("disable-ecommerce", {
+      check: true,
+      expectContains: { "src/lib/catalog.ts": ["export const catalog"] },
+    }),
+  ]),
   makeCase("payments-whatsapp-lifecycle", "static", [
     step("enable-payments", { input: { provider: "whatsapp" } }),
     step("disable-payments", { check: true }),
