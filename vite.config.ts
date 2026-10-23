@@ -63,6 +63,7 @@ export default defineConfig({
         "**/preview-modifies/**",
         "**/creates/**",
         "**/creates-app-mode/**",
+        "**/creates-server/**",
         "**/creates-backend/**",
         "**/variants/**",
         "**/providers/**",

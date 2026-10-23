@@ -7,6 +7,9 @@ import { unmodifyEnvVarsFiles } from "../../../runtime/env-vars";
 import { envEditsFor } from "../../enable/payments/generate";
 import { providersToRemove } from "./generate";
 import { unmodifyNavUser } from "./modifies/modify-nav-user";
+import { unmodifyHooksServerCurrency } from "../../enable/payments/modifies/hooks.server";
+import { unmodifyLayoutServerCurrency } from "../../enable/payments/modifies/layout.server";
+import { unmodifyLayoutSvelteCurrency } from "../../enable/payments/modifies/layout.svelte";
 import { unmodifyRootLayoutCurrencySelect } from "../../enable/payments/modifies/root-layout.svelte";
 import { unmodifyUserSignup } from "./modifies/modify-user-signup";
 import { planDropsForCollections } from "../../destroy/shared";
@@ -61,6 +64,42 @@ export async function generate(options: Options) {
       unmodifyRootLayoutCurrencySelect(layoutPath),
     ),
   );
+
+  // The server half of the store, where enable-payments added it.
+  const hooksServerPath = path.join(options.root, "src", "hooks.server.ts");
+  const layoutServerPath = path.join(
+    options.root,
+    "src",
+    "routes",
+    "+layout.server.ts",
+  );
+  const rootLayoutPath = path.join(
+    options.root,
+    "src",
+    "routes",
+    "+layout.svelte",
+  );
+  if (fs.existsSync(layoutServerPath)) {
+    logger.info("Removing the visitor's currency from the server");
+    pushResult(
+      modifyOutcomeToFile(
+        rootLayoutPath,
+        unmodifyLayoutSvelteCurrency(rootLayoutPath),
+      ),
+    );
+    pushResult(
+      modifyOutcomeToFile(
+        layoutServerPath,
+        unmodifyLayoutServerCurrency(layoutServerPath),
+      ),
+    );
+    pushResult(
+      modifyOutcomeToFile(
+        hooksServerPath,
+        unmodifyHooksServerCurrency(hooksServerPath),
+      ),
+    );
+  }
 
   logger.info("Removing payment variables from src/env.ts");
   const envVars = unmodifyEnvVarsFiles(

@@ -5,7 +5,7 @@ import { mergeResults } from "../../../core/util";
 import { generate as generateBase, providersToRemove } from "./generate";
 
 const SLUG = "disable-payments" as const;
-const VERSION = "2.3.0";
+const VERSION = "2.4.0";
 const SOURCE = "src/patterns/disable/payments";
 const DOCS = "/disable/payments";
 
