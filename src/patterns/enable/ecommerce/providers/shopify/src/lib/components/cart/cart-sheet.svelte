@@ -6,6 +6,12 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Separator } from '#lib/components/ui/separator/index.js';
 	import { cart, formatMoney } from '#lib/cart.svelte.js';
+	import { currency } from '#lib/currency.svelte.js';
+
+	// A cart is priced in the market for the currency the visitor reads prices in.
+	$effect(() => {
+		void cart.market(currency.current);
+	});
 </script>
 
 <Sheet.Root bind:open={cart.open}>

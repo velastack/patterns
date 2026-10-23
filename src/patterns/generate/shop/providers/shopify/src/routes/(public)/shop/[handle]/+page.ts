@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
-import { storefront } from '#lib/shopify.js';
+import { currencyFrom } from '#lib/currency.svelte.js';
+import { marketCountry, storefront } from '#lib/shopify.js';
 import type { Money } from '../+page.js';
 
 export interface Variant {
@@ -20,7 +21,7 @@ export interface Product {
 }
 
 const PRODUCT = `#graphql
-	query Product($handle: String!) {
+	query Product($handle: String!, $country: CountryCode) @inContext(country: $country) {
 		product(handle: $handle) {
 			id
 			title
@@ -58,9 +59,10 @@ const PRODUCT = `#graphql
 
 export const prerender = false;
 
-export const load = async ({ params }) => {
+export const load = async ({ params, parent }) => {
+	const country = await marketCountry(currencyFrom(await parent()));
 	const { data, errors } = await storefront().request(PRODUCT, {
-		variables: { handle: params.handle }
+		variables: { handle: params.handle, country }
 	});
 	if (errors) error(502, errors.message ?? 'Shopify did not answer.');
 	const product = data?.product as Product | null | undefined;

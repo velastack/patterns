@@ -29,3 +29,44 @@ export function storefront(): StorefrontApiClient {
 	}
 	return client;
 }
+
+const LOCALIZATION = `#graphql
+	query Localization {
+		localization {
+			availableCountries {
+				isoCode
+				currency {
+					isoCode
+				}
+			}
+		}
+	}
+`;
+
+let markets: Promise<Record<string, string>> | undefined;
+
+/**
+ * The country whose market prices in `currency`, when the store sells in one
+ * (Shopify Markets): a query run `@inContext` of it comes back priced by
+ * Shopify in that currency, and a cart created in it checks out in it.
+ * `null` when no market does; the store's markets are learned once.
+ */
+export async function marketCountry(currency: string): Promise<string | null> {
+	markets ??= storefront()
+		.request(LOCALIZATION)
+		.then(({ data }) => {
+			const byCurrency: Record<string, string> = {};
+			const countries = (data?.localization?.availableCountries ?? []) as {
+				isoCode: string;
+				currency: { isoCode: string };
+			}[];
+			for (const country of countries) byCurrency[country.currency.isoCode] ??= country.isoCode;
+			return byCurrency;
+		})
+		.catch((error) => {
+			console.error('Could not read the Shopify markets:', error);
+			markets = undefined;
+			return {};
+		});
+	return (await markets)[currency] ?? null;
+}
