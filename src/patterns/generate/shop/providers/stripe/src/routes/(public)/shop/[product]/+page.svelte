@@ -24,7 +24,9 @@
 		<div>
 			<p class="text-muted-foreground mb-2 text-sm"><a href="/shop">Shop</a></p>
 			<h1 class="text-2xl font-semibold">{data.product.name}</h1>
-			<p class="mt-2 text-lg">{formatAmount(selected.unitAmount, selected.currency)}</p>
+			<p class="mt-2 text-lg">
+				{formatAmount(selected.unitAmount, selected.currency, selected.options)}
+			</p>
 		</div>
 
 		{#if data.product.description}
@@ -41,7 +43,7 @@
 						aria-checked={price.price === selectedId}
 						onclick={() => (selectedId = price.price)}
 					>
-						{price.nickname ?? formatAmount(price.unitAmount, price.currency)}
+						{price.nickname ?? formatAmount(price.unitAmount, price.currency, price.options)}
 					</Button>
 				{/each}
 			</div>

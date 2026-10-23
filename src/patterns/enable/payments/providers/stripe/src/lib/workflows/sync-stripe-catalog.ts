@@ -46,7 +46,12 @@ export const syncStripePrices = ow.defineWorkflow(
 	async ({ step }) => {
 		const prices = await step.run({ name: 'list' }, async () => {
 			const rows = [];
-			for await (const price of stripe.prices.list({ limit: 100 })) {
+			// `currency_options` (fixed amounts in other currencies, set in the
+			// dashboard) comes only when asked for.
+			for await (const price of stripe.prices.list({
+				limit: 100,
+				expand: ['data.currency_options']
+			})) {
 				rows.push({
 					id: price.id,
 					billing_scheme: price.billing_scheme,
@@ -57,7 +62,8 @@ export const syncStripePrices = ow.defineWorkflow(
 					unit_amount: price.unit_amount,
 					active: price.active,
 					nickname: price.nickname,
-					lookup_key: price.lookup_key
+					lookup_key: price.lookup_key,
+					currency_options: price.currency_options ?? null
 				});
 			}
 			return rows;

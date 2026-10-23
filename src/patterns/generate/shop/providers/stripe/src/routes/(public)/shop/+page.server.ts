@@ -1,3 +1,5 @@
+import { priceOptions } from '#lib/cart.svelte.js';
+
 /** The fields of the synced catalog this page reads. */
 interface ProductRecord {
 	id: string;
@@ -15,6 +17,7 @@ interface PriceRecord {
 	product?: string;
 	unit_amount?: number;
 	currency?: string;
+	currency_options?: unknown;
 }
 
 const isActive = (product: ProductRecord) => String(product.active) !== 'false';
@@ -60,7 +63,8 @@ export const load = async ({ locals }) => {
 						price: price.id,
 						name,
 						unitAmount: price.unit_amount ?? 0,
-						currency: price.currency
+						currency: price.currency,
+						options: priceOptions(price.currency_options)
 					}
 				}
 			];

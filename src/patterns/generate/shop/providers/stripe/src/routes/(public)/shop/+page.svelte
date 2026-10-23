@@ -24,7 +24,11 @@
 						<div>
 							<h2 class="font-medium">{product.name}</h2>
 							<p class="text-muted-foreground text-sm">
-								{formatAmount(product.price.unitAmount, product.price.currency)}
+								{formatAmount(
+									product.price.unitAmount,
+									product.price.currency,
+									product.price.options
+								)}
 							</p>
 						</div>
 					</a>

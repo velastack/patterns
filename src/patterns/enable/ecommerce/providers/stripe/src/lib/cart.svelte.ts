@@ -1,5 +1,5 @@
 import { browser } from '$app/env';
-import { currency } from '#lib/currency.svelte.js';
+import { currency, money } from '#lib/currency.svelte.js';
 
 export interface CartItem {
 	/** The Stripe price (`price_...`). */
@@ -8,6 +8,12 @@ export interface CartItem {
 	/** Stripe's `unit_amount`: the price in the currency's smallest unit. */
 	unitAmount: number;
 	currency: string;
+	/**
+	 * Fixed amounts in other currencies, from the price's `currency_options` in
+	 * the dashboard, by upper-cased code: `{ EUR: 1800 }`. A visitor reading
+	 * prices in one of them sees and pays that amount, not an estimate.
+	 */
+	options?: Record<string, number>;
 	quantity: number;
 }
 
@@ -28,6 +34,21 @@ class Cart {
 	);
 	/** The cart's currency: Stripe refuses a mixed cart, so the first item's. `null` while empty. */
 	currency = $derived<string | null>(this.items[0]?.currency ?? null);
+	/** Fixed subtotals in the currencies every item has a dashboard amount in. */
+	options = $derived.by<Record<string, number>>(() => {
+		const [first, ...rest] = this.items;
+		if (!first?.options) return {};
+		const totals: Record<string, number> = {};
+		for (const code of Object.keys(first.options)) {
+			if (rest.every((item) => item.options?.[code] !== undefined)) {
+				totals[code] = this.items.reduce(
+					(total, item) => total + item.options![code] * item.quantity,
+					0
+				);
+			}
+		}
+		return totals;
+	});
 
 	#loaded = false;
 
@@ -81,14 +102,37 @@ class Cart {
 
 export const cart = new Cart();
 
-/**
- * Formats a Stripe amount: Intl knows how many decimals the currency has
- * (none for JPY). Shown the way the visitor reads prices: in the currency they
- * picked, as an estimate, when it isn't the price's own.
- */
-export function formatAmount(amount: number, code: string): string {
+/** Stripe amounts are in the currency's smallest unit; Intl knows how many digits that is (none for JPY). */
+function major(amount: number, code: string): number {
 	const digits =
 		new Intl.NumberFormat('en', { style: 'currency', currency: code }).resolvedOptions()
 			.maximumFractionDigits ?? 2;
-	return currency.format(amount / 10 ** digits, code);
+	return amount / 10 ** digits;
+}
+
+/**
+ * Formats a Stripe amount the way the visitor reads prices: the fixed amount
+ * in the currency they picked when the dashboard set one (`options`), else
+ * the price's own, converted and marked as an estimate when they picked another.
+ */
+export function formatAmount(amount: number, code: string, options?: Record<string, number>): string {
+	const fixed = options?.[currency.current];
+	if (fixed !== undefined && currency.current !== code) {
+		return money(major(fixed, currency.current), currency.current);
+	}
+	return currency.format(major(amount, code), code);
+}
+
+/**
+ * A synced price's `currency_options` as the cart keeps them: upper-cased
+ * code to `unit_amount`, leaving out options priced another way (tiers, a
+ * customer-chosen amount).
+ */
+export function priceOptions(raw: unknown): Record<string, number> | undefined {
+	if (!raw || typeof raw !== 'object') return undefined;
+	const options: Record<string, number> = {};
+	for (const [code, option] of Object.entries(raw as Record<string, { unit_amount?: unknown }>)) {
+		if (typeof option?.unit_amount === 'number') options[code.toUpperCase()] = option.unit_amount;
+	}
+	return Object.keys(options).length > 0 ? options : undefined;
 }
