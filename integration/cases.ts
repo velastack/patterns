@@ -611,8 +611,9 @@ export const stackCases: CaseSpec[] = [
   ]),
   // The WhatsApp order message lives in src/lib/order.ts, which wuchale's js
   // adapter only extracts from when told: whichever is enabled first, the
-  // catalog ends up with the message.
-  makeCase("i18n-then-payments-whatsapp", "static", [
+  // catalog ends up with the message. On `minimal`: enable-i18n can't merge
+  // into the static template's root layout load.
+  makeCase("i18n-then-payments-whatsapp", "minimal", [
     step("enable-i18n"),
     step("enable-payments", {
       input: { provider: "whatsapp" },
@@ -624,7 +625,7 @@ export const stackCases: CaseSpec[] = [
       },
     }),
   ]),
-  makeCase("payments-whatsapp-then-i18n", "static", [
+  makeCase("payments-whatsapp-then-i18n", "minimal", [
     step("enable-payments", { input: { provider: "whatsapp" } }),
     step("enable-i18n", {
       check: true,
