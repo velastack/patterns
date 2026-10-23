@@ -12,7 +12,7 @@ import {
   type ReturnStatement,
   type SourceFile,
 } from "ts-morph";
-import type { ImportSpec } from "../../../../runtime/ts-morph-helpers";
+import type { ImportSpec } from "./ts-morph-helpers";
 
 /**
  * What the two layout modifiers have in common: finding a SvelteKit `load`,

@@ -11,9 +11,14 @@ const providersRaw = import.meta.glob<string>(
   { query: "?raw", import: "default", eager: true },
 );
 
-// Shared by every provider: the currency store and its select.
+// Shared by every provider: the currency store and its select, and the server
+// half enable-payments adds to a project with a server load.
 const createsRaw = import.meta.glob<string>(
   "../../enable/payments/creates/**",
+  { query: "?raw", import: "default", eager: true },
+);
+const createsServerRaw = import.meta.glob<string>(
+  "../../enable/payments/creates-server/**",
   { query: "?raw", import: "default", eager: true },
 );
 
@@ -40,6 +45,9 @@ export async function generate(options: Options) {
   const paths = new Set([
     DEMO_PAGE,
     ...Object.keys(filesFromGlob(createsRaw, "../../enable/payments/creates/")),
+    ...Object.keys(
+      filesFromGlob(createsServerRaw, "../../enable/payments/creates-server/"),
+    ),
   ]);
   for (const provider of providersToRemove(options)) {
     for (const path of allProviderPaths(providersRaw, provider.id)) {

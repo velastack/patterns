@@ -9,7 +9,7 @@ import {
   inspectEventParameter,
   newProject,
   returnedObject,
-} from "./load-function";
+} from "../../../../runtime/load-function";
 import { formatLikeSource } from "../../../../runtime/ts-morph-helpers";
 
 const FAILURE_HINT = dedent`

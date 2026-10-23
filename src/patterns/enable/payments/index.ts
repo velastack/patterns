@@ -5,7 +5,7 @@ import { generate as generateBase, PROVIDERS } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
 
 const SLUG = "enable-payments" as const;
-const VERSION = "2.3.0";
+const VERSION = "2.4.0";
 const SOURCE = "src/patterns/enable/payments";
 const DOCS = "/enable/payments";
 

@@ -26,6 +26,9 @@ interface Rates {
 	fetchedAt: number;
 }
 
+/** The day's rates as velastack.dev sends them, before the store stamps when it got them. */
+export type RatesPayload = Pick<Rates, 'base' | 'date' | 'rates'>;
+
 // `site.ts` declares these once payments asked for them; a project that
 // enabled payments before that has none, and formats in each price's own
 // currency with nothing to convert to.
@@ -57,6 +60,17 @@ class Currency {
 	rates = $state<Rates | null>(null);
 
 	#loaded = false;
+
+	/**
+	 * Starts from what the server resolved (`handleCurrency`, through the root
+	 * layout's data), so the first render shows the visitor's currency on the
+	 * server and in the browser alike. Called from the root layout, before any
+	 * child renders; a static site has no server to call it.
+	 */
+	hydrate(current: string, rates: RatesPayload | null) {
+		if (offered.includes(current)) this.current = current;
+		if (rates) this.rates = { ...rates, fetchedAt: Date.now() };
+	}
 
 	/** Reads the cookie and the day's rates, once, in the browser. */
 	load() {
@@ -110,7 +124,7 @@ class Currency {
 		try {
 			const response = await fetch(RATES_URL);
 			if (!response.ok) return;
-			const body = (await response.json()) as { base: string; date: string; rates: Record<string, number> };
+			const body = (await response.json()) as RatesPayload;
 			const rates: Rates = { base: body.base, date: body.date, rates: body.rates, fetchedAt: Date.now() };
 			this.rates = rates;
 			localStorage.setItem(RATES_KEY, JSON.stringify(rates));
