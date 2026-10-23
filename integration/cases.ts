@@ -432,16 +432,16 @@ export const generateCases: CaseSpec[] = [
   // The shop, in each provider's terms: Stripe's on the backend (gated on
   // Stripe), Shopify's and WhatsApp's on a static site, and WhatsApp's CMS
   // pages on a static site that reads a hosted CMS.
-  singleCase("generate-shop"),
+  singleCase("generate-shop", { input: { provider: "stripe" } }),
   makeCase("generate-shop-shopify", "static", [
     step("enable-payments", { input: { provider: "shopify" } }),
     step("enable-ecommerce", { input: { provider: "shopify" } }),
-    step("generate-shop", { check: true }),
+    step("generate-shop", { input: { provider: "shopify" }, check: true }),
   ]),
   makeCase("generate-shop-whatsapp", "static", [
     step("enable-payments", { input: { provider: "whatsapp" } }),
     step("enable-ecommerce", { input: { provider: "whatsapp" } }),
-    step("generate-shop", { check: true }),
+    step("generate-shop", { input: { provider: "whatsapp" }, check: true }),
   ]),
   makeCase("generate-shop-whatsapp-cms", "static", [
     step("enable-cms", {
@@ -449,7 +449,7 @@ export const generateCases: CaseSpec[] = [
     }),
     step("enable-payments", { input: { provider: "whatsapp" } }),
     step("enable-ecommerce", { input: { provider: "whatsapp" } }),
-    step("generate-shop", { check: true }),
+    step("generate-shop", { input: { provider: "whatsapp" }, check: true }),
   ]),
   // zod is not part of `sv create`; the schema has to bring it.
   makeCase("generate-schema-plain", "bare", [
