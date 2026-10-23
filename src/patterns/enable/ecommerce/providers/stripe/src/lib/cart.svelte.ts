@@ -1,4 +1,5 @@
 import { browser } from '$app/env';
+import { currency } from '#lib/currency.svelte.js';
 
 export interface CartItem {
 	/** The Stripe price (`price_...`). */
@@ -81,21 +82,13 @@ class Cart {
 export const cart = new Cart();
 
 /**
- * The page's language, so a price reads the way the page does (an English
- * page shows MXN as `MX$5.50`, a Mexican Spanish one as `$5.50`) rather than
- * the way the visitor's browser is set.
- */
-function pageLocale(): string | undefined {
-	return (browser && document.documentElement.lang) || undefined;
-}
-
-/**
  * Formats a Stripe amount: Intl knows how many decimals the currency has
- * (none for JPY). A server render passes the request's locale, so the server
- * and the browser agree.
+ * (none for JPY). Shown the way the visitor reads prices: in the currency they
+ * picked, as an estimate, when it isn't the price's own.
  */
-export function formatAmount(amount: number, currency: string, locale = pageLocale()): string {
-	const format = new Intl.NumberFormat(locale, { style: 'currency', currency });
-	const digits = format.resolvedOptions().maximumFractionDigits ?? 2;
-	return format.format(amount / 10 ** digits);
+export function formatAmount(amount: number, code: string): string {
+	const digits =
+		new Intl.NumberFormat('en', { style: 'currency', currency: code }).resolvedOptions()
+			.maximumFractionDigits ?? 2;
+	return currency.format(amount / 10 ** digits, code);
 }

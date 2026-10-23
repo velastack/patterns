@@ -6,6 +6,7 @@ const NUMBER = '+52 55 1234 5678';
 const FORM = 'https://velastack.dev/v1/projects/test/forms/order';
 
 vi.mock('$app/env', () => ({ browser: true }));
+// The currency store reads the page's language from the document stubbed below.
 vi.mock('$app/env/public', () => ({
 	PUBLIC_WHATSAPP_NUMBER: NUMBER,
 	PUBLIC_WHATSAPP_ORDER_FORM: FORM

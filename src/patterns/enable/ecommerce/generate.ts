@@ -37,14 +37,6 @@ const providersAppModeRaw = import.meta.glob<string>(
   { query: "?raw", import: "default", eager: true },
 );
 
-// With wuchale, a server load takes the page's language from the URL instead
-// of app.html's fixed `lang`, as enable-cms's layout load does.
-const providersI18nRaw = import.meta.glob<string>("./providers-i18n/**", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-});
-
 export interface GenerateContext {
   /**
    * The project has payments' Stripe customer helper, so checkout can attach
@@ -74,9 +66,6 @@ export async function generate(
         "./providers-app-mode/",
       ),
     );
-  }
-  if (options.features.i18n) {
-    add(providerCreates(providersI18nRaw, provider.id, "./providers-i18n/"));
   }
 
   return {

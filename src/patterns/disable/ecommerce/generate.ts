@@ -13,7 +13,6 @@ const providersRaw = import.meta.glob<string>(
   [
     "../../enable/ecommerce/providers/**",
     "../../enable/ecommerce/providers-app-mode/**",
-    "../../enable/ecommerce/providers-i18n/**",
   ],
   { query: "?raw", import: "default", eager: true },
 );

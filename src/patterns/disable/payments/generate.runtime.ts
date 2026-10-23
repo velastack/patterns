@@ -7,6 +7,7 @@ import { unmodifyEnvVarsFiles } from "../../../runtime/env-vars";
 import { envEditsFor } from "../../enable/payments/generate";
 import { providersToRemove } from "./generate";
 import { unmodifyNavUser } from "./modifies/modify-nav-user";
+import { unmodifyRootLayoutCurrencySelect } from "../../enable/payments/modifies/root-layout.svelte";
 import { unmodifyUserSignup } from "./modifies/modify-user-signup";
 import { planDropsForCollections } from "../../destroy/shared";
 import fs from "node:fs";
@@ -45,6 +46,21 @@ export async function generate(options: Options) {
       ),
     );
   }
+
+  logger.info("Removing the currency select from the navbar");
+  const layoutPath = path.join(
+    options.root,
+    "src",
+    "routes",
+    "(public)",
+    "root-layout.svelte",
+  );
+  pushResult(
+    modifyOutcomeToFile(
+      layoutPath,
+      unmodifyRootLayoutCurrencySelect(layoutPath),
+    ),
+  );
 
   logger.info("Removing payment variables from src/env.ts");
   const envVars = unmodifyEnvVarsFiles(

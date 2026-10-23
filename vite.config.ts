@@ -67,7 +67,6 @@ export default defineConfig({
         "**/variants/**",
         "**/providers/**",
         "**/providers-app-mode/**",
-        "**/providers-i18n/**",
         "**/providers-cms/**",
       ],
     }),

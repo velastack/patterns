@@ -1,7 +1,7 @@
 <script lang="ts">
 	import AddToCart from '#lib/components/cart/add-to-cart.svelte';
 	import { catalog } from '#lib/catalog.js';
-	import { formatPrice } from '#lib/order.js';
+	import { formatPrice } from '#lib/currency.svelte.js';
 </script>
 
 <section data-role="content">

@@ -13,6 +13,7 @@ import {
 } from "../../../core/providers";
 import { InvalidArgumentError } from "../../../core/errors";
 import { VELASTACK_WHATSAPP } from "../../../core/constants";
+import { filesFromGlob } from "../../../core/util";
 
 /**
  * The providers in prompt order. Each one's `env` keys are what the CLI asks
@@ -120,10 +121,11 @@ export function envEditsFor(
   return providerEnvEdits(provider, `${provider.label} credentials`, supplied);
 }
 
+// `select` is the currency select every provider gets.
 const COMPONENTS: Record<string, Component[]> = {
-  stripe: ["dialog", "input", "label"],
-  shopify: ["button"],
-  whatsapp: ["button", "dialog", "input", "label", "textarea"],
+  stripe: ["dialog", "input", "label", "select"],
+  shopify: ["button", "select"],
+  whatsapp: ["button", "dialog", "input", "label", "textarea", "select"],
 };
 
 const PACKAGES: Record<string, Package[]> = {
@@ -131,6 +133,13 @@ const PACKAGES: Record<string, Package[]> = {
   shopify: ["@shopify/storefront-api-client"],
   whatsapp: [VELASTACK_WHATSAPP],
 };
+
+// Shared by every provider: the currency prices show in, and its select.
+const createsRaw = import.meta.glob<string>("./creates/**", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
 
 const providersRaw = import.meta.glob<string>("./providers/**", {
   query: "?raw",
@@ -177,7 +186,10 @@ export async function generate(
   const isAppMode = options.features.auth;
 
   const creates = new Map(
-    providerCreates(providersRaw, provider.id)
+    [
+      ...Object.values(filesFromGlob(createsRaw, "./creates/")),
+      ...providerCreates(providersRaw, provider.id),
+    ]
       .filter((file) => unitTests || !isUnitTest(file.path))
       .map((file) => [file.path, file]),
   );
