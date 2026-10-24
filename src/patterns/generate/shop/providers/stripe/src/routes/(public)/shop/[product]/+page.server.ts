@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+import { priceOptions } from '#lib/cart.svelte.js';
 
 /** The fields of the synced catalog this page reads. */
 interface ProductRecord {
@@ -16,6 +17,7 @@ interface PriceRecord {
 	nickname?: string;
 	unit_amount?: number;
 	currency?: string;
+	currency_options?: unknown;
 }
 
 const isActive = (product: ProductRecord) => String(product.active) !== 'false';
@@ -65,7 +67,8 @@ export const load = async ({ locals, params }) => {
 			// What the dashboard calls this price, when there is more than one.
 			nickname: price.nickname ?? null,
 			unitAmount: price.unit_amount ?? 0,
-			currency: price.currency
+			currency: price.currency,
+			options: priceOptions(price.currency_options)
 		}))
 	};
 };

@@ -57,6 +57,8 @@ export const STRIPE_PRICES: CollectionSpec = {
     { name: "active", required: false, type: "bool" },
     { name: "nickname", required: false, type: "text" },
     { name: "lookup_key", required: false, type: "text" },
+    // Fixed amounts in other currencies, set in the dashboard: `{ eur: { unit_amount: 1800 } }`.
+    { name: "currency_options", required: false, type: "json" },
     { name: "created", onCreate: true, onUpdate: false, type: "autodate" },
     { name: "updated", onCreate: true, onUpdate: true, type: "autodate" },
   ],

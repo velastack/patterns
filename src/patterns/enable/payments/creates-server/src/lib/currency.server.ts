@@ -62,9 +62,9 @@ export async function fetchRates(): Promise<Rates | null> {
 	return inflight;
 }
 
-/** What the page needs to convert into `currency`: nothing when it is the business's own. */
+/** What the page needs to convert into `currency`: nothing when it is the business's own, or the site offers one. */
 export async function displayRates(currency: string): Promise<Rates | null> {
-	return currency === offered[0] ? null : fetchRates();
+	return offered.length < 2 || currency === offered[0] ? null : fetchRates();
 }
 
 /** The headers a CDN reports the visitor's country in. */

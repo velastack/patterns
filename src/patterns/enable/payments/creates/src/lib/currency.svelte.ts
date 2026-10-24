@@ -65,7 +65,10 @@ class Currency {
 	 * Starts from what the server resolved (`handleCurrency`, through the root
 	 * layout's data), so the first render shows the visitor's currency on the
 	 * server and in the browser alike. Called from the root layout, before any
-	 * child renders; a static site has no server to call it.
+	 * child renders; a static site has no server to call it. On the server this
+	 * sets module state per request, which is sound because Svelte renders a
+	 * request synchronously: nothing else runs between this call and the end
+	 * of the page.
 	 */
 	hydrate(current: string, rates: RatesPayload | null) {
 		if (offered.includes(current)) this.current = current;

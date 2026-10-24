@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import Stripe from 'stripe';
 import stripe from '#lib/stripe.js';
+import { priceOptions } from '#lib/cart.svelte.js';
 import { getStripeCustomerId } from '#lib/server/stripe-customer.js';
 
 /** What the cart posts: prices and quantities. Stripe supplies everything else. */
@@ -21,6 +22,36 @@ function readItems(raw: FormDataEntryValue | null): { price: string; quantity: n
 	}
 }
 
+/**
+ * The currency to charge in: the one the visitor read prices in, when every
+ * price has a fixed amount in it (`currency_options`, set in the dashboard);
+ * else the prices' own, and nothing is converted at checkout.
+ */
+async function chargeCurrency(
+	locals: App.Locals,
+	items: { price: string }[]
+): Promise<string | undefined> {
+	const wanted = locals.currency?.toLowerCase();
+	if (!wanted) return undefined;
+	const prices = await Promise.all(
+		items.map((item) =>
+			locals.admin
+				.collection('stripe_prices')
+				.getOne<{ currency?: string; currency_options?: unknown }>(item.price)
+				.catch(() => null)
+		)
+	);
+	const priced = prices.every(
+		(price) =>
+			price &&
+			(price.currency === wanted ||
+				priceOptions(price.currency_options)?.[wanted.toUpperCase()] !== undefined)
+	);
+	// Prices already in that currency are charged in it without being told.
+	const needed = prices.some((price) => price && price.currency !== wanted);
+	return priced && needed ? wanted : undefined;
+}
+
 export const actions = {
 	checkout: async ({ request, url, locals }) => {
 		const items = readItems((await request.formData()).get('items'));
@@ -34,10 +65,13 @@ export const actions = {
 			? await getStripeCustomerId(locals.admin, user).catch(() => undefined)
 			: undefined;
 
+		const currency = await chargeCurrency(locals, items);
+
 		let session: Stripe.Checkout.Session;
 		try {
 			session = await stripe.checkout.sessions.create({
 				mode: 'payment',
+				currency,
 				customer,
 				line_items: items,
 				allow_promotion_codes: true,

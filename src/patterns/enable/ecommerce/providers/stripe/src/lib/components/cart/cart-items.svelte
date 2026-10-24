@@ -25,7 +25,7 @@
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-sm font-medium">{item.name}</p>
 						<p class="text-muted-foreground text-sm">
-							{formatAmount(item.unitAmount, item.currency)}
+							{formatAmount(item.unitAmount, item.currency, item.options)}
 						</p>
 					</div>
 					<div class="flex items-center gap-1">
@@ -67,7 +67,7 @@
 		{#if cart.currency}
 			<div class="flex justify-between text-sm font-medium">
 				<span>Subtotal</span>
-				<span>{formatAmount(cart.subtotal, cart.currency)}</span>
+				<span>{formatAmount(cart.subtotal, cart.currency, cart.options)}</span>
 			</div>
 		{/if}
 
