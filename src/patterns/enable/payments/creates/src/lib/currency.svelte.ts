@@ -1,4 +1,5 @@
 import { browser } from '$app/env';
+import { invalidateAll } from '$app/navigation';
 import { site } from '#lib/site.js';
 
 /**
@@ -90,6 +91,8 @@ class Currency {
 		this.current = code;
 		document.cookie = `${COOKIE}=${code}; path=/; max-age=${365 * 24 * 60 * 60}; samesite=lax`;
 		if (code !== home) this.#loadRates();
+		// A load that prices by the currency (a Shopify market) runs again.
+		void invalidateAll();
 	}
 
 	/** `amount` in `from` as the current currency, or `null` without a rate for either. */
@@ -142,6 +145,15 @@ export const currency = new Currency();
 /** `amount` in `code`, formatted for the page's language in the business's country. */
 export function money(amount: number, code: string): string {
 	return new Intl.NumberFormat(pageLocale(), { style: 'currency', currency: code }).format(amount);
+}
+
+/**
+ * The currency a `load` should price by: what the server resolved into the
+ * root layout's data (`currency`, with a server), else what the store holds.
+ */
+export function currencyFrom(data: object): string {
+	const resolved = 'currency' in data ? data.currency : undefined;
+	return typeof resolved === 'string' && offered.includes(resolved) ? resolved : currency.current;
 }
 
 /** A price in the business's currency, shown the way the visitor reads prices. */

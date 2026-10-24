@@ -2,7 +2,8 @@
 	import { toast } from 'svelte-sonner';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import type { ButtonProps } from '#lib/components/ui/button/index.js';
-	import { storefront } from '#lib/shopify.js';
+	import { marketCountry, storefront } from '#lib/shopify.js';
+	import { currency } from '#lib/currency.svelte.js';
 
 	interface Props {
 		/** The product variant to buy: `gid://shopify/ProductVariant/...`. */
@@ -22,8 +23,8 @@
 	}: Props & ButtonProps = $props();
 
 	const CART_CREATE = `#graphql
-		mutation BuyNow($lines: [CartLineInput!]!) {
-			cartCreate(input: { lines: $lines }) {
+		mutation BuyNow($lines: [CartLineInput!]!, $country: CountryCode) @inContext(country: $country) {
+			cartCreate(input: { lines: $lines, buyerIdentity: { countryCode: $country } }) {
 				cart {
 					checkoutUrl
 				}
@@ -36,12 +37,13 @@
 
 	let isProcessing = $state(false);
 
-	// A one-line cart, then Shopify's checkout for it.
+	// A one-line cart in the visitor's market, then Shopify's checkout for it.
 	async function buy() {
 		isProcessing = true;
 		try {
+			const country = await marketCountry(currency.current);
 			const { data, errors } = await storefront().request(CART_CREATE, {
-				variables: { lines: [{ merchandiseId: variantId, quantity }] }
+				variables: { lines: [{ merchandiseId: variantId, quantity }], country }
 			});
 			const checkoutUrl = data?.cartCreate?.cart?.checkoutUrl;
 			if (errors || !checkoutUrl) {

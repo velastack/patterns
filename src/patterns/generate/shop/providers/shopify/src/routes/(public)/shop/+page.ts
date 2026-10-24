@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
-import { storefront } from '#lib/shopify.js';
+import { currencyFrom } from '#lib/currency.svelte.js';
+import { marketCountry, storefront } from '#lib/shopify.js';
 
 export interface Money {
 	amount: string;
@@ -15,7 +16,7 @@ export interface ProductCard {
 }
 
 const PRODUCTS = `#graphql
-	query Products {
+	query Products($country: CountryCode) @inContext(country: $country) {
 		products(first: 100, sortKey: TITLE) {
 			nodes {
 				id
@@ -40,8 +41,10 @@ const PRODUCTS = `#graphql
 // the browser. It is not prerendered: the catalog changes without a rebuild.
 export const prerender = false;
 
-export const load = async () => {
-	const { data, errors } = await storefront().request(PRODUCTS);
+export const load = async ({ parent }) => {
+	// Priced by Shopify in the visitor's currency, when the store has a market in it.
+	const country = await marketCountry(currencyFrom(await parent()));
+	const { data, errors } = await storefront().request(PRODUCTS, { variables: { country } });
 	if (errors) error(502, errors.message ?? 'Shopify did not answer.');
 	return { products: (data?.products.nodes ?? []) as ProductCard[] };
 };
