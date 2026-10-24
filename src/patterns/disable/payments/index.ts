@@ -108,7 +108,8 @@ export default {
   },
   // The cart imports the payments client, so it has to go first. (Subscriptions
   // would belong here too, but there is no feature flag for it yet.)
-  blockedBy: ["ecommerce"],
+  // Each imports the Stripe client or the cart; they come out first.
+  blockedBy: ["ecommerce", "subscriptions", "orders"],
   category: "payments" as const,
   tags: [
     "sveltekit",

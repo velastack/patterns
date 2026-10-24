@@ -50,6 +50,8 @@ const FEATURE_ENABLER: Partial<Record<keyof Features, Slug>> = {
   workflows: "enable-workflows",
   ecommerce: "enable-ecommerce",
   notifications: "enable-notifications",
+  subscriptions: "enable-subscriptions",
+  orders: "enable-orders",
 };
 
 /** The order prerequisites are applied in; each entry's own `requires` precede it. */

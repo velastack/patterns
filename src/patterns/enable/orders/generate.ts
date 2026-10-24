@@ -24,8 +24,7 @@ export const ORDER_COLLECTIONS = ["orders", "order_lines"];
 
 /**
  * One row per Checkout Session, keyed by its id so Stripe's redeliveries and
- * replays update rather than duplicate. With auth, the buyer's Stripe customer
- * and user.
+ * replays update rather than duplicate. With auth, the buyer's user.
  */
 function orders(appMode: boolean): CollectionSpec {
   return {
@@ -46,16 +45,11 @@ function orders(appMode: boolean): CollectionSpec {
       { name: "currency", required: false, type: "text" },
       { name: "email", required: false, type: "text" },
       { name: "payment_intent", required: false, type: "text" },
+      // The Stripe customer id as text, not a relation: `stripe_customers`
+      // exists only when payments came after auth, and a guest has none.
+      { name: "customer", required: false, type: "text" },
       ...(appMode
         ? [
-            {
-              collectionId: "stripe_customers",
-              maxSelect: 1,
-              minSelect: 0,
-              name: "customer",
-              required: false,
-              type: "relation",
-            },
             {
               collectionId: "_pb_users_auth_",
               maxSelect: 1,

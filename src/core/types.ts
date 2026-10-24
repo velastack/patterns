@@ -35,6 +35,16 @@ export interface Features {
    */
   notifications?: boolean;
   /**
+   * Stripe subscriptions (`enable-subscriptions`), detected by its sync
+   * workflow. Optional so the `requires` of patterns need not mention it.
+   */
+  subscriptions?: boolean;
+  /**
+   * Orders recorded from Stripe Checkout (`enable-orders`), detected by its
+   * webhook handlers. Optional so the `requires` of patterns need not mention it.
+   */
+  orders?: boolean;
+  /**
    * The component kit the project has: `shadcn` is shadcn-svelte (a
    * `components.json` plus the package), `plain` is neither. Detected by the
    * caller; optional so the `requires` of patterns need not mention it, and
