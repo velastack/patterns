@@ -64,6 +64,7 @@ export default defineConfig({
         "**/creates/**",
         "**/creates-app-mode/**",
         "**/creates-server/**",
+        "**/creates-notifications/**",
         "**/creates-backend/**",
         "**/variants/**",
         "**/providers/**",

@@ -46,6 +46,9 @@ export function detectFeatures(root: string): Features {
     whatsapp: has("src/routes/(public)/(auth)/whatsapp"),
     // The cart store every provider's ecommerce files share a path for.
     ecommerce: has("src/lib/cart.svelte.ts"),
+    notifications: has("src/lib/server/notifications.ts"),
+    subscriptions: has("src/lib/workflows/sync-stripe-subscriptions.ts"),
+    orders: has("src/routes/webhooks/stripe/handlers/checkout"),
     ui:
       hasComponentsJson(root) && (hasDep("shadcn-svelte") || hasDep("bits-ui"))
         ? "shadcn"
@@ -116,6 +119,9 @@ export const SLUG_TO_FEATURE: Partial<Record<string, keyof Features>> = {
   "enable-cms": "cms",
   "enable-workflows": "workflows",
   "enable-whatsapp": "whatsapp",
+  "enable-notifications": "notifications",
+  "enable-subscriptions": "subscriptions",
+  "enable-orders": "orders",
 };
 
 /**
@@ -134,8 +140,6 @@ export function expectedFeaturesAfter(slug: string): Partial<Features> {
     if (feature) return { [feature]: false };
   }
 
-  if (slug === "enable-subscriptions") return { payments: true };
-  if (slug === "enable-notifications") return { auth: true };
   return {};
 }
 
@@ -153,4 +157,7 @@ export const ALL_FEATURES_OFF: Features = {
   workflows: false,
   whatsapp: false,
   ecommerce: false,
+  notifications: false,
+  subscriptions: false,
+  orders: false,
 };

@@ -55,6 +55,8 @@ export default {
     cms: false,
     ecommerce: true,
   },
+  // The order pages and handlers import the cart store.
+  blockedBy: ["orders"],
   category: "payments" as const,
   tags: ["sveltekit", "ecommerce", "cart", "stripe", "shopify", "velastack"],
 

@@ -117,6 +117,7 @@ import enableNotifications from "./patterns/enable/notifications";
 import enablePayments from "./patterns/enable/payments";
 import enableEcommerce from "./patterns/enable/ecommerce";
 import enableSubscriptions from "./patterns/enable/subscriptions";
+import enableOrders from "./patterns/enable/orders";
 import enableTeams from "./patterns/enable/teams";
 import enableWhatsapp from "./patterns/enable/whatsapp";
 import enableWorkflows from "./patterns/enable/workflows";
@@ -138,6 +139,7 @@ import disableTeams from "./patterns/disable/teams";
 import disablePayments from "./patterns/disable/payments";
 import disableEcommerce from "./patterns/disable/ecommerce";
 import disableSubscriptions from "./patterns/disable/subscriptions";
+import disableOrders from "./patterns/disable/orders";
 import disableWhatsapp from "./patterns/disable/whatsapp";
 
 export const version = packageJson.version;
@@ -167,6 +169,7 @@ export const patterns = [
   enablePayments,
   enableEcommerce,
   enableSubscriptions,
+  enableOrders,
   enableTeams,
   enableWhatsapp,
   enableWorkflows,
@@ -188,6 +191,7 @@ export const patterns = [
   disablePayments,
   disableEcommerce,
   disableSubscriptions,
+  disableOrders,
   disableWhatsapp,
 ];
 
