@@ -1,5 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { TestContext } from '@velastack/pocketbase/testing';
+import { beforeAll, describe, expect, it } from 'vitest';
 import type Stripe from 'stripe';
 import stripe from '#lib/stripe.js';
 import { handleCheckoutSessionCompleted } from './completed';
@@ -31,13 +30,6 @@ describe('checkout.session.completed', () => {
 		});
 	});
 
-	afterAll(async (context: TestContext) => {
-		await context.admin
-			.collection('orders')
-			.delete(session.id)
-			.catch(() => undefined);
-	});
-
 	it('records the order and its lines, and a redelivery updates them', async (context) => {
 		await handleCheckoutSessionCompleted(session, { admin: context.admin } as App.Locals);
 
@@ -60,5 +52,8 @@ describe('checkout.session.completed', () => {
 				filter: context.admin.filter('order = {:order}', { order: session.id })
 			})
 		).toHaveLength(1);
+
+		// The lines go with the order.
+		await context.admin.collection('orders').delete(session.id);
 	});
 });
