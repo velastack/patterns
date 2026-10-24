@@ -29,6 +29,7 @@
     "**/creates-backend/**",
     "**/creates-superforms/**",
     "**/creates-server/**",
+    "**/creates-notifications/**",
     "**/creates-remote/**",
     "src/patterns/enable/whatsapp/templates/**",
     "src/patterns/enable/whatsapp/originals/**",

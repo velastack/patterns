@@ -29,6 +29,12 @@ export interface Features {
    */
   ecommerce?: boolean;
   /**
+   * In-app notifications (`src/lib/server/notifications.ts`, from
+   * `enable-notifications`). Optional so the `requires` of patterns need not
+   * mention it.
+   */
+  notifications?: boolean;
+  /**
    * The component kit the project has: `shadcn` is shadcn-svelte (a
    * `components.json` plus the package), `plain` is neither. Detected by the
    * caller; optional so the `requires` of patterns need not mention it, and

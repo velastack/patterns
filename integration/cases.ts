@@ -49,6 +49,7 @@ const FEATURE_ENABLER: Partial<Record<keyof Features, Slug>> = {
   cms: "enable-cms",
   workflows: "enable-workflows",
   ecommerce: "enable-ecommerce",
+  notifications: "enable-notifications",
 };
 
 /** The order prerequisites are applied in; each entry's own `requires` precede it. */
@@ -59,7 +60,9 @@ export const PREREQ_ORDER: Slug[] = [
   "enable-api-keys",
   "enable-payments",
   "enable-ecommerce",
+  "enable-orders",
   "enable-teams",
+  "enable-notifications",
   "enable-i18n",
   "enable-blog",
   "enable-content-negotiation",
@@ -383,6 +386,23 @@ export const enableCases: CaseSpec[] = [
     step("enable-ecommerce", { input: { provider: "whatsapp" }, check: true }),
   ]),
   singleCase("enable-subscriptions"),
+  // Orders need Stripe, the cart and a backend; minimal has the backend.
+  singleCase("enable-orders"),
+  makeCase("enable-orders-auth", "auth", [
+    step("enable-workflows", { check: false }),
+    step("enable-payments", { check: false }),
+    step("enable-ecommerce", { check: false }),
+    step("enable-notifications", { check: false }),
+    step("enable-orders", {
+      check: true,
+      expectContains: {
+        "src/routes/webhooks/stripe/handlers/checkout/completed.ts": [
+          "notify(",
+        ],
+        "src/lib/components/nav-user.svelte": ["/orders"],
+      },
+    }),
+  ]),
   singleCase("enable-whatsapp"),
   // The login and signup pages it swaps come in three shapes.
   makeCase("enable-whatsapp-split", "minimal", [
@@ -509,6 +529,7 @@ export const disableCases: CaseSpec[] = [
   inverseCase("disable-payments"),
   inverseCase("disable-ecommerce"),
   inverseCase("disable-subscriptions"),
+  inverseCase("disable-orders"),
 ];
 
 const TEAM_ROUTE = "(app)/[team_id]/projects";
