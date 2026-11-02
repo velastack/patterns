@@ -36,8 +36,9 @@ export function velaBin(): string {
 }
 
 /**
- * A generated project pins `vela` to the version of the CLI that created it.
- * Under `VELA_BIN` that version is a local build: unpublished (the install
+ * A generated project pins `vela` to the version of the CLI that created it,
+ * and `vela enable backend` adds it to one that has none. Under `VELA_BIN`
+ * that version is a local build: unpublished (the install
  * fails) or an older release (its `node_modules/.bin/vela` would shadow the
  * build under test). The project still needs the build in its node_modules,
  * since `vitest.config.ts` imports `vela/testing` from it, so the dependency
@@ -52,12 +53,15 @@ function packVelaDependency(projectRoot: string): void {
   const file = path.join(projectRoot, "package.json");
   const text = readFileSync(file, "utf8");
   const pkg = JSON.parse(text);
-  if (!pkg.devDependencies?.vela) return;
   const tarball = packedVela();
   if (tarball) {
-    pkg.devDependencies.vela = `file:${tarball}`;
-  } else {
+    // Added when absent too: `vela enable backend` adds `vela` to a project
+    // that has none, from the registry, which has no build under test.
+    pkg.devDependencies = { ...pkg.devDependencies, vela: `file:${tarball}` };
+  } else if (pkg.devDependencies?.vela) {
     delete pkg.devDependencies.vela;
+  } else {
+    return;
   }
   const indent = /^[ \t]+(?=")/m.exec(text)?.[0] ?? "\t";
   writeFileSync(file, JSON.stringify(pkg, null, indent) + "\n");
@@ -315,5 +319,6 @@ export function createBareProject(dir: string, logFile?: string): void {
     ],
     { cwd: dir, env: projectEnv(), logFile },
   );
+  packVelaDependency(dir);
   installWithCache(dir, logFile);
 }
