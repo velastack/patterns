@@ -127,8 +127,11 @@ jobs:
           cd .vela-cli
           # Not `npm ci`: the lockfile may pin a patterns release that is not
           # published yet. This keeps every other locked version and swaps
-          # only that entry.
-          npm install "$RUNNER_TEMP/$tarball"
+          # only that entry. `--no-save` keeps package.json's registry spec:
+          # the harness packs this checkout into every generated project
+          # (for `vela/testing`), and a `file:` spec pointing here would not
+          # resolve from there.
+          npm install --no-save "$RUNNER_TEMP/$tarball"
           npm run build
           chmod +x dist/bin.js
           echo "VELA_BIN=$GITHUB_WORKSPACE/.vela-cli/dist/bin.js" >> "$GITHUB_ENV"
