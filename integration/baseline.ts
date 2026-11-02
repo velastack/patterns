@@ -38,17 +38,25 @@ export function velaBin(): string {
  * A generated project pins `vela` to the version of the CLI that created it.
  * Under `VELA_BIN` that version is a local build: unpublished (the install
  * fails) or an older release (its `node_modules/.bin/vela` would shadow the
- * build under test). The harness runs every `vela` command through
- * `velaBin()`, so the dependency is dropped instead. `cacheKey` hashes
- * devDependencies, so these projects get a cache of their own.
+ * build under test). The project still needs the build in its node_modules,
+ * since `vitest.config.ts` imports `vela/testing` from it, so the dependency
+ * points at the build's package directory and npm links it. `cacheKey`
+ * hashes devDependencies, so these projects get a cache of their own.
  */
-function dropVelaDependency(projectRoot: string): void {
-  if (!process.env.VELA_BIN) return;
+function linkVelaDependency(projectRoot: string): void {
+  const bin = process.env.VELA_BIN;
+  if (!bin) return;
   const file = path.join(projectRoot, "package.json");
   const text = readFileSync(file, "utf8");
   const pkg = JSON.parse(text);
   if (!pkg.devDependencies?.vela) return;
-  delete pkg.devDependencies.vela;
+  // `<package>/dist/bin.js` is where every build of the CLI puts its bin.
+  const packageRoot = path.resolve(path.dirname(bin), "..");
+  if (existsSync(path.join(packageRoot, "package.json"))) {
+    pkg.devDependencies.vela = `file:${packageRoot}`;
+  } else {
+    delete pkg.devDependencies.vela;
+  }
   const indent = /^[ \t]+(?=")/m.exec(text)?.[0] ?? "\t";
   writeFileSync(file, JSON.stringify(pkg, null, indent) + "\n");
 }
@@ -248,7 +256,7 @@ export function createVelaProject(
     args.push("--email", ADMIN_EMAIL, "--password", ADMIN_PASSWORD);
   }
   run(velaBin(), args, { cwd: dir, env: projectEnv(), logFile });
-  dropVelaDependency(dir);
+  linkVelaDependency(dir);
   installWithCache(dir, logFile);
 }
 
