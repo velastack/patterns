@@ -3,13 +3,22 @@ import path from "node:path";
 import type { ModifyOutcome } from "../../../../core/types";
 
 // Source of truth: velastack-cli/templates/minimal/test/setup.ts
-export const WITH_BACKEND = `import { beforeEach, afterEach, beforeAll } from 'vitest';
+export const WITH_BACKEND = `import { beforeEach, afterEach, beforeAll, inject } from 'vitest';
 import supertest, { type Agent } from 'supertest';
 import PocketBase from 'pocketbase-sveltekit';
 import type { TestContext } from '@velastack/pocketbase/testing';
+import type {} from 'vela/testing';
 
-const admin = new PocketBase(process.env.POCKETBASE_URL!) as App.Locals['admin'];
-const pb = new PocketBase(process.env.POCKETBASE_URL!) as App.Locals['pb'];
+// The servers \`vela/testing\` started: a throwaway PocketBase and the app.
+const servers = inject('vela');
+if (!servers) {
+\tthrow new Error(
+\t\t'Server tests need the servers \`vela/testing\` starts. Add \`globalSetup: [\\'vela/testing\\']\` to the test config in vitest.config.ts.'
+\t);
+}
+
+const admin = new PocketBase(servers.pocketbaseUrl) as App.Locals['admin'];
+const pb = new PocketBase(servers.pocketbaseUrl) as App.Locals['pb'];
 
 const testUserPassword = 'password';
 
@@ -30,15 +39,12 @@ beforeAll(async () => {
 \tawait admin
 \t\t// @ts-ignore
 \t\t.collection('_superusers')
-\t\t.authWithPassword(
-\t\t\tprocess.env.POCKETBASE_SUPERUSER_EMAIL!,
-\t\t\tprocess.env.POCKETBASE_SUPERUSER_PASSWORD!
-\t\t);
+\t\t.authWithPassword(servers.superuser.email, servers.superuser.password);
 });
 
 beforeEach(async (context: TestContext) => {
-\tcontext.request = supertest(process.env.VITE_TEST_URL!);
-\tcontext.agent = supertest.agent(process.env.VITE_TEST_URL!) as TestContext['agent'];
+\tcontext.request = supertest(servers.appUrl);
+\tcontext.agent = supertest.agent(servers.appUrl) as TestContext['agent'];
 \tcontext.admin = admin;
 \tcontext.pb = pb;
 \tconst email = \`test-\${Math.random().toString(36).slice(2)}@example.com\`;
@@ -69,7 +75,7 @@ beforeEach(async (context: any) => {
 `;
 
 // Source of truth: velastack-cli/templates/minimal/vitest.config.ts
-export const VITEST_CONFIG = `import { defineConfig, mergeConfig } from 'vitest/config';
+export const VITEST_CONFIG = `import { configDefaults, defineConfig, mergeConfig } from 'vitest/config';
 import viteConfig from './vite.config';
 
 export default mergeConfig(
@@ -79,11 +85,48 @@ export default mergeConfig(
 \t\t\texpect: {
 \t\t\t\trequireAssertions: true
 \t\t\t},
-\t\t\tname: 'server',
 \t\t\tenvironment: 'node',
-\t\t\tinclude: ['src/**/*.{test,spec}.{js,ts}'],
-\t\t\texclude: ['src/**/*.svelte.{test,spec}.{js,ts}'],
-\t\t\tsetupFiles: ['test/setup.ts']
+\t\t\tpassWithNoTests: true,
+\t\t\t// Server tests reach the app over HTTP and import nothing from it, so
+\t\t\t// watch mode cannot see which tests an edit affects. Rerun them all.
+\t\t\tforceRerunTriggers: [
+\t\t\t\t'**/package.json/**',
+\t\t\t\t'**/{vitest,vite}.config.*/**',
+\t\t\t\t'src/routes/**',
+\t\t\t\t'src/lib/server/**',
+\t\t\t\t'src/hooks.server.ts',
+\t\t\t\t'data/hooks/**'
+\t\t\t],
+\t\t\tprojects: [
+\t\t\t\t{
+\t\t\t\t\textends: true,
+\t\t\t\t\ttest: {
+\t\t\t\t\t\t// \`server.test.ts\` next to a route, \`<name>.server.test.ts\` elsewhere:
+\t\t\t\t\t\t// tests that run against the app and its database.
+\t\t\t\t\t\tname: 'server',
+\t\t\t\t\t\tinclude: ['src/**/*server.{test,spec}.{js,ts}'],
+\t\t\t\t\t\t// Starts a throwaway PocketBase and the app before the first test
+\t\t\t\t\t\t// file, and stops them after the last. Every way of running vitest
+\t\t\t\t\t\t// gets the same servers: \`vela test:server\`, \`vitest\`, \`vitest --watch\`,
+\t\t\t\t\t\t// an editor's test runner.
+\t\t\t\t\t\tglobalSetup: ['vela/testing'],
+\t\t\t\t\t\tsetupFiles: ['test/setup.ts']
+\t\t\t\t\t}
+\t\t\t\t},
+\t\t\t\t{
+\t\t\t\t\textends: true,
+\t\t\t\t\ttest: {
+\t\t\t\t\t\t// Every other test: pure functions, no servers, no setup file.
+\t\t\t\t\t\tname: 'unit',
+\t\t\t\t\t\tinclude: ['src/**/*.{test,spec}.{js,ts}'],
+\t\t\t\t\t\texclude: [
+\t\t\t\t\t\t\t...configDefaults.exclude,
+\t\t\t\t\t\t\t'src/**/*server.{test,spec}.{js,ts}',
+\t\t\t\t\t\t\t'src/**/*.svelte.{test,spec}.{js,ts}'
+\t\t\t\t\t\t]
+\t\t\t\t\t}
+\t\t\t\t}
+\t\t\t]
 \t\t}
 \t})
 );

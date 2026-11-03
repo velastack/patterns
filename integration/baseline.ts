@@ -11,6 +11,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
+import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
@@ -35,22 +36,61 @@ export function velaBin(): string {
 }
 
 /**
- * A generated project pins `vela` to the version of the CLI that created it.
- * Under `VELA_BIN` that version is a local build: unpublished (the install
+ * A generated project pins `vela` to the version of the CLI that created it,
+ * and `vela enable backend` adds it to one that has none. Under `VELA_BIN`
+ * that version is a local build: unpublished (the install
  * fails) or an older release (its `node_modules/.bin/vela` would shadow the
- * build under test). The harness runs every `vela` command through
- * `velaBin()`, so the dependency is dropped instead. `cacheKey` hashes
+ * build under test). The project still needs the build in its node_modules,
+ * since `vitest.config.ts` imports `vela/testing` from it, so the dependency
+ * points at a tarball of the build, packed once per run. A tarball rather
+ * than a link to the checkout: npm installs a linked package's dependencies
+ * into the link target, and reworking the checkout's node_modules under the
+ * running CLI loses PocketBase's platform binary. `cacheKey` hashes
  * devDependencies, so these projects get a cache of their own.
  */
-function dropVelaDependency(projectRoot: string): void {
+function packVelaDependency(projectRoot: string): void {
   if (!process.env.VELA_BIN) return;
   const file = path.join(projectRoot, "package.json");
   const text = readFileSync(file, "utf8");
   const pkg = JSON.parse(text);
-  if (!pkg.devDependencies?.vela) return;
-  delete pkg.devDependencies.vela;
+  const tarball = packedVela();
+  if (tarball) {
+    // Added when absent too: `vela enable backend` adds `vela` to a project
+    // that has none, from the registry, which has no build under test.
+    pkg.devDependencies = { ...pkg.devDependencies, vela: `file:${tarball}` };
+  } else if (pkg.devDependencies?.vela) {
+    delete pkg.devDependencies.vela;
+  } else {
+    return;
+  }
   const indent = /^[ \t]+(?=")/m.exec(text)?.[0] ?? "\t";
   writeFileSync(file, JSON.stringify(pkg, null, indent) + "\n");
+}
+
+let packedVelaTarball: string | null | undefined;
+
+/** The CLI build under `VELA_BIN` as a tarball, or null when it is not a package. */
+function packedVela(): string | null {
+  if (packedVelaTarball !== undefined) return packedVelaTarball;
+  // `<package>/dist/bin.js` is where every build of the CLI puts its bin.
+  const packageRoot = path.resolve(path.dirname(process.env.VELA_BIN!), "..");
+  if (!existsSync(path.join(packageRoot, "package.json"))) {
+    packedVelaTarball = null;
+    return null;
+  }
+  const dir = path.join(CACHE_ROOT, "vela-pack");
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  const name = execFileSync(npmBin(), ["pack", "--pack-destination", dir], {
+    cwd: packageRoot,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  })
+    .trim()
+    .split("\n")
+    .pop()!;
+  packedVelaTarball = path.join(dir, name);
+  return packedVelaTarball;
 }
 
 /**
@@ -248,7 +288,7 @@ export function createVelaProject(
     args.push("--email", ADMIN_EMAIL, "--password", ADMIN_PASSWORD);
   }
   run(velaBin(), args, { cwd: dir, env: projectEnv(), logFile });
-  dropVelaDependency(dir);
+  packVelaDependency(dir);
   installWithCache(dir, logFile);
 }
 
@@ -279,5 +319,6 @@ export function createBareProject(dir: string, logFile?: string): void {
     ],
     { cwd: dir, env: projectEnv(), logFile },
   );
+  packVelaDependency(dir);
   installWithCache(dir, logFile);
 }
