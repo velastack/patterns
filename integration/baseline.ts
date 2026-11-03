@@ -37,34 +37,41 @@ export function velaBin(): string {
 
 /**
  * A generated project pins `vela` to the version of the CLI that created it,
- * and `vela enable backend` adds it to one that has none. Under `VELA_BIN`
- * that version is a local build: unpublished (the install
- * fails) or an older release (its `node_modules/.bin/vela` would shadow the
- * build under test). The project still needs the build in its node_modules,
- * since `vitest.config.ts` imports `vela/testing` from it, so the dependency
- * points at a tarball of the build, packed once per run. A tarball rather
- * than a link to the checkout: npm installs a linked package's dependencies
- * into the link target, and reworking the checkout's node_modules under the
- * running CLI loses PocketBase's platform binary. `cacheKey` hashes
- * devDependencies, so these projects get a cache of their own.
+ * and `vela enable backend` adds it to one that has none, since the vitest
+ * config it writes imports `vela/testing` from the project's node_modules.
+ * The harness applies patterns directly rather than through the CLI, so it
+ * adds the dependency up front: the installed CLI's version, as the CLI
+ * would, or under `VELA_BIN` a tarball of that local build, packed once per
+ * run. A tarball rather than a link to the checkout: npm installs a linked
+ * package's dependencies into the link target, and reworking the checkout's
+ * node_modules under the running CLI loses PocketBase's platform binary.
+ * `cacheKey` hashes devDependencies, so these projects get a cache of their
+ * own.
  */
-function packVelaDependency(projectRoot: string): void {
-  if (!process.env.VELA_BIN) return;
+function velaDependency(projectRoot: string): void {
   const file = path.join(projectRoot, "package.json");
   const text = readFileSync(file, "utf8");
   const pkg = JSON.parse(text);
-  const tarball = packedVela();
-  if (tarball) {
-    // Added when absent too: `vela enable backend` adds `vela` to a project
-    // that has none, from the registry, which has no build under test.
-    pkg.devDependencies = { ...pkg.devDependencies, vela: `file:${tarball}` };
-  } else if (pkg.devDependencies?.vela) {
-    delete pkg.devDependencies.vela;
-  } else {
-    return;
+  let spec: string | undefined;
+  if (process.env.VELA_BIN) {
+    const tarball = packedVela();
+    if (tarball) spec = `file:${tarball}`;
+    else if (pkg.devDependencies?.vela) delete pkg.devDependencies.vela;
+  } else if (!pkg.devDependencies?.vela) {
+    spec = `^${velaVersion()}`;
   }
+  if (spec) pkg.devDependencies = { ...pkg.devDependencies, vela: spec };
+  else if (!process.env.VELA_BIN) return;
   const indent = /^[ \t]+(?=")/m.exec(text)?.[0] ?? "\t";
   writeFileSync(file, JSON.stringify(pkg, null, indent) + "\n");
+}
+
+/** The version of the CLI on PATH, what `vela create` would pin. */
+function velaVersion(): string {
+  return execFileSync(velaBin(), ["--version"], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  }).trim();
 }
 
 let packedVelaTarball: string | null | undefined;
@@ -288,7 +295,7 @@ export function createVelaProject(
     args.push("--email", ADMIN_EMAIL, "--password", ADMIN_PASSWORD);
   }
   run(velaBin(), args, { cwd: dir, env: projectEnv(), logFile });
-  packVelaDependency(dir);
+  velaDependency(dir);
   installWithCache(dir, logFile);
 }
 
@@ -319,6 +326,6 @@ export function createBareProject(dir: string, logFile?: string): void {
     ],
     { cwd: dir, env: projectEnv(), logFile },
   );
-  packVelaDependency(dir);
+  velaDependency(dir);
   installWithCache(dir, logFile);
 }
