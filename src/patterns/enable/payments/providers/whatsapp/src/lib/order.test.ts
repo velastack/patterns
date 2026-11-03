@@ -2,8 +2,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { openChat, recordOrder, whatsappHref } from '@velastack/whatsapp';
 import { orderMessage, placeOrder } from './order.js';
 
-const NUMBER = '+52 55 1234 5678';
-const FORM = 'https://velastack.dev/v1/projects/test/forms/order';
+// `vi.mock` is hoisted above every import, so what its factories read has to
+// be hoisted with it.
+const { NUMBER, FORM } = vi.hoisted(() => ({
+	NUMBER: '+52 55 1234 5678',
+	FORM: 'https://velastack.dev/v1/projects/test/forms/order'
+}));
 
 vi.mock('$app/env', () => ({ browser: true }));
 // The currency store reads the page's language from the document stubbed below.
