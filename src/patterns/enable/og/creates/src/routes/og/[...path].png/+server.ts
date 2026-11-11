@@ -28,7 +28,11 @@ function withoutSiteName(title: string | undefined) {
 export const GET: RequestHandler = async ({ params, fetch }) => {
 	// The page itself says what its card reads: whatever it set as its title
 	// and description is in the meta tags it renders.
-	const page = await fetch(params.path === 'index' ? '/' : `/${params.path}`);
+	// Redirects are not followed: a page behind sign-in has no card, where
+	// following would hand back the sign-in page's.
+	const page = await fetch(params.path === 'index' ? '/' : `/${params.path}`, {
+		redirect: 'manual'
+	});
 	if (!page.ok) return new Response('Not found', { status: 404 });
 
 	const html = await page.text();
