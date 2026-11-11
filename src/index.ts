@@ -105,6 +105,7 @@ import generateWorkflow from "./patterns/generate/workflow";
 import enableAi from "./patterns/enable/ai";
 import enableAnalytics from "./patterns/enable/analytics";
 import enableAuth from "./patterns/enable/auth";
+import enableOg from "./patterns/enable/og";
 import enableAuthRemote from "./patterns/enable/auth-remote";
 import enableApi from "./patterns/enable/api";
 import enableApiKeys from "./patterns/enable/api-keys";
@@ -128,6 +129,7 @@ import destroyScaffold from "./patterns/destroy/scaffold";
 import destroyShop from "./patterns/destroy/shop";
 import disableAi from "./patterns/disable/ai";
 import disableAnalytics from "./patterns/disable/analytics";
+import disableOg from "./patterns/disable/og";
 import disableApi from "./patterns/disable/api";
 import disableApiKeys from "./patterns/disable/api-keys";
 import disableAuth from "./patterns/disable/auth";
@@ -156,6 +158,7 @@ export const patterns = [
   generateShop,
   enableAi,
   enableAnalytics,
+  enableOg,
   enableAuth,
   enableAuthRemote,
   enableApi,
@@ -180,6 +183,7 @@ export const patterns = [
   destroyShop,
   disableAi,
   disableAnalytics,
+  disableOg,
   disableApi,
   disableApiKeys,
   disableAuth,
