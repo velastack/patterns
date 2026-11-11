@@ -1,0 +1,45 @@
+<script lang="ts">
+	import '../app.css';
+
+	import favicon from '#lib/assets/favicon.svg';
+	import { site } from '#lib/site.js';
+
+	import { ModeWatcher } from 'mode-watcher';
+	import { getFlash } from 'sveltekit-flash-message';
+	import { toast } from 'svelte-sonner';
+	import { page } from '$app/state';
+	import { Toaster } from '#lib/components/ui/sonner/index.js';
+	import { MetaTags, deepMerge } from 'svelte-meta-tags';
+	import type { LayoutProps } from './$types';
+	// [!code highlight:1]
+	import { withCard } from '#lib/og/index.js';
+
+	let { data, children }: LayoutProps = $props();
+	const flash = getFlash(page);
+
+	$effect(() => {
+		if (!$flash || $flash.type !== 'toast') {
+			return;
+		}
+
+		toast.message($flash.message);
+
+		$flash = undefined;
+	});
+
+	// [!code highlight:3]
+	let metaTags = $derived(
+		withCard(deepMerge(data.baseMetaTags, page.data.pageMetaTags), page.url)
+	);
+</script>
+
+<svelte:head>
+	<title>{site.name}</title>
+	<link rel="icon" href={favicon} />
+</svelte:head>
+
+<MetaTags {...metaTags} />
+<ModeWatcher />
+<Toaster />
+
+{@render children?.()}

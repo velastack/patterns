@@ -307,6 +307,7 @@ export const enableCases: CaseSpec[] = [
     { input: { provider: "posthog" } },
     "enable-analytics-posthog",
   ),
+  singleCase("enable-og"),
   singleCase("enable-auth"),
   singleCase(
     "enable-auth",
@@ -500,6 +501,15 @@ export const disableCases: CaseSpec[] = [
   makeCase("disable-analytics-static", "static", [
     step("enable-analytics", { input: { provider: "google" } }),
     step("disable-analytics", { check: true }),
+  ]),
+  // disable-og `requires` nothing either.
+  makeCase("disable-og", "minimal", [
+    step("enable-og"),
+    step("disable-og", { check: true }),
+  ]),
+  makeCase("disable-og-static", "static", [
+    step("enable-og"),
+    step("disable-og", { check: true }),
   ]),
   inverseCase("destroy-form"),
   inverseCase("destroy-schema"),
@@ -698,6 +708,8 @@ export const stackCases: CaseSpec[] = [
   makeCase("static-analytics", "static", [
     step("enable-analytics", { input: { provider: "plausible" }, check: true }),
   ]),
+  // The card route prerenders on a static site: the build writes the PNGs.
+  makeCase("static-og", "static", [step("enable-og", { check: true })]),
   makeCase("auth-then-i18n", "auth", [step("enable-i18n", { check: true })]),
   // With auth the demo page moves into (app) and /api/chat answers 401 to
   // anonymous requests; the server tests cover both.
