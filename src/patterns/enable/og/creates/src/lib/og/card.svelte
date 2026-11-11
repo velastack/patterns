@@ -68,6 +68,7 @@
 		overflow: hidden;
 		-webkit-box-orient: vertical;
 		-webkit-line-clamp: 3;
+		line-clamp: 3;
 		font-size: 32px;
 		line-height: 1.3;
 		opacity: 0.8;
