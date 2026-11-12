@@ -16,7 +16,19 @@ import { modifyAppHtml } from "./modifies/app-html";
 import { modifyGitignore } from "./modifies/gitignore";
 import { ensureRootLayoutI18n } from "./modifies/+layout";
 import { modifyRootLayoutLanguageSelect } from "./modifies/root-layout.svelte";
+import { modifyLayoutServerLocale } from "./modifies/layout.server";
+import { modifyAppDts } from "./modifies/app-d-ts";
+import {
+  APP_LAYOUT_PATH,
+  modifyAppLayoutLanguageSelect,
+} from "./modifies/app-layout.svelte";
 import { welcomePageCatalog } from "./welcome-catalog";
+import {
+  entriesInProject,
+  translateCatalog,
+  withTranslations,
+} from "../../../runtime/wuchale-catalog";
+import { AUTH_TRANSLATIONS } from "../auth/translations";
 import {
   TRANSLATED_LIB_FILES,
   withWuchaleJsFiles,
@@ -77,6 +89,24 @@ export async function generate(options: Options) {
   const appHtmlPath = path.join(options.root, "src", "app.html");
   pushResult(modifyOutcomeToFile(appHtmlPath, modifyAppHtml(appHtmlPath)));
 
+  logger.info("Declaring the request's language in app.d.ts");
+  const appDtsPath = path.join(options.root, "src", "app.d.ts");
+  pushResult(modifyOutcomeToFile(appDtsPath, modifyAppDts(appDtsPath)));
+
+  logger.info("Modifying root +layout.server.ts");
+  const layoutServerPath = path.join(
+    options.root,
+    "src",
+    "routes",
+    "+layout.server.ts",
+  );
+  pushResult(
+    modifyOutcomeToFile(
+      layoutServerPath,
+      modifyLayoutServerLocale(layoutServerPath),
+    ),
+  );
+
   logger.info("Modifying root +layout.ts");
   const layoutPath = path.join(options.root, "src", "routes", "+layout.ts");
   pushResult(modifyOutcomeToFile(layoutPath, ensureRootLayoutI18n(layoutPath)));
@@ -101,6 +131,19 @@ export async function generate(options: Options) {
     ),
   );
 
+  // Signed-in pages have one URL for every language; the select is how a
+  // visitor changes it there.
+  const appLayoutPath = path.join(options.root, APP_LAYOUT_PATH);
+  if (fs.existsSync(appLayoutPath)) {
+    logger.info("Adding the language select to the signed-in layout");
+    pushResult(
+      modifyOutcomeToFile(
+        appLayoutPath,
+        modifyAppLayoutLanguageSelect(appLayoutPath),
+      ),
+    );
+  }
+
   logger.info("Updating .gitignore");
   const gitignorePath = path.join(options.root, ".gitignore");
   pushResult(
@@ -110,8 +153,23 @@ export async function generate(options: Options) {
   const catalog = welcomePageCatalog(options.root, ui);
   if (catalog) logger.info("Translating the welcome page into Spanish");
 
+  // Spanish for the pages other patterns wrote before this one: without it
+  // they stay in English, and nothing says so.
+  const shipped = entriesInProject(options.root, AUTH_TRANSLATIONS);
+  if (shipped.length > 0)
+    logger.info("Translating the sign-in pages into Spanish");
+  const creates: File[] = [];
+  if (catalog) {
+    const content = withTranslations(catalog.content, shipped).source;
+    creates.push({ ...catalog, content });
+  } else {
+    const translated = translateCatalog(options.root, shipped);
+    if (translated.create) creates.push(translated.create);
+    pushResult(translated.modify);
+  }
+
   return {
-    creates: catalog ? [catalog] : [],
+    creates,
     modifies,
     deletes: [],
     components: [],

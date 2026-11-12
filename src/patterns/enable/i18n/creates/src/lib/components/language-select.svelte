@@ -2,14 +2,11 @@
   import * as Select from "#lib/components/ui/select/index.js";
   import { locales, type Locale } from "#locales/data.js";
   import { page } from "$app/state";
-  import { goto } from "$app/navigation";
-  import { deLocalizeDefault } from "wuchale/url";
-  import { defaultLocale, translateUrl } from "#lib/url.js";
+  import { goto, invalidateAll } from "$app/navigation";
+  import { hasLocalizedUrl, translateUrl } from "#lib/url.js";
+  import { localeCookie } from "#lib/locale.js";
 
-  let locale: Locale = $derived.by(() => {
-    const [_, locale] = deLocalizeDefault(page.url.pathname, locales);
-    return locale ?? defaultLocale;
-  });
+  let locale: Locale = $derived(page.data.locale);
 
   function localeDisplayName(code: Locale): string {
     const names = new Intl.DisplayNames([code], { type: "language" });
@@ -26,13 +23,17 @@
     {} as Record<string, string>,
   );
 
-  const handleValueChange = (value: string) => {
-    const translatedUrl = translateUrl(
-      page.url.pathname,
-      locale,
-      value as Locale,
-    );
-    goto(translatedUrl, { refreshAll: true });
+  const handleValueChange = async (value: string) => {
+    // Remembered for the pages that have no language in their URL.
+    document.cookie = localeCookie(value as Locale);
+
+    if (hasLocalizedUrl(page.url.pathname)) {
+      await goto(translateUrl(page.url.pathname, locale, value as Locale), {
+        refreshAll: true,
+      });
+    } else {
+      await invalidateAll();
+    }
   };
 
   let { class: className }: { class?: string } = $props();

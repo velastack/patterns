@@ -31,7 +31,19 @@ export const DEFAULT_LOCALE: LayoutServerLocale = {
   expression: () => "'en'",
 };
 
-/** A wuchale site: the locale enable-i18n's reroute already resolved from the URL. */
+/**
+ * A wuchale site: the language enable-i18n's handle chose for the request,
+ * from the URL on a public page and the visitor's preference elsewhere, so
+ * the content is in the language the rest of the page is in.
+ */
+export const REQUEST_LOCALE: LayoutServerLocale = {
+  expression: (eventName) => `${eventName}.locals.locale`,
+};
+
+/**
+ * A wuchale site enabled before the handle set `locals.locale`: the locale
+ * its reroute resolved from the URL.
+ */
 export const WUCHALE_LOCALE: LayoutServerLocale = {
   expression: (eventName) => `getLocale(${eventName}.url)`,
   imports: [

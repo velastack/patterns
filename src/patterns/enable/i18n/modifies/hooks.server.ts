@@ -11,59 +11,104 @@ import {
 
 const I18N_HANDLE = "handleWuchale";
 
-const FAILURE_HINT = dedent`
-  Wrap your exported handle with the wuchale i18n handler:
+/**
+ * The handle's body: which language the request is in (the URL on a public
+ * page, the visitor's preference elsewhere: see `src/lib/locale.ts`), and the
+ * cookie that remembers the last public page opened.
+ */
+const HANDLE_BODY = (types: { locale: string; html: string }) => dedent`
+  const urlLocale = deLocalizeDefault(event.url.pathname, locales)[1] as Locale | null;
+  const localizedUrl = hasLocalizedUrl(event.url.pathname);
+  const cookie${types.locale} = event.cookies.get(LOCALE_COOKIE);
+  const locale = pickLocale({
+    urlLocale,
+    localizedUrl,
+    cookie,
+    acceptLanguage: event.request.headers.get('accept-language'),
+    locales,
+    defaultLocale
+  });
+  event.locals.locale = locale;
 
-  import { sequence } from '@sveltejs/kit/hooks';
+  const response${types.html ? ": Response" : ""} = await runWithLocale(locale, () =>
+    resolve(event, {
+      transformPageChunk: ({ html }${types.html}) => html.replace('%sveltekit.lang%', locale)
+    })
+  );
+
+  // Opening a public page sets the language of the pages that have no
+  // language in their URL. Only when the page itself is opened: a preload
+  // (hovering a link) must not change it.
+  if (localizedUrl && cookie !== locale && event.request.method === 'GET' && !event.isDataRequest) {
+    try {
+      response.headers.append('set-cookie', localeCookie(locale));
+    } catch {
+      // a response with immutable headers (a proxied file): nothing to remember
+    }
+  }
+  return response;
+`;
+
+const indent = (text: string) =>
+  text
+    .split("\n")
+    .map((line) => (line ? `  ${line}` : line))
+    .join("\n");
+
+const IMPORTS = dedent`
   import { runWithLocale, loadLocales } from 'wuchale/load-utils/server';
-  import { getLocale } from '#locales/main.url.js';
-  import { locales } from '#locales/data.js';
+  import { deLocalizeDefault } from 'wuchale/url';
+  import { locales, type Locale } from '#locales/data.js';
+  import { defaultLocale, hasLocalizedUrl } from '#lib/url.js';
+  import { LOCALE_COOKIE, localeCookie, pickLocale } from '#lib/locale.js';
   import * as main from '#locales/main.loader.server.svelte.js';
   import * as js from '#locales/js.loader.server.js';
+`;
 
+const STARTUP = dedent`
   loadLocales(main.key, main.loadCount, main.loadCatalog, locales);
   loadLocales(js.key, js.loadCount, js.loadCatalog, locales);
-
-  const handleWuchale = async ({ event, resolve }: any) => {
-    const locale = getLocale(event.url);
-    return await runWithLocale(locale, () =>
-      resolve(event, {
-        transformPageChunk: ({ html }: { html: string }) =>
-          html.replace('%sveltekit.lang%', locale),
-      }),
-    );
-  };
-
-  export const handle = sequence(handleWuchale, /* your existing handle */);
 `;
+
+/** The handle as it is added to a file whose own handle is typed loosely. */
+const UNTYPED_HANDLE = [
+  `const ${I18N_HANDLE} = async ({ event, resolve }: any) => {`,
+  indent(
+    HANDLE_BODY({ locale: ": string | undefined", html: ": { html: string }" }),
+  ),
+  "};",
+].join("\n");
+
+const FAILURE_HINT = [
+  "Wrap your exported handle with the wuchale i18n handler:",
+  "",
+  "import { sequence } from '@sveltejs/kit/hooks';",
+  IMPORTS,
+  "",
+  STARTUP,
+  "",
+  UNTYPED_HANDLE,
+  "",
+  "export const handle = sequence(handleWuchale, /* your existing handle */);",
+].join("\n");
 
 /**
  * The whole file, for a project that had no server hooks: a fresh `sv create`
  * app or a static site. `disable-i18n` deletes it again once the i18n handle
  * is all that is left.
  */
-export const HOOKS_SERVER_SNIPPET = dedent`
-  import type { Handle } from '@sveltejs/kit/hooks';
-  import { runWithLocale, loadLocales } from 'wuchale/load-utils/server';
-  import { getLocale } from '#locales/main.url.js';
-  import { locales } from '#locales/data.js';
-  import * as main from '#locales/main.loader.server.svelte.js';
-  import * as js from '#locales/js.loader.server.js';
-
-  loadLocales(main.key, main.loadCount, main.loadCatalog, locales);
-  loadLocales(js.key, js.loadCount, js.loadCatalog, locales);
-
-  const handleWuchale: Handle = async ({ event, resolve }) => {
-    const locale = getLocale(event.url);
-    return await runWithLocale(locale, () =>
-      resolve(event, {
-        transformPageChunk: ({ html }) => html.replace('%sveltekit.lang%', locale)
-      })
-    );
-  };
-
-  export const handle = handleWuchale;
-`;
+export const HOOKS_SERVER_SNIPPET = [
+  "import type { Handle } from '@sveltejs/kit/hooks';",
+  IMPORTS,
+  "",
+  STARTUP,
+  "",
+  `const ${I18N_HANDLE}: Handle = async ({ event, resolve }) => {`,
+  indent(HANDLE_BODY({ locale: "", html: "" })),
+  "};",
+  "",
+  `export const handle = ${I18N_HANDLE};`,
+].join("\n");
 
 function ensureNamespaceImport(
   sourceFile: import("ts-morph").SourceFile,
@@ -109,8 +154,14 @@ export function modifyHooksServerI18n(hooksServerPath: string): ModifyOutcome {
 
   ensureNamedImport(sourceFile, "wuchale/load-utils/server", "runWithLocale");
   ensureNamedImport(sourceFile, "wuchale/load-utils/server", "loadLocales");
-  ensureNamedImport(sourceFile, "#locales/main.url.js", "getLocale");
+  ensureNamedImport(sourceFile, "wuchale/url", "deLocalizeDefault");
   ensureNamedImport(sourceFile, "#locales/data.js", "locales");
+  ensureNamedImport(sourceFile, "#locales/data.js", "Locale", true);
+  ensureNamedImport(sourceFile, "#lib/url.js", "defaultLocale");
+  ensureNamedImport(sourceFile, "#lib/url.js", "hasLocalizedUrl");
+  ensureNamedImport(sourceFile, "#lib/locale.js", "LOCALE_COOKIE");
+  ensureNamedImport(sourceFile, "#lib/locale.js", "localeCookie");
+  ensureNamedImport(sourceFile, "#lib/locale.js", "pickLocale");
   ensureNamespaceImport(
     sourceFile,
     "#locales/main.loader.server.svelte.js",
@@ -118,28 +169,11 @@ export function modifyHooksServerI18n(hooksServerPath: string): ModifyOutcome {
   );
   ensureNamespaceImport(sourceFile, "#locales/js.loader.server.js", "js");
 
-  const startupSnippet = dedent`
-    loadLocales(main.key, main.loadCount, main.loadCatalog, locales);
-    loadLocales(js.key, js.loadCount, js.loadCatalog, locales);
-  `;
-
-  const i18nHandleSnippet = dedent`
-    const ${I18N_HANDLE} = async ({ event, resolve }: any) => {
-      const locale = getLocale(event.url);
-      return await runWithLocale(locale, () =>
-        resolve(event, {
-          transformPageChunk: ({ html }: { html: string }) =>
-            html.replace('%sveltekit.lang%', locale)
-        })
-      );
-    };
-  `;
-
   // Above the handle and its JSDoc, so `handleWuchale` is declared before
   // the handle reads it.
   sourceFile.insertText(
     handleStmt.getStart(true),
-    `${startupSnippet}\n\n${i18nHandleSnippet}\n\n`,
+    `${STARTUP}\n\n${UNTYPED_HANDLE}\n\n`,
   );
 
   formatLikeSource(sourceFile);

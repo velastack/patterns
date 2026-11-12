@@ -2,7 +2,11 @@ import fs from "node:fs";
 import dedent from "dedent";
 import { Project, QuoteKind, type Statement } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
-import { LOAD_STATEMENT } from "../../../enable/i18n/modifies/+layout";
+import {
+  LEGACY_LOAD_STATEMENT,
+  LOAD_STATEMENT,
+} from "../../../enable/i18n/modifies/+layout";
+import { libModule } from "../../../../runtime/lib-specifier";
 import {
   ensureBlankLineAfterImports,
   isEffectivelyEmpty,
@@ -20,6 +24,7 @@ const FAILURE_HINT = dedent`
   import { browser } from '$app/env';
   import { loadLocale } from 'wuchale/load-utils';
   import { getLocale } from '#locales/main.url.js';
+  import { hasLocalizedUrl } from '#lib/url.js';
   import '#locales/main.loader.svelte.js';
   import '#locales/js.loader.js';
 
@@ -35,7 +40,11 @@ const BINDING_MODULES: ModuleMatch[] = [
   (specifier) => /^\$app\/env(ironment)?$/.test(specifier),
   "wuchale/load-utils",
   localesModule("main.url"),
+  libModule("url.ts"),
 ];
+
+/** The loads enable-i18n has written: today's, and the URL-only one before it. */
+const WRITTEN_LOADS = [LOAD_STATEMENT, LEGACY_LOAD_STATEMENT];
 
 function normalize(source: string): string {
   return source.replace(/["']/g, "'").replace(/\s+/g, "");
@@ -71,7 +80,8 @@ export function unmodifyRootLayoutI18n(layoutPath: string): ModifyOutcome {
   if (loadStatement) {
     // A load that grew code of its own needs a hand; only the one enable-i18n
     // wrote is safe to take out wholesale.
-    if (normalize(loadStatement.getText()) !== normalize(LOAD_STATEMENT)) {
+    const load = normalize(loadStatement.getText());
+    if (!WRITTEN_LOADS.some((written) => normalize(written) === load)) {
       return { status: "failed", message: FAILURE_HINT };
     }
     removeStatementWithComments(sourceFile, loadStatement);

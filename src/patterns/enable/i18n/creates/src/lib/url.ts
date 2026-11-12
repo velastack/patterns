@@ -20,6 +20,16 @@ export function localize(path: string, locale: Locale) {
   return localized.endsWith("/") ? localized.slice(0, -1) : localized;
 }
 
+/**
+ * Whether a page has a URL per language (it is under `url.patterns` in
+ * wuchale.config.js). The other pages follow the visitor's preference: see
+ * src/lib/locale.ts.
+ */
+export function hasLocalizedUrl(pathname: string) {
+  const [pathOnly] = deLocalizeDefault(pathname, locales);
+  return matchUrl(pathOnly, defaultLocale).path !== null;
+}
+
 export function translateUrl(
   url: string,
   fromLocale: Locale,
