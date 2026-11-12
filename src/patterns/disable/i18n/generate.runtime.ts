@@ -11,6 +11,7 @@ import {
   VITE_CONFIG_CANDIDATES,
 } from "../../../runtime/config-target";
 import { unmodifyGitignore } from "./modifies/gitignore";
+import { unmodifyPrettierignore } from "./modifies/prettierignore";
 import { unmodifyViteConfig } from "./modifies/vite-config";
 import { unmodifyLocalesAlias } from "./modifies/locales-alias";
 import { removePackageImports } from "../../../runtime/package-imports";
@@ -140,6 +141,32 @@ export async function generate(options: Options) {
   pushResult(
     modifyOutcomeToFile(gitignorePath, unmodifyGitignore(gitignorePath)),
   );
+
+  logger.info("Reverting .prettierignore");
+  const prettierignorePath = path.join(options.root, ".prettierignore");
+  pushResult(
+    modifyOutcomeToFile(
+      prettierignorePath,
+      unmodifyPrettierignore(prettierignorePath),
+    ),
+  );
+
+  // wuchale's loaders import the packages this uninstalls, and without the
+  // .prettierignore block they would fail the project's lint. The catalogs
+  // (.po) beside them are the translations, and stay.
+  logger.info("Removing wuchale's loaders from src/locales");
+  const localesDir = path.join(options.root, "src", "locales");
+  if (fs.existsSync(localesDir)) {
+    for (const entry of fs.readdirSync(localesDir, { withFileTypes: true })) {
+      if (!entry.isFile() || !entry.name.endsWith(".js")) continue;
+      deletes.push({
+        path: path.join(localesDir, entry.name),
+        language: "js",
+        content: "",
+        status: "success",
+      });
+    }
+  }
 
   return {
     creates: [],

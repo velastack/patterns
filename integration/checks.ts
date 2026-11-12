@@ -10,7 +10,7 @@ import { REPO_ROOT, velaBin } from "./baseline";
 import { exitLabel, npxBin } from "./exec";
 import { detectFeatures } from "./features";
 import type { ErrorRecord } from "./apply";
-import type { Project } from "./project";
+import { HARNESS_DIR, type Project } from "./project";
 
 export interface Diagnostic {
   type: "ERROR" | "WARNING";
@@ -34,11 +34,15 @@ export interface CheckReport {
   errors: ErrorRecord[];
   /** Every error-level diagnostic svelte-check produced, before filtering. */
   diagnostics: Diagnostic[];
+  /** Every file `prettier --check .` flagged, before filtering. */
+  unformatted: string[];
 }
 
 export interface CheckOptions {
   /** Diagnostic keys already present before the case started; not the pattern's fault. */
   baselineDiagnostics?: Set<string>;
+  /** Files already unformatted before the case started. */
+  baselineUnformatted?: Set<string>;
   /**
    * Run `vela test:server` too. On unless `INTEGRATION_SERVER_TESTS=0`:
    * svelte-check cannot see a runtime bug in a generated action.
@@ -60,7 +64,7 @@ function hasServerTests(root: string): boolean {
 /**
  * In a project without prettier (the bare baseline), patterns format the files
  * they create but leave the files they edit in the project's own style, so
- * there is no one style to check the changes against. Mirrors the dependency
+ * there is no one style to check against. Mirrors the dependency
  * half of `usesPrettier` in `src/core/format-result.ts`; no baseline has a
  * prettier config without the dependency.
  */
@@ -196,8 +200,11 @@ export function isIgnorable(
 /**
  * The per-step gate: sync (`svelte-kit sync` writes `.svelte-kit/types` and
  * the `node_modules/$app` tsconfig and types; `vela sync` the PocketBase
- * types), type-check with unused-locals, format-check the
- * files the pattern wrote, and optionally run the generated server tests.
+ * types), type-check with unused-locals, format-check the whole project as
+ * its own `npm run lint` does, and optionally run the generated server tests.
+ * The whole project, not the files in the pattern's result: a pattern also
+ * leaves files it never lists (the components `shadcn-svelte add` writes,
+ * migrations, `package.json`), and the user's lint covers those too.
  * Returns error records rather than throwing so a case can report everything
  * at once.
  */
@@ -255,27 +262,48 @@ export function runChecks(
     errors.push({ kind: "check", message: formatDiagnostic(d) });
   }
 
-  const existingChanged = [...new Set(changedFiles)].filter((file) =>
-    existsSync(path.join(root, file)),
-  );
-  if (existingChanged.length > 0 && usesPrettier(root)) {
+  const unformatted: string[] = [];
+  if (usesPrettier(root)) {
     const prettier = project.run(
       npxBin(),
-      ["prettier", "--check", "--ignore-unknown", ...existingChanged],
+      // Everything but what the harness itself left in the project.
+      [
+        "prettier",
+        "--check",
+        "--ignore-unknown",
+        ".",
+        `!${HARNESS_DIR}`,
+        `!${CHECK_TSCONFIG}`,
+      ],
       { allowFailure: true },
     );
+    writeFileSync(
+      path.join(project.logDir, `${tag}.prettier.log`),
+      `${prettier.stdout}\n${prettier.stderr}`,
+    );
     if (prettier.status !== 0) {
-      const unformatted = prettier.stderr
-        .split(/\r?\n/)
-        .map((line) => line.replace(/^\[warn\]\s*/, "").trim())
-        .filter((line) => existingChanged.includes(line));
-      errors.push({
-        kind: "prettier",
-        message:
-          unformatted.length > 0
-            ? `not formatted: ${unformatted.join(", ")}`
-            : `prettier --check failed:\n${(prettier.stderr || prettier.stdout).trim().slice(-2000)}`,
-      });
+      unformatted.push(
+        ...prettier.stderr
+          .split(/\r?\n/)
+          .map((line) => line.replace(/^\[warn\]\s*/, "").trim())
+          .filter((line) => line && existsSync(path.join(root, line))),
+      );
+      const baseline = opts.baselineUnformatted ?? new Set<string>();
+      const introduced = unformatted.filter((file) => !baseline.has(file));
+      if (unformatted.length === 0) {
+        errors.push({
+          kind: "prettier",
+          message: `prettier --check failed:\n${(prettier.stderr || prettier.stdout).trim().slice(-2000)}`,
+        });
+      } else if (introduced.length > 0) {
+        const listed = new Set(changedFiles);
+        const describe = (file: string) =>
+          listed.has(file) ? file : `${file} (not in the pattern's result)`;
+        errors.push({
+          kind: "prettier",
+          message: `not formatted: ${introduced.map(describe).join(", ")}`,
+        });
+      }
     }
   }
 
@@ -301,5 +329,5 @@ export function runChecks(
     rmSync(path.join(root, CHECK_TSCONFIG), { force: true });
   }
 
-  return { errors, diagnostics };
+  return { errors, diagnostics, unformatted };
 }

@@ -34,6 +34,8 @@ export interface Baseline {
   root: string;
   /** Keys of every error diagnostic the baseline already has. */
   diagnostics: Set<string>;
+  /** Files `prettier --check .` already flags in the baseline. */
+  unformatted: Set<string>;
   /** Problems found while building/checking the baseline itself. */
   errors: ErrorRecord[];
 }
@@ -57,6 +59,7 @@ export async function getBaseline(
   const project = projectHandle(suite, `baseline-${name}`, root);
   const errors: ErrorRecord[] = [];
   let diagnostics: Set<string>;
+  let unformatted: Set<string>;
 
   if (name === "auth") {
     const parent = await getBaseline(suite, "minimal");
@@ -66,11 +69,14 @@ export async function getBaseline(
     if (!outcome.errors.some((e) => e.fatal)) {
       const report = runChecks(project, "baseline", outcome.changedFiles, {
         baselineDiagnostics: parent.diagnostics,
+        baselineUnformatted: parent.unformatted,
       });
       errors.push(...report.errors.map((e) => ({ ...e, step: "enable-auth" })));
       diagnostics = new Set(report.diagnostics.map(diagnosticKey));
+      unformatted = new Set(report.unformatted);
     } else {
       diagnostics = new Set(parent.diagnostics);
+      unformatted = new Set(parent.unformatted);
     }
   } else {
     rmSync(root, { recursive: true, force: true });
@@ -92,9 +98,10 @@ export async function getBaseline(
     const report = runChecks(project, "baseline", []);
     errors.push(...report.errors);
     diagnostics = new Set(report.diagnostics.map(diagnosticKey));
+    unformatted = new Set(report.unformatted);
   }
 
-  const baseline: Baseline = { name, root, diagnostics, errors };
+  const baseline: Baseline = { name, root, diagnostics, unformatted, errors };
   baselines.set(key, baseline);
   return baseline;
 }
@@ -302,6 +309,7 @@ async function runCase(
     if (check) {
       const report = runChecks(project, `${index + 1}-${step.slug}`, changed, {
         baselineDiagnostics: baseline.diagnostics,
+        baselineUnformatted: baseline.unformatted,
       });
       errors.push(...report.errors.map((e) => ({ ...e, step: step.slug })));
     }

@@ -20,7 +20,7 @@ export async function generate(options: Options) {
   const { input } = options;
   const logger = getLogger(options);
 
-  let creates: File[] = [];
+  const creates: File[] = [];
 
   // Update PocketBase
   await withPocketbase(options.root, async (pb) => {
@@ -145,7 +145,7 @@ export async function generate(options: Options) {
 
   // The auth pages and the app sidebar show `site.name`.
   const siteFile = await ensureSiteFile(options);
-  const written: File[] = siteFile ? [siteFile] : [];
+  const written: File[] = siteFile ? [...creates, siteFile] : [...creates];
 
   // In a project that already has i18n: the language select and the Spanish
   // enable-i18n would have added had these pages been there when it ran.

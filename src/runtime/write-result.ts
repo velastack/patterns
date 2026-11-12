@@ -9,6 +9,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
+import { createHash } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { detect } from "package-manager-detector";
@@ -655,6 +656,33 @@ export async function formatPaths(
   return changed;
 }
 
+/**
+ * A digest of every file under the given directories. Content, not mtime: a
+ * file rewritten within the filesystem's timestamp tick keeps its mtime.
+ */
+function fileDigests(dirs: string[]): Map<string, string> {
+  const digests = new Map<string, string>();
+  for (const dir of dirs) {
+    for (const filePath of filesUnder(dir)) {
+      digests.set(
+        filePath,
+        createHash("sha1").update(readFileSync(filePath)).digest("hex"),
+      );
+    }
+  }
+  return digests;
+}
+
+/** The files under the directories that are new or changed since `before`. */
+function filesWrittenSince(
+  before: Map<string, string>,
+  dirs: string[],
+): string[] {
+  return [...fileDigests(dirs)]
+    .filter(([filePath, digest]) => before.get(filePath) !== digest)
+    .map(([filePath]) => filePath);
+}
+
 /** The component directories a project has, sorted. */
 export function installedComponents(root: string): Component[] {
   const uiDir = resolveUiDir(root);
@@ -785,7 +813,15 @@ export async function installComponents(
     logger,
   );
 
+  // `shadcn-svelte add` writes more than the items it is given: each one's
+  // registry dependencies too (`command` brings `dialog` and `input-group`),
+  // over a copy the project already has, and hooks and utils beside the
+  // components. All of it arrives in the registry's style.
+  const shadcnDirs = [path.join(root, "src", "lib"), componentsDir];
   const publicList = [...publicToInstall].sort();
+  const beforeShadcn =
+    publicList.length > 0 ? fileDigests(shadcnDirs) : undefined;
+
   if (publicList.length > 0) {
     await assertKnownRegistryItems(root, publicList, runtime, logger);
     logger.info(
@@ -839,10 +875,12 @@ export async function installComponents(
   }
 
   const installedList = [...new Set(installed)].sort();
-  await formatPaths(
-    root,
-    installedList.map((component) => path.join(componentsDir, component)),
-  );
+  await formatPaths(root, [
+    ...new Set([
+      ...installedList.map((component) => path.join(componentsDir, component)),
+      ...(beforeShadcn ? filesWrittenSince(beforeShadcn, shadcnDirs) : []),
+    ]),
+  ]);
 
   return { installed: installedList, skipped, packages };
 }
@@ -868,9 +906,17 @@ export async function writeResult(
   let dropMigrationCreates: Result["creates"] = [];
   if (result.collectionDrops.length > 0) {
     const { dropCollections } = await import("./collections");
-    dropMigrationCreates = await dropCollections(
-      result.collectionDrops,
-      options,
+    // PocketBase writes these while the collections drop, after the result
+    // was formatted, so they still carry its own style.
+    dropMigrationCreates = await Promise.all(
+      (await dropCollections(result.collectionDrops, options)).map(
+        async (file) => ({
+          ...file,
+          content: await formatSource(file.content, file.path, options, {
+            created: true,
+          }),
+        }),
+      ),
     );
   }
 
