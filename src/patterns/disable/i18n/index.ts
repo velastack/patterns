@@ -38,7 +38,7 @@ export default {
   plan: "open",
   title: "Disable i18n",
   summary:
-    "Removes i18n: deletes the generated files, uninstalls wuchale, and reverts vite.config, the package.json #locales import, hooks.server, app.html, the root +layout.ts and layout, and the .gitignore block. The translation catalogs in src/locales stay.",
+    "Removes i18n: deletes the generated files, uninstalls wuchale, and reverts vite.config, the package.json #locales import, hooks.server, app.html, the root +layout.ts and layout, and the .gitignore and .prettierignore blocks. The wuchale cache (src/locales/.wuchale) and the loaders wuchale wrote in src/locales go; the translation catalogs there stay.",
   requires: {
     auth: false,
     api: false,

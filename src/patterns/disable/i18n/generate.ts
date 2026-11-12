@@ -8,18 +8,23 @@ const createsRaw = import.meta.glob<string>("../../enable/i18n/creates/**", {
 });
 
 const CREATES_PREFIX = "../../enable/i18n/creates/";
+const WUCHALE_CACHE = "src/locales/.wuchale";
 
 export async function generate(_options: Options) {
-  const deletes = Object.keys(createsRaw)
-    .map((key) => {
-      const path = appRelativePath(key, CREATES_PREFIX);
-      return {
-        path,
-        language: languageFromPath(path),
-        content: "",
-        status: "success" as const,
-      };
-    })
+  const deletes = [
+    ...Object.keys(createsRaw).map((key) =>
+      appRelativePath(key, CREATES_PREFIX),
+    ),
+    // wuchale's compiled catalogs and proxies: a cache, and git-ignored only
+    // while the feature is on.
+    WUCHALE_CACHE,
+  ]
+    .map((path) => ({
+      path,
+      language: languageFromPath(path),
+      content: "",
+      status: "success" as const,
+    }))
     .sort((a, b) => a.path.localeCompare(b.path));
 
   return {

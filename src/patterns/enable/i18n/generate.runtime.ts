@@ -14,6 +14,7 @@ import { modifyHooksServerI18n } from "./modifies/hooks.server";
 import { modifyHooksI18n } from "./modifies/hooks";
 import { modifyAppHtml } from "./modifies/app-html";
 import { modifyGitignore } from "./modifies/gitignore";
+import { modifyPrettierignore } from "./modifies/prettierignore";
 import { ensureRootLayoutI18n } from "./modifies/+layout";
 import { modifyRootLayoutLanguageSelect } from "./modifies/root-layout.svelte";
 import { welcomePageCatalog } from "./welcome-catalog";
@@ -105,6 +106,15 @@ export async function generate(options: Options) {
   const gitignorePath = path.join(options.root, ".gitignore");
   pushResult(
     modifyOutcomeToFile(gitignorePath, modifyGitignore(gitignorePath)),
+  );
+
+  logger.info("Updating .prettierignore");
+  const prettierignorePath = path.join(options.root, ".prettierignore");
+  pushResult(
+    modifyOutcomeToFile(
+      prettierignorePath,
+      modifyPrettierignore(prettierignorePath),
+    ),
   );
 
   const catalog = welcomePageCatalog(options.root, ui);
