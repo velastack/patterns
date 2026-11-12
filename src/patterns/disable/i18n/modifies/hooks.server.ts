@@ -10,6 +10,7 @@ import {
   removeTopLevelStatementByIdentifier,
   formatLikeSource,
 } from "../../../../runtime/ts-morph-helpers";
+import { libModule } from "../../../../runtime/lib-specifier";
 import { localesModule } from "./locales-module";
 
 const I18N_HANDLE = "handleWuchale";
@@ -21,6 +22,11 @@ const FAILURE_HINT = dedent`
 
 const I18N_MODULES = [
   "wuchale/load-utils/server",
+  // Since the handle follows the visitor's preference on pages without a
+  // language in their URL; a project enabled before has none of the three.
+  "wuchale/url",
+  libModule("url.ts"),
+  libModule("locale.ts"),
   localesModule("main.url"),
   localesModule("data"),
   localesModule("main.loader.server.svelte"),

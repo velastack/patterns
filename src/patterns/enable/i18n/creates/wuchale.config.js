@@ -13,6 +13,9 @@ export default defineConfig({
   adapters: {
     main: svelte({
       loader: "sveltekit",
+      // The pages with a URL per language (`/`, `/es`): the public ones. A
+      // page that is not listed, such as a sign-in page or one behind it, has
+      // one URL and follows the visitor's preference (src/lib/locale.ts).
       url: { localize: "src/lib/url.ts", patterns: ["/"] },
       // wuchale localizes the `href` of an <a> by default, when the path is
       // one of the `url.patterns` above. Most links are components that render
@@ -42,6 +45,8 @@ export default defineConfig({
       files: [
         "src/**/+{page,layout}.{js,ts}",
         "src/**/+{page,layout}.server.{js,ts}",
+        // Remote functions answer with messages a visitor reads too.
+        "src/**/*.remote.{js,ts}",
       ],
     }),
   },

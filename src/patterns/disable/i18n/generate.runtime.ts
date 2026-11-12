@@ -21,6 +21,10 @@ import { unmodifyHooksI18n } from "./modifies/hooks";
 import { unmodifyAppHtml } from "./modifies/app-html";
 import { unmodifyRootLayoutI18n } from "./modifies/+layout";
 import { unmodifyRootLayoutLanguageSelect } from "./modifies/root-layout.svelte";
+import { unmodifyLayoutServerLocale } from "./modifies/layout.server";
+import { unmodifyAppDts } from "./modifies/app-d-ts";
+import { unmodifyAppLayoutLanguageSelect } from "./modifies/app-layout.svelte";
+import { APP_LAYOUT_PATH } from "../../enable/i18n/modifies/app-layout.svelte";
 
 export async function generate(options: Options) {
   const logger = getLogger(options);
@@ -86,6 +90,34 @@ export async function generate(options: Options) {
   );
   pushResult(layoutRevert.modify);
   if (layoutRevert.delete) deletes.push(layoutRevert.delete);
+
+  logger.info("Reverting root +layout.server.ts");
+  const layoutServerPath = path.join(
+    options.root,
+    "src",
+    "routes",
+    "+layout.server.ts",
+  );
+  // enable-i18n may have written the whole file; emptied, it goes.
+  const layoutServerRevert = revertOutcomeToFile(
+    layoutServerPath,
+    unmodifyLayoutServerLocale(layoutServerPath),
+  );
+  pushResult(layoutServerRevert.modify);
+  if (layoutServerRevert.delete) deletes.push(layoutServerRevert.delete);
+
+  logger.info("Reverting app.d.ts");
+  const appDtsPath = path.join(options.root, "src", "app.d.ts");
+  pushResult(modifyOutcomeToFile(appDtsPath, unmodifyAppDts(appDtsPath)));
+
+  logger.info("Reverting the signed-in layout language select");
+  const appLayoutPath = path.join(options.root, APP_LAYOUT_PATH);
+  pushResult(
+    modifyOutcomeToFile(
+      appLayoutPath,
+      unmodifyAppLayoutLanguageSelect(appLayoutPath),
+    ),
+  );
 
   logger.info("Reverting root layout language select");
   const rootLayoutCandidates = [

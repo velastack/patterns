@@ -14,12 +14,31 @@ const IMPORT_SNIPPET = dedent`
   import { loadLocale } from 'wuchale/load-utils';
 
   import { getLocale } from '#locales/main.url.js';
+  import { hasLocalizedUrl } from '#lib/url.js';
   import '#locales/main.loader.svelte.js';
   import '#locales/js.loader.js';
 `;
 
 /** The load `disable-i18n` looks for to take it out again. */
 export const LOAD_STATEMENT = dedent`
+  export const load = async ({ url, data }) => {
+    // A public page's language is in its URL. The others follow the visitor's
+    // preference, which only the server knows: see src/lib/locale.ts.
+    const locale = hasLocalizedUrl(url.pathname) ? getLocale(url) : data.locale;
+
+    if (browser) {
+      await loadLocale(locale);
+    }
+
+    return { ...data, locale };
+  };
+`;
+
+/**
+ * The load enable-i18n wrote while every page took its language from the
+ * URL. `disable-i18n` still takes it out of a project enabled back then.
+ */
+export const LEGACY_LOAD_STATEMENT = dedent`
   export const load = async ({ url, data }) => {
     const locale = getLocale(url);
 
@@ -68,6 +87,7 @@ export function ensureRootLayoutI18n(layoutPath: string): ModifyOutcome {
   ensureNamedImport(sourceFile, "$app/env", "browser");
   ensureNamedImport(sourceFile, "wuchale/load-utils", "loadLocale");
   ensureNamedImport(sourceFile, "#locales/main.url.js", "getLocale");
+  ensureNamedImport(sourceFile, "#lib/url.js", "hasLocalizedUrl");
   ensureImports(sourceFile, [
     { moduleSpecifier: "#locales/main.loader.svelte.js" },
     { moduleSpecifier: "#locales/js.loader.js" },

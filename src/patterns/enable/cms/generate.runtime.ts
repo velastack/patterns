@@ -11,6 +11,7 @@ import { resolveMode, type CmsMode } from "./generate";
 import { modifyViteConfig } from "./modifies/vite-config";
 import {
   DEFAULT_LOCALE,
+  REQUEST_LOCALE,
   WUCHALE_LOCALE,
   modifyLayoutServer,
 } from "./modifies/layout.server";
@@ -71,7 +72,15 @@ export async function generate(options: Options) {
     "routes",
     "+layout.server.ts",
   );
-  const locale = i18n ? WUCHALE_LOCALE : DEFAULT_LOCALE;
+  // `src/lib/locale.ts` came with the handle that sets `locals.locale`.
+  const requestLocale = fs.existsSync(
+    path.join(options.root, "src", "lib", "locale.ts"),
+  );
+  const locale = !i18n
+    ? DEFAULT_LOCALE
+    : requestLocale
+      ? REQUEST_LOCALE
+      : WUCHALE_LOCALE;
   pushResult(
     modifyOutcomeToFile(
       layoutServerPath,

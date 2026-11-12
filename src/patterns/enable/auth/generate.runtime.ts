@@ -14,6 +14,7 @@ import { modifyLayoutServer } from "./modifies/+layout.server";
 import { modifyRootLayoutSvelte } from "./modifies/root-layout.svelte";
 import { modifyHooksServer } from "./modifies/hooks.server";
 import { modifySidebarMenuButton } from "./modifies/sidebar-menu-button.svelte";
+import { localizeAuthPages } from "./i18n";
 
 export async function generate(options: Options) {
   const { input } = options;
@@ -144,9 +145,16 @@ export async function generate(options: Options) {
 
   // The auth pages and the app sidebar show `site.name`.
   const siteFile = await ensureSiteFile(options);
+  const written: File[] = siteFile ? [...creates, siteFile] : [...creates];
+
+  // In a project that already has i18n: the language select and the Spanish
+  // enable-i18n would have added had these pages been there when it ran.
+  const localized = localizeAuthPages(options);
+  written.push(...localized.creates);
+  modifies.push(...localized.modifies);
 
   return {
-    creates: siteFile ? [...creates, siteFile] : creates,
+    creates: written,
     modifies,
     deletes: [],
     components: [],

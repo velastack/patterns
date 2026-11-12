@@ -1,4 +1,10 @@
-import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 import { afterAll, describe, it, type TestContext } from "vitest";
 import {
@@ -291,6 +297,12 @@ async function runCase(
           message: `${file} does not contain ${JSON.stringify(needle)} after ${step.slug}`,
         });
       }
+    }
+
+    for (const [file, content] of Object.entries(step.files ?? {})) {
+      const full = path.join(project.root, file);
+      mkdirSync(path.dirname(full), { recursive: true });
+      writeFileSync(full, content);
     }
 
     const check = step.check ?? index === spec.steps.length - 1;

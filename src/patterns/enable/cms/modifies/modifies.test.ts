@@ -4,7 +4,11 @@ import path from "node:path";
 import fs from "node:fs";
 
 import { modifyViteConfig } from "./vite-config";
-import { modifyLayoutServer, WUCHALE_LOCALE } from "./layout.server";
+import {
+  modifyLayoutServer,
+  REQUEST_LOCALE,
+  WUCHALE_LOCALE,
+} from "./layout.server";
 import { modifyLayoutSvelte } from "./layout.svelte";
 import { modifyLayoutUniversal } from "./layout";
 
@@ -141,6 +145,16 @@ describe("enable cms modifiers", () => {
     );
     expect(modified).toContain(
       "await loadCms(event, { locale: getLocale(event.url) })",
+    );
+  });
+
+  it("passes the language the i18n handle chose for the request", () => {
+    const filePath = path.join(tempDir, LAYOUT_SERVER);
+    const outcome = modifyLayoutServer(filePath, REQUEST_LOCALE);
+
+    expect(outcome).toEqual({ status: "success", changed: true });
+    expect(read(LAYOUT_SERVER)).toContain(
+      "await loadCms(event, { locale: event.locals.locale })",
     );
   });
 
