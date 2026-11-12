@@ -19,7 +19,7 @@ export async function generate(options: Options) {
   const { input } = options;
   const logger = getLogger(options);
 
-  let creates: File[] = [];
+  const creates: File[] = [];
 
   // Update PocketBase
   await withPocketbase(options.root, async (pb) => {
@@ -146,7 +146,7 @@ export async function generate(options: Options) {
   const siteFile = await ensureSiteFile(options);
 
   return {
-    creates: siteFile ? [siteFile] : [],
+    creates: siteFile ? [...creates, siteFile] : creates,
     modifies,
     deletes: [],
     components: [],

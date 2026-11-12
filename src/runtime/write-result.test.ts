@@ -712,6 +712,47 @@ describe("installComponents", () => {
     );
   });
 
+  it("formats the registry dependencies shadcn-svelte writes alongside", async () => {
+    const root = makeProject();
+    writeFileSync(
+      path.join(root, ".prettierrc"),
+      JSON.stringify({ useTabs: true, singleQuote: true }),
+      "utf8",
+    );
+    const registryStyle = 'export { default as Root } from "./root.svelte";\n';
+    const projectStyle = "export { default as Root } from './root.svelte';\n";
+    // The project's own button, already in its style.
+    mkdirSync(uiPath(root, "button"), { recursive: true });
+    writeFileSync(uiPath(root, "button", "index.ts"), projectStyle, "utf8");
+    // `shadcn-svelte add command` also writes `dialog`, which nobody named,
+    // rewrites the `button` that was there, and adds a hook outside ui/.
+    const hook = path.join(root, "src", "lib", "hooks", "is-mobile.svelte.ts");
+    const executeCommand = vi.fn<ExecuteCommand>(async (cwd, operation) => {
+      if (operation !== "execute") return;
+      for (const component of ["command", "dialog", "button"]) {
+        mkdirSync(uiPath(cwd, component), { recursive: true });
+        writeFileSync(uiPath(cwd, component, "index.ts"), registryStyle);
+      }
+      mkdirSync(path.dirname(hook), { recursive: true });
+      writeFileSync(hook, 'export const MOBILE = "mobile";\n');
+    });
+
+    const result = await installComponents(
+      { root, components: ["command"] },
+      { executeCommand, fetch: registryFetch() },
+    );
+
+    expect(result.installed).toEqual(["command"]);
+    for (const component of ["command", "dialog", "button"]) {
+      expect(readFileSync(uiPath(root, component, "index.ts"), "utf8")).toBe(
+        projectStyle,
+      );
+    }
+    expect(readFileSync(hook, "utf8")).toBe(
+      "export const MOBILE = 'mobile';\n",
+    );
+  });
+
   it("pulls badge in for cells", async () => {
     const root = makeProject();
     const executeCommand = execSpy();
