@@ -35,10 +35,11 @@ export async function generate(options: Options) {
     isStripe && options.features.backend
       ? await unlinkStripePaymentMethodsCustomer(options)
       : [];
-  const finalResult = {
-    ...merged,
-    creates: [...merged.creates, ...patchCreates],
-  };
+  // The patch's migration is PocketBase's own writing; format it with the rest.
+  const finalResult = await formatResult(
+    { ...merged, creates: [...merged.creates, ...patchCreates] },
+    options,
+  );
 
   const { writeResult } = await import("../../../runtime/write-result");
   return writeResult(finalResult, options);
