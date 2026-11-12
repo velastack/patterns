@@ -30,6 +30,12 @@ permissions:
   pull-requests: write
   issues: write
 
+# An explicit shell runs with pipefail, so a script piped into `tee` still
+# fails its step.
+defaults:
+  run:
+    shell: bash
+
 concurrency:
   group: bump-versions
   cancel-in-progress: false
