@@ -4,8 +4,8 @@ The registry for VelaStack patterns.
 
 ## Requirements
 
-Patterns write SvelteKit 3 code only, and the package needs Node 22.17 or later (`engines`), the same floor as
-SvelteKit 3. A project with a `svelte.config.*`, or with options still nested under `kit:`, is refused with
+Patterns write SvelteKit 3 code only, and the package needs Node 22.22 or later (`engines`), the same floor as
+a vela project (SvelteKit 3 itself starts at 22.17; `openworkflow` 0.11 needs 22.22). A project with a `svelte.config.*`, or with options still nested under `kit:`, is refused with
 `npx vela@^0.15 migrate sveltekit-3`. Config edits go into the inline `sveltekit({...})` call in `vite.config.ts`.
 
 - Imports from `src/lib` use `#lib` (the `"imports"` entries in `package.json`) with sv's extension rules:

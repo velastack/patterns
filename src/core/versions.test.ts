@@ -2,7 +2,13 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import semver from "semver";
 import { describe, expect, it } from "vitest";
-import { VERSION_HOLDS, VERSION_TRACKS, VERSIONS, spec } from "./versions";
+import {
+  NODE_FLOOR,
+  VERSION_HOLDS,
+  VERSION_TRACKS,
+  VERSIONS,
+  spec,
+} from "./versions";
 
 const SRC = path.resolve(__dirname, "..");
 
@@ -47,6 +53,15 @@ describe("versions.json", () => {
       expect(VERSIONS[name], name).toBeDefined();
       expect(track.source, name).toBe("sv-create");
     }
+  });
+
+  it("sets a Node floor this package's own engines agree with", () => {
+    expect(semver.valid(NODE_FLOOR)).not.toBeNull();
+    const own = JSON.parse(readFileSync("package.json", "utf8")) as {
+      engines: { node: string };
+    };
+    // vela runs patterns inside the project, on the project's Node.
+    expect(semver.minVersion(own.engines.node)!.version).toBe(NODE_FLOOR);
   });
 
   it("gives formsnap a superforms it peers with", () => {

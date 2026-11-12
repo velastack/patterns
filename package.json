@@ -22,7 +22,7 @@
     "pocketbase"
   ],
   "engines": {
-    "node": ">=22.17"
+    "node": ">=22.22"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

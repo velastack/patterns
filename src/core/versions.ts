@@ -24,6 +24,12 @@ export const VERSION_TRACKS: Readonly<
   Record<string, { source: string; reason: string }>
 > = data.tracks;
 
+/**
+ * The oldest Node a vela project may run on: the floor of its `engines.node`.
+ * Projects set `engine-strict`, so no listed package may require a later one.
+ */
+export const NODE_FLOOR: string = data.node;
+
 /** The install spec for a listed package: `spec("zod")` is `zod@^4.6.7`. */
 export function spec(name: string): string {
   const range = VERSIONS[name];

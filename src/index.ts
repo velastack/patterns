@@ -79,7 +79,13 @@ export {
   VELASTACK_KIT,
   VELASTACK_POCKETBASE,
 } from "./core/constants";
-export { VERSIONS, VERSION_HOLDS, VERSION_TRACKS, spec } from "./core/versions";
+export {
+  NODE_FLOOR,
+  VERSIONS,
+  VERSION_HOLDS,
+  VERSION_TRACKS,
+  spec,
+} from "./core/versions";
 export {
   capabilityName,
   providerEnvVars,

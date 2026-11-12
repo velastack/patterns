@@ -28,10 +28,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 22.17 is the floor: SvelteKit 3 requires it, and so does this package
-        # (engines). Testing the floor itself, not just the latest 22, catches
-        # an API used before it existed.
-        node-version: ["22.17", "24", "26"]
+        # 22.22 is the floor: a vela project requires it (`node` in
+        # src/core/versions.json), and so does this package (engines). Testing
+        # the floor itself, not just the latest 22, catches an API used before
+        # it existed.
+        node-version: ["22.22", "24", "26"]
 
     steps:
       - uses: actions/checkout@v7
