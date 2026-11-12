@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ExecuteCommand } from "./core/types";
 import { installComponents } from "./index";
+import { spec } from "./core/versions";
 
 const tempDirs: string[] = [];
 
@@ -44,12 +45,12 @@ describe("installComponents", () => {
       ),
     ).toBe(true);
     expect(executeCommand).toHaveBeenCalledWith(root, "install", [
-      "@tanstack/table-core@^9.2.4",
+      spec("@tanstack/table-core"),
     ]);
     expect(result).toEqual({
       installed: ["data-table"],
       skipped: [],
-      packages: ["@tanstack/table-core@^9.2.4"],
+      packages: [spec("@tanstack/table-core")],
     });
   });
 });

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Options } from "../../../core/types";
 import { generate } from "./generate";
 import { generate as generateDisable } from "../../disable/og/generate";
+import { spec } from "../../../core/versions";
 
 const options: Options = {
   argv: [],
@@ -35,7 +36,7 @@ describe("enable-og", () => {
 
   it("installs the renderer and nothing else", async () => {
     expect((await generate(options)).packages).toEqual([
-      "@takumi-rs/core@^2.20.0",
+      spec("@takumi-rs/core"),
     ]);
   });
 

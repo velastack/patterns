@@ -1,5 +1,6 @@
 import type { CollectionSpec, Options, Result } from "../../../core/types";
 import { appRelativePath, languageFromPath } from "../../../core/util";
+import { spec } from "../../../core/versions";
 
 const createsRaw = import.meta.glob<string>("./creates/**", {
   query: "?raw",
@@ -70,7 +71,7 @@ export async function generate(_options: Options) {
     modifies: [],
     deletes: [],
     components: ["alert-dialog", "button", "badge"],
-    packages: ["@types/node"],
+    packages: [spec("@types/node")],
     collections: [apiKeysCollection],
     collectionPatches: [],
     collectionDrops: [],

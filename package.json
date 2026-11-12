@@ -41,7 +41,8 @@
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "bump-versions": "vite-node scripts/bump-versions.ts --"
   },
   "dependencies": {
     "prettier": "^3.8.2",
@@ -97,6 +98,7 @@
     "@types/cross-spawn": "^6.0.6",
     "@types/node": "^26.5.1",
     "@types/pluralize": "^0.0.33",
+    "@types/semver": "^7.8.0",
     "@velastack/kit": "^0.4.0",
     "@velastack/pocketbase": "^0.4.2",
     "@velastack/pocketbase-codegen": "^0.1.0",
@@ -107,6 +109,7 @@
     "package-manager-detector": "^1.6.0",
     "pluralize": "^8.0.0",
     "pocketbase": "^0.28.0",
+    "semver": "^7.8.6",
     "shadcn-svelte": "^1.6.0",
     "stripe": "^23.0.0",
     "svelte": "^5.56.10",

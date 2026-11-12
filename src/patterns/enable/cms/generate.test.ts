@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Options } from "../../../core/types";
 import { VELASTACK_CMS, VELASTACK_KIT } from "../../../core/constants";
+import { spec } from "../../../core/versions";
 import { InvalidArgumentError } from "../../../core/errors";
 import { generate, resolveMode } from "./generate";
 
@@ -67,7 +68,7 @@ describe("enable cms generate", () => {
     expect(paths).toEqual(["src/lib/cms.ts"]);
     expect(libSource(result)).toContain(`endpoint: '${HOSTED}'`);
     expect(result.packages).not.toContain("better-sqlite3");
-    expect(result.packages).toContain("marked");
+    expect(result.packages).toContain(spec("marked"));
     expect(result.packages).toContain(VELASTACK_CMS);
   });
 

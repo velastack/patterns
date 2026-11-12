@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Options } from "../../../core/types";
 import { generate as generateBase } from "./generate";
+import { spec } from "../../../core/versions";
 
 vi.mock("../../../parse/env.preview", () => {
   return {
@@ -397,7 +398,7 @@ describe("generate scaffold pattern", () => {
     for (const v8 of ["createSvelteTable", "getCoreRowModel", "getState()"]) {
       expect(listPage).not.toContain(v8);
     }
-    expect(result.packages).toContain("@tanstack/table-core@^9.2.4");
+    expect(result.packages).toContain(spec("@tanstack/table-core"));
   });
 
   it("filters on the first text field, and has no search box without one", async () => {
@@ -457,8 +458,8 @@ describe("generate scaffold pattern", () => {
 
     expect(result.components).toEqual([]);
     expect(result.packages).toEqual([
-      "sveltekit-superforms@3.0.0",
-      "zod@^4.1.11",
+      spec("sveltekit-superforms"),
+      spec("zod"),
     ]);
     for (const suffix of [
       "/contacts/+page.svelte",

@@ -206,6 +206,25 @@ lists in `components` is handed to `shadcn-svelte add`, which resolves it from t
   the `shadcn-svelte` devDependency.
 - `WriteResultRuntime.fetch` is the test seam for the registry, next to `executeCommand` for the spawns.
 
+# Dependency versions
+
+`src/core/versions.json` is the one list of dependency ranges every vela project starts from. Three things read it:
+
+- the patterns here install from it: `spec("zod")` is `zod@^4.6.7`, and a test refuses a `name@range` written inline;
+- the vela CLI's `minimal` and `static` templates list the same ranges, with a test that fails when they stop (`npm run sync-versions` there rewrites them from this package);
+- the velastack-templates baselines are built on those templates and follow them.
+
+So a version is changed here and nowhere else. The file has four parts:
+
+- `packages`: the ranges.
+- `node`: the oldest Node a project may run on. Projects set `engine-strict`, so a release whose own `engines.node` starts above it would fail the install there.
+- `holds`: packages kept below their latest release on purpose, each with the reason and the date. Write a block down here instead of leaving it to be rediscovered.
+- `tracks`: packages whose range follows another project's. `svelte` follows the floor `sv create`'s minimal template ships.
+
+`npm run bump-versions` raises each floor to the newest release its range admits that is stable, at least three days old (`--cooldown N`) and installable on `node`; `-- --check` only reports. It never leaves a range: a new major or a new 0.x minor is listed as "outside the range" for someone to read the changelog, change `versions.json` by hand and run the integration suites against it.
+
+The weekly **Bump versions** workflow runs the script, opens one pull request with what it raised, and keeps the "Dependencies outside their range" issue. The ranges reach users after a release of this package and the vela repository's **Sync versions** pull request; vela's daily **Canary** scaffolds, installs, builds and tests a new project, which is what catches a release upstream breaking one.
+
 # Workflow for adding new patterns
 
 - Develop the pattern in the `src/patterns` directory.

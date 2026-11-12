@@ -5,6 +5,7 @@ import {
   VELASTACK_POCKETBASE,
 } from "../../../core/constants";
 import { appRelativePath, languageFromPath } from "../../../core/util";
+import { spec } from "../../../core/versions";
 
 const createsRaw = import.meta.glob<string>("./creates/**", {
   query: "?raw",
@@ -35,16 +36,16 @@ export async function generate(_options: Options) {
     packages: [
       VELASTACK_POCKETBASE,
       VELASTACK_KIT,
-      "pocketbase-sveltekit",
+      spec("pocketbase-sveltekit"),
       // The adapter the config is switched to has to be installed with it,
       // or the config fails to load and takes every .svelte file with it.
       ADAPTER_NODE,
       // test/setup.ts and the server tests other patterns add need these; the
-      // minimal template ships them, the static one does not. Pinned to the
-      // template's ranges so both kinds of project end up alike.
-      "vitest@^5.0.1",
-      "supertest@^7.2.2",
-      "@types/supertest@^6.0.3",
+      // minimal template ships them, the static one does not. The same
+      // ranges as the template's, so both kinds of project end up alike.
+      spec("vitest"),
+      spec("supertest"),
+      spec("@types/supertest"),
     ],
     collections: [],
     collectionPatches: [],

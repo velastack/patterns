@@ -1,5 +1,6 @@
 import type { Options, Result } from "../../../core/types";
 import { appRelativePath, languageFromPath } from "../../../core/util";
+import { spec } from "../../../core/versions";
 
 const createsRaw = import.meta.glob<string>("./creates/**", {
   query: "?raw",
@@ -16,9 +17,9 @@ const CREATES_PREFIX = "./creates/";
  * export; none of them has runtime dependencies of its own.
  */
 export const WORKFLOW_PACKAGES = [
-  "openworkflow@^0.10.0",
-  "openworkflow-pocketbase@^0.1.1",
-  "croner@^10.0.1",
+  spec("openworkflow"),
+  spec("openworkflow-pocketbase"),
+  spec("croner"),
 ];
 
 export async function generate(_options: Options) {

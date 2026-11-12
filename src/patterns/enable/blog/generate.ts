@@ -1,5 +1,6 @@
 import type { File, Options, Result } from "../../../core/types";
 import { appRelativePath, languageFromPath } from "../../../core/util";
+import { spec } from "../../../core/versions";
 
 const createsRaw = import.meta.glob<string>("./creates/**", {
   query: "?raw",
@@ -57,7 +58,7 @@ export async function generate(options: Options) {
     modifies: [],
     deletes: [],
     components: ["avatar", "badge", "breadcrumb", "card", "separator"],
-    packages: ["mdsvex"],
+    packages: [spec("mdsvex")],
     collections: [],
     collectionPatches: [],
     collectionDrops: [],

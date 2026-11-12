@@ -29,6 +29,8 @@ import {
   writeResult,
 } from "./write-result";
 import { offlineFetch, registryFetch } from "./registry.mock";
+import { SUPERFORMS_VERSION } from "../core/constants";
+import { VERSIONS, spec } from "../core/versions";
 
 const tempDirs: string[] = [];
 
@@ -236,7 +238,7 @@ describe("writeResult", () => {
       "new-package",
     ]);
     expect(executeCommand).toHaveBeenNthCalledWith(2, root, "install", [
-      "@tanstack/table-core@^9.2.4",
+      spec("@tanstack/table-core"),
     ]);
     expect(executeCommand).toHaveBeenNthCalledWith(3, root, "execute", [
       "shadcn-svelte",
@@ -264,7 +266,7 @@ describe("writeResult", () => {
     expect(result.components).toEqual(["column-header", "dropdown-menu"]);
     expect(result.packages).toEqual([
       "new-package",
-      "@tanstack/table-core@^9.2.4",
+      spec("@tanstack/table-core"),
     ]);
   });
 
@@ -291,7 +293,7 @@ describe("writeResult", () => {
     const result = await writeResult(
       {
         ...emptyResult(),
-        uninstalls: ["sveltekit-negotiate", "wuchale@^0.26.3", "never-there"],
+        uninstalls: ["sveltekit-negotiate", spec("wuchale"), "never-there"],
       },
       makeOptions(root),
       { executeCommand, fetch: registryFetch() },
@@ -330,7 +332,7 @@ describe("writeResult", () => {
 
     expect(executeCommand).toHaveBeenCalledTimes(1);
     expect(executeCommand).toHaveBeenCalledWith(root, "install", [
-      "@tanstack/table-core@^9.2.4",
+      spec("@tanstack/table-core"),
     ]);
     for (const file of [
       "index.ts",
@@ -345,7 +347,7 @@ describe("writeResult", () => {
       ).toBe(true);
     }
     expect(result.components).toEqual(["data-table"]);
-    expect(result.packages).toEqual(["@tanstack/table-core@^9.2.4"]);
+    expect(result.packages).toEqual([spec("@tanstack/table-core")]);
   });
 
   it("installs a pinned spec but skips it once the name is present", async () => {
@@ -373,7 +375,7 @@ describe("writeResult", () => {
         // Ranges are what the i18n pattern declares. The already-installed
         // check compares names, so the scoped package below must be recognized
         // as present despite the spec carrying a range.
-        packages: ["wuchale@^0.26.3", "@wuchale/svelte@^0.21.1"],
+        packages: [spec("wuchale"), spec("@wuchale/svelte")],
       },
       makeOptions(root),
       { executeCommand, fetch: registryFetch() },
@@ -381,9 +383,9 @@ describe("writeResult", () => {
 
     expect(executeCommand).toHaveBeenCalledTimes(1);
     expect(executeCommand).toHaveBeenNthCalledWith(1, root, "install", [
-      "wuchale@^0.26.3",
+      spec("wuchale"),
     ]);
-    expect(result.packages).toEqual(["wuchale@^0.26.3"]);
+    expect(result.packages).toEqual([spec("wuchale")]);
   });
 });
 
@@ -530,10 +532,12 @@ describe("installComponents", () => {
     const pkg = JSON.parse(
       readFileSync(path.join(root, "package.json"), "utf8"),
     );
-    expect(pkg.dependencies).toEqual({ "sveltekit-superforms": "3.0.0" });
+    expect(pkg.dependencies).toEqual({
+      "sveltekit-superforms": SUPERFORMS_VERSION,
+    });
     expect(pkg.devDependencies).toEqual({ formsnap: "^2.1.0" });
     expect(messages).toContain(
-      "formsnap 2.1 peers superforms 3: sveltekit-superforms → 3.0.0, formsnap → ^2.1.0",
+      `formsnap 2.1 peers superforms 3: sveltekit-superforms → ${SUPERFORMS_VERSION}, formsnap → ^2.1.0`,
     );
   });
 
@@ -895,7 +899,7 @@ describe("packageName", () => {
   });
 
   it("strips a range from an unscoped package", () => {
-    expect(packageName("wuchale@^0.26.3")).toBe("wuchale");
+    expect(packageName(spec("wuchale"))).toBe("wuchale");
   });
 
   it("keeps the scope on a scoped package with no range", () => {
@@ -903,7 +907,7 @@ describe("packageName", () => {
   });
 
   it("strips a range from a scoped package", () => {
-    expect(packageName("@wuchale/svelte@^0.21.1")).toBe("@wuchale/svelte");
+    expect(packageName(spec("@wuchale/svelte"))).toBe("@wuchale/svelte");
   });
 
   it("handles a pinned exact version", () => {
@@ -918,7 +922,7 @@ describe("isExactSpec", () => {
     ["@scope/pkg@1.2.3", true],
     ["stripe@19.3.0", true],
     ["formsnap@^2.1.0", false],
-    ["@sveltejs/adapter-node@^6.0.0", false],
+    [spec("@sveltejs/adapter-node"), false],
     ["leaflet", false],
     ["@types/leaflet", false],
     ["vite@>=8", false],
@@ -983,7 +987,7 @@ describe("writeResult package installs", () => {
         ...emptyResult(),
         packages: [
           "sveltekit-flash-message@3.0.0",
-          "zod@^4.1.11",
+          spec("zod"),
           "sveltekit-superforms@3.0.0",
         ],
       },
@@ -995,11 +999,11 @@ describe("writeResult package installs", () => {
         args: ["sveltekit-flash-message@3.0.0", "sveltekit-superforms@3.0.0"],
         exact: true,
       },
-      { args: ["zod@^4.1.11"], exact: false },
+      { args: [spec("zod")], exact: false },
     ]);
     expect(result.packages).toEqual([
       "sveltekit-flash-message@3.0.0",
-      "zod@^4.1.11",
+      spec("zod"),
       "sveltekit-superforms@3.0.0",
     ]);
   });
@@ -1024,10 +1028,10 @@ describe("writeResult package installs", () => {
     );
     expect(calls.map((call) => call.args)).toEqual([["formsnap@^2.1.0"]]);
     expect(JSON.parse(calls[0]!.pkg).devDependencies).toEqual({
-      "sveltekit-superforms": "3.0.0",
+      "sveltekit-superforms": SUPERFORMS_VERSION,
     });
     expect(messages).toContain(
-      "formsnap 2.1 peers superforms 3: sveltekit-superforms → 3.0.0",
+      `formsnap 2.1 peers superforms 3: sveltekit-superforms → ${SUPERFORMS_VERSION}`,
     );
   });
 
@@ -1047,7 +1051,7 @@ describe("writeResult package installs", () => {
     expect(install?.args).toEqual(["formsnap@^2.1.0"]);
     expect(
       JSON.parse(install!.pkg).devDependencies["sveltekit-superforms"],
-    ).toBe("3.0.0");
+    ).toBe(SUPERFORMS_VERSION);
   });
 
   it("raises formsnap 2.0 and drops its override when superforms joins it", async () => {
@@ -1134,7 +1138,7 @@ describe("writeResult package installs", () => {
             status: "success",
           },
         ],
-        packages: ["wuchale@^0.26.3"],
+        packages: [spec("wuchale")],
       },
       makeOptions(root),
       { executeCommand, fetch: registryFetch() },
@@ -1144,7 +1148,7 @@ describe("writeResult package installs", () => {
       readFileSync(path.join(root, "package.json"), "utf8"),
     );
     expect(pkg.imports).toEqual({ "#locales/*": "./src/locales/*" });
-    expect(pkg.dependencies).toEqual({ wuchale: "^0.26.3" });
+    expect(pkg.dependencies).toEqual({ wuchale: VERSIONS.wuchale });
     expect(result.modifies.map((file) => file.path)).toEqual(["package.json"]);
   });
 });
