@@ -6,6 +6,7 @@ import type { Options } from "../../../core/types";
 import { generate } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
 import { generate as generateRuntime } from "./generate.runtime";
+import { spec } from "../../../core/versions";
 
 function makeOptions(root: string, env: Options["env"] = "runtime"): Options {
   return {
@@ -45,9 +46,9 @@ describe("enable backend", () => {
     const result = await generate(makeOptions("/tmp/project"));
     expect(result.packages).toEqual(
       expect.arrayContaining([
-        "@velastack/pocketbase@^0.4.2",
-        "@velastack/kit@^0.4.0",
-        "@sveltejs/adapter-node@^6.0.0",
+        spec("@velastack/pocketbase"),
+        spec("@velastack/kit"),
+        spec("@sveltejs/adapter-node"),
       ]),
     );
   });

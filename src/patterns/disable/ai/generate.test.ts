@@ -6,6 +6,7 @@ import type { Features, Options, RouteGroups } from "../../../core/types";
 import { generate as enable, PROVIDERS } from "../../enable/ai/generate";
 import { aiPaths, demoDirs, generate } from "./generate";
 import { generate as generateRuntime } from "./generate.runtime";
+import { spec } from "../../../core/versions";
 
 function makeOptions(
   input: Record<string, unknown> = {},
@@ -66,10 +67,10 @@ describe("disable ai generate", () => {
   it("uninstalls every AI SDK package enable-ai may have added, but not zod", async () => {
     const result = await generate(makeOptions());
     expect(result.uninstalls).toEqual([
-      "ai@^7.0.107",
-      "@ai-sdk/svelte@^5.0.107",
-      "@ai-sdk/openai@^4.0.71",
-      "@ai-sdk/anthropic@^4.0.58",
+      spec("ai"),
+      spec("@ai-sdk/svelte"),
+      spec("@ai-sdk/openai"),
+      spec("@ai-sdk/anthropic"),
     ]);
   });
 

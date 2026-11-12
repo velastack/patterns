@@ -1,5 +1,6 @@
 import type { File, Options, Result } from "../../../core/types";
 import { VELASTACK_CMS, VELASTACK_KIT } from "../../../core/constants";
+import { spec } from "../../../core/versions";
 import { InvalidArgumentError } from "../../../core/errors";
 import { filesFromGlob } from "../../../core/util";
 
@@ -149,8 +150,8 @@ export async function generate(options: Options) {
   // @velastack/kit, which a backend template has and a project on adapter-node
   // alone does not.
   const packages = mode.local
-    ? [VELASTACK_CMS, VELASTACK_KIT, "better-sqlite3", "marked"]
-    : [VELASTACK_CMS, "marked"];
+    ? [VELASTACK_CMS, VELASTACK_KIT, "better-sqlite3", spec("marked")]
+    : [VELASTACK_CMS, spec("marked")];
 
   return {
     creates: sortedCreates,

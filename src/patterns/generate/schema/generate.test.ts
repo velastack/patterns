@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Options } from "../../../core/types";
 import { generate as generateBase } from "./generate";
+import { spec } from "../../../core/versions";
 
 const mockCollections = [
   {
@@ -77,7 +78,7 @@ describe("generate schema pattern", () => {
 
     expect(result.creates).toHaveLength(1);
     // The schema imports zod, which a project vela did not create may lack.
-    expect(result.packages).toEqual(["zod@^4.1.11"]);
+    expect(result.packages).toEqual([spec("zod")]);
     expect(result.creates[0].path).toBe("src/lib/schemas/contact.ts");
     expect(result.creates[0].content).toContain("export const contactSchema");
     expect(result.creates[0].content).toContain("name: z.string().nonempty()");

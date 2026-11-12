@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { Options } from "../../../core/types";
 import { generate as generateBase } from "./generate";
 import formRemotePattern from "./index";
+import { spec } from "../../../core/versions";
 
 vi.mock("../../../parse/env.preview", () => {
   return {
@@ -120,7 +121,7 @@ describe("generate form-remote pattern", () => {
       "src/lib/schemas/note.ts",
     ]);
     expect(result.components).toEqual([]);
-    expect(result.packages).toEqual(["zod@^4.1.11"]);
+    expect(result.packages).toEqual([spec("zod")]);
 
     const page = result.creates[0].content;
     expect(page).not.toContain("#lib/components/ui/");

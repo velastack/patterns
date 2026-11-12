@@ -3,6 +3,7 @@ import { ALL_FEATURES_OFF } from "../../../../integration/features";
 import type { Options } from "../../../core/types";
 import { generate } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
+import { spec } from "../../../core/versions";
 
 function options(provider: string, auth = false): Options {
   return {
@@ -66,7 +67,7 @@ describe("enable-payments generate", () => {
         "src/lib/currency.svelte.ts",
         "src/lib/order.ts",
       ]);
-      expect(result.packages).toEqual(["@velastack/whatsapp@^0.1.0"]);
+      expect(result.packages).toEqual([spec("@velastack/whatsapp")]);
       expect(result.components).toEqual([
         "button",
         "dialog",

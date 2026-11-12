@@ -80,6 +80,13 @@ export {
   VELASTACK_POCKETBASE,
 } from "./core/constants";
 export {
+  NODE_FLOOR,
+  VERSIONS,
+  VERSION_HOLDS,
+  VERSION_TRACKS,
+  spec,
+} from "./core/versions";
+export {
   capabilityName,
   providerEnvVars,
   providerFromArgv,

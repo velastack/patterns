@@ -18,7 +18,7 @@ const CREATES_PREFIX = "../../enable/backend/creates/";
  */
 const WORKFLOW_PATHS = ["src/lib/server/workflows.ts", "src/lib/workflows"];
 
-/** `openworkflow@^0.10.0` -> `openworkflow`, `@scope/name@1` -> `@scope/name`. */
+/** `openworkflow@^0.11.0` -> `openworkflow`, `@scope/name@1` -> `@scope/name`. */
 function packageName(spec: string): string {
   const at = spec.lastIndexOf("@");
   return at > 0 ? spec.slice(0, at) : spec;

@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { Options } from "../../../core/types";
 import { generate as generateBase } from "./generate";
 import formPattern from "./index";
+import { spec } from "../../../core/versions";
 
 vi.mock("../../../parse/env.preview", () => {
   return {
@@ -395,8 +396,8 @@ describe("generate form pattern", () => {
     ]);
     expect(result.components).toEqual([]);
     expect(result.packages).toEqual([
-      "sveltekit-superforms@3.0.0",
-      "zod@^4.1.11",
+      spec("sveltekit-superforms"),
+      spec("zod"),
     ]);
 
     const page = result.creates[0].content;

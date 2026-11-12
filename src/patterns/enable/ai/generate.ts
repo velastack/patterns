@@ -15,6 +15,7 @@ import {
 } from "../../../core/providers";
 import { composeCreates, filesFromGlob } from "../../../core/util";
 import { defaultGroup } from "../../../parse/route";
+import { spec } from "../../../core/versions";
 
 /**
  * The providers in prompt order. Each one's `env` key is what the CLI asks
@@ -65,10 +66,10 @@ export const PROVIDERS: Provider[] = [
  * zod, a peer of `ai`, is installed alongside but is not listed here: it is
  * not the pattern's to uninstall.
  */
-export const PACKAGES: Package[] = ["ai@^7.0.107", "@ai-sdk/svelte@^5.0.107"];
+export const PACKAGES: Package[] = [spec("ai"), spec("@ai-sdk/svelte")];
 export const PROVIDER_PACKAGES: Record<string, Package[]> = {
-  openai: ["@ai-sdk/openai@^4.0.71"],
-  anthropic: ["@ai-sdk/anthropic@^4.0.58"],
+  openai: [spec("@ai-sdk/openai")],
+  anthropic: [spec("@ai-sdk/anthropic")],
 };
 
 /** What `resolveProvider` needs; `index.ts` spreads the rest of the metadata. */

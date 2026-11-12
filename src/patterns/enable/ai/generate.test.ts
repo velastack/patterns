@@ -11,6 +11,7 @@ import {
   STATIC_ADAPTER_MESSAGE,
   usesStaticAdapter,
 } from "./generate.runtime";
+import { spec } from "../../../core/versions";
 
 function makeOptions(
   input: Record<string, unknown>,
@@ -96,9 +97,9 @@ describe("ai generate", () => {
       "import { AI_GATEWAY_API_KEY } from '$app/env/private';",
     );
     expect(result.packages).toEqual([
-      "ai@^7.0.107",
-      "@ai-sdk/svelte@^5.0.107",
-      "zod@^4.1.11",
+      spec("ai"),
+      spec("@ai-sdk/svelte"),
+      spec("zod"),
     ]);
     expect(result.components).toEqual(["button", "textarea"]);
   });
@@ -108,7 +109,7 @@ describe("ai generate", () => {
     const ai = content(result.creates, AI_PATH);
     expect(ai).toContain("from '@ai-sdk/openai'");
     expect(ai).toContain("'OPENAI_API_KEY'");
-    expect(result.packages).toContain("@ai-sdk/openai@^4.0.71");
+    expect(result.packages).toContain(spec("@ai-sdk/openai"));
   });
 
   it("installs @ai-sdk/anthropic for Anthropic", async () => {
@@ -116,7 +117,7 @@ describe("ai generate", () => {
     const ai = content(result.creates, AI_PATH);
     expect(ai).toContain("from '@ai-sdk/anthropic'");
     expect(ai).toContain("'ANTHROPIC_API_KEY'");
-    expect(result.packages).toContain("@ai-sdk/anthropic@^4.0.58");
+    expect(result.packages).toContain(spec("@ai-sdk/anthropic"));
   });
 
   it("streams through the provider-agnostic model from the endpoint", async () => {
@@ -197,7 +198,7 @@ describe("ai generate", () => {
     const result = await generate(
       makeOptions({}, { argv: ["--provider", "anthropic"] }),
     );
-    expect(result.packages).toContain("@ai-sdk/anthropic@^4.0.58");
+    expect(result.packages).toContain(spec("@ai-sdk/anthropic"));
   });
 
   it("rejects an unknown provider", async () => {

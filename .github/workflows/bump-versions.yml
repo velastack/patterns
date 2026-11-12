@@ -1,0 +1,127 @@
+name: Bump versions
+
+# Keeps src/core/versions.json current: the one list of dependency ranges
+# every vela project starts from. Weekly, scripts/bump-versions.ts raises each
+# floor to the newest release its range admits (stable, a few days old, and
+# installable on the project's Node floor) and this opens one pull request.
+#
+# What is outside a range (a new major, a new 0.x minor) is never raised
+# here. It is kept in one issue, "Dependencies outside their range", for
+# someone or an agent to take one at a time; `holds` in versions.json is where
+# a known block is written down with its reason.
+#
+# The pull request is opened with the workflow's own token, so its checks wait
+# for one click ("Approve and run") before CI and the integration suites run.
+# After it merges, a release publishes the list, and the vela repository's
+# "Sync versions" workflow brings the templates to it.
+
+on:
+  schedule:
+    - cron: "23 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      cooldown:
+        description: Only releases at least this many days old.
+        required: false
+        default: "3"
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+# An explicit shell runs with pipefail, so a script piped into `tee` still
+# fails its step.
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: bump-versions
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Raise what the ranges admit
+        run: |
+          npm run -s bump-versions -- \
+            --cooldown "${{ inputs.cooldown || '3' }}" \
+            --report "$RUNNER_TEMP/report.json" | tee "$RUNNER_TEMP/report.md"
+          cat "$RUNNER_TEMP/report.md" >> "$GITHUB_STEP_SUMMARY"
+
+      # The tests read their expectations from versions.json, so a bump that
+      # fails here broke something real, not a hard-coded string.
+      - name: Lint and test
+        run: |
+          npx prettier --write src/core/versions.json
+          npm run lint
+          npm test
+
+      - name: Open a pull request
+        run: |
+          if git diff --quiet; then
+            echo "Nothing to raise."
+            exit 0
+          fi
+          branch="chore/bump-versions"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch"
+          git commit -am "chore(versions): raise dependency floors"
+          git push --force origin "$branch"
+          {
+            echo "The weekly bump of \`src/core/versions.json\`."
+            echo
+            cat "$RUNNER_TEMP/report.md"
+            echo
+            echo "Approve the checks to run CI and the integration suites. These ranges reach users after a patterns release and the vela repository's Sync versions pull request."
+          } > "$RUNNER_TEMP/body.md"
+          if [ -n "$(gh pr list --head "$branch" --state open --json number --jq '.[0].number // empty')" ]; then
+            gh pr edit "$branch" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh pr create --base main --head "$branch" \
+              --title "chore(versions): raise dependency floors" \
+              --body-file "$RUNNER_TEMP/body.md"
+          fi
+
+      # One standing issue, rewritten each week, closed when nothing waits.
+      - name: Track what is outside its range
+        run: |
+          title="Dependencies outside their range"
+          waiting=$(node -p "require('$RUNNER_TEMP/report.json').outside.length")
+          existing=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number // empty')
+          if [ "$waiting" = "0" ]; then
+            if [ -n "$existing" ]; then
+              gh issue close "$existing" --comment "Nothing is waiting any more."
+            fi
+            exit 0
+          fi
+          {
+            echo "Releases the ranges in \`src/core/versions.json\` do not admit: a new major, or a new 0.x minor. The weekly bump never takes these. Each needs its changelog read, the change made in versions.json, and the integration suites run against it; or an entry under \`holds\` saying why not."
+            echo
+            node -e "
+              const r = require('$RUNNER_TEMP/report.json');
+              console.log('| Package | Range | Latest | Published |');
+              console.log('|---|---|---|---|');
+              for (const o of r.outside) console.log('| \`' + o.name + '\` | \`' + o.range + '\` | ' + o.latest + ' | ' + o.published + ' |');
+            "
+          } > "$RUNNER_TEMP/issue.md"
+          if [ -n "$existing" ]; then
+            gh issue edit "$existing" --body-file "$RUNNER_TEMP/issue.md"
+          else
+            gh issue create --title "$title" --body-file "$RUNNER_TEMP/issue.md"
+          fi
