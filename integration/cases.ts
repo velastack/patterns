@@ -1,5 +1,6 @@
 import { bySlug, type Slug } from "../src/index";
 import type { Features, Pattern } from "../src/core/types";
+import { LOCALE_ACCEPTANCE } from "./locale-acceptance";
 
 /**
  * Starting points for a case:
@@ -25,6 +26,12 @@ export interface StepSpec {
    * svelte-check nor prettier would miss if it went (a composed hook, say).
    */
   expectContains?: Record<string, string[]>;
+  /**
+   * Files the harness writes into the project before the step's checks, by
+   * path relative to the project root: a server test for behaviour that
+   * needs two patterns and so belongs to neither.
+   */
+  files?: Record<string, string>;
   /** Harness action mirroring what a user does right after the command. */
   after?: "bootstrapSuperuser" | "i18nExtract";
 }
@@ -710,7 +717,9 @@ export const stackCases: CaseSpec[] = [
   ]),
   // The card route prerenders on a static site: the build writes the PNGs.
   makeCase("static-og", "static", [step("enable-og", { check: true })]),
-  makeCase("auth-then-i18n", "auth", [step("enable-i18n", { check: true })]),
+  // Sign-in pages follow the visitor's language preference and come with
+  // their Spanish, whichever of the two patterns is enabled second.
+  makeCase("auth-then-i18n", "auth", [step("enable-i18n", LOCALE_ACCEPTANCE)]),
   // With auth the demo page moves into (app) and /api/chat answers 401 to
   // anonymous requests; the server tests cover both.
   makeCase("auth-then-ai", "auth", [
@@ -718,7 +727,17 @@ export const stackCases: CaseSpec[] = [
   ]),
   makeCase("i18n-then-auth", "minimal", [
     step("enable-i18n"),
-    step("enable-auth", { check: true }),
+    step("enable-auth", LOCALE_ACCEPTANCE),
+  ]),
+  // The same with the remote-functions auth, whose pages are at the same
+  // paths: remote functions are called at one URL for every language too.
+  makeCase("auth-remote-then-i18n", "minimal", [
+    step("enable-auth-remote"),
+    step("enable-i18n", LOCALE_ACCEPTANCE),
+  ]),
+  makeCase("i18n-then-auth-remote", "minimal", [
+    step("enable-i18n"),
+    step("enable-auth-remote", LOCALE_ACCEPTANCE),
   ]),
   makeCase("remote-functions", "minimal", [
     step("enable-auth-remote"),
