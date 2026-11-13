@@ -11,8 +11,10 @@ const DOCS = "/generate/scaffold";
 export async function generate(options: Options) {
   if (options.env === "runtime" && resolveUi(options) === "shadcn") {
     // Before the collection is created: nothing is written for a v8 project.
-    const { assertTableCoreV9 } = await import("../../../runtime/table-core");
+    const { assertRegistryPagination, assertTableCoreV9 } =
+      await import("../../../runtime/table-core");
     assertTableCoreV9(options.root);
+    assertRegistryPagination(options.root);
   }
 
   const baseRes = await generateBase(options);

@@ -559,6 +559,43 @@ describe("installComponents", () => {
     ]);
   });
 
+  it("brings shadcn-svelte's pagination in for data-table-pagination", async () => {
+    const root = makeProject({ "@tanstack/table-core": "^9.2.4" }, ["select"]);
+    const executeCommand = execSpy();
+
+    const result = await installComponents(
+      { root, components: ["data-table-pagination"] },
+      { executeCommand, fetch: registryFetch() },
+    );
+
+    expect(executeCommand).toHaveBeenCalledWith(root, "execute", [
+      ...SHADCN_ADD,
+      "pagination",
+    ]);
+    expect(result.installed).toEqual(["data-table-pagination", "pagination"]);
+  });
+
+  it("refuses data-table-pagination over the footer that used to be ui/pagination", async () => {
+    const root = makeProject({ "@tanstack/table-core": "^9.2.4" }, [
+      "pagination",
+    ]);
+    writeFileSync(
+      uiPath(root, "pagination", "index.ts"),
+      'export { default as Pagination } from "./pagination.svelte";\n',
+      "utf8",
+    );
+    const executeCommand = execSpy();
+
+    await expect(
+      installComponents(
+        { root, components: ["data-table-pagination"] },
+        { executeCommand, fetch: registryFetch() },
+      ),
+    ).rejects.toThrow("vela ui add pagination --overwrite");
+    expect(executeCommand).not.toHaveBeenCalled();
+    expect(existsSync(uiPath(root, "data-table-pagination"))).toBe(false);
+  });
+
   it("refuses v9 table helpers next to a v8 @tanstack/table-core", async () => {
     const root = makeProject({ "@tanstack/table-core": "^8.21.3" }, [
       "data-table",
@@ -567,12 +604,16 @@ describe("installComponents", () => {
 
     await expect(
       installComponents(
-        { root, components: ["data-table", "pagination"], overwrite: true },
+        {
+          root,
+          components: ["data-table", "data-table-pagination"],
+          overwrite: true,
+        },
         { executeCommand, fetch: registryFetch() },
       ),
     ).rejects.toThrow("package.json pins @tanstack/table-core 8.x");
     expect(executeCommand).not.toHaveBeenCalled();
-    expect(existsSync(uiPath(root, "pagination"))).toBe(false);
+    expect(existsSync(uiPath(root, "data-table-pagination"))).toBe(false);
     expect(existsSync(uiPath(root, "data-table", "index.ts"))).toBe(false);
   });
 

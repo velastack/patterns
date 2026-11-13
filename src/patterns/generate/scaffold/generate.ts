@@ -798,7 +798,7 @@ export async function generate(options: Options) {
           "cells",
           "column-header",
           "faceted-filter",
-          "pagination",
+          "data-table-pagination",
           "row-actions",
         ] as Component[]);
 

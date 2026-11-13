@@ -188,7 +188,7 @@ lists in `components` is handed to `shadcn-svelte add`, which resolves it from t
 - `customDependencies` must list every `#lib/components/ui/<x>/index.js` a shipped component imports, and
   `customNpmPackages` every npm package no shadcn item installs for it.
 - `data-table` is a local copy of `@tanstack/svelte-table`'s v9 adapter (`createTable`, `FlexRender`,
-  `renderComponent`) over `@tanstack/table-core` alone; `column-header`, `faceted-filter` and `pagination` type
+  `renderComponent`) over `@tanstack/table-core` alone; `column-header`, `faceted-filter` and `data-table-pagination` type
   their props with table-core's per-feature interfaces (`Column_RowSorting<any, any>`, ...), since a
   `Column<typeof features, Row>` is not assignable to `Column<any, any>` in v9. The scaffold list page
   (`src/core/scaffold-list.ts`) declares its own `tableFeatures`. `installPackages` never upgrades a package

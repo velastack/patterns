@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { InvalidArgumentError } from "../core/errors";
 import {
+  assertRegistryPagination,
   assertTableCorePackage,
   assertTableCoreV9,
   declaredTableCoreMajor,
@@ -86,7 +87,7 @@ describe("assertTableCoreV9", () => {
       "package.json pins @tanstack/table-core 8.x",
     );
     expect(() => assertTableCoreV9(root)).toThrow(
-      "vela ui add data-table column-header faceted-filter pagination --overwrite",
+      "vela ui add data-table column-header faceted-filter data-table-pagination --overwrite",
     );
   });
 
@@ -115,8 +116,11 @@ describe("assertTableCorePackage", () => {
 
   it("refuses table components next to a v8 package", () => {
     expect(() =>
-      assertTableCorePackage(makeProject(v8), ["button", "pagination"]),
-    ).toThrow("pagination targets TanStack Table v9");
+      assertTableCorePackage(makeProject(v8), [
+        "button",
+        "data-table-pagination",
+      ]),
+    ).toThrow("data-table-pagination targets TanStack Table v9");
   });
 
   it("lets other components and v9 or absent packages through", () => {
@@ -125,6 +129,42 @@ describe("assertTableCorePackage", () => {
     ).not.toThrow();
     expect(() =>
       assertTableCorePackage(makeProject({}), ["data-table"]),
+    ).not.toThrow();
+  });
+});
+
+describe("assertRegistryPagination", () => {
+  const INDEX = "src/lib/components/ui/pagination/index.ts";
+
+  it("refuses the table footer older scaffolds left in ui/pagination", () => {
+    const root = makeProject(
+      {},
+      {
+        [INDEX]:
+          'export { default as Pagination } from "./pagination.svelte";\n',
+      },
+    );
+    expect(() => assertRegistryPagination(root)).toThrow(InvalidArgumentError);
+    expect(() => assertRegistryPagination(root)).toThrow(
+      "vela ui add pagination --overwrite",
+    );
+    expect(() => assertRegistryPagination(root)).toThrow(
+      "<DataTablePagination {table} />",
+    );
+  });
+
+  it("accepts shadcn-svelte's pagination, or none", () => {
+    expect(() => assertRegistryPagination(makeProject({}))).not.toThrow();
+    expect(() =>
+      assertRegistryPagination(
+        makeProject(
+          {},
+          {
+            [INDEX]:
+              'import Content from "./pagination-content.svelte";\nimport Root from "./pagination.svelte";\nexport { Root, Content, Root as Pagination };\n',
+          },
+        ),
+      ),
     ).not.toThrow();
   });
 });
