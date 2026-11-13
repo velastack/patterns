@@ -42,7 +42,7 @@ import {
   readComponentsConfig,
   resolveUiDir,
 } from "./registry";
-import { assertTableCorePackage } from "./table-core";
+import { assertRegistryPagination, assertTableCorePackage } from "./table-core";
 
 export { resolveUiDir };
 
@@ -64,7 +64,7 @@ const customDependencies: Record<string, string[]> = {
   "data-table": [],
   "column-header": ["dropdown-menu", "button"],
   "faceted-filter": ["command", "popover", "button", "separator", "badge"],
-  pagination: ["button", "select"],
+  "data-table-pagination": ["pagination", "select"],
   "row-actions": ["dropdown-menu", "button"],
   leaflet: [],
   "auth-menu": ["dropdown-menu", "button"],
@@ -81,7 +81,7 @@ const customNpmPackages: CustomNpmPackages = {
   "data-table": [TANSTACK_TABLE_CORE],
   "column-header": [TANSTACK_TABLE_CORE],
   "faceted-filter": [TANSTACK_TABLE_CORE],
-  pagination: [TANSTACK_TABLE_CORE],
+  "data-table-pagination": [TANSTACK_TABLE_CORE],
   "row-actions": [],
   leaflet: ["leaflet", "@types/leaflet"],
 };
@@ -794,6 +794,9 @@ export async function installComponents(
 
   // `installPackages` keeps an existing @tanstack/table-core whatever its range.
   assertTableCorePackage(root, [...customToInstall]);
+  if (customToInstall.has("data-table-pagination")) {
+    assertRegistryPagination(root);
+  }
 
   const installed: string[] = [];
   const customList = [...customToInstall].sort();

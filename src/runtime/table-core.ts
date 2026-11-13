@@ -12,7 +12,7 @@ export const TABLE_CORE_COMPONENTS = [
   "data-table",
   "column-header",
   "faceted-filter",
-  "pagination",
+  "data-table-pagination",
 ];
 
 const MIGRATION_GUIDE =
@@ -97,5 +97,39 @@ export function assertTableCorePackage(
   throw new InvalidArgumentError(
     `${tableComponents.join(", ")} target${tableComponents.length === 1 ? "s" : ""} TanStack Table v${TANSTACK_TABLE_CORE_MAJOR}, and package.json pins @tanstack/table-core ${major}.x.\n\n` +
       `Nothing was changed. Install ${TANSTACK_TABLE_CORE} first (npm install ${TANSTACK_TABLE_CORE}), then run this again.`,
+  );
+}
+
+/**
+ * Whether `ui/pagination` is the table footer this package shipped under that
+ * name (one `Pagination` taking a `table`), not shadcn-svelte's pagination,
+ * whose index exports the parts (`Content`, `Item`, `Link`, ...).
+ */
+function hasLegacyPagination(root: string): boolean {
+  const index = path.join(resolveUiDir(root), "pagination", "index.ts");
+  return existsSync(index) && !readFileSync(index, "utf8").includes("Content");
+}
+
+/**
+ * Refuses a project whose `ui/pagination` is still the old table footer,
+ * before anything is written.
+ *
+ * The footer is `data-table-pagination` now, built on shadcn-svelte's
+ * `pagination`, which installs to that same directory. A component that is
+ * present is never replaced, so the new footer would import parts the old
+ * file does not export; and replacing it in place would break the list pages
+ * that render the old one.
+ */
+export function assertRegistryPagination(root: string): void {
+  if (!hasLegacyPagination(root)) return;
+
+  throw new InvalidArgumentError(
+    "This project's ui/pagination is the table footer older scaffolds used. The footer is now data-table-pagination, built on shadcn-svelte's pagination, which belongs in that directory.\n\n" +
+      "Nothing was changed. To upgrade:\n" +
+      "  1. Replace ui/pagination with shadcn-svelte's:  vela ui add pagination --overwrite\n" +
+      "  2. Add the new footer:                          vela ui add data-table-pagination\n" +
+      '  3. In existing list pages, import { DataTablePagination } from "#lib/components/ui/data-table-pagination/index.js"\n' +
+      "     in place of { Pagination }, and render <DataTablePagination {table} />.\n" +
+      "Then run this again.",
   );
 }

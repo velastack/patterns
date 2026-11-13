@@ -173,7 +173,7 @@ export function listPageSnippet(
     'import * as Table from "#lib/components/ui/table/index.js";',
     'import { Checkbox } from "#lib/components/ui/checkbox/index.js";',
     'import { ColumnHeader } from "#lib/components/ui/column-header/index.js";',
-    'import { Pagination } from "#lib/components/ui/pagination/index.js";',
+    'import { DataTablePagination } from "#lib/components/ui/data-table-pagination/index.js";',
     'import { RowActions } from "#lib/components/ui/row-actions/index.js";',
     'import * as Cells from "#lib/components/ui/cells/index.js";',
     'import { Button } from "#lib/components/ui/button/index.js";',
@@ -300,7 +300,7 @@ export function listPageSnippet(
           </Table.Root>
         </div>
 
-        <Pagination {table} />
+        <DataTablePagination {table} />
       </div>
     </section>
   `;

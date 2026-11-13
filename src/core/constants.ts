@@ -10,7 +10,7 @@ export const API_URL = "http://localhost:5173";
 
 /**
  * The table helpers this repo ships (`data-table`, `column-header`,
- * `faceted-filter`, `pagination`) and the pages the scaffold generators emit
+ * `faceted-filter`, `data-table-pagination`) and the pages the scaffold generators emit
  * target TanStack Table v9, whose API and types are incompatible with v8; see
  * `assertTableCoreV9` for projects that still have the v8 helpers.
  */

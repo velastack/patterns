@@ -8,6 +8,7 @@ export const REGISTRY_UI_ITEMS = [
   "command",
   "dropdown-menu",
   "input",
+  "pagination",
   "popover",
   "select",
   "separator",
