@@ -18,10 +18,10 @@ else building on top of shadcn.
 Every primitive ships with a dozen variants. In practice our product
 leans on two or three per component:
 
-- **Buttons** — `default`, `ghost`, and `outline`. Destructive shows up
+- *Buttons* — `default`, `ghost`, and `outline`. Destructive shows up
   rarely enough to be worth the extra click.
-- **Badges** — `default` and `secondary`. Tags and counts, nothing else.
-- **Cards** — one shape, with optional footer. Multiple card styles
+- *Badges* — `default` and `secondary`. Tags and counts, nothing else.
+- *Cards* — one shape, with optional footer. Multiple card styles
   became indistinguishable from "padded div," so we stopped.
 
 If a variant hasn't appeared in a design in six months, it gets deleted.

@@ -22,7 +22,7 @@ describe("enable blog modifiers", () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it("adds mdsvex at the top level of the sveltekit() arg", async () => {
+  it("adds the mdsvex plugin ahead of sveltekit()", async () => {
     const { filePath, outcome } = modifyViteConfigMdsvex(tempDir);
 
     expect(outcome).toEqual({ status: "success", changed: true });
@@ -46,7 +46,7 @@ describe("enable blog modifiers", () => {
     expect(fs.readFileSync(filePath, "utf8")).toBe(first);
   });
 
-  it("joins the extensions and preprocessors already there", () => {
+  it("joins the extensions already there and leaves preprocessors alone", () => {
     const filePath = path.join(tempDir, "vite.config.ts");
     fs.writeFileSync(
       filePath,
@@ -65,8 +65,34 @@ describe("enable blog modifiers", () => {
     expect(modifyViteConfigMdsvex(tempDir).outcome.status).toBe("success");
     const modified = fs.readFileSync(filePath, "utf8");
     expect(modified).toContain(`extensions: ['.svelte', '.svx']`);
-    expect(modified).toContain(`preprocess: [vitePreprocess(), mdsvex()]`);
+    expect(modified).toContain(`preprocess: vitePreprocess()`);
+    expect(modified).toMatch(
+      /plugins: \[mdsvex\(\{ smart_punctuation: true \}\),\s*sveltekit\(/,
+    );
     expect(modified).toContain(`import { mdsvex } from 'mdsvex';`);
+  });
+
+  it.each([
+    ["mdsvex 0.x under preprocess", "[sveltekit({ preprocess: [mdsvex()] })]"],
+    ["a plugin list it can't edit", "withPlugins(sveltekit({}))"],
+  ])("refuses %s", (_, plugins) => {
+    const filePath = path.join(tempDir, "vite.config.ts");
+    const before = [
+      `import { defineConfig } from 'vite';`,
+      `import { mdsvex } from 'mdsvex';`,
+      `import { sveltekit } from '@sveltejs/kit/vite';`,
+      ``,
+      `export default defineConfig({ plugins: ${plugins} });`,
+      ``,
+    ].join("\n");
+    fs.writeFileSync(filePath, before);
+
+    const { outcome } = modifyViteConfigMdsvex(tempDir);
+    expect(outcome.status).toBe("failed");
+    expect((outcome as { message: string }).message).toContain(
+      "npx @mdsvex/migrate",
+    );
+    expect(fs.readFileSync(filePath, "utf8")).toBe(before);
   });
 
   it("refuses a svelte.config.js (SvelteKit 2) with the migrate message", () => {

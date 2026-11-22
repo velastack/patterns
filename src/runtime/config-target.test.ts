@@ -264,15 +264,14 @@ describe("modifiers target the resolved config", () => {
     expect(read(root, "vite.config.ts")).toBe(first);
   });
 
-  it("mdsvex extensions/preprocess/import land in the vite-inline arg", () => {
+  it("mdsvex plugin/extensions/import land in the vite config", () => {
     const root = makeRoot({ "vite.config.ts": VITE_INLINE });
     const { outcome } = modifyViteConfigMdsvex(root);
     expect(outcome.status).toBe("success");
     const vite = read(root, "vite.config.ts");
     expect(vite).toMatch(/extensions/);
     expect(vite).toContain(".svx");
-    expect(vite).toMatch(/preprocess/);
-    expect(vite).toMatch(/mdsvex\(\)/);
+    expect(vite).toMatch(/mdsvex\(.*\),\s*sveltekit\(/);
     expect(vite).toMatch(/from\s+'mdsvex'/);
   });
 

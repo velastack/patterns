@@ -3,23 +3,23 @@ import dedent from "dedent";
 import { SvelteFile } from "../../../../runtime/svelte-file";
 import type { ModifyOutcome } from "../../../../core/types";
 
-const PRISM_IMPORT = `import '../css/prism-vsc-dark-plus.css';`;
+const THEME_IMPORT = `import '../css/twinkleplop-vsc-dark-plus.css';`;
 
 const NOT_FOUND_HINT = dedent`
-  Create src/routes/+layout.svelte and import the Prism theme for
+  Create src/routes/+layout.svelte and import the twinkleplop theme for
   code block highlighting in blog posts:
 
   <script lang="ts">
     import '../app.css';
-    ${PRISM_IMPORT}
+    ${THEME_IMPORT}
   </script>
 `;
 
 const FAILURE_HINT = dedent`
-  Import the Prism theme in your root +layout.svelte for blog code
+  Import the twinkleplop theme in your root +layout.svelte for blog code
   block highlighting:
 
-  ${PRISM_IMPORT}
+  ${THEME_IMPORT}
 `;
 
 export function modifyRootLayoutSvelte(layoutPath: string): ModifyOutcome {
@@ -33,7 +33,7 @@ export function modifyRootLayoutSvelte(layoutPath: string): ModifyOutcome {
     return { status: "failed", message: FAILURE_HINT };
   }
 
-  if (script.content.includes("prism-vsc-dark-plus.css")) {
+  if (script.content.includes("twinkleplop-vsc-dark-plus.css")) {
     return { status: "success", changed: false };
   }
 
@@ -43,11 +43,11 @@ export function modifyRootLayoutSvelte(layoutPath: string): ModifyOutcome {
     );
     if (appCssMatch) {
       const indent = appCssMatch[1] ?? "";
-      const insertion = `\n${indent}${PRISM_IMPORT}`;
+      const insertion = `\n${indent}${THEME_IMPORT}`;
       const end = (appCssMatch.index ?? 0) + appCssMatch[0].length;
       return source.slice(0, end) + insertion + source.slice(end);
     }
-    return source.replace(/^/, `\n\t${PRISM_IMPORT}\n`);
+    return source.replace(/^/, `\n\t${THEME_IMPORT}\n`);
   });
 
   file.writeTo(layoutPath);
