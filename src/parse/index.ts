@@ -7,6 +7,7 @@ export {
   resolveFields,
   splitFieldDef,
   parseSelectOptions,
+  autodateFlags,
 } from "./fields";
 
 export {

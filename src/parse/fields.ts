@@ -161,6 +161,20 @@ export function parseSelectOptions(
   return result;
 }
 
+/**
+ * When an autodate field is stamped, going by its name. PocketBase's own
+ * `created` is set on create only and its `updated` on create and on every
+ * update, so a fresh record has both. `undefined` when the name says neither.
+ */
+export function autodateFlags(
+  name: string,
+): { onCreate: boolean; onUpdate: boolean } | undefined {
+  const lower = name.toLowerCase();
+  const onUpdate = lower.includes("update");
+  const onCreate = onUpdate || lower.includes("create");
+  return onCreate ? { onCreate, onUpdate } : undefined;
+}
+
 const TYPE_ALIASES: Record<string, string> = {
   string: "text",
   boolean: "bool",
@@ -316,14 +330,13 @@ function resolveField(
 
   // autodate
   if (type === "autodate") {
-    const onCreate = name.includes("create");
-    const onUpdate = name.includes("update");
-    if (!onCreate && !onUpdate) {
+    const flags = autodateFlags(name);
+    if (!flags) {
       throw new InvalidArgumentError(
         `Invalid autodate field: ${name}. Must be one of created/created_at/updated/updated_at.`,
       );
     }
-    return { type: "autodate", name, title, required, onCreate, onUpdate };
+    return { type: "autodate", name, title, required, ...flags };
   }
 
   // select with inline options; PocketBase refuses a maxSelect above the

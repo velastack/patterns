@@ -85,8 +85,18 @@ describe("generate resource pattern", () => {
             required: false,
             maxSelect: 99,
           },
+          {
+            name: "created",
+            type: "autodate",
+            onCreate: true,
+            onUpdate: false,
+          },
+          { name: "updated", type: "autodate", onCreate: true, onUpdate: true },
         ],
       },
     ]);
+    // Collection-level only: the schema never sees them.
+    expect(result.creates[0].content).not.toContain("created");
+    expect(result.creates[0].content).not.toContain("updated");
   });
 });

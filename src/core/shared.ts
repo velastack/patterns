@@ -4,6 +4,7 @@ import pluralize from "pluralize";
 import { InvalidArgumentError } from "./errors";
 import type { CollectionFieldSpec, CollectionSpec, Options } from "./types";
 import {
+  autodateFlags,
   collectionDisplayFieldMap,
   parseModel,
   resolveFields,
@@ -342,6 +343,11 @@ export function fieldsFromCollection(
     if (raw.name === "id" || raw.system) {
       continue;
     }
+    // PocketBase stamps these itself: they are no more a form input, a schema
+    // key or a fixture value than `id` is.
+    if (raw.type === "autodate" && isTimestampName(raw.name)) {
+      continue;
+    }
 
     const type = normalizeType(raw.type);
     const required = Boolean(raw.required);
@@ -411,8 +417,8 @@ export function fieldsFromCollection(
         title,
         type: "autodate",
         required,
-        onCreate: raw.onCreate ?? raw.name.includes("create"),
-        onUpdate: raw.onUpdate ?? raw.name.includes("update"),
+        onCreate: raw.onCreate ?? autodateFlags(raw.name)?.onCreate ?? false,
+        onUpdate: raw.onUpdate ?? autodateFlags(raw.name)?.onUpdate ?? false,
       });
       continue;
     }
@@ -532,11 +538,35 @@ export function toCollectionFieldSpec(field: Field): CollectionFieldSpec {
   return base;
 }
 
+/**
+ * The two autodate fields PocketBase's own admin UI adds to every new
+ * collection. Without them `sort: "-created"` fails at runtime.
+ */
+const TIMESTAMP_FIELDS: CollectionFieldSpec[] = [
+  { name: "created", type: "autodate", onCreate: true, onUpdate: false },
+  { name: "updated", type: "autodate", onCreate: true, onUpdate: true },
+];
+
+function isTimestampName(name: string): boolean {
+  return TIMESTAMP_FIELDS.some((field) => field.name === name);
+}
+
+/**
+ * The spec of a new collection. `created` and `updated` are added here and
+ * nowhere else: they belong to the collection, not to the fields a generator
+ * renders, so no schema, form, page or fixture sees them. A field the user
+ * named `created` or `updated` is kept as they declared it.
+ */
 export function collectionSpecFromModelFields(
   model: Pick<Model, "tableName">,
   fields: Field[],
   auth?: OwnershipResult,
 ): CollectionSpec {
+  const declared = new Set(fields.map((field) => field.name));
+  const timestamps = TIMESTAMP_FIELDS.filter(
+    (field) => !declared.has(field.name),
+  );
+
   const rules = auth
     ? {
         listRule: auth.rule,
@@ -551,6 +581,6 @@ export function collectionSpecFromModelFields(
     name: model.tableName,
     type: "base",
     ...rules,
-    fields: fields.map(toCollectionFieldSpec),
+    fields: [...fields.map(toCollectionFieldSpec), ...timestamps],
   };
 }

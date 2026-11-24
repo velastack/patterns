@@ -255,4 +255,49 @@ describe("generate scaffold-remote pattern", () => {
       "redirect(303, `/${params.team_id}/projects/${project.id}`);",
     );
   });
+  it("adds created and updated to the collection and to nothing else", async () => {
+    const result = await generateBase(
+      makeOptions({ env: "preview", argv: ["note", "title:text!"] }),
+    );
+
+    expect(result.collections[0].fields.slice(-2)).toEqual([
+      { name: "created", type: "autodate", onCreate: true, onUpdate: false },
+      { name: "updated", type: "autodate", onCreate: true, onUpdate: true },
+    ]);
+    for (const file of result.creates) {
+      expect(file.content, file.path).not.toMatch(/\b(created|updated)\b/);
+    }
+  });
+
+  it("leaves a live collection's created and updated out of every page", async () => {
+    const result = await generateBase(
+      makeOptions({
+        env: "runtime",
+        argv: ["note"],
+        getCollections: (async () => [
+          {
+            id: "notes_id",
+            name: "notes",
+            type: "base",
+            fields: [
+              { name: "id", type: "text", system: true },
+              { name: "title", type: "text", required: true },
+              { name: "created", type: "autodate", onCreate: true },
+              {
+                name: "updated",
+                type: "autodate",
+                onCreate: true,
+                onUpdate: true,
+              },
+            ],
+          },
+        ]) as never,
+      }),
+    );
+
+    expect(result.collections).toEqual([]);
+    for (const file of result.creates) {
+      expect(file.content, file.path).not.toMatch(/\b(created|updated)\b/);
+    }
+  });
 });

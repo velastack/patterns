@@ -739,9 +739,20 @@ describe("resolveFields", () => {
       name: "updatedAt",
       title: "Updated At",
       required: false,
-      onCreate: false,
+      onCreate: true,
       onUpdate: true,
     });
+  });
+
+  it("stamps an `updated` autodate on create as well, as PocketBase's own does", () => {
+    const { fields } = resolveFields(
+      ["created:autodate", "updated:autodate"],
+      parent,
+      [],
+      noAuth,
+    );
+    expect(fields[0]).toMatchObject({ onCreate: true, onUpdate: false });
+    expect(fields[1]).toMatchObject({ onCreate: true, onUpdate: true });
   });
 
   it("should throw for invalid autodate field name", () => {
