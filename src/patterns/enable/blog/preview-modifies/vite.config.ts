@@ -8,6 +8,8 @@ import { mdsvex } from "mdsvex";
 export default defineConfig({
   plugins: [
     tailwindcss(),
+    // [!code highlight:1]
+    mdsvex({ smart_punctuation: true }),
     sveltekit({
       compilerOptions: {
         runes: ({ filename }) =>
@@ -21,9 +23,8 @@ export default defineConfig({
       ...(process.env.VELA_ORIGIN
         ? { paths: { origin: process.env.VELA_ORIGIN } }
         : {}),
-      // [!code highlight:2]
+      // [!code highlight:1]
       extensions: [".svelte", ".svx"],
-      preprocess: [mdsvex()],
     }),
   ],
 });

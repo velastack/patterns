@@ -7,6 +7,7 @@ import { mdsvex } from 'mdsvex';
 export default defineConfig({
 	plugins: [
 		tailwindcss(),
+		mdsvex({ smart_punctuation: true }),
 		sveltekit({
 			compilerOptions: {
 				runes: ({ filename }) =>
@@ -18,8 +19,7 @@ export default defineConfig({
 			// baked in at build time. It is left unset for a deploy that serves more
 			// than one host, where each request's own origin is used instead.
 			...(process.env.VELA_ORIGIN ? { paths: { origin: process.env.VELA_ORIGIN } } : {}),
-			extensions: ['.svelte', '.svx'],
-			preprocess: [mdsvex()]
+			extensions: ['.svelte', '.svx']
 		})
 	]
 });

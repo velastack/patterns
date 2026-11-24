@@ -28,7 +28,7 @@
     "croner": "^11.0.0",
     "formsnap": "^2.1.0",
     "marked": "^18.2.0",
-    "mdsvex": "^0.12.8",
+    "mdsvex": "^1.0.1",
     "mode-watcher": "^1.1.0",
     "openworkflow": "^0.11.0",
     "openworkflow-pocketbase": "^0.2.2",

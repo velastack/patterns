@@ -20,12 +20,12 @@ and theming story all changed in ways that made us want to adopt it.
 
 Three things mattered:
 
-1. **CSS-first config.** `tailwind.config.js` is gone. Tokens live in
+1. *CSS-first config.* `tailwind.config.js` is gone. Tokens live in
    `app.css` as real CSS custom properties, which means they also work
    outside of Tailwind — SVG fills, inline styles, wherever.
-2. **OKLCH colors.** Designers can reason about lightness and chroma
+2. *OKLCH colors.* Designers can reason about lightness and chroma
    independently. Contrast checks become much easier to eyeball.
-3. **Speed.** The new engine compiles fast enough that we stopped
+3. *Speed.* The new engine compiles fast enough that we stopped
    thinking about purge lists. Dev feedback is effectively instant.
 
 ## The config we kept

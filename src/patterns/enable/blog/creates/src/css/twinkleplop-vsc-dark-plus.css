@@ -1,0 +1,119 @@
+/* VS Code Dark+ for twinkleplop, the highlighter mdsvex renders code with. */
+pre.twinkleplop {
+	padding: 1em;
+	margin: 0.5em 0;
+	overflow: auto;
+	color: #d4d4d4;
+	background: oklch(0.21 0.034 264.665);
+	font-family: Menlo, Monaco, Consolas, 'Andale Mono', 'Ubuntu Mono', 'Courier New', monospace;
+	font-size: 13px;
+	line-height: 1.5;
+	direction: ltr;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	tab-size: 4;
+	hyphens: none;
+}
+
+pre.twinkleplop *::selection,
+pre.twinkleplop::selection {
+	background: #264f78;
+}
+
+/*********************************************************
+* Tokens
+*/
+.twinkleplop .comment,
+.twinkleplop .doctype,
+.twinkleplop .inserted,
+.twinkleplop .inserted_marker {
+	color: #6a9955;
+}
+
+.twinkleplop .keyword,
+.twinkleplop .boolean,
+.twinkleplop .null,
+.twinkleplop .tag_name,
+.twinkleplop .tag,
+.twinkleplop .entity,
+.twinkleplop .heading,
+.twinkleplop .heading_marker,
+.twinkleplop .svelte_block {
+	color: #569cd6;
+}
+
+.twinkleplop .identifier,
+.twinkleplop .variable,
+.twinkleplop .parameter,
+.twinkleplop .property,
+.twinkleplop .constant,
+.twinkleplop .attribute,
+.twinkleplop .attr_name,
+.twinkleplop .css_variable,
+.twinkleplop .svelte_directive {
+	color: #9cdcfe;
+}
+
+.twinkleplop .function,
+.twinkleplop .builtin,
+.twinkleplop .decorator {
+	color: #dcdcaa;
+}
+
+.twinkleplop .type,
+.twinkleplop .class_name,
+.twinkleplop .namespace,
+.twinkleplop .variant {
+	color: #4ec9b0;
+}
+
+.twinkleplop .string,
+.twinkleplop .template,
+.twinkleplop .plain_scalar,
+.twinkleplop .code,
+.twinkleplop .link_text,
+.twinkleplop .url,
+.twinkleplop .url_link,
+.twinkleplop .url_title,
+.twinkleplop .autolink,
+.twinkleplop .deleted,
+.twinkleplop .deleted_marker {
+	color: #ce9178;
+}
+
+.twinkleplop .number,
+.twinkleplop .unit,
+.twinkleplop .datetime {
+	color: #b5cea8;
+}
+
+.twinkleplop .regex {
+	color: #d16969;
+}
+
+.twinkleplop .selector,
+.twinkleplop .selector_class,
+.twinkleplop .selector_id,
+.twinkleplop .selector_pseudo,
+.twinkleplop .escape,
+.twinkleplop .string_escape {
+	color: #d7ba7d;
+}
+
+.twinkleplop .directive {
+	color: #c586c0;
+}
+
+.twinkleplop .bold {
+	font-weight: bold;
+}
+
+.twinkleplop .italic {
+	font-style: italic;
+}
+
+.twinkleplop .strike {
+	text-decoration: line-through;
+}

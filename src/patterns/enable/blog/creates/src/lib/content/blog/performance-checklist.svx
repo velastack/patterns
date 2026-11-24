@@ -18,18 +18,18 @@ on. The list below is what "the obvious thing" usually is.
 
 ## The checklist
 
-1. **Measure with real numbers.** Lighthouse and the Network tab answer
+1. *Measure with real numbers.* Lighthouse and the Network tab answer
    most questions. If you're not measuring, you're guessing.
-2. **Serve fewer bytes.** Compress images (AVIF or WebP), remove unused
+2. *Serve fewer bytes.* Compress images (AVIF or WebP), remove unused
    fonts, and audit any dependency over 50KB gzipped.
-3. **Defer the non-critical.** Scripts that aren't needed above the
+3. *Defer the non-critical.* Scripts that aren't needed above the
    fold can wait. `loading="lazy"` on images, `defer` on scripts, and
    dynamic `import()` for interactive widgets.
-4. **Cache at the edge.** If the same HTML could serve a thousand users,
+4. *Cache at the edge.* If the same HTML could serve a thousand users,
    it should. Use your adapter's cache headers; don't hand-roll it.
-5. **Avoid waterfalls.** If page load depends on three sequential fetches,
+5. *Avoid waterfalls.* If page load depends on three sequential fetches,
    collapse them into one endpoint or preload the critical ones.
-6. **Trust the framework.** SvelteKit's `load` functions run in parallel
+6. *Trust the framework.* SvelteKit's `load` functions run in parallel
    by default and the compiler already strips unused code. Most hand-rolled
    cleverness just gets in the way.
 
