@@ -17,6 +17,12 @@ export async function generate(options: Options) {
     return formatResult(mergeResults([baseRes, previewRes]), options);
   }
 
+  // Before the runtime step creates collections: a component that cannot be
+  // installed should leave nothing behind.
+  const { assertComponentsAvailable } =
+    await import("../../../runtime/write-result");
+  await assertComponentsAvailable(options.root, baseRes.components, options);
+
   const { generate: generateRuntime } = await import("./generate.runtime");
   const runtimeRes = await generateRuntime(options);
   const { writeResult } = await import("../../../runtime/write-result");

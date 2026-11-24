@@ -41,6 +41,7 @@ import {
 import {
   fetchRegistryIndex,
   readComponentsConfig,
+  registryIndexUrl,
   resolveUiDir,
 } from "./registry";
 import { assertRegistryPagination, assertTableCorePackage } from "./table-core";
@@ -711,6 +712,16 @@ export function installedComponents(root: string): Component[] {
 const BARE_ITEM_NAME = /^[a-z0-9][a-z0-9-]*$/i;
 
 /**
+ * How long an unreachable registry is left alone. One command checks the
+ * names up to three times (a pattern's preflight, `writeResult`,
+ * `installComponents`); offline, only the first should wait out the timeout
+ * and say so. Short, so a long-lived caller asks again once it may be online.
+ */
+const REGISTRY_RETRY_MS = 30_000;
+
+const registryUnavailableAt = new WeakMap<typeof fetch, Map<string, number>>();
+
+/**
  * A name the style's registry does not list would otherwise reach
  * `shadcn-svelte add`, which fails after a fetch with a message that never
  * mentions the style. Skipped when the registry cannot be read: shadcn will
@@ -726,6 +737,13 @@ async function assertKnownRegistryItems(
   if (bare.length === 0) {
     return;
   }
+  const config = readComponentsConfig(root);
+  const url = registryIndexUrl(config.registry, config.style);
+  const fetchImpl = runtime?.fetch ?? globalThis.fetch;
+  const failedAt = registryUnavailableAt.get(fetchImpl)?.get(url);
+  if (failedAt !== undefined && Date.now() - failedAt < REGISTRY_RETRY_MS) {
+    return;
+  }
   let known: Set<string>;
   try {
     const index = await fetchRegistryIndex(root, { runtime });
@@ -733,29 +751,42 @@ async function assertKnownRegistryItems(
   } catch (error) {
     if (!(error instanceof RegistryUnavailableError)) throw error;
     logger.info(`${error.message}; leaving component names to shadcn-svelte`);
+    let failures = registryUnavailableAt.get(fetchImpl);
+    if (!failures) {
+      failures = new Map();
+      registryUnavailableAt.set(fetchImpl, failures);
+    }
+    failures.set(url, Date.now());
     return;
   }
   const unknown = bare.filter((component) => !known.has(component));
   if (unknown.length === 0) {
     return;
   }
-  const { style } = readComponentsConfig(root);
   const names = unknown.map((component) => `"${component}"`).join(", ");
   throw new InvalidArgumentError(
-    `Unknown component${unknown.length > 1 ? "s" : ""} ${names} for style ${style}. Run \`vela ui list\` to see what is available.`,
+    `Unknown component${unknown.length > 1 ? "s" : ""} ${names} for style ${config.style}. Run \`vela ui list\` to see what is available.`,
   );
 }
 
-export async function installComponents(
-  options: InstallComponentsOptions,
-  runtime?: WriteResultRuntime,
-): Promise<InstallComponentsResult> {
-  const { root, components, overwrite = false } = options;
-  const logger = getLogger(options);
+/** What one `installComponents` call will do, worked out without touching the project. */
+interface ComponentPlan {
+  /** Requested but already in the project, and so left alone. */
+  skipped: Component[];
+  /** Copied from this package: the requested ones and the bundled components they build on, sorted. */
+  custom: Component[];
+  /** Handed to `shadcn-svelte add`: the requested ones and what the bundled components import, sorted. */
+  registry: Component[];
+}
 
+function planComponentInstall(
+  root: string,
+  components: Component[],
+  overwrite: boolean,
+): ComponentPlan {
   const requested = [...new Set(components)];
   if (requested.length === 0) {
-    return { installed: [], skipped: [], packages: [] };
+    return { skipped: [], custom: [], registry: [] };
   }
 
   // `shadcn-svelte add` exits 1 without a `components.json`, after the custom
@@ -768,7 +799,6 @@ export async function installComponents(
   }
 
   const componentsDir = resolveUiDir(root);
-  mkdirSync(componentsDir, { recursive: true });
   const isPresent = (component: string) =>
     existsSync(path.join(componentsDir, component));
 
@@ -776,12 +806,6 @@ export async function installComponents(
   const toInstall = requested.filter(
     (component) => !skipped.includes(component),
   );
-  if (skipped.length > 0) {
-    logger.info(`Already present: ${skipped.join(", ")}`);
-  }
-  if (toInstall.length === 0) {
-    return { installed: [], skipped, packages: [] };
-  }
 
   const customToInstall = new Set(toInstall.filter(isCustomComponent));
   const publicToInstall = new Set(
@@ -804,21 +828,109 @@ export async function installComponents(
     }
   }
 
+  return {
+    skipped,
+    custom: [...customToInstall].sort(),
+    registry: [...publicToInstall].sort(),
+  };
+}
+
+/**
+ * Every reason an install would be refused, checked before it writes
+ * anything: copying a bundled component, installing its packages and
+ * spawning `shadcn-svelte add` all come after.
+ */
+async function assertPlanInstallable(
+  root: string,
+  plan: ComponentPlan,
+  runtime: WriteResultRuntime | undefined,
+  logger: Logger,
+): Promise<void> {
   // `installPackages` keeps an existing @tanstack/table-core whatever its range.
-  assertTableCorePackage(root, [...customToInstall]);
-  if (customToInstall.has("data-table-pagination")) {
+  assertTableCorePackage(root, plan.custom);
+  if (plan.custom.includes("data-table-pagination")) {
     assertRegistryPagination(root);
   }
+  await assertKnownRegistryItems(root, plan.registry, runtime, logger);
+}
+
+export interface AssertComponentsAvailableOptions {
+  /** As for `installComponents`: also check the named components that are already present. */
+  overwrite?: boolean;
+  logger?: Logger;
+}
+
+/**
+ * The preflight for `installComponents`: throws what it would throw for
+ * these components, and changes nothing. `MissingShadcnError` without a
+ * `components.json`, `InvalidArgumentError` for a name the style's registry
+ * does not list (or a project whose table helpers are a major behind).
+ * Components already in the project are not checked, as they are not
+ * installed.
+ *
+ * For a caller with side effects of its own ahead of the install. A pattern
+ * creates its collections first, and PocketBase writes each one's migration
+ * file as it does, so a component the registry has dropped used to leave a
+ * migration (and the bundled components, and their packages) behind a run
+ * that then failed. `writeResult` and `installComponents` run the same
+ * checks before their first write.
+ *
+ * A registry that cannot be read (offline, a timeout, an HTTP error) does not
+ * fail the preflight: the names go unchecked, a line is logged, and
+ * `shadcn-svelte add` reports the problem if it is still there at install
+ * time, as it did before there was a preflight. The failure is remembered for
+ * 30 seconds so the later checks of the same run neither wait nor repeat it.
+ */
+export async function assertComponentsAvailable(
+  root: string,
+  components: Component[],
+  options: AssertComponentsAvailableOptions = {},
+  runtime?: WriteResultRuntime,
+): Promise<void> {
+  const plan = planComponentInstall(
+    root,
+    components,
+    options.overwrite ?? false,
+  );
+  await assertPlanInstallable(root, plan, runtime, getLogger(options));
+}
+
+export async function installComponents(
+  options: InstallComponentsOptions,
+  runtime?: WriteResultRuntime,
+): Promise<InstallComponentsResult> {
+  const { root, components, overwrite = false } = options;
+  const logger = getLogger(options);
+  const plan = planComponentInstall(root, components, overwrite);
+  await assertPlanInstallable(root, plan, runtime, logger);
+  return applyComponentPlan(root, plan, runtime, logger);
+}
+
+/** Carries out a plan `assertPlanInstallable` has passed. */
+async function applyComponentPlan(
+  root: string,
+  plan: ComponentPlan,
+  runtime: WriteResultRuntime | undefined,
+  logger: Logger,
+): Promise<InstallComponentsResult> {
+  const { skipped, custom: customList, registry: publicList } = plan;
+  if (skipped.length > 0) {
+    logger.info(`Already present: ${skipped.join(", ")}`);
+  }
+  if (customList.length === 0 && publicList.length === 0) {
+    return { installed: [], skipped, packages: [] };
+  }
+
+  const componentsDir = resolveUiDir(root);
+  mkdirSync(componentsDir, { recursive: true });
 
   const installed: string[] = [];
-  const customList = [...customToInstall].sort();
   if (customList.length > 0) {
     logger.info(`Installing custom components: ${customList.join(", ")}`);
   }
   for (const component of customList) {
     copyCustomComponent(component, componentsDir);
     installed.push(component);
-    publicToInstall.delete(component);
   }
 
   const packages = await installPackages(
@@ -833,12 +945,10 @@ export async function installComponents(
   // over a copy the project already has, and hooks and utils beside the
   // components. All of it arrives in the registry's style.
   const shadcnDirs = [path.join(root, "src", "lib"), componentsDir];
-  const publicList = [...publicToInstall].sort();
   const beforeShadcn =
     publicList.length > 0 ? fileDigests(shadcnDirs) : undefined;
 
   if (publicList.length > 0) {
-    await assertKnownRegistryItems(root, publicList, runtime, logger);
     logger.info(
       `Installing shadcn-svelte components: ${publicList.join(", ")}`,
     );
@@ -918,6 +1028,15 @@ export async function writeResult(
     collectionDrops: [],
   };
 
+  // Before anything is dropped, written or installed: a component that
+  // cannot be installed refuses the whole result.
+  const componentPlan = planComponentInstall(
+    options.root,
+    result.components,
+    false,
+  );
+  await assertPlanInstallable(options.root, componentPlan, runtime, logger);
+
   let dropMigrationCreates: Result["creates"] = [];
   if (result.collectionDrops.length > 0) {
     const { dropCollections } = await import("./collections");
@@ -953,9 +1072,11 @@ export async function writeResult(
     logger,
   );
 
-  const componentInstalls = await installComponents(
-    { root: options.root, components: result.components, logger },
+  const componentInstalls = await applyComponentPlan(
+    options.root,
+    componentPlan,
     runtime,
+    logger,
   );
 
   const packageUninstalls = await uninstallPackages(

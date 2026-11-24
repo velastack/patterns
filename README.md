@@ -194,6 +194,11 @@ lists in `components` is handed to `shadcn-svelte add`, which resolves it from t
   `src/ui/components/<name>`, declare its dependencies, and delete its line from the list.
 - `customDependencies` must list every `#lib/components/ui/<x>/index.js` a shipped component imports, and
   `customNpmPackages` every npm package no shadcn item installs for it.
+- `writeResult` and `installComponents` refuse a component the style's registry does not list before they write
+  anything. A pattern with side effects ahead of `writeResult` (creating collections makes PocketBase write
+  migration files) calls `assertComponentsAvailable(root, components)` first, and so can any other caller: it
+  throws what the install would and changes nothing. When the registry cannot be read, the names go unchecked
+  and the install reports the problem itself.
 - `data-table` is a local copy of `@tanstack/svelte-table`'s v9 adapter (`createTable`, `FlexRender`,
   `renderComponent`) over `@tanstack/table-core` alone; `column-header`, `faceted-filter` and `data-table-pagination` type
   their props with table-core's per-feature interfaces (`Column_RowSorting<any, any>`, ...), since a

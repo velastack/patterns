@@ -20,6 +20,7 @@ import {
   ensureSvelteKitSync,
   executeCommand,
   formatPaths,
+  assertComponentsAvailable,
   installComponents,
   installedComponents,
   isExactSpec,
@@ -935,6 +936,38 @@ describe("installComponents", () => {
     expect(executeCommand).not.toHaveBeenCalled();
   });
 
+  it("checks the registry before it copies a bundled component or installs its packages", async () => {
+    const root = makeProject();
+    const executeCommand = execSpy();
+
+    // `file-form` is bundled and brings `input`; `nope` is in no registry.
+    await expect(
+      installComponents(
+        { root, components: ["file-form", "nope"] },
+        { executeCommand, fetch: registryFetch() },
+      ),
+    ).rejects.toThrow(/Unknown component "nope"/);
+
+    expect(executeCommand).not.toHaveBeenCalled();
+    expect(existsSync(path.join(root, "src"))).toBe(false);
+  });
+
+  it("checks the registry items a bundled component builds on, too", async () => {
+    const root = makeProject();
+    const executeCommand = execSpy();
+
+    // The registry has dropped `input`, which `file-form` imports.
+    await expect(
+      installComponents(
+        { root, components: ["file-form"] },
+        { executeCommand, fetch: registryFetch(["button"]) },
+      ),
+    ).rejects.toThrow(/Unknown component "input"/);
+
+    expect(executeCommand).not.toHaveBeenCalled();
+    expect(existsSync(path.join(root, "src"))).toBe(false);
+  });
+
   it("asks the configured style's index and leaves URLs and scoped items to shadcn", async () => {
     const root = makeProject();
     writeFileSync(
@@ -1390,5 +1423,160 @@ describe("restoreDowngradedDependencies", () => {
       { devDependencies: { a: "^3.0.0-next.1" } },
     );
     expect(restored).toEqual(["a@3.0.0"]);
+  });
+});
+
+describe("assertComponentsAvailable", () => {
+  function makeProject(present: string[] = []) {
+    const root = makeTempRoot();
+    writeFileSync(
+      path.join(root, "package.json"),
+      JSON.stringify({ name: "tmp", dependencies: {} }),
+      "utf8",
+    );
+    writeFileSync(
+      path.join(root, "components.json"),
+      JSON.stringify({ style: "vega" }),
+      "utf8",
+    );
+    for (const component of present) {
+      mkdirSync(path.join(root, "src", "lib", "components", "ui", component), {
+        recursive: true,
+      });
+    }
+    return root;
+  }
+
+  it("passes components the registry lists or this package ships, and writes nothing", async () => {
+    const root = makeProject();
+
+    await assertComponentsAvailable(
+      root,
+      ["button", "form", "file-form", "auth-menu"],
+      {},
+      { fetch: registryFetch() },
+    );
+
+    expect(existsSync(path.join(root, "src"))).toBe(false);
+  });
+
+  it("throws what the install would for a name the registry does not list", async () => {
+    const root = makeProject();
+
+    await expect(
+      assertComponentsAvailable(
+        root,
+        ["button", "gone"],
+        {},
+        { fetch: registryFetch() },
+      ),
+    ).rejects.toThrow(
+      new InvalidArgumentError(
+        'Unknown component "gone" for style vega. Run `vela ui list` to see what is available.',
+      ),
+    );
+  });
+
+  it("does not check a component the project already has", async () => {
+    const root = makeProject(["gone"]);
+    const calls: string[] = [];
+
+    await assertComponentsAvailable(
+      root,
+      ["gone"],
+      {},
+      { fetch: registryFetch(undefined, calls) },
+    );
+
+    expect(calls).toEqual([]);
+  });
+
+  it("refuses a project without components.json", async () => {
+    const root = makeProject();
+    rmSync(path.join(root, "components.json"));
+
+    await expect(
+      assertComponentsAvailable(root, ["button"]),
+    ).rejects.toBeInstanceOf(MissingShadcnError);
+    await expect(assertComponentsAvailable(root, [])).resolves.toBeUndefined();
+  });
+
+  it("lets an unreachable registry through, asking and saying so once", async () => {
+    const root = makeProject();
+    const fetch = vi.fn(offlineFetch());
+    const info = vi.fn();
+    const executeCommand = vi.fn<ExecuteCommand>(async () => {});
+    const logger = { info } as unknown as Options["logger"];
+
+    await assertComponentsAvailable(root, ["button"], { logger }, { fetch });
+    // The install's own check, in the same run.
+    await installComponents(
+      { root, components: ["button"], logger },
+      { executeCommand, fetch },
+    );
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(
+      info.mock.calls.filter(([line]) =>
+        String(line).includes("leaving component names to shadcn-svelte"),
+      ),
+    ).toHaveLength(1);
+    expect(executeCommand).toHaveBeenCalledWith(root, "execute", [
+      "shadcn-svelte",
+      "add",
+      "--yes",
+      "--overwrite",
+      "--no-deps-install",
+      "button",
+    ]);
+  });
+});
+
+describe("writeResult with a component that cannot be installed", () => {
+  it("refuses the result before it writes, installs or deletes anything", async () => {
+    const root = makeTempRoot();
+    const packageJson = JSON.stringify({ name: "tmp", dependencies: {} });
+    writeFileSync(path.join(root, "package.json"), packageJson, "utf8");
+    writeFileSync(path.join(root, "components.json"), "{}", "utf8");
+    writeFileSync(path.join(root, "old.ts"), "old\n", "utf8");
+    const executeCommand = vi.fn<ExecuteCommand>(async () => {});
+
+    await expect(
+      writeResult(
+        {
+          ...emptyResult(),
+          creates: [
+            {
+              path: "src/new.ts",
+              language: "ts",
+              content: "export const a = 1;\n",
+              status: "success",
+            },
+          ],
+          modifies: [
+            {
+              path: "package.json",
+              language: "json",
+              content: '{ "name": "changed" }\n',
+              status: "success",
+            },
+          ],
+          deletes: [
+            { path: "old.ts", language: "ts", content: "", status: "success" },
+          ],
+          packages: ["zod"],
+          components: ["file-form", "gone"],
+        },
+        makeOptions(root),
+        { executeCommand, fetch: registryFetch() },
+      ),
+    ).rejects.toThrow(/Unknown component "gone"/);
+
+    expect(executeCommand).not.toHaveBeenCalled();
+    expect(readFileSync(path.join(root, "package.json"), "utf8")).toBe(
+      packageJson,
+    );
+    expect(existsSync(path.join(root, "src"))).toBe(false);
+    expect(existsSync(path.join(root, "old.ts"))).toBe(true);
   });
 });

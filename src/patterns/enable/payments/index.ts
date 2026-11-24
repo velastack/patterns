@@ -21,6 +21,12 @@ export async function generate(options: Options) {
   const baseRes = await generateBase(options, {
     unitTests: hasVitest(options.root),
   });
+  // Before the runtime step creates collections: a component that cannot be
+  // installed should leave nothing behind.
+  const { assertComponentsAvailable } =
+    await import("../../../runtime/write-result");
+  await assertComponentsAvailable(options.root, baseRes.components, options);
+
   const runtimeRes = await generateRuntime(options);
   const { writeResult } = await import("../../../runtime/write-result");
   return writeResult(
