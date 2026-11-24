@@ -70,7 +70,9 @@ export async function generate(_options: Options) {
     creates,
     modifies: [],
     deletes: [],
-    components: ["alert-dialog", "button", "badge"],
+    // `form`: the new-key page is a superforms page. Auth's own pages bring
+    // the component in, but `enable auth --remote` has none.
+    components: ["alert-dialog", "button", "badge", "form"],
     packages: [spec("@types/node")],
     collections: [apiKeysCollection],
     collectionPatches: [],

@@ -834,6 +834,67 @@ describe("installComponents", () => {
     });
   });
 
+  it("copies form from this package, with the registry items and packages it builds on", async () => {
+    const root = makeProject();
+    const executeCommand = execSpy();
+
+    const result = await installComponents(
+      { root, components: ["form"] },
+      // The registry no longer lists `form`; the default index here does not either.
+      { executeCommand, fetch: registryFetch() },
+    );
+
+    const formDir = path.join(root, "src", "lib", "components", "ui", "form");
+    const index = readFileSync(path.join(formDir, "index.ts"), "utf8");
+    for (const member of [
+      "Field",
+      "Control",
+      "Label",
+      "Button",
+      "FieldErrors",
+      "Description",
+      "Fieldset",
+      "Legend",
+      "ElementField",
+    ]) {
+      expect(index).toMatch(new RegExp(`\\b${member},`));
+    }
+    expect(existsSync(path.join(formDir, "form-field.svelte"))).toBe(true);
+    expect(executeCommand).toHaveBeenNthCalledWith(1, root, "install", [
+      spec("formsnap"),
+      spec("sveltekit-superforms"),
+    ]);
+    expect(executeCommand).toHaveBeenNthCalledWith(2, root, "execute", [
+      ...SHADCN_ADD,
+      "button",
+      "label",
+    ]);
+    expect(result).toEqual({
+      installed: ["button", "form", "label"],
+      skipped: [],
+      packages: [spec("formsnap"), spec("sveltekit-superforms")],
+    });
+  });
+
+  it("leaves a form the project took from the registry alone", async () => {
+    const root = makeProject();
+    const formDir = path.join(root, "src", "lib", "components", "ui", "form");
+    mkdirSync(formDir, { recursive: true });
+    writeFileSync(path.join(formDir, "index.ts"), "// theirs\n", "utf8");
+    const executeCommand = execSpy();
+
+    const result = await installComponents(
+      { root, components: ["form"] },
+      { executeCommand, fetch: registryFetch() },
+    );
+
+    expect(readFileSync(path.join(formDir, "index.ts"), "utf8")).toBe(
+      "// theirs\n",
+    );
+    expect(executeCommand).not.toHaveBeenCalled();
+    expect(result).toEqual({ installed: [], skipped: ["form"], packages: [] });
+  });
+
   it("no longer pulls badge in for multiselect", async () => {
     const root = makeProject({ formsnap: "^2.0.1" });
     const executeCommand = execSpy();

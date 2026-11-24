@@ -34,6 +34,7 @@ import { getLogger, NOOP_LOGGER, type Logger } from "../core/logger";
 import { formatSource } from "../core/format-result";
 import {
   FORMSNAP,
+  SUPERFORMS,
   SUPERFORMS_VERSION,
   TANSTACK_TABLE_CORE,
 } from "../core/constants";
@@ -55,9 +56,15 @@ type CustomNpmPackages = Record<string, string[]>;
  * (`#lib/components/ui/<x>/index.js`) must appear in `customDependencies`, and
  * every npm package that no shadcn item installs for it must appear in
  * `customNpmPackages`.
+ *
+ * `form` is shadcn-svelte's own formsnap wrapper as it last shipped it: the
+ * registry dropped the item from every style on 2026-11-24
+ * (huntabyte/shadcn-svelte#2989), and the superforms pages the patterns
+ * generate are built on it.
  */
-const customDependencies: Record<string, string[]> = {
+export const customDependencies: Record<string, string[]> = {
   "file-form": ["input"],
+  form: ["label", "button"],
   multiselect: ["command", "popover", "button"],
   geopoint: ["button", "leaflet"],
   cells: ["badge"],
@@ -72,6 +79,9 @@ const customDependencies: Record<string, string[]> = {
 
 const customNpmPackages: CustomNpmPackages = {
   "file-form": [FORMSNAP],
+  // What the registry item used to record. Superforms is named because the
+  // field components import its path types.
+  form: [FORMSNAP, SUPERFORMS],
   multiselect: [FORMSNAP],
   geopoint: [],
   cells: [],
@@ -456,8 +466,10 @@ function compareFloors(a: number[], b: number[]): number {
 /**
  * The dependency entries `shadcn-svelte add` changed that have to go back:
  * shadcn replaces any range its registry item's own range does not cover,
- * downgrades included. The form item still asks for `sveltekit-superforms`
- * ^2, which SvelteKit 3 cannot install, over the project's 3.x pin. So an
+ * downgrades included. The form item asked for `sveltekit-superforms` ^2,
+ * which SvelteKit 3 cannot install, over the project's 3.x pin (the item is
+ * gone from the registry and `form` ships from this package now, but any
+ * item may do the same to another package). So an
  * entry the project already had is restored when shadcn moved it below
  * where it was, or when it is not a semver range at all (file:, git,
  * workspace:). A raised floor and every new entry are kept.

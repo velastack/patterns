@@ -185,6 +185,13 @@ configures vitest nowhere, the `vitest.config.ts` that loads it, both reported a
 lists in `components` is handed to `shadcn-svelte add`, which resolves it from the style-scoped registry
 (`/registry/styles/<style>/`) named by the project's `components.json`.
 
+- `form` is shadcn-svelte's formsnap wrapper as the registry last shipped it. The registry dropped the item
+  from every style on 2026-11-24 (huntabyte/shadcn-svelte#2989), so it is copied from here like the rest. Its
+  `index.ts` imports `formsnap`, which this repo does not install, so `tsconfig.json` excludes the directory.
+- `src/runtime/registry-components.ts` lists every registry item the patterns ask for, and
+  `registry-components.test.ts` fails when a pattern, a shipped component or a generated page names one that is
+  neither on that list nor shipped from here. When the registry drops another item: copy the component into
+  `src/ui/components/<name>`, declare its dependencies, and delete its line from the list.
 - `customDependencies` must list every `#lib/components/ui/<x>/index.js` a shipped component imports, and
   `customNpmPackages` every npm package no shadcn item installs for it.
 - `data-table` is a local copy of `@tanstack/svelte-table`'s v9 adapter (`createTable`, `FlexRender`,
