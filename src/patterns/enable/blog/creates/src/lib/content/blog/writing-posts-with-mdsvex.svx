@@ -34,9 +34,9 @@ author:
 
 ## Markdown works the way you'd expect
 
-Headings, lists, links, blockquotes, and inline `code` all render.
-Fenced code blocks pick up language hints for syntax highlighting when a
-plugin is enabled.
+Headings, lists, links, blockquotes, and inline `code` all render. One
+asterisk on each side makes text *strong*, and underscores make it
+_emphasized_. Fenced code blocks are highlighted by their language.
 
 ```ts
 function greet(name: string) {

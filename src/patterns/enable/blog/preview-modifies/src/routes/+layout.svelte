@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	// [!code highlight:1]
-	import '../css/prism-vsc-dark-plus.css';
+	import '../css/twinkleplop-vsc-dark-plus.css';
 
 	import favicon from '#lib/assets/favicon.svg';
 	import { site } from '#lib/site.js';
