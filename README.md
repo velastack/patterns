@@ -41,6 +41,22 @@ const pattern = await registry.loadPattern("generate-form", {
 });
 ```
 
+### PocketBase
+
+A pattern that touches the schema (`createCollections`, every `withPocketbase` call) uses the dev server's
+PocketBase when one is running, and otherwise starts its own for the length of the call. Which binary it starts
+is the caller's to say:
+
+- `VELA_POCKETBASE_BIN` (exported as `POCKETBASE_BIN_ENV`) set to the absolute path of a PocketBase binary: that
+  file is run directly, with `serve --dir <root>/data --migrationsDir <root>/migrations --http <host>:<port>`,
+  and the project's package manager is never consulted. The vela CLI sets it to the binary of its own
+  `pocketbase-server` dependency before it calls `pattern.generate`. A relative path, or one that does not
+  exist, is an error.
+- Unset or empty: `pocketbase-server` is run through the project's package manager (`npx --yes pocketbase-server`,
+  `pnpm dlx pocketbase-server`, ...). Under pnpm that downloads an unpinned copy, and with a `node_modules` one
+  manager installed and another runs it exits 127, so this is the fallback for the integration harness and for
+  callers that use the library without the CLI.
+
 ## Preview
 
 The other way is for the velastack.dev/patterns website. Each pattern is available for browsing. Each pattern

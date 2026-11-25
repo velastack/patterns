@@ -9,6 +9,22 @@ export const AUTHED_REDIRECT_PATH = "/dashboard";
 export const API_URL = "http://localhost:5173";
 
 /**
+ * Names the environment variable that points the patterns at a PocketBase
+ * binary: `VELA_POCKETBASE_BIN`, an absolute path. When it is set,
+ * `withPocketbase` (every pattern that touches the schema) runs that file
+ * directly, with the arguments it would have given `pocketbase-server`, and
+ * does not look at the project's package manager at all.
+ *
+ * The vela CLI sets it to the binary of its own `pocketbase-server`
+ * dependency before it calls a pattern. Without it the server is started
+ * through the package manager (`npx pocketbase-server`, `pnpm dlx ...`),
+ * which only finds vela's copy when the project's `node_modules` happens to
+ * expose it: under pnpm, `dlx` downloads whatever version is latest, and a
+ * `node_modules` installed by one manager and run by another exits 127.
+ */
+export const POCKETBASE_BIN_ENV = "VELA_POCKETBASE_BIN";
+
+/**
  * The table helpers this repo ships (`data-table`, `column-header`,
  * `faceted-filter`, `data-table-pagination`) and the pages the scaffold generators emit
  * target TanStack Table v9, whose API and types are incompatible with v8; see
