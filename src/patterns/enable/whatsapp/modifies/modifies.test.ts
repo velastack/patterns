@@ -7,6 +7,7 @@ import sveltePlugin from "prettier-plugin-svelte";
 
 import { pageGroups, swapAuthPages, type Mode } from "./auth-pages";
 import { modifyTestSetup } from "./modify-test-setup";
+import { WITH_BACKEND } from "../../backend/modifies/test-setup";
 import { modifyUserSignup } from "../../payments/modifies/modify-user-signup";
 import { unmodifyUserSignup } from "../../../disable/payments/modifies/modify-user-signup";
 
@@ -254,6 +255,32 @@ describe("modifyTestSetup", () => {
       });
     });
   }
+
+  it("has nothing to do on the current default setup", () => {
+    const file = path.join(tempDir, "current.ts");
+    fs.writeFileSync(file, WITH_BACKEND);
+    expect(modifyTestSetup(file)).toEqual({
+      status: "success",
+      changed: false,
+    });
+  });
+
+  it("still finds the helper's signature when only the email is not yet optional", () => {
+    // The current helper as a project would have it had it been written
+    // before `email` could be absent.
+    const file = path.join(tempDir, "current-required-email.ts");
+    fs.writeFileSync(
+      file,
+      WITH_BACKEND.replace(
+        "user: { email?: string }",
+        "user: { email: string }",
+      ),
+    );
+    expect(modifyTestSetup(file)).toEqual({ status: "success", changed: true });
+    expect(fs.readFileSync(file, "utf8")).toContain(
+      "async function authenticateUser(agent: Agent, user: { email?: string }) {",
+    );
+  });
 
   it("leaves a project without a test setup alone", () => {
     expect(modifyTestSetup(path.join(tempDir, "missing.ts"))).toEqual({

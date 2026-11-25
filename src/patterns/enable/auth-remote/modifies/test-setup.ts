@@ -1,27 +1,13 @@
 import fs from "node:fs";
-import dedent from "dedent";
 import { Project } from "ts-morph";
 import type { ModifyOutcome } from "../../../../core/types";
-
-const COOKIE_LOGIN = dedent`
-  // Login is a remote function, so there is no form action to post to: carry
-  // the session the way the browser does, in the \`pb_auth\` cookie.
-  async function authenticateUser(agent: Agent, user: { email?: string }) {
-    // Logs in with the password, so it needs the email (made optional by
-    // enable-whatsapp, for accounts that sign in with a phone number).
-    if (!user.email) {
-      throw new Error('authenticateUser needs a user with an email');
-    }
-    const client = new PocketBase(process.env.POCKETBASE_URL!);
-    await client.collection("users").authWithPassword(user.email, testUserPassword);
-    agent.set("Cookie", client.authStore.exportToCookie().split(";")[0]);
-  }
-`;
+import { authenticateUserHelper } from "../../backend/modifies/test-setup";
 
 /**
- * The template's server-test helper logs in by posting the `/login` form
- * action, which this pattern replaces with a remote function. A project
- * without the helper (or with its own) has nothing to fix.
+ * A test setup from before the cookie helper was the default logs in by
+ * posting the `/login` form action, which this pattern replaces with a remote
+ * function. That helper is swapped for the current one; a project that
+ * already has it, has none, or wrote its own has nothing to fix.
  */
 export function modifyTestSetup(setupPath: string): ModifyOutcome {
   if (!fs.existsSync(setupPath)) {
@@ -36,7 +22,11 @@ export function modifyTestSetup(setupPath: string): ModifyOutcome {
     return { status: "success", changed: false };
   }
 
-  helper.replaceWithText(COOKIE_LOGIN);
+  // Setups older than `vela/testing` have no `servers`, only the environment.
+  const pocketbaseUrl = sourceFile.getVariableDeclaration("servers")
+    ? "servers.pocketbaseUrl"
+    : "process.env.POCKETBASE_URL!";
+  helper.replaceWithText(authenticateUserHelper(pocketbaseUrl));
   sourceFile.saveSync();
   return { status: "success", changed: true };
 }

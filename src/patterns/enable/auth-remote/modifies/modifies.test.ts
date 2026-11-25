@@ -7,6 +7,7 @@ import { modifyLayoutServer } from "./+layout.server";
 import { modifyRootLayoutSvelte } from "./root-layout.svelte";
 import { modifyHooksServer } from "./hooks.server";
 import { modifyTestSetup } from "./test-setup";
+import { WITH_BACKEND } from "../../backend/modifies/test-setup";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -154,6 +155,24 @@ describe("modifyTestSetup", () => {
       status: "success",
       changed: false,
     });
+  });
+
+  it("turns the previous default setup into the current one, byte for byte", () => {
+    // test/setup.ts as the template shipped it while the helper still posted
+    // the login form: it reads the PocketBase URL from `servers`.
+    const file = path.join(tempDir, "test-setup-vela-testing.ts");
+    expect(modifyTestSetup(file)).toEqual({ status: "success", changed: true });
+    expect(fs.readFileSync(file, "utf8")).toBe(WITH_BACKEND);
+  });
+
+  it("has nothing to do on the current default setup", () => {
+    const file = path.join(tempDir, "current.ts");
+    fs.writeFileSync(file, WITH_BACKEND);
+    expect(modifyTestSetup(file)).toEqual({
+      status: "success",
+      changed: false,
+    });
+    expect(fs.readFileSync(file, "utf8")).toBe(WITH_BACKEND);
   });
 
   it("leaves a project without the server-test helper alone", () => {
