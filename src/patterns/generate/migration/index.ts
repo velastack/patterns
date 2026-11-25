@@ -1,7 +1,7 @@
 import type { File, Options, Pattern } from "../../../core/types";
 import { formatResult } from "../../../core/format-result";
 import { getLogger } from "../../../core/logger";
-import { generate as generateBase } from "./generate";
+import { resolveMigration } from "./generate";
 
 const SLUG = "generate-migration" as const;
 const VERSION = "1.0.0";
@@ -9,7 +9,8 @@ const SOURCE = "src/patterns/generate/migration";
 const DOCS = "/generate/migration";
 
 export async function generate(options: Options) {
-  const baseRes = await generateBase(options);
+  const migration = await resolveMigration(options);
+  const baseRes = migration.result;
 
   if (options.env !== "runtime") {
     return formatResult(baseRes, options);
@@ -30,9 +31,17 @@ export async function generate(options: Options) {
     );
   });
 
+  // After the collection changed, so the schema never runs ahead of it.
+  // `generate resource` and the scaffolds wrote this file; one that is not
+  // there is nobody's to patch.
+  const { modifySchemaForMigration } = await import("./modifies/schema");
+  logger.info("Updating the zod schema");
+  const schemaFile = modifySchemaForMigration(options.root, migration);
+
   const runtimeRes = {
     ...baseRes,
     creates: [...baseRes.creates, ...migrationCreates],
+    modifies: [...baseRes.modifies, ...(schemaFile ? [schemaFile] : [])],
   };
 
   const { writeResult } = await import("../../../runtime/write-result");

@@ -1,5 +1,6 @@
 import pluralize from "pluralize";
 import type { FieldChange, Options, Result } from "../../../core/types";
+import type { Field, Model } from "../../../parse";
 import { InvalidArgumentError } from "../../../core/errors";
 import {
   loadCollections,
@@ -35,7 +36,25 @@ function parsePatternArgs(argv: string[]): {
   return { collectionName, op: op as Op, rest };
 }
 
+/**
+ * A migration as the collection sees it (`result`) and as the parsed fields
+ * it was made from, which is what the zod schema is patched with.
+ */
+export interface ResolvedMigration {
+  result: Result;
+  model: Model;
+  /** The fields an `add` or `references` adds, as parsed. */
+  added: Field[];
+  changes: FieldChange[];
+}
+
 export async function generate(options: Options): Promise<Result> {
+  return (await resolveMigration(options)).result;
+}
+
+export async function resolveMigration(
+  options: Options,
+): Promise<ResolvedMigration> {
   const { collectionName, op, rest } = parsePatternArgs(options.argv);
   validateModelName(collectionName);
 
@@ -49,6 +68,7 @@ export async function generate(options: Options): Promise<Result> {
   const existingNames = new Set(collection.fields.map((f) => f.name));
   const changes: FieldChange[] = [];
   let indexes: string[] = [];
+  let added: Field[] = [];
 
   if (op === "add" || op === "references") {
     const fieldDefs =
@@ -69,6 +89,7 @@ export async function generate(options: Options): Promise<Result> {
       changes.push({ op: "add", field: toCollectionFieldSpec(field) });
     }
     indexes = uniqueIndexes({ tableName: collectionName }, fields);
+    added = fields;
   } else if (op === "remove") {
     const fieldNames = requireNonEmpty(
       rest,
@@ -102,7 +123,7 @@ export async function generate(options: Options): Promise<Result> {
     changes.push({ op: "rename", from, to });
   }
 
-  return {
+  const result = {
     creates: [],
     modifies: [],
     deletes: [],
@@ -114,6 +135,8 @@ export async function generate(options: Options): Promise<Result> {
     ],
     collectionDrops: [],
   } satisfies Result;
+
+  return { result, model: parent, added, changes };
 }
 
 function referencesFieldDef(rest: string[]): string {

@@ -53,7 +53,7 @@ function escapeFieldName(fieldName: string): string {
   return validIdentifierRegex.test(fieldName) ? fieldName : `'${fieldName}'`;
 }
 
-interface SchemaOptions {
+export interface SchemaOptions {
   forForm: boolean;
   /**
    * The schema backs a remote form, whose `fields.x.as(...)` exists only on
@@ -229,6 +229,42 @@ export async function resolveInputFields(
   };
 }
 
+/**
+ * The keys a list of fields has in a zod object, in order. A multi-file field
+ * has three: its own (the filenames kept), `name+` (uploads) and `name-`
+ * (filenames to drop), which is how PocketBase takes them.
+ */
+export function schemaEntriesForFields(
+  fields: Field[],
+  options: SchemaOptions,
+): Array<{ name: string; schema: string }> {
+  const entries: Array<{ name: string; schema: string }> = [];
+
+  for (const field of fields) {
+    if (field.type === "file" && field.maxSelect > 1) {
+      entries.push({
+        name: field.name,
+        schema: zodSchemaForField({ ...field, required: false }, options),
+      });
+      entries.push({
+        name: `${field.name}+`,
+        schema: "z.instanceof(File).array().optional()",
+      });
+      entries.push({
+        name: `${field.name}-`,
+        schema: "z.string().array().optional()",
+      });
+      continue;
+    }
+    entries.push({
+      name: field.name,
+      schema: zodSchemaForField(field, options),
+    });
+  }
+
+  return entries;
+}
+
 export function generateSchemaSnippet(
   model: Pick<Model, "schemaName" | "tableName">,
   fields: Field[],
@@ -253,27 +289,7 @@ export function generateSchemaSnippet(
     });
   }
 
-  for (const field of fields) {
-    if (field.type === "file" && field.maxSelect > 1) {
-      entries.push({
-        name: field.name,
-        schema: zodSchemaForField({ ...field, required: false }, options),
-      });
-      entries.push({
-        name: `${field.name}+`,
-        schema: "z.instanceof(File).array().optional()",
-      });
-      entries.push({
-        name: `${field.name}-`,
-        schema: "z.string().array().optional()",
-      });
-      continue;
-    }
-    entries.push({
-      name: field.name,
-      schema: zodSchemaForField(field, options),
-    });
-  }
+  entries.push(...schemaEntriesForFields(fields, options));
 
   const schemaFields = entries
     .map((entry) => `${escapeFieldName(entry.name)}: ${entry.schema}`)
