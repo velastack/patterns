@@ -7,7 +7,11 @@ import type {
   CollectionSpec,
   Options,
 } from "../core/types";
-import { applyCollectionRulePatches, createCollections } from "./collections";
+import {
+  applyCollectionFieldsPatches,
+  applyCollectionRulePatches,
+  createCollections,
+} from "./collections";
 
 // Hoisted because `vi.mock` is itself hoisted above these declarations: the
 // factory below runs before a plain `const` has initialized, which fails with
@@ -294,5 +298,57 @@ describe("applyCollectionRulePatches", () => {
     );
 
     expect(getFirstListItemMock).toHaveBeenCalledWith(`name='a''b'`);
+  });
+});
+
+describe("applyCollectionFieldsPatches", () => {
+  const field = { name: "code", type: "text", required: true };
+  const index = "CREATE UNIQUE INDEX `idx_songs_code` ON `songs` (`code`)";
+
+  function pocketbase(indexes?: string[]) {
+    const update = vi.fn().mockResolvedValue(undefined);
+    const pb = {
+      collections: {
+        getOne: vi.fn().mockResolvedValue({ id: "col1", fields: [], indexes }),
+        update,
+      },
+    };
+    return { pb, update };
+  }
+
+  it("adds a patch's indexes to the ones the collection has", async () => {
+    getMigrationFileMock.mockReturnValue(undefined);
+    const existing = "CREATE INDEX `idx_songs_title` ON `songs` (`title`)";
+    const { pb, update } = pocketbase([existing]);
+
+    await applyCollectionFieldsPatches(
+      pb,
+      [
+        {
+          collectionName: "songs",
+          changes: [{ op: "add", field }],
+          indexes: [index, existing],
+        },
+      ],
+      makeOptions("/tmp/project"),
+    );
+
+    expect(update).toHaveBeenCalledWith("col1", {
+      fields: [field],
+      indexes: [existing, index],
+    });
+  });
+
+  it("sends no indexes for a patch without any", async () => {
+    getMigrationFileMock.mockReturnValue(undefined);
+    const { pb, update } = pocketbase(["CREATE INDEX `a` ON `songs` (`b`)"]);
+
+    await applyCollectionFieldsPatches(
+      pb,
+      [{ collectionName: "songs", changes: [{ op: "add", field }] }],
+      makeOptions("/tmp/project"),
+    );
+
+    expect(update).toHaveBeenCalledWith("col1", { fields: [field] });
   });
 });

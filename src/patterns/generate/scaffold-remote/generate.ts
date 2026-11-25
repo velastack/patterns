@@ -23,6 +23,9 @@ import {
   relationLoadLines,
   relationLoadReturnVars,
   resolveInputFields,
+  rulesModeForCreate,
+  rulesNotes,
+  type RulesMode,
   uniqueRelationCollections,
 } from "../../../core/shared";
 import { listPageSnippet } from "../../../core/scaffold-list";
@@ -67,10 +70,25 @@ function selectLabelMaps(fields: Field[]): string {
     .join("\n\n");
 }
 
+/**
+ * The client the pages talk to PocketBase with: the signed-in user's, unless
+ * the project has no auth or the collection is kept to the superuser.
+ */
 function pbInstance(
   options: Pick<Options, "features">,
+  rules?: RulesMode,
 ): "locals.pb" | "locals.admin" {
-  return options.features.auth ? "locals.pb" : "locals.admin";
+  return options.features.auth && rules !== "superuser"
+    ? "locals.pb"
+    : "locals.admin";
+}
+
+function scaffoldNotes(model: Model, rules: RulesMode | undefined): string[] {
+  if (rules !== "superuser") return [];
+  return [
+    ...rulesNotes(model, rules),
+    `The generated ${model.pluralDisplayName.toLowerCase()} pages use \`locals.admin\`, so everyone who can open them can read and write every record. Check who is asking in their load functions and actions.`,
+  ];
 }
 
 function createFormIdentifier(model: Model): string {
@@ -518,7 +536,8 @@ export async function generate(options: Options) {
   const paths = scaffoldFilePaths(route);
   const urls = scaffoldUrls(route);
   const dynamicParams = route.dynamicParams;
-  const pb = pbInstance(options);
+  const rules = rulesModeForCreate(options, model, shouldCreateCollection);
+  const pb = pbInstance(options, rules);
   const uiFields = fields.filter(
     (field) =>
       !(
@@ -625,9 +644,10 @@ export async function generate(options: Options) {
     components: [...new Set(components)],
     packages: [TANSTACK_TABLE_CORE],
     collections: shouldCreateCollection
-      ? [collectionSpecFromModelFields(model, fields, auth)]
+      ? [collectionSpecFromModelFields(model, fields, auth, rules)]
       : [],
     collectionPatches: [],
     collectionDrops: [],
+    notes: scaffoldNotes(model, rules),
   } satisfies Result;
 }

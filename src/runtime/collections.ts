@@ -220,9 +220,11 @@ function applyFieldChanges(
 export async function applyCollectionFieldsPatches(
   pb: {
     collections: {
-      getOne: (
-        name: string,
-      ) => Promise<{ id: string; fields: CollectionFieldSpec[] }>;
+      getOne: (name: string) => Promise<{
+        id: string;
+        fields: CollectionFieldSpec[];
+        indexes?: string[];
+      }>;
       update: (id: string, body: Record<string, unknown>) => Promise<unknown>;
     };
   },
@@ -236,7 +238,16 @@ export async function applyCollectionFieldsPatches(
     const collection = await pb.collections.getOne(patch.collectionName);
     const newFields = applyFieldChanges(collection.fields, patch);
     logger.info(`Updating fields on collection "${patch.collectionName}"`);
-    await pb.collections.update(collection.id, { fields: newFields });
+    const body: Record<string, unknown> = { fields: newFields };
+    if (patch.indexes?.length) {
+      // PocketBase replaces the list, so the ones it has are sent back.
+      const existing = collection.indexes ?? [];
+      body.indexes = [
+        ...existing,
+        ...patch.indexes.filter((index) => !existing.includes(index)),
+      ];
+    }
+    await pb.collections.update(collection.id, body);
     await migrationDelay();
 
     const migrationFile = getMigrationFile(

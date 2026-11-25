@@ -5,6 +5,9 @@ import {
   collectionSpecFromModelFields,
   fieldsFromCollection,
   generateSchemaSnippet,
+  rulesModeForCreate,
+  rulesModeFromInput,
+  rulesNotes,
 } from "./shared";
 
 const model = parseModel("post");
@@ -150,5 +153,181 @@ describe("fieldsFromCollection", () => {
       "publishedUpdate",
     ]);
     expect(resolved[2]).toMatchObject({ onCreate: true, onUpdate: true });
+  });
+});
+
+describe("collection rules", () => {
+  const title: Field = {
+    name: "title",
+    title: "Title",
+    type: "text",
+    required: true,
+  };
+  const signedIn = '@request.auth.id != ""';
+  const owner = {
+    rule: "@request.auth.id = user.id",
+    ownershipChainCollections: ["posts", "users"],
+    ownershipChainFields: ["user"],
+    operator: "=" as const,
+  };
+  const noOwner = {
+    rule: signedIn,
+    ownershipChainCollections: ["posts"],
+    ownershipChainFields: [],
+    operator: "=" as const,
+  };
+  const rulesOf = (spec: ReturnType<typeof collectionSpecFromModelFields>) => ({
+    listRule: spec.listRule,
+    viewRule: spec.viewRule,
+    createRule: spec.createRule,
+    updateRule: spec.updateRule,
+    deleteRule: spec.deleteRule,
+  });
+  const all = (rule: string | null | undefined) => ({
+    listRule: rule,
+    viewRule: rule,
+    createRule: rule,
+    updateRule: rule,
+    deleteRule: rule,
+  });
+
+  it("unset: the inferred rule, or none without auth", () => {
+    expect(
+      rulesOf(collectionSpecFromModelFields(model, [title], owner)),
+    ).toEqual(all(owner.rule));
+    expect(
+      rulesOf(collectionSpecFromModelFields(model, [title], noOwner)),
+    ).toEqual(all(signedIn));
+    const spec = collectionSpecFromModelFields(model, [title]);
+    expect(spec).not.toHaveProperty("listRule");
+    expect(spec).not.toHaveProperty("deleteRule");
+  });
+
+  it("auth: any signed-in user, even with an owner path", () => {
+    expect(
+      rulesOf(collectionSpecFromModelFields(model, [title], owner, "auth")),
+    ).toEqual(all(signedIn));
+  });
+
+  it("owner: the inferred owner rule", () => {
+    expect(
+      rulesOf(collectionSpecFromModelFields(model, [title], owner, "owner")),
+    ).toEqual(all(owner.rule));
+  });
+
+  it("owner: an error when no relation leads to users", () => {
+    expect(() =>
+      collectionSpecFromModelFields(model, [title], noOwner, "owner"),
+    ).toThrow(/Rules "owner" need a relation from "posts" to users/);
+  });
+
+  it("superuser: all five rules null, with or without auth", () => {
+    expect(
+      rulesOf(
+        collectionSpecFromModelFields(model, [title], owner, "superuser"),
+      ),
+    ).toEqual(all(null));
+    expect(
+      rulesOf(
+        collectionSpecFromModelFields(model, [title], undefined, "superuser"),
+      ),
+    ).toEqual(all(null));
+  });
+
+  it("says a superuser-only collection needs the admin client", () => {
+    expect(rulesNotes(model, "superuser")).toEqual([
+      expect.stringContaining("locals.admin"),
+    ]);
+    expect(rulesNotes(model, "auth")).toEqual([]);
+    expect(rulesNotes(model, undefined)).toEqual([]);
+  });
+
+  describe("input.rules", () => {
+    const auth = { ...noFeatures, auth: true };
+
+    it("is optional", () => {
+      expect(rulesModeFromInput({ features: auth, input: {} })).toBeUndefined();
+    });
+
+    it("takes auth, owner and superuser", () => {
+      for (const rules of ["auth", "owner", "superuser"] as const) {
+        expect(rulesModeFromInput({ features: auth, input: { rules } })).toBe(
+          rules,
+        );
+      }
+    });
+
+    it("rejects anything else, listing the valid values", () => {
+      expect(() =>
+        rulesModeFromInput({ features: auth, input: { rules: "public" } }),
+      ).toThrow(
+        'Invalid rules: "public". Valid values are: auth, owner, superuser',
+      );
+    });
+
+    it("refuses auth and owner in a project without auth", () => {
+      for (const rules of ["auth", "owner"]) {
+        expect(() =>
+          rulesModeFromInput({ features: noFeatures, input: { rules } }),
+        ).toThrow(/need the auth feature/);
+      }
+      expect(
+        rulesModeFromInput({
+          features: noFeatures,
+          input: { rules: "superuser" },
+        }),
+      ).toBe("superuser");
+    });
+
+    it("refuses rules when no collection is created", () => {
+      expect(() =>
+        rulesModeForCreate(
+          { features: auth, input: { rules: "auth" } },
+          model,
+          false,
+        ),
+      ).toThrow(/"posts" is not being created/);
+      expect(
+        rulesModeForCreate({ features: auth, input: {} }, model, false),
+      ).toBeUndefined();
+    });
+  });
+});
+
+describe("unique indexes", () => {
+  it("puts one CREATE UNIQUE INDEX per unique field on the spec", () => {
+    const spec = collectionSpecFromModelFields(model, [
+      {
+        name: "code",
+        title: "Code",
+        type: "text",
+        required: true,
+        unique: true,
+      },
+      { name: "title", title: "Title", type: "text", required: true },
+      {
+        name: "slug",
+        title: "Slug",
+        type: "text",
+        required: false,
+        unique: true,
+      },
+    ]);
+    expect(spec.indexes).toEqual([
+      "CREATE UNIQUE INDEX `idx_posts_code` ON `posts` (`code`)",
+      "CREATE UNIQUE INDEX `idx_posts_slug` ON `posts` (`slug`)",
+    ]);
+    // `unique` is the index, not a property of the PocketBase field.
+    expect(spec.fields[0]).toEqual({
+      name: "code",
+      type: "text",
+      required: true,
+    });
+  });
+
+  it("leaves indexes off a spec without unique fields", () => {
+    expect(
+      collectionSpecFromModelFields(model, [fields[0]]),
+    ).not.toHaveProperty("indexes");
   });
 });

@@ -65,6 +65,8 @@ export interface FieldBase {
   name: string;
   title: string;
   required: boolean;
+  /** Declared `name:type:unique`: the collection gets a unique index on it. */
+  unique?: boolean;
 }
 
 export interface SimpleField extends FieldBase {

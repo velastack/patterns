@@ -1,7 +1,11 @@
 import pluralize from "pluralize";
 import type { FieldChange, Options, Result } from "../../../core/types";
 import { InvalidArgumentError } from "../../../core/errors";
-import { loadCollections, toCollectionFieldSpec } from "../../../core/shared";
+import {
+  loadCollections,
+  toCollectionFieldSpec,
+  uniqueIndexes,
+} from "../../../core/shared";
 import { parseModel, resolveFields, validateModelName } from "../../../parse";
 
 type Op = "add" | "remove" | "rename" | "references";
@@ -44,6 +48,7 @@ export async function generate(options: Options): Promise<Result> {
   const parent = parseModel(collectionName);
   const existingNames = new Set(collection.fields.map((f) => f.name));
   const changes: FieldChange[] = [];
+  let indexes: string[] = [];
 
   if (op === "add" || op === "references") {
     const fieldDefs =
@@ -63,6 +68,7 @@ export async function generate(options: Options): Promise<Result> {
       }
       changes.push({ op: "add", field: toCollectionFieldSpec(field) });
     }
+    indexes = uniqueIndexes({ tableName: collectionName }, fields);
   } else if (op === "remove") {
     const fieldNames = requireNonEmpty(
       rest,
@@ -103,7 +109,9 @@ export async function generate(options: Options): Promise<Result> {
     components: [],
     packages: [],
     collections: [],
-    collectionPatches: [{ collectionName, changes }],
+    collectionPatches: [
+      { collectionName, changes, ...(indexes.length > 0 ? { indexes } : {}) },
+    ],
     collectionDrops: [],
   } satisfies Result;
 }

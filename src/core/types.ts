@@ -116,6 +116,13 @@ export interface Options {
    *   the one to generate. Falls back to `--provider <id>` in `argv`.
    * - `providerEnv` (Record<string, string>): values the CLI collected for
    *   the chosen provider's `env` keys, written to `.env` by the pattern.
+   * - `rules` (`"auth" | "owner" | "superuser"`): the API rules of a
+   *   collection a generator creates. `auth` lets every signed-in user read
+   *   and write, `owner` only the user a relation path leads to (an error
+   *   when there is none), `superuser` nobody but the server's superuser
+   *   client. Unset: `owner` when a path exists and `auth` otherwise, or
+   *   `superuser` in a project without auth. An error when the generator
+   *   creates no collection.
    */
   input: Record<string, any>;
   /**
@@ -330,6 +337,8 @@ export type FieldChange =
 export interface CollectionFieldsPatch {
   collectionName: string;
   changes: FieldChange[];
+  /** `CREATE INDEX` statements to add to the ones the collection has. */
+  indexes?: string[];
 }
 
 export interface CollectionDropSpec {
@@ -353,6 +362,12 @@ export interface Result {
    * added without checking first.
    */
   uninstalls?: Package[];
+  /**
+   * Things the user has to know about what was generated and could not tell
+   * from the file list, one sentence each, for the caller to print with the
+   * result: a collection only the superuser client can reach, for instance.
+   */
+  notes?: string[];
 }
 
 /** One `.env` key a provider needs; the CLI prompts for it and the pattern writes it. */

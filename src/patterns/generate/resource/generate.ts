@@ -5,6 +5,8 @@ import {
   collectionSpecFromModelFields,
   generateSchemaSnippet,
   resolveInputFields,
+  rulesModeForCreate,
+  rulesNotes,
 } from "../../../core/shared";
 
 function parsePatternArgs(argv: string[]) {
@@ -38,6 +40,8 @@ export async function generate(options: Options) {
     );
   }
 
+  const rules = rulesModeForCreate(options, model, shouldCreateCollection);
+
   const schemaPath = `src/lib/schemas/${model.name}.ts`;
   const schema = generateSchemaSnippet(model, fields, {
     includeModelFields: true,
@@ -51,9 +55,10 @@ export async function generate(options: Options) {
     components: [],
     packages: [],
     collections: shouldCreateCollection
-      ? [collectionSpecFromModelFields(model, fields, auth)]
+      ? [collectionSpecFromModelFields(model, fields, auth, rules)]
       : [],
     collectionPatches: [],
     collectionDrops: [],
+    notes: rulesNotes(model, rules),
   } satisfies Result;
 }

@@ -1,7 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { parseModel, validateModelName, safeVarName } from "./model";
 import { parseRoute, scaffoldFilePaths, scaffoldUrls } from "./route";
-import { resolveFields, splitFieldDef, parseSelectOptions } from "./fields";
+import {
+  resolveFields,
+  splitFieldDef,
+  splitFieldParts,
+  parseSelectOptions,
+} from "./fields";
+import {
+  FIELD_MODIFIERS,
+  FIELD_SYNTAX_HELP,
+  FIELD_TYPES,
+  SPECIAL_FIELD_TYPES,
+  TYPE_ALIASES,
+} from "./syntax";
+import { validTypes } from "./types";
 import {
   pickDisplayField,
   collectionIdMap,
@@ -960,5 +973,202 @@ describe("generateAuthRule", () => {
     ];
     const result = generateAuthRule(schema, "posts");
     expect(result.rule).toBe('@request.auth.id != ""');
+  });
+});
+
+describe("splitFieldParts", () => {
+  it("splits name, type and modifiers", () => {
+    expect(splitFieldParts("code:text!:unique")).toEqual({
+      name: "code",
+      type: "text!",
+      modifiers: ["unique"],
+    });
+    expect(splitFieldParts("slug:text")).toEqual({
+      name: "slug",
+      type: "text",
+      modifiers: [],
+    });
+  });
+
+  it("keeps the colons of select options in the type", () => {
+    expect(
+      splitFieldParts('state:select(a:"Open: now",b:Closed)!:unique'),
+    ).toEqual({
+      name: "state",
+      type: 'select(a:"Open: now",b:Closed)!',
+      modifiers: ["unique"],
+    });
+  });
+
+  it("returns every further segment as a modifier", () => {
+    expect(splitFieldParts("code:text:unique:other").modifiers).toEqual([
+      "unique",
+      "other",
+    ]);
+  });
+});
+
+describe("field modifiers", () => {
+  it("marks a field unique", () => {
+    const { fields } = resolveFields(
+      ["code:text!:unique", "slug:text:unique", "title:text"],
+      parent,
+      [],
+      noAuth,
+    );
+    expect(fields[0]).toMatchObject({
+      name: "code",
+      required: true,
+      unique: true,
+    });
+    expect(fields[1]).toMatchObject({
+      name: "slug",
+      required: false,
+      unique: true,
+    });
+    expect(fields[2]).not.toHaveProperty("unique");
+  });
+
+  it("takes unique on a select with labelled options", () => {
+    const { fields } = resolveFields(
+      ["state:select(open:Open,closed:Closed)!:unique"],
+      parent,
+      [],
+      noAuth,
+    );
+    expect(fields[0]).toMatchObject({
+      type: "select",
+      required: true,
+      unique: true,
+      options: [
+        { value: "open", label: "Open" },
+        { value: "closed", label: "Closed" },
+      ],
+    });
+  });
+
+  it("rejects an unknown modifier, naming the valid ones", () => {
+    expect(() => resolveFields(["code:text:uniq"], parent, [], noAuth)).toThrow(
+      /Invalid field modifier: "uniq" in code:text:uniq\. Valid modifiers are: unique/,
+    );
+  });
+
+  it("rejects unique on a type or a field that holds no single value", () => {
+    expect(() =>
+      resolveFields(["meta:json:unique"], parent, [], noAuth),
+    ).toThrow(/a json field cannot be unique/);
+    expect(() =>
+      resolveFields(["tags:select(a,b):unique"], parent, [], noAuth),
+    ).toThrow(/holds several values/);
+  });
+});
+
+describe("field names", () => {
+  it("takes underscores", () => {
+    const { fields } = resolveFields(
+      ["first_name:text", "created_at:autodate", "updated_at:autodate"],
+      parent,
+      [],
+      noAuth,
+    );
+    expect(fields[0]).toMatchObject({
+      name: "first_name",
+      title: "First Name",
+    });
+    expect(fields[1]).toMatchObject({ onCreate: true, onUpdate: false });
+    expect(fields[2]).toMatchObject({ onCreate: true, onUpdate: true });
+  });
+
+  it("rejects a name that does not start with a letter, or holds anything else", () => {
+    for (const name of ["_private", "1st", "first-name", "first.name"]) {
+      expect(() => resolveFields([`${name}:text`], parent, [], noAuth)).toThrow(
+        /Invalid field name/,
+      );
+    }
+  });
+});
+
+describe("field syntax table", () => {
+  const collections: Collection[] = [
+    { id: "users_id", name: "users", type: "auth", fields: [] },
+    { id: "teams_id", name: "teams", type: "base", fields: [] },
+    { id: "tags_id", name: "tags", type: "base", fields: [] },
+  ];
+  const everything = {
+    features: { ...withAuth.features, teams: true },
+  };
+  // A field name each type resolves under: relation takes its collection
+  // from it, autodate its timing.
+  const fieldName: Record<string, string> = {
+    relation: "tags",
+    references: "tags",
+    autodate: "created",
+  };
+  const spelling = (type: string) => (type === "select" ? "select(a,b)" : type);
+
+  it("lists PocketBase's field types, each once", () => {
+    expect(FIELD_TYPES.map((entry) => entry.type).sort()).toEqual(
+      [...validTypes].sort(),
+    );
+  });
+
+  it("parses every type and alias it lists", () => {
+    for (const entry of [...FIELD_TYPES, ...SPECIAL_FIELD_TYPES]) {
+      for (const name of [entry.type, ...entry.aliases]) {
+        const { fields } = resolveFields(
+          [`${fieldName[name] ?? "thing"}:${spelling(name)}`],
+          parent,
+          collections,
+          everything,
+        );
+        const expected = SPECIAL_FIELD_TYPES.includes(entry)
+          ? "relation"
+          : entry.type;
+        expect(fields[0].type, name).toBe(expected);
+      }
+    }
+  });
+
+  it("names every type, alias and modifier in the help", () => {
+    const words = new Set(FIELD_SYNTAX_HELP.split(/[^A-Za-z_!:]+/));
+    for (const entry of [...FIELD_TYPES, ...SPECIAL_FIELD_TYPES]) {
+      for (const name of [entry.type, ...entry.aliases]) {
+        expect(words, name).toContain(name);
+      }
+    }
+    for (const alias of Object.keys(TYPE_ALIASES)) {
+      expect(words, alias).toContain(alias);
+    }
+    for (const modifier of FIELD_MODIFIERS) {
+      expect(FIELD_SYNTAX_HELP).toContain(`:${modifier}`);
+    }
+    expect(FIELD_SYNTAX_HELP).toContain("name:text!");
+    expect(FIELD_SYNTAX_HELP).toContain("select(");
+  });
+
+  it("parses the examples the help gives", () => {
+    const examples = FIELD_SYNTAX_HELP.split("\n")
+      .filter((line) => /^ {4}\S/.test(line))
+      .map((line) => line.trim().split(/\s{2,}/)[0])
+      .flatMap((line) => line.split(" "))
+      .map((arg) => arg.replace(/^'(.*)'$/, "$1"));
+    expect(examples.length).toBeGreaterThan(8);
+    const { fields } = resolveFields(
+      [...new Set(examples)],
+      parent,
+      [
+        ...collections,
+        { id: "categories_id", name: "categories", type: "base", fields: [] },
+      ],
+      everything,
+    );
+    expect(fields).toHaveLength(new Set(examples).size);
+  });
+
+  it("fits an 80-column terminal", () => {
+    for (const line of FIELD_SYNTAX_HELP.split("\n")) {
+      expect(line.length, line).toBeLessThanOrEqual(80);
+      expect(line, line).toBe(line.trimEnd());
+    }
   });
 });

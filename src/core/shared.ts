@@ -4,6 +4,7 @@ import pluralize from "pluralize";
 import { InvalidArgumentError } from "./errors";
 import type { CollectionFieldSpec, CollectionSpec, Options } from "./types";
 import {
+  FIELD_TYPES,
   autodateFlags,
   collectionDisplayFieldMap,
   parseModel,
@@ -40,33 +41,12 @@ interface SchemaField {
 
 const NON_EMPTY_FIELDS: Field["type"][] = ["text"];
 
-const TYPE_ALIASES: Record<string, Field["type"]> = {
-  string: "text",
-  boolean: "bool",
-  geopoint: "geoPoint",
-  references: "relation",
-  integer: "number",
-  int: "number",
-  float: "number",
-  decimal: "number",
-  double: "number",
-  datetime: "date",
-  timestamp: "date",
-  text: "text",
-  number: "number",
-  bool: "bool",
-  date: "date",
-  email: "email",
-  password: "password",
-  url: "url",
-  editor: "editor",
-  autodate: "autodate",
-  select: "select",
-  file: "file",
-  json: "json",
-  geoPoint: "geoPoint",
-  relation: "relation",
-};
+/** A collection field's type, under any spelling the field syntax takes. */
+const TYPE_ALIASES = Object.fromEntries(
+  FIELD_TYPES.flatMap(({ type, aliases }) =>
+    [type, ...aliases].map((name) => [name, type]),
+  ),
+) as Record<string, Field["type"]>;
 
 function escapeFieldName(fieldName: string): string {
   const validIdentifierRegex = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
@@ -316,7 +296,9 @@ export function generateSchemaSnippet(
 }
 
 function normalizeType(type: string): Field["type"] {
-  const normalized = TYPE_ALIASES[type];
+  const normalized = Object.prototype.hasOwnProperty.call(TYPE_ALIASES, type)
+    ? TYPE_ALIASES[type]
+    : undefined;
   if (!normalized) {
     throw new Error(
       `Unsupported collection field type "${type}" when generating from collection`,
@@ -551,6 +533,130 @@ function isTimestampName(name: string): boolean {
   return TIMESTAMP_FIELDS.some((field) => field.name === name);
 }
 
+/** What `input.rules` takes. */
+export const RULES_MODES = ["auth", "owner", "superuser"] as const;
+
+export type RulesMode = (typeof RULES_MODES)[number];
+
+const SIGNED_IN_RULE = '@request.auth.id != ""';
+
+/**
+ * `input.rules`, checked. Thrown here rather than at the PocketBase call, so
+ * a bad value stops the run before anything is written.
+ */
+export function rulesModeFromInput(
+  options: Pick<Options, "features" | "input">,
+): RulesMode | undefined {
+  const value: unknown = options.input?.rules;
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+  if (!(RULES_MODES as readonly unknown[]).includes(value)) {
+    throw new InvalidArgumentError(
+      `Invalid rules: ${JSON.stringify(value)}. Valid values are: ${RULES_MODES.join(", ")}`,
+    );
+  }
+  const mode = value as RulesMode;
+  if (mode !== "superuser" && !options.features.auth) {
+    throw new InvalidArgumentError(
+      `Rules "${mode}" need the auth feature. Run \`vela enable auth\` first, or use "superuser" to keep the collection to the server's superuser client.`,
+    );
+  }
+  return mode;
+}
+
+type CollectionRules = Pick<
+  CollectionSpec,
+  "listRule" | "viewRule" | "createRule" | "updateRule" | "deleteRule"
+>;
+
+function allRules(rule: string | null): CollectionRules {
+  return {
+    listRule: rule,
+    viewRule: rule,
+    createRule: rule,
+    updateRule: rule,
+    deleteRule: rule,
+  };
+}
+
+/**
+ * The five API rules of a new collection.
+ *
+ * Without a mode: the owner rule when a relation path leads to `users`, any
+ * signed-in user otherwise, and no rules at all (superuser only) in a project
+ * without auth. A mode picks one of those outright.
+ */
+function collectionRules(
+  model: Pick<Model, "tableName">,
+  auth: OwnershipResult | undefined,
+  mode: RulesMode | undefined,
+): CollectionRules {
+  switch (mode) {
+    case undefined:
+      return auth ? allRules(auth.rule) : {};
+    case "auth":
+      return allRules(SIGNED_IN_RULE);
+    case "superuser":
+      return allRules(null);
+    case "owner":
+      if (!auth || auth.ownershipChainFields.length === 0) {
+        throw new InvalidArgumentError(
+          `Rules "owner" need a relation from "${model.tableName}" to users, directly or through another collection, and none of its fields has one. Add one (for example \`user:current_user\`), or use rules "auth".`,
+        );
+      }
+      return allRules(auth.rule);
+  }
+}
+
+/**
+ * What to tell the user about the rules a collection was created with, for
+ * `Result.notes`. Only "superuser" needs saying: nothing reaches the
+ * collection through `locals.pb`.
+ */
+export function rulesNotes(
+  model: Pick<Model, "tableName">,
+  mode: RulesMode | undefined,
+): string[] {
+  if (mode !== "superuser") return [];
+  return [
+    `"${model.tableName}" has no API rules: only the superuser client can read or write it. Use \`locals.admin\` on the server; \`locals.pb\` and the browser get nothing.`,
+  ];
+}
+
+/**
+ * `input.rules` for a generator about to create a collection, or not: rules
+ * are set as the collection is created, so asking for them when it already
+ * exists is refused rather than silently dropped.
+ */
+export function rulesModeForCreate(
+  options: Pick<Options, "features" | "input">,
+  model: Pick<Model, "tableName">,
+  shouldCreateCollection: boolean,
+): RulesMode | undefined {
+  const mode = rulesModeFromInput(options);
+  if (mode && !shouldCreateCollection) {
+    throw new InvalidArgumentError(
+      `Rules are set when a collection is created, and "${model.tableName}" is not being created. Leave rules out, and change the collection's rules in a migration.`,
+    );
+  }
+  return mode;
+}
+
+function uniqueIndex(tableName: string, fieldName: string): string {
+  return `CREATE UNIQUE INDEX \`idx_${tableName}_${fieldName}\` ON \`${tableName}\` (\`${fieldName}\`)`;
+}
+
+/** One `CREATE UNIQUE INDEX` per field declared `name:type:unique`. */
+export function uniqueIndexes(
+  model: Pick<Model, "tableName">,
+  fields: Field[],
+): string[] {
+  return fields
+    .filter((field) => field.unique)
+    .map((field) => uniqueIndex(model.tableName, field.name));
+}
+
 /**
  * The spec of a new collection. `created` and `updated` are added here and
  * nowhere else: they belong to the collection, not to the fields a generator
@@ -561,26 +667,20 @@ export function collectionSpecFromModelFields(
   model: Pick<Model, "tableName">,
   fields: Field[],
   auth?: OwnershipResult,
+  rules?: RulesMode,
 ): CollectionSpec {
   const declared = new Set(fields.map((field) => field.name));
   const timestamps = TIMESTAMP_FIELDS.filter(
     (field) => !declared.has(field.name),
   );
 
-  const rules = auth
-    ? {
-        listRule: auth.rule,
-        viewRule: auth.rule,
-        createRule: auth.rule,
-        updateRule: auth.rule,
-        deleteRule: auth.rule,
-      }
-    : {};
+  const indexes = uniqueIndexes(model, fields);
 
   return {
     name: model.tableName,
     type: "base",
-    ...rules,
+    ...collectionRules(model, auth, rules),
     fields: [...fields.map(toCollectionFieldSpec), ...timestamps],
+    ...(indexes.length > 0 ? { indexes } : {}),
   };
 }
