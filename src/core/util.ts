@@ -98,3 +98,12 @@ export function mergeResults(results: Result[]) {
     } satisfies Result,
   );
 }
+
+/**
+ * `result` with the notes of `source`. `writeResult` and `mergeResults`
+ * build their return from the keys they handle, so a pattern's notes are put
+ * back on what it finally returns.
+ */
+export function withNotes(result: Result, source: Result): Result {
+  return source.notes?.length ? { ...result, notes: source.notes } : result;
+}

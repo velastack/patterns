@@ -1,7 +1,7 @@
 import type { Options, Pattern } from "../../../core/types";
 import { formatResult } from "../../../core/format-result";
 import { getLogger } from "../../../core/logger";
-import { mergeResults } from "../../../core/util";
+import { mergeResults, withNotes } from "../../../core/util";
 import { generate as generateBase } from "./generate";
 import { generate as generatePreview } from "./generate.preview";
 
@@ -23,7 +23,10 @@ export async function generate(options: Options) {
 
   if (options.env === "preview") {
     const previewRes = await generatePreview(options);
-    return formatResult(mergeResults([baseRes, previewRes]), options);
+    return formatResult(
+      withNotes(mergeResults([baseRes, previewRes]), baseRes),
+      options,
+    );
   }
 
   if (options.env !== "runtime") {
@@ -60,7 +63,10 @@ export async function generate(options: Options) {
   };
 
   const { writeResult } = await import("../../../runtime/write-result");
-  return writeResult(await formatResult(runtimeRes, options), options);
+  return withNotes(
+    await writeResult(await formatResult(runtimeRes, options), options),
+    baseRes,
+  );
 }
 
 export default {

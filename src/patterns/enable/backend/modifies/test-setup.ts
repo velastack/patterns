@@ -2,6 +2,32 @@ import fs from "node:fs";
 import path from "node:path";
 import type { ModifyOutcome } from "../../../../core/types";
 
+/**
+ * The server-test helper that signs a supertest agent in: against PocketBase
+ * directly, with the session handed to the agent in the `pb_auth` cookie the
+ * app's hook reads. It used to post the app's `/login` form, which tied every
+ * authenticated test to a page projects replace (and that enable-auth
+ * --remote does away with).
+ *
+ * `pocketbaseUrl` is the expression the PocketBase URL is read from in the
+ * file the helper goes into. Tab-indented, as the template is.
+ */
+export function authenticateUserHelper(pocketbaseUrl: string): string {
+  return `// Signs the agent in against PocketBase and hands it the session the way a
+// browser carries it, in the \`pb_auth\` cookie. The app's own login page is
+// not involved, so replacing it breaks no test.
+async function authenticateUser(agent: Agent, user: { email?: string }) {
+\t// Logs in with the password, so it needs the email (made optional by
+\t// enable-whatsapp, for accounts that sign in with a phone number).
+\tif (!user.email) {
+\t\tthrow new Error('authenticateUser needs a user with an email');
+\t}
+\tconst client = new PocketBase(${pocketbaseUrl});
+\tawait client.collection('users').authWithPassword(user.email, testUserPassword);
+\tagent.set('Cookie', client.authStore.exportToCookie().split(';')[0]);
+}`;
+}
+
 // Source of truth: velastack-cli/templates/minimal/test/setup.ts
 export const WITH_BACKEND = `import { beforeEach, afterEach, beforeAll, inject } from 'vitest';
 import supertest, { type Agent } from 'supertest';
@@ -22,18 +48,7 @@ const pb = new PocketBase(servers.pocketbaseUrl) as App.Locals['pb'];
 
 const testUserPassword = 'password';
 
-async function authenticateUser(agent: Agent, user: { email?: string }) {
-\t// Logs in with the password, so it needs the email (made optional by
-\t// enable-whatsapp, for accounts that sign in with a phone number).
-\tif (!user.email) {
-\t\tthrow new Error('authenticateUser needs a user with an email');
-\t}
-\tawait agent.post('/login').type('form').send({
-\t\ttype: 'password',
-\t\temail: user.email,
-\t\tpassword: testUserPassword
-\t});
-}
+${authenticateUserHelper("servers.pocketbaseUrl")}
 
 beforeAll(async () => {
 \tawait admin

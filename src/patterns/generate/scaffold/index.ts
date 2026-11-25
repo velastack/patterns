@@ -1,5 +1,6 @@
 import type { Options, Pattern } from "../../../core/types";
 import { formatResult } from "../../../core/format-result";
+import { withNotes } from "../../../core/util";
 import { resolveUi } from "../../../core/field/ui";
 import { generate as generateBase } from "./generate";
 
@@ -40,7 +41,10 @@ export async function generate(options: Options) {
   };
 
   const { writeResult } = await import("../../../runtime/write-result");
-  return writeResult(await formatResult(runtimeRes, options), options);
+  return withNotes(
+    await writeResult(await formatResult(runtimeRes, options), options),
+    baseRes,
+  );
 }
 
 export default {

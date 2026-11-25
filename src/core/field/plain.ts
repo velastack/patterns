@@ -105,6 +105,38 @@ const REMOTE_INPUT_TYPES = [
 ];
 
 /**
+ * Fields a remote form has a control for. A relation needs the related
+ * records and a geoPoint its own two inputs, neither of which this renderer
+ * writes yet. A multi-file field uploads through PocketBase's `name+` key,
+ * which is not a valid remote form field path, and its own key holds the
+ * kept filenames, so neither takes `.as("file multiple")`.
+ */
+export function remoteFormSupports(field: Field): boolean {
+  return (
+    field.type !== "geoPoint" &&
+    field.type !== "relation" &&
+    !(field.type === "file" && isMultiple(field))
+  );
+}
+
+/**
+ * Fields a form cannot show the stored value of. On a form that edits a
+ * record they start empty, are never `required`, and leave the stored value
+ * alone when posted empty.
+ */
+export function isWriteOnly(field: Field): boolean {
+  return field.type === "file" || field.type === "password";
+}
+
+export interface RemoteBindingOptions {
+  /**
+   * The form edits an existing record, so a write-only field may be left
+   * empty to keep what is stored.
+   */
+  edit?: boolean;
+}
+
+/**
  * A remote form posts each control under the name `.as()` generates (the
  * field path plus a type prefix, an array marker and the form id), and
  * SvelteKit 3 rejects any other name. So every control spreads `.as()` and
@@ -112,19 +144,22 @@ const REMOTE_INPUT_TYPES = [
  * everything but text and selects, and `multiple` for `select multiple`,
  * whose `[]` name marker is what lets several values through.
  */
-export function remoteBinding(formVar: string): PlainBinding {
+export function remoteBinding(
+  formVar: string,
+  options: RemoteBindingOptions = {},
+): PlainBinding {
   const as = (field: Field, type: string) =>
     `{...${formVar}.fields.${field.name}.as(${JSON.stringify(type)})}`;
 
   return {
     label: "remote form variant",
-    unsupported: ["geoPoint", "relation"],
-    // A multi-file field uploads through PocketBase's `name+` key, which is
-    // not a valid remote form field path, and its own key holds the kept
-    // filenames, so neither takes `.as("file multiple")`.
-    unsupportedField: (field) => field.type === "file" && isMultiple(field),
+    unsupported: [],
+    unsupportedField: (field) => !remoteFormSupports(field),
     control(field, kind, { htmlType, multiple, required }) {
-      const tail = flag(required, "required");
+      const tail = flag(
+        required && !(options.edit && isWriteOnly(field)),
+        "required",
+      );
       switch (kind) {
         case "input": {
           const asType =
@@ -156,6 +191,29 @@ export function remoteBinding(formVar: string): PlainBinding {
       return `${formVar}.fields.${field.name}.issues()?.length`;
     },
   };
+}
+
+/**
+ * The value a remote form control starts from when the form edits `record`
+ * (an expression, `data.post`), or `undefined` for a field with no control
+ * or nothing to show. What PocketBase returns is not always what the control
+ * takes: `<input type="date">` wants `YYYY-MM-DD`, not a timestamp, and a
+ * json field is edited as text.
+ */
+export function remoteSeedExpression(
+  field: Field,
+  record: string,
+): string | undefined {
+  if (!remoteFormSupports(field) || isWriteOnly(field)) return undefined;
+  const value = `${record}.${field.name}`;
+  switch (field.type) {
+    case "date":
+      return `${value}?.slice(0, 10)`;
+    case "json":
+      return `${value} == null ? "" : JSON.stringify(${value}, null, 2)`;
+    default:
+      return value;
+  }
 }
 
 /** Array-valued fields report their own errors under `_errors`. */

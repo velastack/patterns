@@ -56,6 +56,32 @@ function makeOptions(
 
 describe("generate migration pattern", () => {
   describe("add", () => {
+    it("adds a unique index for a field declared :unique", async () => {
+      const result = await generateBase(
+        makeOptions({
+          env: "preview",
+          argv: ["posts", "add", "slug:text!:unique", "views:number"],
+        }),
+      );
+
+      expect(result.collectionPatches).toEqual([
+        {
+          collectionName: "posts",
+          changes: [
+            {
+              op: "add",
+              field: { name: "slug", type: "text", required: true },
+            },
+            {
+              op: "add",
+              field: { name: "views", type: "number", required: false },
+            },
+          ],
+          indexes: ["CREATE UNIQUE INDEX `idx_posts_slug` ON `posts` (`slug`)"],
+        },
+      ]);
+    });
+
     it("emits one add change per field def", async () => {
       const result = await generateBase(
         makeOptions({

@@ -9,6 +9,14 @@ import {
 } from "./collections";
 import { parseModel } from "./model";
 import { generateAuthRule } from "./permissions";
+import {
+  FIELD_MODIFIERS,
+  FIELD_NAME_PATTERN,
+  FIELD_NAME_RULE,
+  FIELD_TYPES,
+  TYPE_ALIASES,
+  type FieldModifier,
+} from "./syntax";
 import type { Collection, Field, Model, OwnershipResult } from "./types";
 
 export function splitFieldDef(definition: string): [string, string] {
@@ -48,6 +56,27 @@ export function splitFieldDef(definition: string): [string, string] {
     }
   }
   return [definition, ""];
+}
+
+/**
+ * `name:type[:modifier...]` split at every colon outside parentheses and
+ * quotes, so the colons of `select(value:Label)` stay in the type.
+ */
+export function splitFieldParts(definition: string): {
+  name: string;
+  type: string;
+  modifiers: string[];
+} {
+  const [name, rest] = splitFieldDef(definition);
+  const [type, tail] = splitFieldDef(rest);
+  const modifiers: string[] = [];
+  let remaining = tail;
+  while (remaining !== "") {
+    const [modifier, next] = splitFieldDef(remaining);
+    modifiers.push(modifier);
+    remaining = next;
+  }
+  return { name, type, modifiers };
 }
 
 function stripQuotes(s: string): string {
@@ -161,19 +190,19 @@ export function parseSelectOptions(
   return result;
 }
 
-const TYPE_ALIASES: Record<string, string> = {
-  string: "text",
-  boolean: "bool",
-  geopoint: "geoPoint",
-  references: "relation",
-  integer: "number",
-  int: "number",
-  float: "number",
-  decimal: "number",
-  double: "number",
-  datetime: "date",
-  timestamp: "date",
-};
+/**
+ * When an autodate field is stamped, going by its name. PocketBase's own
+ * `created` is set on create only and its `updated` on create and on every
+ * update, so a fresh record has both. `undefined` when the name says neither.
+ */
+export function autodateFlags(
+  name: string,
+): { onCreate: boolean; onUpdate: boolean } | undefined {
+  const lower = name.toLowerCase();
+  const onUpdate = lower.includes("update");
+  const onCreate = onUpdate || lower.includes("create");
+  return onCreate ? { onCreate, onUpdate } : undefined;
+}
 
 interface NormalizedType {
   type: string;
@@ -192,11 +221,7 @@ function normalizeType(rawType: string): NormalizedType {
     type = "select";
   }
 
-  if (type === "files") {
-    return { type: "file", required, selectOptions };
-  }
-
-  if (type in TYPE_ALIASES) {
+  if (Object.prototype.hasOwnProperty.call(TYPE_ALIASES, type)) {
     type = TYPE_ALIASES[type];
   }
 
@@ -238,6 +263,61 @@ function resolveRelation(
     ),
     maxSelect: name === plural ? 999 : 1,
   };
+}
+
+/** Types with nothing to resolve: the field is its name, type and `required`. */
+const SIMPLE_TYPES: string[] = [
+  "text",
+  "number",
+  "bool",
+  "date",
+  "email",
+  "password",
+  "url",
+  "editor",
+  "json",
+  "geoPoint",
+];
+
+/**
+ * A unique index needs one comparable value per record. These hold a JSON
+ * document, a hash or a timestamp instead.
+ */
+const NOT_UNIQUE_TYPES: Field["type"][] = [
+  "json",
+  "geoPoint",
+  "file",
+  "password",
+  "autodate",
+  "bool",
+];
+
+function applyModifiers(
+  field: Field,
+  modifiers: string[],
+  fieldDef: string,
+): Field {
+  for (const modifier of modifiers) {
+    if (!(FIELD_MODIFIERS as readonly string[]).includes(modifier)) {
+      throw new InvalidArgumentError(
+        `Invalid field modifier: "${modifier}" in ${fieldDef}. Valid modifiers are: ${FIELD_MODIFIERS.join(", ")} (written name:type:modifier)`,
+      );
+    }
+    if ((modifier as FieldModifier) === "unique") {
+      if (NOT_UNIQUE_TYPES.includes(field.type)) {
+        throw new InvalidArgumentError(
+          `Invalid field modifier: a ${field.type} field cannot be unique (${fieldDef})`,
+        );
+      }
+      if ("maxSelect" in field && field.maxSelect > 1) {
+        throw new InvalidArgumentError(
+          `Invalid field modifier: "${field.name}" holds several values, so it cannot be unique (${fieldDef})`,
+        );
+      }
+      field.unique = true;
+    }
+  }
+  return field;
 }
 
 function resolveField(
@@ -316,14 +396,13 @@ function resolveField(
 
   // autodate
   if (type === "autodate") {
-    const onCreate = name.includes("create");
-    const onUpdate = name.includes("update");
-    if (!onCreate && !onUpdate) {
+    const flags = autodateFlags(name);
+    if (!flags) {
       throw new InvalidArgumentError(
-        `Invalid autodate field: ${name}. Must be one of created/created_at/updated/updated_at.`,
+        `Invalid autodate field: ${name}. The name says when the field is set, so it has to hold "create" or "update": created, created_at, updated, updated_at.`,
       );
     }
-    return { type: "autodate", name, title, required, onCreate, onUpdate };
+    return { type: "autodate", name, title, required, ...flags };
   }
 
   // select with inline options; PocketBase refuses a maxSelect above the
@@ -409,45 +488,19 @@ function resolveField(
   }
 
   // Validate that it's a known simple type
-  const allValidTypes = [
-    ...new Set([
-      "text",
-      "number",
-      "bool",
-      "date",
-      "email",
-      "password",
-      "url",
-      "editor",
-      "json",
-      "geoPoint",
-      "autodate",
-      "select",
-      "file",
-      "relation",
-      ...(options.features.auth ? ["current_user"] : []),
-      ...(options.features.teams ? ["current_team"] : []),
-      ...names,
-    ]),
-  ];
-  if (
-    !(
-      [
-        "text",
-        "number",
-        "bool",
-        "date",
-        "email",
-        "password",
-        "url",
-        "editor",
-        "json",
-        "geoPoint",
-      ] as string[]
-    ).includes(type)
-  ) {
+  if (!SIMPLE_TYPES.includes(type)) {
+    const allValidTypes = [
+      ...new Set([
+        ...FIELD_TYPES.map((entry) =>
+          entry.type === "relation" ? "references" : entry.type,
+        ),
+        ...(options.features.auth ? ["current_user"] : []),
+        ...(options.features.teams ? ["current_team"] : []),
+        ...names,
+      ]),
+    ];
     throw new InvalidArgumentError(
-      `Invalid field type: ${type}. Valid types are: ${allValidTypes.join(", ").replace("relation", "references")}`,
+      `Invalid field type: ${type}. Valid types are: ${allValidTypes.join(", ")}`,
     );
   }
 
@@ -463,22 +516,28 @@ export function resolveFields(
   const parsed: Field[] = [];
 
   for (const fieldDef of fields) {
-    const [name, rawType] = splitFieldDef(fieldDef);
+    const { name, type: rawType, modifiers } = splitFieldParts(fieldDef);
 
     if (!name || !rawType) {
       throw new InvalidArgumentError(
-        `Invalid field format: ${fieldDef}. Expected format: name:type or name:type!`,
+        `Invalid field format: ${fieldDef}. Expected format: name:type, name:type! or name:type:unique`,
       );
     }
 
-    if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name)) {
+    if (!FIELD_NAME_PATTERN.test(name)) {
       throw new InvalidArgumentError(
-        `Invalid field name: ${name}. Must start with a letter and contain only alphanumeric characters`,
+        `Invalid field name: ${name}. ${FIELD_NAME_RULE}`,
       );
     }
 
     const normalized = normalizeType(rawType);
-    parsed.push(resolveField(name, normalized, parent, collections, options));
+    parsed.push(
+      applyModifiers(
+        resolveField(name, normalized, parent, collections, options),
+        modifiers,
+        fieldDef,
+      ),
+    );
   }
 
   const auth = options.features.auth

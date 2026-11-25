@@ -100,6 +100,8 @@ export {
   resolveProvider,
   unknownProviderMessage,
 } from "./core/providers";
+export { FIELD_SYNTAX_HELP } from "./parse/syntax";
+export { RULES_MODES, type RulesMode } from "./core/shared";
 export {
   blockingFeatures,
   unmetRequirements,
