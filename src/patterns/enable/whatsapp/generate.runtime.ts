@@ -1,7 +1,7 @@
-import fs from "node:fs";
 import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
+import { readMigration } from "../../../runtime/collections";
 import {
   getMigrationFile,
   migrationDelay,
@@ -20,15 +20,6 @@ import { modifyTestSetup } from "./modifies/modify-test-setup";
 
 export const DOCS_URL = "https://velastack.dev/docs/enable/whatsapp";
 
-function migrationCreate(file: string): File {
-  return {
-    path: file,
-    language: "js",
-    content: fs.readFileSync(file, "utf8"),
-    status: "success",
-  };
-}
-
 export async function generate(options: Options) {
   const logger = getLogger(options);
   const creates: File[] = [];
@@ -44,14 +35,16 @@ export async function generate(options: Options) {
     if (await setupWhatsAppFields(pb)) {
       await migrationDelay();
       const file = getMigrationFile("users", "updated", options);
-      if (file) creates.push(migrationCreate(file));
+      if (file) creates.push(await readMigration(file, options));
     }
 
     logger.info("Turning on WhatsApp sign-in for users");
     await enableWhatsAppAuth(pb);
     await migrationDelay();
     const configMigration = writeWhatsAppConfigMigration(options, true);
-    if (configMigration) creates.push(migrationCreate(configMigration));
+    if (configMigration) {
+      creates.push(await readMigration(configMigration, options));
+    }
   });
 
   logger.info("Adding WhatsApp to the login and signup pages");

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import type PocketBase from "pocketbase";
 import type { CollectionModel } from "pocketbase";
 import type {
@@ -12,6 +12,7 @@ import type {
 } from "../core/types";
 import { InvalidArgumentError } from "../core/errors";
 import { getLogger, NOOP_LOGGER, type Logger } from "../core/logger";
+import { formatSource } from "../core/format-result";
 import { languageFromPath } from "../core/util";
 import { getMigrationFile, migrationDelay, withPocketbase } from "./pocketbase";
 
@@ -158,12 +159,7 @@ export async function applyCollectionRulePatches(
         options,
       );
       if (migrationFile) {
-        migrations.push({
-          path: migrationFile,
-          language: languageFromPath(migrationFile),
-          content: readFileSync(migrationFile, "utf8"),
-          status: "success",
-        });
+        migrations.push(await readMigration(migrationFile, options));
       }
     }
   }
@@ -246,12 +242,7 @@ export async function applyCollectionFieldsPatches(
     );
     if (!migrationFile) continue;
 
-    migrations.push({
-      path: migrationFile,
-      language: languageFromPath(migrationFile),
-      content: readFileSync(migrationFile, "utf8"),
-      status: "success",
-    });
+    migrations.push(await readMigration(migrationFile, options));
   }
 
   return migrations;
@@ -391,16 +382,47 @@ export async function dropCollections(
       const migrationFile = getMigrationFile(spec.name, "deleted", options);
       if (!migrationFile) continue;
 
-      migrations.push({
-        path: migrationFile,
-        language: languageFromPath(migrationFile),
-        content: readFileSync(migrationFile, "utf8"),
-        status: "success",
-      });
+      migrations.push(await readMigration(migrationFile, options));
     }
   });
 
   return migrations;
+}
+
+/**
+ * A migration PocketBase has just written, as a file of the result, formatted
+ * where it lies.
+ *
+ * PocketBase writes migrations in its own style, which the project's
+ * `prettier --check` rejects. Formatting used to wait for `writeResult`, so a
+ * run that failed in between (a component that could not be installed, a
+ * package install that died) left the migration as PocketBase wrote it. It is
+ * formatted here instead, as soon as it is read back, and marked `written` so
+ * `writeResult` reports the file, as it did when it was the one to format it,
+ * without writing it a second time.
+ */
+export async function readMigration(
+  filePath: string,
+  options: Pick<Options, "env" | "root">,
+): Promise<File> {
+  const original = readFileSync(filePath, "utf8");
+  const content = await formatSource(original, filePath, options, {
+    created: true,
+  });
+  // Only a file this call rewrote is marked. `getMigrationFile` hands back
+  // the latest migration of that name, which is an earlier run's when this
+  // one changed nothing; that file is formatted already and not reported.
+  const written = content !== original;
+  if (written) {
+    writeFileSync(filePath, content, "utf8");
+  }
+  return {
+    path: filePath,
+    language: languageFromPath(filePath),
+    content,
+    status: "success",
+    ...(written ? { written } : {}),
+  };
 }
 
 export async function createCollections(
@@ -434,12 +456,7 @@ export async function createCollections(
         continue;
       }
 
-      migrations.push({
-        path: migrationFile,
-        language: languageFromPath(migrationFile),
-        content: readFileSync(migrationFile, "utf8"),
-        status: "success",
-      });
+      migrations.push(await readMigration(migrationFile, options));
     }
   });
 

@@ -6,7 +6,11 @@ import { resolveCommand } from "package-manager-detector/commands";
 import spawn from "cross-spawn";
 import { freePort, waitForPort, waitForHealth } from "./net";
 import type { Options } from "../core/types";
-import { DATA_DIR, MIGRATIONS_DIR } from "../core/constants";
+import {
+  DATA_DIR,
+  MIGRATIONS_DIR,
+  POCKETBASE_BIN_ENV,
+} from "../core/constants";
 
 /**
  * PocketBase names migration files with a 1-second-resolution Unix timestamp
@@ -85,6 +89,52 @@ export async function authWithRetries(
   }
 }
 
+/**
+ * The command that runs PocketBase with the given arguments (`serve --dir
+ * ...`).
+ *
+ * With `VELA_POCKETBASE_BIN` (`POCKETBASE_BIN_ENV`) set, that binary itself:
+ * the caller has resolved it, and nothing about the project's package manager
+ * is consulted. `pocketbase-server`'s own bin only forwards its arguments to
+ * the binary, so they are the same either way. The value has to be an
+ * absolute path to a file that exists; anything else is an error rather than
+ * a quiet fall back to the package manager, since whoever set it meant it.
+ * Unset or empty, the server is started as before, through the project's
+ * package manager (`npx --yes pocketbase-server ...`, `pnpm dlx ...`), which
+ * the integration harness and direct callers of this library rely on.
+ */
+export async function pocketbaseCommand(
+  cwd: string,
+  serverArgs: string[],
+  env: Record<string, string | undefined> = process.env,
+): Promise<{ command: string; args: string[] }> {
+  const bin = env[POCKETBASE_BIN_ENV];
+  if (bin) {
+    if (!path.isAbsolute(bin)) {
+      throw new Error(
+        `${POCKETBASE_BIN_ENV} must be an absolute path to the PocketBase binary; it is "${bin}".`,
+      );
+    }
+    if (!existsSync(bin)) {
+      throw new Error(
+        `${POCKETBASE_BIN_ENV} points at ${bin}, which does not exist.`,
+      );
+    }
+    return { command: bin, args: [...serverArgs] };
+  }
+
+  const packageManager = (await detect({ cwd }))?.name ?? "npm";
+  const { command, args } = resolveCommand(packageManager, "execute", [
+    "pocketbase-server",
+    ...serverArgs,
+  ])!;
+
+  // adding --yes as the first parameter helps avoiding the "Need to install the following packages:" message
+  if (packageManager === "npm") args.unshift("--yes");
+
+  return { command, args };
+}
+
 export async function withPocketbase(
   cwd: string,
   fn: (pb: PocketBase) => Promise<void>,
@@ -113,8 +163,7 @@ export async function withPocketbase(
   }
 
   const port = await freePort(host);
-  const commandArgs = [
-    "pocketbase-server",
+  const { command, args } = await pocketbaseCommand(cwd, [
     "serve",
     "--dir",
     dir,
@@ -122,19 +171,9 @@ export async function withPocketbase(
     migrationsDir,
     "--http",
     `${host}:${port}`,
-  ];
+  ]);
 
-  const packageManager = (await detect({ cwd }))?.name ?? "npm";
-  const { command, args } = resolveCommand(
-    packageManager,
-    "execute",
-    commandArgs,
-  )!;
-
-  // adding --yes as the first parameter helps avoiding the "Need to install the following packages:" message
-  if (packageManager === "npm") args.unshift("--yes");
-
-  // Start the PocketBase server process. The package manager wrapper (`npx`)
+  // Start the PocketBase server process. A package manager wrapper (`npx`)
   // spawns the real binary as a grandchild; put the tree in its own process
   // group so it can be killed as a whole, otherwise `pocketbase serve` outlives
   // us and keeps the data directory open.
@@ -151,7 +190,7 @@ export async function withPocketbase(
     serverProcess.once("exit", (code, signal) => {
       reject(
         new Error(
-          `pocketbase-server exited before listening on ${host}:${port} (${signal ?? `code ${code}`})`,
+          `PocketBase (${command}) exited before listening on ${host}:${port} (${signal ?? `code ${code}`})`,
         ),
       );
     });

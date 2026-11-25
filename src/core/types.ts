@@ -489,6 +489,13 @@ export interface File {
   content: string;
   status: FileStatus;
   message?: string;
+  /**
+   * This run has already put the content on disk: a migration PocketBase
+   * wrote, which `readMigration` formatted in place. `writeResult` does not
+   * write it again, and reports it among the modifies as it did when it was
+   * the one to format it.
+   */
+  written?: boolean;
 }
 
 export type ModifyOutcome =

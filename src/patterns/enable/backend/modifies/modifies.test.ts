@@ -5,7 +5,11 @@ import fs from "node:fs";
 
 import { HOOKS_SERVER_SNIPPET } from "../../i18n/modifies/hooks.server";
 import { modifyHooksServerBackend } from "./hooks.server";
-import { modifyTsconfigBackend, POCKETBASE_TYPES } from "./tsconfig";
+import {
+  LEGACY_POCKETBASE_TYPES,
+  modifyTsconfigBackend,
+  POCKETBASE_TYPES,
+} from "./tsconfig";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -177,6 +181,81 @@ describe("enable backend tsconfig.json", () => {
       status: "success",
       changed: false,
     });
+  });
+
+  it("writes the types where SvelteKit will not clear them", () => {
+    expect(POCKETBASE_TYPES).toBe(".svelte-kit/pocketbase/*.d.ts");
+    expect(LEGACY_POCKETBASE_TYPES).toBe(".svelte-kit/types/pocketbase/*.d.ts");
+  });
+
+  it("moves the entry for the old types directory, where it stands", () => {
+    write({
+      include: [
+        "src",
+        "test",
+        LEGACY_POCKETBASE_TYPES,
+        "vite.config.ts",
+        "vitest.config.ts",
+      ],
+    });
+    expect(modifyTsconfigBackend(root)).toEqual({
+      status: "success",
+      changed: true,
+    });
+    expect(read().include).toEqual([
+      "src",
+      "test",
+      POCKETBASE_TYPES,
+      "vite.config.ts",
+      "vitest.config.ts",
+    ]);
+    expect(modifyTsconfigBackend(root)).toEqual({
+      status: "success",
+      changed: false,
+    });
+  });
+
+  it("keeps the leading ./ of the entry it moves", () => {
+    write({
+      include: [
+        "./src",
+        "./test",
+        "./vite.config.ts",
+        "./vitest.config.ts",
+        `./${LEGACY_POCKETBASE_TYPES}`,
+      ],
+    });
+    modifyTsconfigBackend(root);
+    expect(read().include).toEqual([
+      "./src",
+      "./test",
+      "./vite.config.ts",
+      "./vitest.config.ts",
+      `./${POCKETBASE_TYPES}`,
+    ]);
+  });
+
+  it("drops the old entry when the new one is already there", () => {
+    const rest = ["src", "test", "vite.config.ts", "vitest.config.ts"];
+    write({
+      include: [...rest, LEGACY_POCKETBASE_TYPES, `./${POCKETBASE_TYPES}`],
+    });
+    expect(modifyTsconfigBackend(root)).toEqual({
+      status: "success",
+      changed: true,
+    });
+    expect(read().include).toEqual([...rest, `./${POCKETBASE_TYPES}`]);
+
+    // Listed twice, it still ends up there once.
+    write({
+      include: [
+        ...rest,
+        LEGACY_POCKETBASE_TYPES,
+        `./${LEGACY_POCKETBASE_TYPES}`,
+      ],
+    });
+    modifyTsconfigBackend(root);
+    expect(read().include).toEqual([...rest, POCKETBASE_TYPES]);
   });
 
   it("names the vitest config the project has", () => {

@@ -1,8 +1,10 @@
 import packageJson from "../package.json";
+import type { AssertComponentsAvailableOptions } from "./runtime/write-result";
 import type {
   ApplyBaseColorOptions,
   ApplyColorsResult,
   ApplyThemeOptions,
+  Component,
   DetectedProviders,
   InstallComponentsOptions,
   InstallComponentsResult,
@@ -66,13 +68,17 @@ export {
   type EnvVarSpec,
 } from "./runtime/env-vars-file";
 export type { ModifyEnvVarsResult, UnmodifyEnvVarsResult };
+export type { AssertComponentsAvailableOptions };
 export type { OverrideValue, PackageJsonEditResult };
 export {
   ADAPTER_NODE,
   ADAPTER_STATIC,
   FLASH,
   FORMSNAP,
+  LEGACY_POCKETBASE_TYPES,
   NEGOTIATE,
+  POCKETBASE_BIN_ENV,
+  POCKETBASE_TYPES,
   SUPERFORMS,
   SUPERFORMS_VERSION,
   VELASTACK_CMS,
@@ -237,6 +243,26 @@ export async function installComponents(
 ): Promise<InstallComponentsResult> {
   const { installComponents: run } = await import("./runtime/write-result");
   return run(options, runtime);
+}
+
+/**
+ * The preflight for `installComponents`: throws what it would throw for these
+ * components (`MissingShadcnError`, or `InvalidArgumentError` for a name the
+ * style's registry does not list) and changes nothing. For a caller with side
+ * effects of its own ahead of the install; a pattern that lists components
+ * and creates collections runs it first. A registry that cannot be read is not an error
+ * here: the names go unchecked and the install reports it. Node-only, loaded
+ * on first call like `installComponents`.
+ */
+export async function assertComponentsAvailable(
+  root: string,
+  components: Component[],
+  options: AssertComponentsAvailableOptions = {},
+  runtime?: WriteResultRuntime,
+): Promise<void> {
+  const { assertComponentsAvailable: run } =
+    await import("./runtime/write-result");
+  return run(root, components, options, runtime);
 }
 
 /**

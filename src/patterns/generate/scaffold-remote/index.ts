@@ -30,6 +30,12 @@ export async function generate(options: Options) {
     return formatResult(baseRes, options);
   }
 
+  // Before the collections: PocketBase writes a migration for each one, and a
+  // component that cannot be installed should leave nothing behind.
+  const { assertComponentsAvailable } =
+    await import("../../../runtime/write-result");
+  await assertComponentsAvailable(options.root, baseRes.components, options);
+
   const { createCollections } = await import("../../../runtime/collections");
   const migrationCreates = await createCollections(
     baseRes.collections,
