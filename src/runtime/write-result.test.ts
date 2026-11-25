@@ -1580,3 +1580,106 @@ describe("writeResult with a component that cannot be installed", () => {
     expect(existsSync(path.join(root, "old.ts"))).toBe(true);
   });
 });
+
+describe("writeResult with files the run has already written", () => {
+  it("reports a migration formatted in place, without writing it again", async () => {
+    const root = makeTempRoot();
+    const migration = path.join(root, "migrations", "1_created_posts.js");
+    mkdirSync(path.dirname(migration), { recursive: true });
+    const content = "migrate(() => {});\n";
+    writeFileSync(migration, content, "utf8");
+    const file = {
+      path: migration,
+      language: "js",
+      content,
+      status: "success" as const,
+    };
+
+    const marked = await writeResult(
+      { ...emptyResult(), creates: [{ ...file, written: true }] },
+      makeOptions(root),
+    );
+    // What the CLI lists a new migration from.
+    expect(marked.creates).toEqual([]);
+    expect(marked.modifies).toEqual([
+      { ...file, path: "migrations/1_created_posts.js" },
+    ]);
+
+    // Unmarked and unchanged, it is an earlier run's file: not reported.
+    const unmarked = await writeResult(
+      { ...emptyResult(), creates: [file] },
+      makeOptions(root),
+    );
+    expect(unmarked.creates).toEqual([]);
+    expect(unmarked.modifies).toEqual([]);
+  });
+});
+
+describe("installComponents when the install fails part-way", () => {
+  function makeProject() {
+    const root = makeTempRoot();
+    writeFileSync(
+      path.join(root, "package.json"),
+      // A project that uses prettier, with settings unlike this repo's.
+      JSON.stringify({ name: "tmp", devDependencies: { prettier: "^3.0.0" } }),
+      "utf8",
+    );
+    writeFileSync(path.join(root, "components.json"), "{}", "utf8");
+    writeFileSync(
+      path.join(root, ".prettierrc"),
+      JSON.stringify({ useTabs: true, singleQuote: true }),
+      "utf8",
+    );
+    return root;
+  }
+
+  const uiFile = (root: string, ...rest: string[]) =>
+    path.join(root, "src", "lib", "components", "ui", ...rest);
+
+  it("formats the bundled components it copied when a package install fails", async () => {
+    const root = makeProject();
+    const executeCommand = vi.fn<ExecuteCommand>(async (_cwd, operation) => {
+      if (operation === "install") throw new Error("npm exited with code 1");
+    });
+
+    await expect(
+      installComponents(
+        { root, components: ["file-form", "auth-menu"] },
+        { executeCommand, fetch: registryFetch() },
+      ),
+    ).rejects.toThrow("npm exited with code 1");
+
+    // This repo writes double quotes; the project wants single.
+    const index = readFileSync(uiFile(root, "file-form", "index.ts"), "utf8");
+    expect(index).toContain("from './file-field.svelte'");
+    expect(index).not.toContain('"');
+    expect(
+      readFileSync(uiFile(root, "auth-menu", "context.ts"), "utf8"),
+    ).toContain("\tisDesktop: boolean;");
+  });
+
+  it("formats what shadcn-svelte wrote before it failed", async () => {
+    const root = makeProject();
+    const executeCommand = vi.fn<ExecuteCommand>(async (_cwd, operation) => {
+      if (operation !== "execute") return;
+      mkdirSync(uiFile(root, "button"), { recursive: true });
+      writeFileSync(
+        uiFile(root, "button", "index.ts"),
+        'export const a = "b"\n',
+        "utf8",
+      );
+      throw new Error("shadcn-svelte exited with code 1");
+    });
+
+    await expect(
+      installComponents(
+        { root, components: ["button"] },
+        { executeCommand, fetch: registryFetch() },
+      ),
+    ).rejects.toThrow("shadcn-svelte exited with code 1");
+
+    expect(readFileSync(uiFile(root, "button", "index.ts"), "utf8")).toBe(
+      "export const a = 'b';\n",
+    );
+  });
+});

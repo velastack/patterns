@@ -2,6 +2,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { Options, Result, File } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
+import { readMigration } from "../../../runtime/collections";
 import {
   getMigrationFile,
   migrationDelay,
@@ -79,12 +80,7 @@ export async function generate(options: Options) {
 
     const migrationFile = getMigrationFile("users", "updated", options);
     if (migrationFile) {
-      creates.push({
-        path: migrationFile,
-        language: "ts",
-        content: fs.readFileSync(migrationFile, "utf8"),
-        status: "success",
-      });
+      creates.push(await readMigration(migrationFile, options));
     }
   });
 

@@ -925,88 +925,103 @@ async function applyComponentPlan(
   mkdirSync(componentsDir, { recursive: true });
 
   const installed: string[] = [];
-  if (customList.length > 0) {
-    logger.info(`Installing custom components: ${customList.join(", ")}`);
-  }
-  for (const component of customList) {
-    copyCustomComponent(component, componentsDir);
-    installed.push(component);
-  }
-
-  const packages = await installPackages(
-    root,
-    customNpmPackagesFor(customList),
-    runtime,
-    logger,
-  );
-
-  // `shadcn-svelte add` writes more than the items it is given: each one's
-  // registry dependencies too (`command` brings `dialog` and `input-group`),
-  // over a copy the project already has, and hooks and utils beside the
-  // components. All of it arrives in the registry's style.
+  let packages: string[] = [];
   const shadcnDirs = [path.join(root, "src", "lib"), componentsDir];
-  const beforeShadcn =
-    publicList.length > 0 ? fileDigests(shadcnDirs) : undefined;
+  let beforeShadcn: Map<string, string> | undefined;
 
-  if (publicList.length > 0) {
-    logger.info(
-      `Installing shadcn-svelte components: ${publicList.join(", ")}`,
-    );
-    // shadcn-svelte reads the tsconfig, whose `extends` an install may have pruned.
-    await ensureSvelteKitSync(root, runtime, logger);
-    // shadcn only records its packages; they are installed below, once any
-    // pin it moved backwards is put back.
-    const before = readPackageJson(root);
-    await executeCommand(
-      root,
-      "execute",
-      [
-        "shadcn-svelte",
-        "add",
-        "--yes",
-        "--overwrite",
-        "--no-deps-install",
-        ...publicList,
-      ],
-      runtime,
-    );
-    installed.push(...publicList);
-    const after = readPackageJson(root);
-    if (before && after && JSON.stringify(before) !== JSON.stringify(after)) {
-      const { pkg, restored } = restoreDowngradedDependencies(
-        before as DependencyBlocks,
-        after as DependencyBlocks,
-      );
-      if (restored.length > 0) {
-        logger.info(
-          `Kept ${restored.join(", ")} (shadcn-svelte asked for an older range)`,
-        );
-        const file = path.join(root, "package.json");
-        const indent =
-          readFileSync(file, "utf8").match(/^[{]\s*\n([\t ]+)/)?.[1] ?? "\t";
-        writeFileSync(file, `${JSON.stringify(pkg, null, indent)}\n`, "utf8");
-      }
-      const recorded = (pkg: Record<string, unknown>) =>
-        new Set(
-          DEPENDENCY_BLOCKS.flatMap((block) =>
-            Object.keys((pkg[block] as Record<string, string>) ?? {}),
-          ),
-        );
-      const had = recorded(before);
-      const added = [...recorded(after)].filter((name) => !had.has(name));
-      reconcileFormsnap(root, had, added, logger);
-      await executeCommand(root, "install", [], runtime);
+  // The bundled components carry this repo's style and shadcn-svelte's files
+  // the registry's. Whatever reached the project is formatted, whether or not
+  // the install got to its end: a package install or `shadcn-svelte add` that
+  // fails after the components were copied used to leave them as they came,
+  // for the project's `prettier --check` to trip over.
+  const formatWritten = () =>
+    formatPaths(root, [
+      ...new Set([
+        ...installed.map((component) => path.join(componentsDir, component)),
+        ...(beforeShadcn ? filesWrittenSince(beforeShadcn, shadcnDirs) : []),
+      ]),
+    ]);
+
+  try {
+    if (customList.length > 0) {
+      logger.info(`Installing custom components: ${customList.join(", ")}`);
     }
+    for (const component of customList) {
+      copyCustomComponent(component, componentsDir);
+      installed.push(component);
+    }
+
+    packages = await installPackages(
+      root,
+      customNpmPackagesFor(customList),
+      runtime,
+      logger,
+    );
+
+    // `shadcn-svelte add` writes more than the items it is given: each one's
+    // registry dependencies too (`command` brings `dialog` and `input-group`),
+    // over a copy the project already has, and hooks and utils beside the
+    // components. All of it arrives in the registry's style.
+    beforeShadcn = publicList.length > 0 ? fileDigests(shadcnDirs) : undefined;
+
+    if (publicList.length > 0) {
+      logger.info(
+        `Installing shadcn-svelte components: ${publicList.join(", ")}`,
+      );
+      // shadcn-svelte reads the tsconfig, whose `extends` an install may have pruned.
+      await ensureSvelteKitSync(root, runtime, logger);
+      // shadcn only records its packages; they are installed below, once any
+      // pin it moved backwards is put back.
+      const before = readPackageJson(root);
+      await executeCommand(
+        root,
+        "execute",
+        [
+          "shadcn-svelte",
+          "add",
+          "--yes",
+          "--overwrite",
+          "--no-deps-install",
+          ...publicList,
+        ],
+        runtime,
+      );
+      installed.push(...publicList);
+      const after = readPackageJson(root);
+      if (before && after && JSON.stringify(before) !== JSON.stringify(after)) {
+        const { pkg, restored } = restoreDowngradedDependencies(
+          before as DependencyBlocks,
+          after as DependencyBlocks,
+        );
+        if (restored.length > 0) {
+          logger.info(
+            `Kept ${restored.join(", ")} (shadcn-svelte asked for an older range)`,
+          );
+          const file = path.join(root, "package.json");
+          const indent =
+            readFileSync(file, "utf8").match(/^[{]\s*\n([\t ]+)/)?.[1] ?? "\t";
+          writeFileSync(file, `${JSON.stringify(pkg, null, indent)}\n`, "utf8");
+        }
+        const recorded = (pkg: Record<string, unknown>) =>
+          new Set(
+            DEPENDENCY_BLOCKS.flatMap((block) =>
+              Object.keys((pkg[block] as Record<string, string>) ?? {}),
+            ),
+          );
+        const had = recorded(before);
+        const added = [...recorded(after)].filter((name) => !had.has(name));
+        reconcileFormsnap(root, had, added, logger);
+        await executeCommand(root, "install", [], runtime);
+      }
+    }
+  } catch (error) {
+    // The install's error is the one to report.
+    await formatWritten().catch(() => {});
+    throw error;
   }
+  await formatWritten();
 
   const installedList = [...new Set(installed)].sort();
-  await formatPaths(root, [
-    ...new Set([
-      ...installedList.map((component) => path.join(componentsDir, component)),
-      ...(beforeShadcn ? filesWrittenSince(beforeShadcn, shadcnDirs) : []),
-    ]),
-  ]);
-
   return { installed: installedList, skipped, packages };
 }
 
@@ -1109,10 +1124,19 @@ export async function writeResult(
       });
       continue;
     }
-    if (readFileSync(target, "utf8") !== file.content) {
+    // A `written` file is the run's own (a migration PocketBase wrote and
+    // `readMigration` formatted), reported even when there is nothing left
+    // to write: the CLI lists a new migration from this entry.
+    const changed = readFileSync(target, "utf8") !== file.content;
+    if (changed) {
       writeFile(target, file.content);
+    }
+    if (changed || file.written) {
+      // The marker is this module's and `readMigration`'s; callers get the
+      // entry in the shape it always had.
+      const { written: _written, ...reported } = file;
       writtenResult.modifies.push({
-        ...file,
+        ...reported,
         path: toRelativePath(options.root, file.path),
       });
     }
