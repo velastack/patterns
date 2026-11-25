@@ -9,6 +9,21 @@ export const AUTHED_REDIRECT_PATH = "/dashboard";
 export const API_URL = "http://localhost:5173";
 
 /**
+ * The tsconfig `include` entry for the types `vela sync` generates from the
+ * PocketBase schema (`Schemas`, the typed client): `$types.d.ts` under
+ * `.svelte-kit/pocketbase`.
+ */
+export const POCKETBASE_TYPES = ".svelte-kit/pocketbase/*.d.ts";
+
+/**
+ * Where those types were written before, and the entry older projects have.
+ * SvelteKit owns `.svelte-kit/types` and clears what it does not recognise
+ * there whenever a Vite server starts, so running vitest deleted the synced
+ * types. `modifyTsconfigBackend` rewrites this entry to `POCKETBASE_TYPES`.
+ */
+export const LEGACY_POCKETBASE_TYPES = ".svelte-kit/types/pocketbase/*.d.ts";
+
+/**
  * Names the environment variable that points the patterns at a PocketBase
  * binary: `VELA_POCKETBASE_BIN`, an absolute path. When it is set,
  * `withPocketbase` (every pattern that touches the schema) runs that file

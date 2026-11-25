@@ -2,8 +2,12 @@ import fs from "node:fs";
 import path from "node:path";
 import type { ModifyOutcome } from "../../../../core/types";
 
-/** Where `vela sync` writes PocketBase's generated types (`Schemas`, the typed client). */
-export const POCKETBASE_TYPES = ".svelte-kit/types/pocketbase/*.d.ts";
+import {
+  LEGACY_POCKETBASE_TYPES,
+  POCKETBASE_TYPES,
+} from "../../../../core/constants";
+
+export { LEGACY_POCKETBASE_TYPES, POCKETBASE_TYPES };
 
 const VITEST_CONFIGS = ["ts", "mts", "js", "mjs"].map(
   (ext) => `vitest.config.${ext}`,
@@ -17,9 +21,12 @@ const VITEST_CONFIGS = ["ts", "mts", "js", "mjs"].map(
  * every `server.test.ts` reads), the vitest config, and PocketBase's generated
  * types, without which `Schemas` is missing from `@velastack/pocketbase`.
  *
- * Entries already there stay, in their order. A tsconfig with no `include`
- * checks everything already; one that is not plain JSON (comments) is left
- * alone with the entries to add.
+ * Entries already there stay, in their order, but for one: the entry for
+ * where the PocketBase types used to be (`LEGACY_POCKETBASE_TYPES`) becomes
+ * the current one where it stands, keeping a leading `./` if it had one, and
+ * is dropped when the current one is there as well. A tsconfig with no
+ * `include` checks everything already; one that is not plain JSON (comments)
+ * is left alone with the entries to add.
  */
 export function modifyTsconfigBackend(root: string): ModifyOutcome {
   const filePath = path.join(root, "tsconfig.json");
@@ -56,9 +63,21 @@ export function modifyTsconfigBackend(root: string): ModifyOutcome {
 
   const normalize = (entry: unknown) =>
     typeof entry === "string" ? entry.replace(/^\.\//, "") : entry;
+  const isCurrentTypes = (entry: unknown) =>
+    normalize(entry) === POCKETBASE_TYPES;
+  const hasCurrentTypes = include.some(isCurrentTypes);
+  const next: unknown[] = [];
+  for (const entry of include as unknown[]) {
+    if (normalize(entry) !== LEGACY_POCKETBASE_TYPES) {
+      next.push(entry);
+    } else if (!hasCurrentTypes && !next.some(isCurrentTypes)) {
+      // The first old entry turns into the new one; any other goes.
+      const prefix = String(entry).startsWith("./") ? "./" : "";
+      next.push(`${prefix}${POCKETBASE_TYPES}`);
+    }
+  }
   const has = (entry: string) =>
-    include.some((existing) => normalize(existing) === entry);
-  const next = [...include] as unknown[];
+    next.some((existing) => normalize(existing) === entry);
   const insertAfter = (entry: string, after: (e: unknown) => boolean) => {
     if (has(entry)) return;
     let index = -1;
@@ -73,7 +92,10 @@ export function modifyTsconfigBackend(root: string): ModifyOutcome {
   );
   insertAfter(POCKETBASE_TYPES, () => false);
 
-  if (next.length === include.length) {
+  if (
+    next.length === include.length &&
+    next.every((entry, index) => entry === include[index])
+  ) {
     return { status: "success", changed: false };
   }
   config.include = next;
