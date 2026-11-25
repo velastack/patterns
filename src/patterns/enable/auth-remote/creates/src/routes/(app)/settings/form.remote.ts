@@ -8,10 +8,15 @@ import { changePasswordSchema } from "#lib/schemas/changePassword.js";
 export const updateProfileForm = form(profileSchema, async (data) => {
   const { locals, cookies } = getRequestEvent();
 
-  await locals.pb.collection("users").update(locals.pb.authStore.record!.id, {
+  const user = locals.pb.authStore.record!;
+
+  await locals.pb.collection("users").update(user.id, {
     name: data.name,
+    // No file chosen: `undefined`, which leaves the saved avatar alone.
     avatar: data.avatar,
-    emailVisibility: data.emailVisibility,
+    // An unticked checkbox posts nothing at all, so absent means "off". The
+    // box is only shown to accounts with an email; the others keep theirs.
+    ...(user.email ? { emailVisibility: data.emailVisibility ?? false } : {}),
   });
 
   setFlash(

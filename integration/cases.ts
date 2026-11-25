@@ -743,8 +743,24 @@ export const stackCases: CaseSpec[] = [
     step("enable-auth-remote"),
     // Not the `contact` example: the form step would regenerate its schema
     // without the id the scaffold's edit form reads.
+    // One field of every kind the edit form starts from the saved record, and
+    // the two it cannot show (a file, a password): svelte-check is what tells
+    // whether `fields.set()` takes what the record holds.
     step("generate-scaffold-remote", {
-      argv: ["product", "name:text", "price:number"],
+      argv: [
+        "product",
+        "name:text!",
+        "price:number",
+        "active:bool",
+        "released:date",
+        "site:url",
+        "summary:editor",
+        "specs:json",
+        "state:select(draft,live)",
+        "tags:select(new,sale,last)",
+        "photo:file",
+        "pin:password",
+      ],
     }),
     step("generate-form-remote", { check: true }),
   ]),

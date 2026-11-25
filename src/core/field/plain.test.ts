@@ -6,6 +6,7 @@ import {
   geoPointState,
   plainRenderer,
   remoteBinding,
+  remoteSeedExpression,
   superformsBinding,
   usesConstraints,
 } from "./plain";
@@ -208,5 +209,81 @@ describe("plainRenderer with the remote binding", () => {
     ).toBe(
       '<!-- TODO: geoPoint field "loc" is not yet supported by the remote form variant -->',
     );
+  });
+});
+
+describe("remote forms that edit a record", () => {
+  const render = (partial: Record<string, unknown>, edit: boolean) =>
+    compact(
+      plainRenderer(remoteBinding("f", { edit }), NATIVE_STYLE).render(
+        field(partial),
+      ),
+    );
+
+  it("does not require a file or a password, which cannot be shown", () => {
+    const file = { name: "cover", type: "file", maxSelect: 1, required: true };
+    const password = { name: "pin", type: "password", required: true };
+
+    expect(render(file, false)).toContain('.as("file")} required />');
+    expect(render(file, true)).toContain('.as("file")} />');
+    expect(render(password, false)).toContain('.as("password")} required />');
+    expect(render(password, true)).toContain('.as("password")} />');
+  });
+
+  it("still requires everything else", () => {
+    expect(
+      render({ name: "title", type: "text", required: true }, true),
+    ).toContain('.as("text")} required />');
+  });
+
+  describe("remoteSeedExpression", () => {
+    const seed = (partial: Record<string, unknown>) =>
+      remoteSeedExpression(field(partial), "data.post");
+
+    it("is the record's value for most fields", () => {
+      for (const type of [
+        "text",
+        "number",
+        "email",
+        "url",
+        "editor",
+        "bool",
+        "autodate",
+      ]) {
+        expect(seed({ name: "x", type }), type).toBe("data.post.x");
+      }
+      expect(
+        seed({ name: "state", type: "select", maxSelect: 1, options: [] }),
+      ).toBe("data.post.state");
+      expect(
+        seed({ name: "tags", type: "select", maxSelect: 3, options: [] }),
+      ).toBe("data.post.tags");
+    });
+
+    it("cuts a date down to what <input type=date> takes", () => {
+      expect(seed({ name: "due", type: "date" })).toBe(
+        "data.post.due?.slice(0, 10)",
+      );
+    });
+
+    it("turns json into the text the textarea edits", () => {
+      expect(seed({ name: "meta", type: "json" })).toBe(
+        'data.post.meta == null ? "" : JSON.stringify(data.post.meta, null, 2)',
+      );
+    });
+
+    it("is undefined for what cannot be shown or has no control", () => {
+      expect(
+        seed({ name: "cover", type: "file", maxSelect: 1 }),
+      ).toBeUndefined();
+      expect(
+        seed({ name: "docs", type: "file", maxSelect: 5 }),
+      ).toBeUndefined();
+      expect(seed({ name: "pin", type: "password" })).toBeUndefined();
+      expect(seed({ name: "loc", type: "geoPoint" })).toBeUndefined();
+      expect(
+        seed({ name: "author", type: "relation", maxSelect: 1, relatedModel }),
+      ).toBeUndefined();
+    });
   });
 });
