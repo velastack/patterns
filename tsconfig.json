@@ -35,6 +35,7 @@
     "src/patterns/enable/whatsapp/originals/**",
     "**/providers/**",
     "**/providers-app-mode/**",
-    "**/providers-cms/**"
+    "**/providers-cms/**",
+    "src/ui/components/form/**"
   ]
 }

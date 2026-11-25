@@ -15,11 +15,17 @@
 
   let { data } = $props();
 
+  // The profile fields start from the saved values, passed to \`.as()\`: a
+  // field left alone is then posted back as it was, and the form goes back
+  // to what was saved when it resets after a save.
+
   // bits-ui's Checkbox renders a <button>, so drop the native type="checkbox"
   // from the field props before spreading them.
   const emailVisibilityProps = $derived.by(() => {
-    const { type, ...props } =
-      updateProfileForm.fields.emailVisibility.as("checkbox");
+    const { type, ...props } = updateProfileForm.fields.emailVisibility.as(
+      "checkbox",
+      data.user.emailVisibility,
+    );
     return props;
   });
 </script>
@@ -74,7 +80,7 @@
               <label for="name" class="text-sm font-medium">Name</label>
               <Input
                 id="name"
-                {...updateProfileForm.fields.name.as("text")}
+                {...updateProfileForm.fields.name.as("text", data.user.name)}
                 type="text"
                 autocomplete="name"
               />

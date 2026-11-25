@@ -6,7 +6,9 @@ export {
   parseFields,
   resolveFields,
   splitFieldDef,
+  splitFieldParts,
   parseSelectOptions,
+  autodateFlags,
 } from "./fields";
 
 export {
@@ -18,6 +20,17 @@ export {
 } from "./collections";
 
 export { generateAuthRule } from "./permissions";
+
+export {
+  FIELD_MODIFIERS,
+  FIELD_NAME_PATTERN,
+  FIELD_SYNTAX_HELP,
+  FIELD_TYPES,
+  SPECIAL_FIELD_TYPES,
+  TYPE_ALIASES,
+  type FieldModifier,
+  type FieldTypeSyntax,
+} from "./syntax";
 
 export type {
   Model,

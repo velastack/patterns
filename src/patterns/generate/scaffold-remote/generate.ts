@@ -17,12 +17,20 @@ import {
   renderRemoteField,
 } from "../../../core/field/remote";
 import {
+  isWriteOnly,
+  remoteFormSupports,
+  remoteSeedExpression,
+} from "../../../core/field/plain";
+import {
   collectionSpecFromModelFields,
   generateSchemaSnippet,
   relationExpandParam,
   relationLoadLines,
   relationLoadReturnVars,
   resolveInputFields,
+  rulesModeForCreate,
+  rulesNotes,
+  type RulesMode,
   uniqueRelationCollections,
 } from "../../../core/shared";
 import { listPageSnippet } from "../../../core/scaffold-list";
@@ -67,10 +75,25 @@ function selectLabelMaps(fields: Field[]): string {
     .join("\n\n");
 }
 
+/**
+ * The client the pages talk to PocketBase with: the signed-in user's, unless
+ * the project has no auth or the collection is kept to the superuser.
+ */
 function pbInstance(
   options: Pick<Options, "features">,
+  rules?: RulesMode,
 ): "locals.pb" | "locals.admin" {
-  return options.features.auth ? "locals.pb" : "locals.admin";
+  return options.features.auth && rules !== "superuser"
+    ? "locals.pb"
+    : "locals.admin";
+}
+
+function scaffoldNotes(model: Model, rules: RulesMode | undefined): string[] {
+  if (rules !== "superuser") return [];
+  return [
+    ...rulesNotes(model, rules),
+    `The generated ${model.pluralDisplayName.toLowerCase()} pages use \`locals.admin\`, so everyone who can open them can read and write every record. Check who is asking in their load functions and actions.`,
+  ];
 }
 
 function createFormIdentifier(model: Model): string {
@@ -208,6 +231,51 @@ function newPageSnippet(
   `;
 }
 
+/**
+ * Script statement that starts the edit form from the saved record.
+ *
+ * A remote form's controls hold what the form's own state says, which is
+ * empty until someone types: left that way, the page shows a blank form and
+ * saving it writes a blank over every field. The state is module-level and
+ * outlives the page, so it is set afresh each time the page is created; that
+ * also clears what an earlier record's edit left in it.
+ */
+function editSeedSnippet(
+  model: Model,
+  fields: Field[],
+  formVar: string,
+): string {
+  const record = `data.${model.name}`;
+  const seeds = fields.flatMap((field) => {
+    const value = remoteSeedExpression(field, record);
+    return value === undefined ? [] : [`${field.name}: ${value},`];
+  });
+  if (seeds.length === 0) return "";
+
+  const writeOnly = fields.some(
+    (field) => remoteFormSupports(field) && isWriteOnly(field),
+  );
+  const comment = [
+    "// The form starts from the saved record, so a field left alone is saved",
+    "// as it was.",
+    ...(writeOnly
+      ? [
+          "// Files and passwords cannot be shown: left empty, they keep what is",
+          "// stored (see form.remote.ts).",
+        ]
+      : []),
+  ].join("\n");
+
+  return dedent`
+    ${comment}
+    ${formVar}.fields.set(
+      untrack(() => ({
+        ${seeds.join("\n")}
+      })),
+    );
+  `;
+}
+
 function editPageSnippet(
   model: Model,
   urls: ReturnType<typeof scaffoldUrls>,
@@ -217,14 +285,16 @@ function editPageSnippet(
 ): string {
   const formVar = updateFormIdentifier(model);
   const components = getRemoteFieldComponents(fields);
+  const seed = editSeedSnippet(model, fields, formVar);
   const imports = [
+    ...(seed ? ['import { untrack } from "svelte";'] : []),
     `import { ${formVar} } from "./form.remote";`,
     'import { Button } from "#lib/components/ui/button/index.js";',
     'import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";',
     ...getRemoteFieldImports(components),
   ].join("\n");
   const fieldContent = fields
-    .map((field) => renderRemoteField(field, { formVar }))
+    .map((field) => renderRemoteField(field, { formVar, edit: true }))
     .join("\n");
   const hiddenInputs = editHiddenInputs(model, injectables, formVar);
   const enctype = hasFiles(fields) ? ' enctype="multipart/form-data"' : "";
@@ -240,6 +310,8 @@ function editPageSnippet(
       ${imports}
 
       let { data, params } = $props();
+
+      ${seed}
     </script>
 
     <section data-role="content">
@@ -467,44 +539,96 @@ function editServerSnippet(model: Model, fields: Field[], pb: string): string {
 function editRemoteSnippet(
   model: Model,
   urls: ReturnType<typeof scaffoldUrls>,
+  fields: Field[],
   injectables: Injectables,
   pb: string,
   dynamicParams: string[],
 ): string {
   const formVar = updateFormIdentifier(model);
   const { currentUserField, currentTeamField } = injectables;
-  const hasPreservations = Boolean(currentUserField || currentTeamField);
-  const preservations: string[] = [];
-  if (currentUserField) {
-    preservations.push(
-      `${currentUserField.name}: existing.${currentUserField.name}`,
+  const rendered = fields.filter(remoteFormSupports);
+  const writeOnly = rendered.filter(isWriteOnly);
+  const bools = rendered.filter((field) => field.type === "bool");
+  const jsons = rendered.filter((field) => field.type === "json");
+
+  // What the form posts is not always what should be written.
+  const overrides: string[] = [];
+  if (bools.length > 0) {
+    overrides.push(
+      "// An unticked checkbox posts nothing at all, so absent means off.",
+      ...bools.map((field) => `${field.name}: rest.${field.name} ?? false,`),
     );
   }
-  if (currentTeamField) {
-    preservations.push(
-      `${currentTeamField.name}: existing.${currentTeamField.name}`,
+  if (jsons.length > 0) {
+    overrides.push(
+      "// An empty textarea is no value. Posted as it is, PocketBase would store",
+      '// the string "".',
+      ...jsons.map((field) => `${field.name}: rest.${field.name} || null,`),
     );
   }
-  const updateBody = hasPreservations
-    ? dedent`
-        const existing = await ${pb}.collection("${model.tableName}").getOne(id);
-        await ${pb}.collection("${model.tableName}").update(id, {
-          ...rest,
-          ${preservations.join(",\n  ")}
-        });
-      `
-    : `await ${pb}.collection("${model.tableName}").update(id, rest);`;
+  if (writeOnly.length > 0) {
+    overrides.push(
+      "// Left empty, these keep what is stored: an empty value would delete it.",
+      ...writeOnly.map((field) =>
+        field.type === "file"
+          ? `...(${field.name} instanceof File ? { ${field.name} } : {}),`
+          : `...(${field.name} ? { ${field.name} } : {}),`,
+      ),
+    );
+  }
+  const preserved = [currentUserField, currentTeamField].filter(
+    (field): field is InjectableField => Boolean(field),
+  );
+  if (preserved.length > 0) {
+    overrides.push(
+      ...preserved.map((field) => `${field.name}: existing.${field.name},`),
+    );
+  }
+
+  const taken = ["id", "collectionId", ...writeOnly.map((field) => field.name)];
+  const existing =
+    preserved.length > 0
+      ? `const existing = await ${pb}.collection("${model.tableName}").getOne(id);`
+      : "";
+  const update =
+    overrides.length > 0
+      ? dedent`
+          await ${pb}.collection("${model.tableName}").update(id, {
+            ...rest,
+            ${overrides.join("\n")}
+          });
+        `
+      : `await ${pb}.collection("${model.tableName}").update(id, rest);`;
+
+  // The create form requires these; here an empty one means "no change".
+  const optionalOnEdit = writeOnly.filter(
+    (field) => field.type === "file" && field.required,
+  );
+  const updateSchema = `update${model.typeName}Schema`;
+  const schemaDeclaration =
+    optionalOnEdit.length > 0
+      ? dedent`
+          // A stored file stays unless a new one is chosen, so the edit form does
+          // not ask for it again.
+          const ${updateSchema} = ${model.schemaName}.extend({
+            ${optionalOnEdit.map((field) => `${field.name}: ${model.schemaName}.shape.${field.name}.optional(),`).join("\n")}
+          });
+        `
+      : "";
+  const schema = optionalOnEdit.length > 0 ? updateSchema : model.schemaName;
 
   return dedent`
     import { form, getRequestEvent } from "$app/server";
     import { error, redirect } from "@sveltejs/kit";
     import { ${model.schemaName} } from "#lib/schemas/${model.name}.js";
 
-    export const ${formVar} = form(${model.schemaName}, async (data) => {
+    ${schemaDeclaration}
+
+    export const ${formVar} = form(${schema}, async (data) => {
       const { locals${dynamicParams.length > 0 ? ", params" : ""} } = getRequestEvent();
-      const { id, collectionId, ...rest } = data;
+      const { ${taken.join(", ")}, ...rest } = data;
       if (!id) error(400, "id is required");
-      ${updateBody}
+      ${[existing, update].filter(Boolean).join("\n")}
       redirect(303, ${urlJsExprWithSuffix(urls.list, dynamicParams, "/${id}")});
     });
   `;
@@ -518,7 +642,8 @@ export async function generate(options: Options) {
   const paths = scaffoldFilePaths(route);
   const urls = scaffoldUrls(route);
   const dynamicParams = route.dynamicParams;
-  const pb = pbInstance(options);
+  const rules = rulesModeForCreate(options, model, shouldCreateCollection);
+  const pb = pbInstance(options, rules);
   const uiFields = fields.filter(
     (field) =>
       !(
@@ -581,7 +706,7 @@ export async function generate(options: Options) {
     ),
     toFile(
       `${paths.edit}/form.remote.ts`,
-      editRemoteSnippet(model, urls, injectables, pb, dynamicParams),
+      editRemoteSnippet(model, urls, uiFields, injectables, pb, dynamicParams),
     ),
     toFile(
       `${paths.edit}/+page.svelte`,
@@ -625,9 +750,10 @@ export async function generate(options: Options) {
     components: [...new Set(components)],
     packages: [TANSTACK_TABLE_CORE],
     collections: shouldCreateCollection
-      ? [collectionSpecFromModelFields(model, fields, auth)]
+      ? [collectionSpecFromModelFields(model, fields, auth, rules)]
       : [],
     collectionPatches: [],
     collectionDrops: [],
+    notes: scaffoldNotes(model, rules),
   } satisfies Result;
 }

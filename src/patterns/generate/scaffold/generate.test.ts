@@ -543,4 +543,140 @@ describe("generate scaffold pattern", () => {
       result.creates.some((file) => file.path.endsWith("server.test.ts")),
     ).toBe(false);
   });
+  it("adds created and updated to the collection and to nothing else", async () => {
+    const result = await generateBase(
+      makeOptions({ env: "preview", argv: ["note", "title:text!"] }),
+    );
+
+    expect(result.collections[0].fields.slice(-2)).toEqual([
+      { name: "created", type: "autodate", onCreate: true, onUpdate: false },
+      { name: "updated", type: "autodate", onCreate: true, onUpdate: true },
+    ]);
+    for (const file of result.creates) {
+      expect(file.content, file.path).not.toMatch(/\b(created|updated)\b/);
+    }
+  });
+
+  it("leaves a live collection's created and updated out of every page", async () => {
+    const result = await generateBase(
+      makeOptions({
+        env: "runtime",
+        argv: ["note"],
+        getCollections: (async () => [
+          {
+            id: "notes_id",
+            name: "notes",
+            type: "base",
+            fields: [
+              { name: "id", type: "text", system: true },
+              { name: "title", type: "text", required: true },
+              { name: "created", type: "autodate", onCreate: true },
+              {
+                name: "updated",
+                type: "autodate",
+                onCreate: true,
+                onUpdate: true,
+              },
+            ],
+          },
+        ]) as never,
+      }),
+    );
+
+    expect(result.collections).toEqual([]);
+    for (const file of result.creates) {
+      expect(file.content, file.path).not.toMatch(/\b(created|updated)\b/);
+    }
+  });
+
+  describe("input.rules", () => {
+    const withAuth = {
+      auth: true,
+      api: false,
+      apiKeys: false,
+      backend: true,
+      i18n: false,
+      teams: false,
+      payments: false,
+      blog: false,
+      contentNegotiation: false,
+      cms: false,
+    };
+
+    it("superuser: null rules, pages on the admin client, and notes saying so", async () => {
+      const result = await generateBase(
+        makeOptions({
+          env: "preview",
+          argv: ["note", "title:text!"],
+          features: withAuth,
+          input: { rules: "superuser" },
+        }),
+      );
+
+      expect(result.collections[0]).toMatchObject({
+        listRule: null,
+        viewRule: null,
+        createRule: null,
+        updateRule: null,
+        deleteRule: null,
+      });
+      const servers = result.creates.filter(
+        (file) =>
+          file.path.endsWith("+page.server.ts") ||
+          file.path.endsWith("form.remote.ts"),
+      );
+      expect(servers.length).toBeGreaterThan(2);
+      for (const file of servers) {
+        expect(file.content, file.path).toContain(
+          'locals.admin.collection("notes")',
+        );
+        expect(file.content, file.path).not.toContain("locals.pb.collection");
+      }
+      expect(result.notes).toEqual([
+        expect.stringContaining("only the superuser client"),
+        expect.stringContaining("everyone who can open them"),
+      ]);
+    });
+
+    it("auth: signed-in rules and the user's own client", async () => {
+      const result = await generateBase(
+        makeOptions({
+          env: "preview",
+          argv: ["note", "title:text!", "user:current_user"],
+          features: withAuth,
+          input: { rules: "auth" },
+        }),
+      );
+
+      expect(result.collections[0].listRule).toBe('@request.auth.id != ""');
+      expect(result.collections[0].deleteRule).toBe('@request.auth.id != ""');
+      expect(result.notes).toEqual([]);
+      expect(
+        result.creates.find((file) =>
+          file.path.endsWith("notes/+page.server.ts"),
+        )?.content,
+      ).toContain("locals.pb.collection");
+    });
+
+    it("is refused when the collection already exists", async () => {
+      await expect(
+        generateBase(
+          makeOptions({
+            env: "runtime",
+            argv: ["note"],
+            features: withAuth,
+            input: { rules: "superuser" },
+            getCollections: (async () => [
+              {
+                id: "notes_id",
+                name: "notes",
+                type: "base",
+                fields: [{ name: "title", type: "text" }],
+              },
+            ]) as never,
+          }),
+        ),
+      ).rejects.toThrow(/"notes" is not being created/);
+    });
+  });
 });

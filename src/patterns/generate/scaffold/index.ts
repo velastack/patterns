@@ -1,5 +1,6 @@
 import type { Options, Pattern } from "../../../core/types";
 import { formatResult } from "../../../core/format-result";
+import { withNotes } from "../../../core/util";
 import { resolveUi } from "../../../core/field/ui";
 import { generate as generateBase } from "./generate";
 
@@ -23,6 +24,12 @@ export async function generate(options: Options) {
     return formatResult(baseRes, options);
   }
 
+  // Before the collections: PocketBase writes a migration for each one, and a
+  // component that cannot be installed should leave nothing behind.
+  const { assertComponentsAvailable } =
+    await import("../../../runtime/write-result");
+  await assertComponentsAvailable(options.root, baseRes.components, options);
+
   const { createCollections } = await import("../../../runtime/collections");
   const migrationCreates = await createCollections(
     baseRes.collections,
@@ -34,7 +41,10 @@ export async function generate(options: Options) {
   };
 
   const { writeResult } = await import("../../../runtime/write-result");
-  return writeResult(await formatResult(runtimeRes, options), options);
+  return withNotes(
+    await writeResult(await formatResult(runtimeRes, options), options),
+    baseRes,
+  );
 }
 
 export default {

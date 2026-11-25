@@ -50,6 +50,8 @@ interface RemoteRenderOptions {
   formVar: string;
   /** Bare elements instead of shadcn's `Input`/`Textarea`; see `PlainStyle`. */
   native?: boolean;
+  /** The form edits an existing record; see `RemoteBindingOptions`. */
+  edit?: boolean;
 }
 
 export function renderRemoteField(
@@ -57,7 +59,7 @@ export function renderRemoteField(
   options: RemoteRenderOptions,
 ): string {
   return plainRenderer(
-    remoteBinding(options.formVar),
+    remoteBinding(options.formVar, { edit: options.edit }),
     options.native ? NATIVE_STYLE : SHADCN_STYLE,
   ).render(field);
 }

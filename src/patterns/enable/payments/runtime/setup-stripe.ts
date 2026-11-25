@@ -1,10 +1,8 @@
-import fs from "node:fs";
 import path from "node:path";
 import dedent from "dedent";
 import type { File, Options, Result } from "../../../../core/types";
 import { getLogger } from "../../../../core/logger";
 import { suppliedProviderEnv } from "../../../../core/providers";
-import { languageFromPath } from "../../../../core/util";
 import {
   getMigrationFile,
   migrationDelay,
@@ -13,6 +11,7 @@ import {
 import {
   createCollectionIdempotent,
   ensureCollectionFields,
+  readMigration,
 } from "../../../../runtime/collections";
 import { STRIPE_PRICES, STRIPE_PRODUCTS } from "./collections";
 import { modifyOutcomeToFile } from "../../../../runtime/modify-file";
@@ -35,12 +34,7 @@ async function pushMigrationCreates(
   await migrationDelay();
   const migrationFile = getMigrationFile(collectionName, action, options);
   if (!migrationFile) return;
-  creates.push({
-    path: migrationFile,
-    language: languageFromPath(migrationFile),
-    content: fs.readFileSync(migrationFile, "utf8"),
-    status: "success",
-  });
+  creates.push(await readMigration(migrationFile, options));
 }
 
 function paymentPageSnippet(priceId: string): string {

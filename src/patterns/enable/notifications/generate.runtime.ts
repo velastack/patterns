@@ -1,11 +1,10 @@
-import fs from "node:fs";
 import path from "node:path";
 import type { File, Options, Result } from "../../../core/types";
 import { getLogger } from "../../../core/logger";
-import { languageFromPath } from "../../../core/util";
 import {
   applyCollectionRulePatches,
   createCollectionIdempotent,
+  readMigration,
 } from "../../../runtime/collections";
 import {
   getMigrationFile,
@@ -28,12 +27,7 @@ async function pushMigrationCreates(
   await migrationDelay();
   const migrationFile = getMigrationFile(collectionName, "created", options);
   if (!migrationFile) return;
-  creates.push({
-    path: migrationFile,
-    language: languageFromPath(migrationFile),
-    content: fs.readFileSync(migrationFile, "utf8"),
-    status: "success",
-  });
+  creates.push(await readMigration(migrationFile, options));
 }
 
 export async function generate(options: Options) {

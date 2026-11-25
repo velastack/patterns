@@ -1,4 +1,10 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -7,7 +13,12 @@ import type {
   CollectionSpec,
   Options,
 } from "../core/types";
-import { applyCollectionRulePatches, createCollections } from "./collections";
+import {
+  applyCollectionFieldsPatches,
+  applyCollectionRulePatches,
+  createCollections,
+  readMigration,
+} from "./collections";
 
 // Hoisted because `vi.mock` is itself hoisted above these declarations: the
 // factory below runs before a plain `const` has initialized, which fails with
@@ -55,6 +66,13 @@ function makeOptions(root: string): Options {
 
 const tempDirs: string[] = [];
 
+function writeMigration(root: string, name: string, content: string): string {
+  const file = path.join(root, "migrations", name);
+  mkdirSync(path.dirname(file), { recursive: true });
+  writeFileSync(file, content, "utf8");
+  return file;
+}
+
 afterEach(() => {
   vi.clearAllMocks();
   getFirstListItemMock.mockReset();
@@ -75,7 +93,8 @@ describe("createCollections", () => {
       "migrations",
       "0001_created_contacts.js",
     );
-    writeFileSync(migrationPath, "migration-content", "utf8");
+    // PocketBase's own style: tabs, no trailing newline.
+    writeFileSync(migrationPath, "migrate((app) => {\n\treturn 1\n})", "utf8");
 
     const createMock = vi.fn().mockResolvedValue(undefined);
     withPocketbaseMock.mockImplementation(async (_cwd, fn) => {
@@ -102,14 +121,40 @@ describe("createCollections", () => {
       "created",
       expect.objectContaining({ root }),
     );
+    // Formatted where PocketBase left it, so a run that fails before
+    // `writeResult` still leaves a file `prettier --check` accepts.
+    const formatted = "migrate((app) => {\n  return 1;\n});\n";
+    expect(readFileSync(migrationPath, "utf8")).toBe(formatted);
     expect(migrations).toEqual([
       {
         path: migrationPath,
         language: "js",
-        content: "migration-content",
+        content: formatted,
         status: "success",
+        written: true,
       },
     ]);
+  });
+
+  it("does not mark a migration it had no need to rewrite", async () => {
+    const root = mkdtempSync(path.join(os.tmpdir(), "collections-runtime-"));
+    tempDirs.push(root);
+    const formatted = "migrate((app) => {\n  return 1;\n});\n";
+    const first = await readMigration(
+      writeMigration(root, "1_created_a.js", "migrate((app) => {return 1})"),
+      makeOptions(root),
+    );
+    expect(first.written).toBe(true);
+    expect(first.content).toBe(formatted);
+
+    // The same file read back again (an earlier run's, or twice in one run).
+    const again = await readMigration(first.path, makeOptions(root));
+    expect(again).toEqual({
+      path: first.path,
+      language: "js",
+      content: formatted,
+      status: "success",
+    });
   });
 
   it("swaps relation targets named by collection for their ids", async () => {
@@ -263,19 +308,18 @@ describe("applyCollectionRulePatches", () => {
     expect(collectionsUpdateMock).toHaveBeenNthCalledWith(2, "col1", {
       viewRule: "b = 2",
     });
+    // Both patches read back the one file the mock names: the first formats
+    // it, the second finds it formatted.
+    const content = "updated - migration;\n";
     expect(files).toEqual([
       {
         path: migrationPath,
         language: "js",
-        content: "updated-migration",
+        content,
         status: "success",
+        written: true,
       },
-      {
-        path: migrationPath,
-        language: "js",
-        content: "updated-migration",
-        status: "success",
-      },
+      { path: migrationPath, language: "js", content, status: "success" },
     ]);
   });
 
@@ -294,5 +338,57 @@ describe("applyCollectionRulePatches", () => {
     );
 
     expect(getFirstListItemMock).toHaveBeenCalledWith(`name='a''b'`);
+  });
+});
+
+describe("applyCollectionFieldsPatches", () => {
+  const field = { name: "code", type: "text", required: true };
+  const index = "CREATE UNIQUE INDEX `idx_songs_code` ON `songs` (`code`)";
+
+  function pocketbase(indexes?: string[]) {
+    const update = vi.fn().mockResolvedValue(undefined);
+    const pb = {
+      collections: {
+        getOne: vi.fn().mockResolvedValue({ id: "col1", fields: [], indexes }),
+        update,
+      },
+    };
+    return { pb, update };
+  }
+
+  it("adds a patch's indexes to the ones the collection has", async () => {
+    getMigrationFileMock.mockReturnValue(undefined);
+    const existing = "CREATE INDEX `idx_songs_title` ON `songs` (`title`)";
+    const { pb, update } = pocketbase([existing]);
+
+    await applyCollectionFieldsPatches(
+      pb,
+      [
+        {
+          collectionName: "songs",
+          changes: [{ op: "add", field }],
+          indexes: [index, existing],
+        },
+      ],
+      makeOptions("/tmp/project"),
+    );
+
+    expect(update).toHaveBeenCalledWith("col1", {
+      fields: [field],
+      indexes: [existing, index],
+    });
+  });
+
+  it("sends no indexes for a patch without any", async () => {
+    getMigrationFileMock.mockReturnValue(undefined);
+    const { pb, update } = pocketbase(["CREATE INDEX `a` ON `songs` (`b`)"]);
+
+    await applyCollectionFieldsPatches(
+      pb,
+      [{ collectionName: "songs", changes: [{ op: "add", field }] }],
+      makeOptions("/tmp/project"),
+    );
+
+    expect(update).toHaveBeenCalledWith("col1", { fields: [field] });
   });
 });
