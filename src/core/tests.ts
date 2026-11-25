@@ -115,6 +115,22 @@ function mockValueForField(
   relationIdsByCollectionId: Record<string, string>,
   options: { forForm: boolean; authEnabled: boolean },
 ): FixtureValue | undefined {
+  // A unique field cannot hold the same sample in two records, and the tests
+  // create several. `crypto` is a global in the Node versions vitest runs on.
+  if (field.unique) {
+    const suffix = "${crypto.randomUUID().slice(0, 8)}";
+    switch (field.type) {
+      case "text":
+      case "editor":
+        return new RawExpression(`\`${field.name}-${suffix}\``);
+      case "email":
+        return new RawExpression(`\`test-${suffix}@example.com\``);
+      case "url":
+        return new RawExpression(`\`https://example.com/${suffix}\``);
+      case "number":
+        return new RawExpression("Math.floor(Math.random() * 1e9)");
+    }
+  }
   switch (field.type) {
     case "text":
     case "editor":
