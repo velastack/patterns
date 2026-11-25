@@ -7,6 +7,7 @@ import {
   migrationDelay,
   withPocketbase,
 } from "../../../runtime/pocketbase";
+import { readMigration } from "../../../runtime/collections";
 import { modifyOutcomeToFile } from "../../../runtime/modify-file";
 import { ensureSiteFile } from "../../../runtime/site";
 import { modifySvelteConfigRemote } from "../../../runtime/modify-svelte-config-remote";
@@ -79,12 +80,7 @@ export async function generate(options: Options) {
 
     const migrationFile = getMigrationFile("users", "updated", options);
     if (migrationFile) {
-      creates.push({
-        path: migrationFile,
-        language: "ts",
-        content: fs.readFileSync(migrationFile, "utf8"),
-        status: "success",
-      });
+      creates.push(await readMigration(migrationFile, options));
     }
   });
 
